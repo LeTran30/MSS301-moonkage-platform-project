@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL 16 — Single instance, 4 logical DBs
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: bake2b-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bake2b
+      POSTGRES_PASSWORD: bake2b_secret
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql
+    networks:
+      - bake2b-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bake2b"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # pgAdmin 4 — Database Management UI
+  # ─────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: bake2b-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@bake2b.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bake2b-network
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  bake2b-network:
+    driver: bridge
