@@ -1,57 +1,37 @@
 package com.bake2b.identity.entity;
 
-import com.bake2b.identity.enums.*;
+import com.bake2b.identity.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-
-/**
- * Account of one person (FR-01). One login type for everyone; no company accounts (scope 4.2).
- */
+/** Profile of one person (FR-01). Addresses and vendor ownership hang off this. */
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
-public class User {
+@AllArgsConstructor
+@Builder
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
     private String id;
 
-    @Column(unique = true)
-    private String email;
-
-    @Column(unique = true)
-    private String phone;
-
-    @Column(nullable = false)
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
-    @Column(nullable = false)
-    private String passwordHash;
+    @Column(name = "email", unique = true, length = 100)
+    private String email;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role = UserRole.MEMBER;
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
 
-    @Column(nullable = false)
-    private boolean verified;
+    @Column(name = "avatar_url")
+    private String avatarUrl;
 
-    @Column(nullable = false)
-    private boolean active = true;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "account_id", unique = true, nullable = false)
+    private Account account;
 }
