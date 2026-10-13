@@ -1,20 +1,26 @@
 package com.bake2b.catalog.entity;
 
+import com.bake2b.catalog.enums.*;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.*;
 
 /**
- * Represents a mooncake product in the catalog.
+ * Ready-to-sell Shop product (FR-30 - FR-32).
  */
 @Entity
 @Table(name = "products")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Product {
 
     @Id
@@ -22,29 +28,62 @@ public class Product {
     private String id;
 
     @Column(nullable = false)
+    private String vendorId;
+
+    @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    private String category;
+    /** Cake type, used as filter (FR-05). */
+    private String cakeType;
 
-    private String imageUrl;
+    /** Required for resold products (BR-12). */
+    private String brand;
 
-    private boolean active;
+    /** Place of manufacture; required for resold products (BR-12). */
+    private String origin;
 
+    /** Number of cakes per box, shown in comparison (AC-06.2). */
+    private Integer piecesPerBox;
+
+    /** VAT-inclusive listed price, VND (BR-06). */
+    @Column(nullable = false)
+    private Long listPrice;
+
+    @Column(nullable = false)
+    private Integer stock;
+
+    @Column(nullable = false)
+    private LocalDate expiryDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DeliveryLabel deliveryLabel;
+
+    /** Qty at/above which buyer must send a request; only effective if vendor accepts orders (FR-32). */
+    private Integer quoteThreshold;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductStatus status = ProductStatus.ON_SALE;
+
+    @Column(columnDefinition = "TEXT")
+    private String removedReason;
+
+    @ElementCollection
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "file_url", nullable = false)
+    private List<String> imageUrls = new ArrayList<>();
+
+    /** Optimistic lock: two buyers racing for the last box must not both succeed (FR-09). */
+    @Version
+    private Long version;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        active = true;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

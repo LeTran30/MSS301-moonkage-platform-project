@@ -12,7 +12,7 @@
 
     <artifactId>tender-service</artifactId>
     <name>Tender Service</name>
-    <description>Tender request, invitation, and quoting management</description>
+    <description>Direct/open requests, invitations, quotes and season cut-offs</description>
 
     <dependencies>
         <dependency>

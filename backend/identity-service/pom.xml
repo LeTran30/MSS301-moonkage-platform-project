@@ -12,7 +12,7 @@
 
     <artifactId>identity-service</artifactId>
     <name>Identity Service</name>
-    <description>User, Company, and Vendor identity management</description>
+    <description>Accounts, addresses and vendor profiles</description>
 
     <dependencies>
         <dependency>

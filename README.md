@@ -66,10 +66,10 @@ npm run dev
 │   ├── pom.xml                 # Parent POM
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # API Gateway
-│   ├── identity-service/       # Users, Companies, Vendors
-│   ├── catalog-service/        # Products, Pricing, Capabilities
-│   ├── tender-service/         # Tenders, Invitations, Quotes
-│   └── order-service/          # Orders, Payments, Mockups
+│   ├── identity-service/       # Users, Addresses, Vendors
+│   ├── catalog-service/        # Products, Order profiles, Delivery areas, Reviews
+│   ├── tender-service/         # Requests, Invitations, Quotes, Season
+│   └── order-service/          # Cart, Orders, Payments, Escrow, Mockups, Disputes, Vouchers
 ├── frontend/
 │   └── web-portal/             # React SPA
 ├── infra/

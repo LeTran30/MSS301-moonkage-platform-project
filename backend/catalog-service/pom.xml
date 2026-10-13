@@ -12,7 +12,7 @@
 
     <artifactId>catalog-service</artifactId>
     <name>Catalog Service</name>
-    <description>Product catalog, pricing tiers, and vendor capabilities</description>
+    <description>Products, order profiles, delivery areas and reviews</description>
 
     <dependencies>
         <dependency>

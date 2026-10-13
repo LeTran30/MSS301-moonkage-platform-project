@@ -1,49 +1,54 @@
 package com.bake2b.order.entity;
 
+import com.bake2b.order.enums.*;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.*;
 
 /**
- * Represents a payment transaction for an order.
+ * Money movement for an order: buy-now, deposit, remaining or refund (7.1).
  */
 @Entity
 @Table(name = "payments")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String orderId;
+    private PaymentType type;
 
-    @Column(precision = 15, scale = 2)
-    private BigDecimal amount;
+    @Column(nullable = false)
+    private Long amount;
 
-    private String currency;
+    private String method;
 
-    private String paymentMethod;
-
+    /** Gateway reference; one gateway txn may cover several split orders. */
     private String transactionRef;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentStatus status = PaymentStatus.PENDING;
 
     private LocalDateTime paidAt;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        if (status == null) status = "PENDING";
-        if (currency == null) currency = "VND";
-    }
 }
