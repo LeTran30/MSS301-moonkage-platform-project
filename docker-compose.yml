@@ -1,52 +1,165 @@
-version: '3.8'
+# =============================================
+# MoonKage / Bake2B - full stack
+#   Everything:          docker compose up -d --build
+#   Only the databases:  docker compose up -d identity-db catalog-db tender-db order-db
+#                        (then run the services from the IDE / mvn)
+# Values come from .env in this folder (see .env.example).
+# =============================================
+name: bake2b
+
+x-postgres: &postgres
+  image: postgres:17-alpine
+  restart: unless-stopped
+  networks: [bake2b-network]
+
+x-app: &app
+  restart: unless-stopped
+  env_file: .env
+  networks: [bake2b-network]
+
+x-app-env: &app-env
+  EUREKA_URL: http://discovery-server:8761/eureka/
+  TZ: Asia/Ho_Chi_Minh
 
 services:
-  # ─────────────────────────────────────────────
-  # PostgreSQL 16 — Single instance, 4 logical DBs
-  # ─────────────────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    container_name: bake2b-postgres
-    restart: unless-stopped
+  # ───────────── Databases: one PostgreSQL per service ─────────────
+  identity-db:
+    <<: *postgres
+    container_name: bake2b-identity-db
     environment:
-      POSTGRES_USER: bake2b
-      POSTGRES_PASSWORD: bake2b_secret
-      POSTGRES_DB: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./infra/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql
-    networks:
-      - bake2b-network
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: identity_db
+    ports: ["${IDENTITY_DB_PORT}:5432"]
+    volumes: [identity-db-data:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bake2b"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─────────────────────────────────────────────
-  # pgAdmin 4 — Database Management UI
-  # ─────────────────────────────────────────────
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: bake2b-pgadmin
-    restart: unless-stopped
+  catalog-db:
+    <<: *postgres
+    container_name: bake2b-catalog-db
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@bake2b.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    ports:
-      - "5050:80"
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: catalog_db
+    ports: ["${CATALOG_DB_PORT}:5432"]
+    volumes: [catalog-db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  tender-db:
+    <<: *postgres
+    container_name: bake2b-tender-db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: tender_db
+    ports: ["${TENDER_DB_PORT}:5432"]
+    volumes: [tender-db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-db:
+    <<: *postgres
+    container_name: bake2b-order-db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: order_db
+    ports: ["${ORDER_DB_PORT}:5432"]
+    volumes: [order-db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ───────────── Infrastructure services ─────────────
+  discovery-server:
+    <<: *app
+    container_name: bake2b-discovery-server
+    build: { context: ./backend, dockerfile: discovery-server/Dockerfile }
+    environment: { TZ: Asia/Ho_Chi_Minh }
+    ports: ["8761:8761"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8761/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  api-gateway:
+    <<: *app
+    container_name: bake2b-api-gateway
+    build: { context: ./backend, dockerfile: api-gateway/Dockerfile }
+    environment: *app-env
+    # the only business entry point exposed to the host; other services are reachable only through it
+    ports: ["8080:8080"]
     depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - bake2b-network
+      discovery-server: { condition: service_healthy }
+
+  # ───────────── Business services (no host ports: go through the gateway) ─────────────
+  identity-service:
+    <<: *app
+    container_name: bake2b-identity-service
+    build: { context: ./backend, dockerfile: identity-service/Dockerfile }
+    environment:
+      <<: *app-env
+      IDENTITY_DB_HOST: identity-db
+      IDENTITY_DB_PORT: 5432
+    depends_on:
+      identity-db: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
+
+  catalog-service:
+    <<: *app
+    container_name: bake2b-catalog-service
+    build: { context: ./backend, dockerfile: catalog-service/Dockerfile }
+    environment:
+      <<: *app-env
+      CATALOG_DB_HOST: catalog-db
+      CATALOG_DB_PORT: 5432
+    depends_on:
+      catalog-db: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
+
+  tender-service:
+    <<: *app
+    container_name: bake2b-tender-service
+    build: { context: ./backend, dockerfile: tender-service/Dockerfile }
+    environment:
+      <<: *app-env
+      TENDER_DB_HOST: tender-db
+      TENDER_DB_PORT: 5432
+    depends_on:
+      tender-db: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
+
+  order-service:
+    <<: *app
+    container_name: bake2b-order-service
+    build: { context: ./backend, dockerfile: order-service/Dockerfile }
+    environment:
+      <<: *app-env
+      ORDER_DB_HOST: order-db
+      ORDER_DB_PORT: 5432
+    depends_on:
+      order-db: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
 
 volumes:
-  postgres-data:
-    driver: local
+  identity-db-data:
+  catalog-db-data:
+  tender-db-data:
+  order-db-data:
 
 networks:
   bake2b-network:

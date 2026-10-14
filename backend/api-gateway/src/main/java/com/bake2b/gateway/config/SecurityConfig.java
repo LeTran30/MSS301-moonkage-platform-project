@@ -58,6 +58,9 @@ public class SecurityConfig {
                 .authorizeExchange(a -> a
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()
                         .pathMatchers("/actuator/health").permitAll()
+                        // Swagger UI and each service's OpenAPI doc
+                        .pathMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**",
+                                "/*/v3/api-docs/**").permitAll()
                         // identity-service decides itself which auth endpoints need a token (/me)
                         .pathMatchers("/identity-service/api/auth/**").permitAll()
                         // FR-04: guests browse products before logging in

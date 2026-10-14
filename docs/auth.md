@@ -78,7 +78,7 @@ Mọi lỗi trả theo cùng một dạng, giống Capstone:
 
 ## Cấu hình (`.env`)
 
-Mọi giá trị cấu hình nằm trong file **`.env` ở thư mục gốc repo**. File này đã có trong `.gitignore` nên không bị commit. `application.properties` chỉ tham chiếu `${VAR}` và không chứa giá trị nào. `DotEnvConfig.loadDotEnv()` trong `main()` của identity-service và api-gateway đi ngược từ thư mục đang chạy lên các thư mục cha để tìm `.env`. Vì vậy chạy từ thư mục module, từ `backend/` hay từ gốc repo đều được. Biến môi trường thật của hệ điều hành được ưu tiên hơn giá trị trong `.env`.
+Mọi giá trị cấu hình nằm trong file **`.env` ở thư mục gốc repo**. File này đã có trong `.gitignore` nên không bị commit. `application.yml` chỉ tham chiếu `${VAR}` và không chứa giá trị nào. `DotEnvConfig.loadDotEnv()` trong `main()` của mọi service đi ngược từ thư mục đang chạy lên các thư mục cha để tìm `.env`. Vì vậy chạy từ thư mục module, từ `backend/` hay từ gốc repo đều được. Biến môi trường thật của hệ điều hành được ưu tiên hơn giá trị trong `.env`.
 
 Cách thiết lập cho thành viên mới:
 
@@ -91,7 +91,9 @@ Thiếu `.env` hoặc thiếu một biến thì service dừng ngay khi khởi �
 
 | Biến | Ghi chú |
 |---|---|
-| `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD` | Phải khớp với `docker-compose.yml` |
+| `DB_USERNAME`, `DB_PASSWORD` | Dùng chung cho 4 container Postgres |
+| `IDENTITY_DB_HOST/PORT`, `CATALOG_DB_*`, `TENDER_DB_*`, `ORDER_DB_*` | Mỗi service một DB (cổng 5441–5444 khi chạy từ IDE). Trong Docker, compose tự đổi sang tên container |
+| `EUREKA_URL` | `http://localhost:8761/eureka/`; trong Docker tự đổi thành `http://discovery-server:8761/eureka/` |
 | `JWT_SECRET` | Chuỗi Base64, ít nhất 32 byte. identity-service và api-gateway đọc **cùng một** giá trị này |
 | `JWT_EXPIRATION` / `JWT_REFRESH_EXPIRATION` | Đơn vị mili giây (12 giờ / 7 ngày) |
 | `OTP_EXPIRATION` / `OTP_MAX_ATTEMPTS` | `5m` / `5` |

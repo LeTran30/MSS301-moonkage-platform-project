@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
 
     /** Email or phone number (FR-02). */
-    @NotBlank(message = "Vui lòng nhập email hoặc số điện thoại")
+    @NotBlank(message = "Vui lòng nhập username")
     private String username;
 
     @NotBlank(message = "Vui lòng nhập mật khẩu")

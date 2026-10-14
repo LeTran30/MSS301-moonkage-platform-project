@@ -15,8 +15,7 @@ A comprehensive platform connecting corporate buyers with mooncake vendors throu
 | **Tender Service** | Spring Boot + JPA + PostgreSQL | `8083` |
 | **Order Service** | Spring Boot + JPA + PostgreSQL | `8084` |
 | **Web Portal** | React + Vite + TypeScript + TailwindCSS | `5173` |
-| **PostgreSQL** | PostgreSQL 16 (Docker) | `5432` |
-| **pgAdmin** | pgAdmin 4 (Docker) | `5050` |
+| **PostgreSQL ×4** | PostgreSQL 17 (Docker), one DB per service | `5441` identity, `5442` catalog, `5443` tender, `5444` order |
 
 ## Getting Started
 
@@ -27,31 +26,37 @@ A comprehensive platform connecting corporate buyers with mooncake vendors throu
 - Node.js 18+
 - Docker & Docker Compose
 
-### 1. Start Infrastructure
+### 0. Config
 
 ```bash
-docker compose up -d
+cp .env.example .env
+openssl rand -base64 48   # paste into JWT_SECRET
 ```
 
-This creates 4 databases: `identity_db`, `catalog_db`, `tender_db`, `order_db`.
-
-### 2. Start Backend Services
+### Option A: whole backend in Docker
 
 ```bash
+docker compose up -d --build
+docker compose logs -f identity-service   # OTP codes appear here when MAIL_HOST is empty
+```
+
+Gateway: `http://localhost:8080`, Eureka: `http://localhost:8761`. Business services are only reachable through the gateway.
+
+### Option B: databases in Docker, services from the IDE
+
+```bash
+docker compose up -d identity-db catalog-db tender-db order-db
+
 cd backend
-
-# Start Eureka first
-mvn -pl discovery-server spring-boot:run
-
-# Then start other services (in separate terminals)
-mvn -pl api-gateway spring-boot:run
+mvn -pl discovery-server spring-boot:run   # start Eureka first
+mvn -pl api-gateway spring-boot:run        # then the rest, separate terminals
 mvn -pl identity-service spring-boot:run
 mvn -pl catalog-service spring-boot:run
 mvn -pl tender-service spring-boot:run
 mvn -pl order-service spring-boot:run
 ```
 
-### 3. Start Frontend
+### Frontend
 
 ```bash
 cd frontend/web-portal
@@ -64,6 +69,7 @@ npm run dev
 ```
 ├── backend/
 │   ├── pom.xml                 # Parent POM
+│   ├── <service>/Dockerfile    # one image per service (build context = backend/)
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # API Gateway
 │   ├── identity-service/       # Users, Addresses, Vendors
@@ -72,8 +78,6 @@ npm run dev
 │   └── order-service/          # Cart, Orders, Payments, Escrow, Mockups, Disputes, Vouchers
 ├── frontend/
 │   └── web-portal/             # React SPA
-├── infra/
-│   └── init-databases.sql      # DB initialization
 ├── docker-compose.yml
 └── README.md
 ```

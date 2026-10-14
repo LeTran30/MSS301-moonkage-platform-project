@@ -29,6 +29,9 @@ public class JwtFilter extends OncePerRequestFilter {
     static final List<String> PUBLIC_ENDPOINTS = List.of(
             "/error",
             "/actuator/health",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
             "/api/auth/register",
             "/api/auth/verify",
             "/api/auth/resend-otp",
@@ -62,7 +65,8 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        boolean isPublic = isPublicAPI(request.getRequestURI());
+        // servlet path, not the URI: behind the gateway the URI carries the /identity-service prefix
+        boolean isPublic = isPublicAPI(request.getServletPath());
         String token = extractJwtFromRequest(request);
         if (token == null) {
             if (isPublic) {
