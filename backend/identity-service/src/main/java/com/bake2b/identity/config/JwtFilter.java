@@ -29,6 +29,8 @@ public class JwtFilter extends OncePerRequestFilter {
     static final List<String> PUBLIC_ENDPOINTS = List.of(
             "/error",
             "/actuator/health",
+            // service-to-service (OpenFeign); the gateway blocks /*/internal/** from outside
+            "/internal/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

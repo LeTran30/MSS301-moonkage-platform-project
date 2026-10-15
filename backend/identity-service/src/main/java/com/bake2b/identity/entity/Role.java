@@ -4,7 +4,7 @@ import com.bake2b.identity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-/** CUSTOMER or ADMIN. Vendor ownership is not a role: it comes from Vendor.owner (BR-11). */
+/** CUSTOMER, SELLER (owns an approved vendor) or ADMIN. */
 @Entity
 @Table(name = "roles")
 @Getter

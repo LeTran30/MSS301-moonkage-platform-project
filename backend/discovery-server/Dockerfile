@@ -12,6 +12,7 @@ COPY identity-service/pom.xml identity-service/
 COPY catalog-service/pom.xml catalog-service/
 COPY tender-service/pom.xml tender-service/
 COPY order-service/pom.xml order-service/
+COPY file-service/pom.xml file-service/
 COPY discovery-server/src discovery-server/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl discovery-server -am package -DskipTests
 

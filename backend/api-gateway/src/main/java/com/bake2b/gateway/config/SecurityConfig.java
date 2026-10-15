@@ -58,6 +58,8 @@ public class SecurityConfig {
                 .authorizeExchange(a -> a
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()
                         .pathMatchers("/actuator/health").permitAll()
+                        // /internal/** is for service-to-service (OpenFeign) calls only
+                        .pathMatchers("/*/internal/**").denyAll()
                         // Swagger UI and each service's OpenAPI doc
                         .pathMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**",
                                 "/*/v3/api-docs/**").permitAll()
@@ -68,6 +70,8 @@ public class SecurityConfig {
                                 "/catalog-service/api/products/**",
                                 "/catalog-service/api/order-profiles/**",
                                 "/catalog-service/api/reviews/**").permitAll()
+                        // shop product management: role SELLER only (catalog-service also checks the vendor is approved)
+                        .pathMatchers("/catalog-service/api/seller/**").hasRole("SELLER")
                         .anyExchange().authenticated())
                 // role claim is a single string ("CUSTOMER"/"ADMIN") -> ROLE_CUSTOMER / ROLE_ADMIN
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())))

@@ -1,7 +1,7 @@
 # =============================================
 # MoonKage / Bake2B - full stack
 #   Everything:          docker compose up -d --build
-#   Only the databases:  docker compose up -d identity-db catalog-db tender-db order-db
+#   Only the databases:  docker compose up -d identity-db catalog-db tender-db order-db minio
 #                        (then run the services from the IDE / mvn)
 # Values come from .env in this folder (see .env.example).
 # =============================================
@@ -83,6 +83,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # ───────────── File storage (used only by file-service) ─────────────
+  minio:
+    # MinIO stopped publishing Docker images in Oct 2025, so :latest no longer changes
+    image: minio/minio:latest
+    container_name: bake2b-minio
+    restart: unless-stopped
+    networks: [bake2b-network]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    # 9000 = API (the browser loads files from here), 9001 = web console
+    ports: ["${MINIO_API_PORT}:9000", "${MINIO_CONSOLE_PORT}:9001"]
+    volumes: [minio-data:/data]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ───────────── Infrastructure services ─────────────
   discovery-server:
     <<: *app
@@ -155,11 +175,23 @@ services:
       order-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
+  file-service:
+    <<: *app
+    container_name: bake2b-file-service
+    build: { context: ./backend, dockerfile: file-service/Dockerfile }
+    environment:
+      <<: *app-env
+      MINIO_URL: http://minio:9000
+    depends_on:
+      minio: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
+
 volumes:
   identity-db-data:
   catalog-db-data:
   tender-db-data:
   order-db-data:
+  minio-data:
 
 networks:
   bake2b-network:

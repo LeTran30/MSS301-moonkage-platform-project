@@ -72,6 +72,14 @@ public class Product {
     @Column(columnDefinition = "TEXT")
     private String removedReason;
 
+    /** Seller deleted it; kept so carts and order history that reference the id stay valid. */
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("fromQty ASC")
+    private List<ProductPriceTier> priceTiers = new ArrayList<>();
+
     @ElementCollection
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "file_url", nullable = false)

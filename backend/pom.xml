@@ -25,6 +25,7 @@
         <module>catalog-service</module>
         <module>tender-service</module>
         <module>order-service</module>
+        <module>file-service</module>
     </modules>
 
     <properties>
