@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Covers: FR-01, FR-02. */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

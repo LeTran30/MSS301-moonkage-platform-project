@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Covers: FR-17, FR-18, FR-37, FR-38. Endpoints not implemented yet. */
 @RestController
 @RequestMapping("/api/quotes")
 @RequiredArgsConstructor

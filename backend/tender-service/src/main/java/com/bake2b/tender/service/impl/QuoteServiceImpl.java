@@ -6,7 +6,6 @@ import com.bake2b.tender.service.QuoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** Covers: FR-17, FR-18, FR-37, FR-38. Business logic not implemented yet. */
 @Service
 @RequiredArgsConstructor
 public class QuoteServiceImpl implements QuoteService {

@@ -8,7 +8,6 @@ import com.bake2b.order.service.DisputeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** Covers: FR-12, FR-51. Business logic not implemented yet. */
 @Service
 @RequiredArgsConstructor
 public class DisputeServiceImpl implements DisputeService {

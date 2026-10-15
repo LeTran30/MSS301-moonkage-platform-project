@@ -6,7 +6,6 @@ import com.bake2b.catalog.service.OrderProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** Covers: FR-14, FR-35. Business logic not implemented yet. */
 @Service
 @RequiredArgsConstructor
 public class OrderProfileServiceImpl implements OrderProfileService {

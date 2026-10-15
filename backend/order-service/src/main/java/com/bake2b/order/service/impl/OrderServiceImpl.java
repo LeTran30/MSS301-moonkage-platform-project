@@ -11,7 +11,6 @@ import com.bake2b.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** Covers: FR-09 - FR-11, FR-19 - FR-22, FR-24, FR-25, FR-33, FR-39, FR-40, FR-42, FR-44. Business logic not implemented yet. */
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {

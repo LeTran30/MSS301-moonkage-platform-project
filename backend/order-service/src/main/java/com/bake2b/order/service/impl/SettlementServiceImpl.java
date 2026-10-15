@@ -8,7 +8,6 @@ import com.bake2b.order.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** Covers: FR-41, FR-43, FR-45, FR-48, FR-49. Business logic not implemented yet. */
 @Service
 @RequiredArgsConstructor
 public class SettlementServiceImpl implements SettlementService {

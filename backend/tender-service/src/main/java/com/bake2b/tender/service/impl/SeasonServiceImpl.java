@@ -6,7 +6,6 @@ import com.bake2b.tender.service.SeasonService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** Covers: FR-53. Business logic not implemented yet. */
 @Service
 @RequiredArgsConstructor
 public class SeasonServiceImpl implements SeasonService {

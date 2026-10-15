@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Covers: FR-41, FR-43, FR-45, FR-48, FR-49. Endpoints not implemented yet. */
 @RestController
 @RequestMapping("/api/settlements")
 @RequiredArgsConstructor
