@@ -81,3 +81,5 @@ Desktop.ini
 .cache/
 ERRORS.md
 .agent/
+# ── Local tool config ──
+.mcp.json
