@@ -1,4 +1,4 @@
-# 🥮 MoonKage Platform
+# MoonKage Platform
 
 > Nền tảng B2B2C bánh trung thu: kết nối doanh nghiệp mua quà với các nhà bán bánh qua quy trình đấu thầu, đặt hàng và theo dõi sản xuất. Kiến trúc microservices.
 
