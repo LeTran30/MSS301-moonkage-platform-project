@@ -1,8 +1,5 @@
 package com.bake2b.identity.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -11,6 +8,8 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Loads the repo-root .env into System properties so application.properties can read ${VAR}.
@@ -19,17 +18,17 @@ import java.util.Map;
  */
 public final class DotEnvConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(DotEnvConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(DotEnvConfig.class);
     private static final String ENV_FILE = ".env";
 
-    private DotEnvConfig() {
-    }
+    private DotEnvConfig() {}
 
     public static void loadDotEnv() {
         try {
             Path envFile = findEnvFile();
             if (envFile == null) {
-                logger.warn("File .env not found from {} upwards. Using system environment variables.",
+                log.warn(
+                        "File .env not found from {} upwards. Using system environment variables.",
                         Paths.get("").toAbsolutePath());
                 return;
             }
@@ -39,13 +38,16 @@ public final class DotEnvConfig {
                     System.setProperty(key, value);
                 }
             });
-            logger.info("Loaded {} variables from {}", envVars.size(), envFile.toAbsolutePath());
+            log.info("Loaded {} variables from {}", envVars.size(), envFile.toAbsolutePath());
         } catch (IOException e) {
-            logger.error("Error loading .env file", e);
+            log.error("Error loading .env file", e);
         }
     }
 
-    /** Walks up from the working dir, so it works whether the service runs from its module, backend/ or the repo root. */
+    /**
+     * Walks up from the working dir, so it works whether the service runs from its module,
+     * backend/ or the repo root.
+     */
     private static Path findEnvFile() {
         for (Path dir = Paths.get("").toAbsolutePath(); dir != null; dir = dir.getParent()) {
             Path candidate = dir.resolve(ENV_FILE);
@@ -61,13 +63,18 @@ public final class DotEnvConfig {
         List<String> lines = Files.readAllLines(envFile, StandardCharsets.UTF_8);
         for (String raw : lines) {
             String line = raw.trim();
-            if (line.isEmpty() || line.startsWith("#")) continue;
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
             int eq = line.indexOf('=');
-            if (eq <= 0) continue;
+            if (eq <= 0) {
+                continue;
+            }
             String key = line.substring(0, eq).trim();
             String value = line.substring(eq + 1).trim();
-            if (value.length() >= 2 && ((value.startsWith("\"") && value.endsWith("\""))
-                    || (value.startsWith("'") && value.endsWith("'")))) {
+            if (value.length() >= 2
+                    && ((value.startsWith("\"") && value.endsWith("\""))
+                            || (value.startsWith("'") && value.endsWith("'")))) {
                 value = value.substring(1, value.length() - 1);
             }
             out.put(key, value); // empty values are kept so optional vars (MAIL_HOST=) still resolve

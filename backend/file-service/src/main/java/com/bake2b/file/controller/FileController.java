@@ -4,14 +4,20 @@ import com.bake2b.file.dto.FileUploadResponse;
 import com.bake2b.file.enums.FileFolder;
 import com.bake2b.file.service.FileService;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-import java.util.Map;
 
 /** The gateway sets X-User-Id / X-User-Role from the access token; clients cannot forge them. */
 @RestController
@@ -25,16 +31,13 @@ public class FileController {
     public List<FileUploadResponse> upload(
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
             @RequestParam FileFolder folder,
-            @RequestPart("files") List<MultipartFile> files
-    ) {
+            @RequestPart("files") List<MultipartFile> files) {
         return fileService.upload(userId, folder, files);
     }
 
     @DeleteMapping
     public ResponseEntity<Void> delete(
-            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
-            @RequestParam String url
-    ) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId, @RequestParam String url) {
         fileService.delete(userId, url);
         return ResponseEntity.noContent().build();
     }
@@ -44,8 +47,7 @@ public class FileController {
     public Map<String, String> presigned(
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
             @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
-            @RequestParam String url
-    ) {
+            @RequestParam String url) {
         return Map.of("url", fileService.presignedUrl(userId, role, url));
     }
 }

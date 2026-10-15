@@ -18,8 +18,7 @@ public class AuthValidation {
         switch (result) {
             case "EMAIL_EXISTS" -> throw new EmailAlreadyExistsException("Email đã được sử dụng");
             case "PHONE_EXISTS" -> throw new EmailAlreadyExistsException("Số điện thoại đã được sử dụng");
-            default -> {
-            }
+            default -> {}
         }
     }
 }

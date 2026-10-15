@@ -13,5 +13,4 @@ public class OrderServiceApplication {
         DotEnvConfig.loadDotEnv();
         SpringApplication.run(OrderServiceApplication.class, args);
     }
-
 }

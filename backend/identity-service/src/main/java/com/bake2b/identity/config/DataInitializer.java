@@ -54,7 +54,11 @@ public class DataInitializer implements CommandLineRunner {
 
         if (accountRepository.findByEmail(adminEmail).isEmpty()) {
             Account admin = accountRepository.save(activeAccount(adminEmail, adminPassword, adminRole));
-            userRepository.save(User.builder().fullName("Quản trị viên MoonKage").email(adminEmail).account(admin).build());
+            userRepository.save(User.builder()
+                    .fullName("Quản trị viên MoonKage")
+                    .email(adminEmail)
+                    .account(admin)
+                    .build());
             log.info("Seeded admin account {}", adminEmail);
         }
 
@@ -103,7 +107,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Role initializeRole(String name, String description) {
-        return roleRepository.findByRoleName(name)
-                .orElseGet(() -> roleRepository.save(Role.builder().roleName(name).description(description).build()));
+        return roleRepository
+                .findByRoleName(name)
+                .orElseGet(() -> roleRepository.save(
+                        Role.builder().roleName(name).description(description).build()));
     }
 }

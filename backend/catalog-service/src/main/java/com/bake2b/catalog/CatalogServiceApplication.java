@@ -13,5 +13,4 @@ public class CatalogServiceApplication {
         DotEnvConfig.loadDotEnv();
         SpringApplication.run(CatalogServiceApplication.class, args);
     }
-
 }

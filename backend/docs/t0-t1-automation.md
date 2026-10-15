@@ -23,7 +23,7 @@ Bộ mẫu viết cho project **một module**, git root trùng Maven root. Repo
 
 | Repo này | Hệ quả |
 |---|---|
-| Git root là thư mục repo, Maven root là `backend/` (6 module) | Hook và CI đặt ở git root nhưng phải chạy Maven trong `backend/`. Đường dẫn Checkstyle tương đối sẽ không tìm thấy từ submodule. |
+| Git root là thư mục repo, Maven root là `backend/` (7 module) | Hook và CI đặt ở git root nhưng phải chạy Maven trong `backend/`. Đường dẫn Checkstyle tương đối sẽ không tìm thấy từ submodule. |
 | Đang dùng Java 17, Dockerfile dùng `temurin-17` | Checkstyle 13.7 và Error Prone 2.50 yêu cầu JDK 21+ → **nâng toàn bộ lên Java 21**. |
 | 4 service dùng Lombok | `annotationProcessorPaths` tắt việc tự tìm processor → phải khai báo Lombok. |
 | Chưa có `mvnw`, máy chưa cài `mvn`/`jq` | Hook và CI gọi `./mvnw` → phải tạo Maven wrapper. |
@@ -46,7 +46,7 @@ Bộ mẫu viết cho project **một module**, git root trùng Maven root. Repo
 
 Không chép `src/` (2 file demo) và hook Claude Code `.claude/settings.json` (cần `jq`, máy chưa có).
 
-### 3.3. Sửa `backend/pom.xml` (parent — 6 module kế thừa)
+### 3.3. Sửa `backend/pom.xml` (parent — 7 module kế thừa)
 - `java.version`: `17` → `21`.
 - Thêm `lombok.version = 1.18.46` (mới hơn bản Spring Boot 3.3 quản lý, để chạy được trên JDK 25 ở máy local).
 - Thêm 5 property version công cụ: Spotless 3.7.0, maven-checkstyle-plugin 3.6.0, Checkstyle 13.7.0, Error Prone 2.50.0, maven-compiler-plugin 3.14.0.
@@ -67,7 +67,7 @@ Không chép `src/` (2 file demo) và hook Claude Code `.claude/settings.json` (
 - Trigger: pull request và push vào `main`, `develop`, chỉ khi thay đổi `backend/**` hoặc chính file workflow.
 - `working-directory: backend`, JDK Temurin 21, chạy `./mvnw -B -ntp clean verify`.
 
-### 3.6. Sửa 6 Dockerfile
+### 3.6. Sửa 7 Dockerfile (gồm `file-service`)
 - Image build: `maven:3.9-eclipse-temurin-17` → `maven:3.9-eclipse-temurin-21`.
 - Image runtime: `eclipse-temurin:17-jre-alpine` → `eclipse-temurin:21-jre-alpine`.
 - Thêm `COPY .mvn/jvm.config .mvn/` (Error Prone cần).
@@ -128,7 +128,7 @@ Kiểm tra nhanh qua gateway (`http://localhost:8080`):
 
 ## 4. Việc còn lại (chưa làm)
 
-- [ ] **Commit** — chưa commit gì. Đề xuất tách 2 commit: (1) tooling, (2) format + sửa vi phạm.
+- [x] **Commit** — đã tách 2 commit: (1) tooling, (2) format + sửa vi phạm. Đã rebase lên `develop` (có `file-service` và quản lý sản phẩm Shop), sửa thêm các vi phạm trong code mới đó.
 - [ ] Thêm hash commit format vào `.git-blame-ignore-revs` để `git blame` bỏ qua.
 - [ ] Kiểm tra lại `identity-service/.../entity/Vendor.java`: thay đổi chưa commit có sẵn từ trước giờ bị trộn với thay đổi format/import.
 - [ ] Bật branch protection trên `main` (và `develop`): bắt buộc job **Code quality** pass. Hook có thể bị bỏ qua bằng `--no-verify`, CI thì không.
@@ -148,3 +148,10 @@ Bỏ qua **có chủ đích** một vi phạm (bắt buộc kèm lý do):
 ```java
 @SuppressWarnings("checkstyle:MagicNumber") // lý do...
 ```
+
+## 6. Rebase lên `develop` (2026-10-15)
+
+- Tooling được áp sạch lên `develop`. Commit format bị conflict ở 13 file mà `develop` đã đổi (service chuyển sang interface, product management): lấy bản `develop` rồi chạy lại `spotless:apply`.
+- Sửa thêm vi phạm trong code mới: import `*` (controller, DTO), `if` thiếu `{}` (`ProductServiceImpl`), dòng dài, `logger` → `log` (`file-service/DotEnvConfig`), magic number `3` → `OBJECT_NAME_PARTS` và `StringSplitter` → `split("/", -1)` (`FileServiceImpl`), `setMaxAge(Duration.ofHours(1))` (`api-gateway`).
+- `file-service/Dockerfile` chuyển sang JDK 21 như các service khác.
+- `./mvnw -B -ntp clean verify`: **BUILD SUCCESS** cả 7 module.

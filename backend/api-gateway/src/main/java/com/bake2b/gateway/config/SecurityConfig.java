@@ -1,5 +1,9 @@
 package com.bake2b.gateway.config;
 
+import java.time.Duration;
+import java.util.Base64;
+import java.util.List;
+import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
@@ -16,24 +20,20 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
-
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
-import java.util.List;
 
 /**
  * Gateway is the single entry point: it validates the access token issued by identity-service
@@ -49,30 +49,41 @@ public class SecurityConfig {
 
     @Bean
     SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(c -> {
-                })
+        return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .cors(c -> {})
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-                .authorizeExchange(a -> a
-                        .pathMatchers(HttpMethod.OPTIONS).permitAll()
-                        .pathMatchers("/actuator/health").permitAll()
+                .authorizeExchange(a -> a.pathMatchers(HttpMethod.OPTIONS)
+                        .permitAll()
+                        .pathMatchers("/actuator/health")
+                        .permitAll()
                         // /internal/** is for service-to-service (OpenFeign) calls only
-                        .pathMatchers("/*/internal/**").denyAll()
+                        .pathMatchers("/*/internal/**")
+                        .denyAll()
                         // Swagger UI and each service's OpenAPI doc
-                        .pathMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/webjars/**",
-                                "/*/v3/api-docs/**").permitAll()
+                        .pathMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/webjars/**",
+                                "/*/v3/api-docs/**")
+                        .permitAll()
                         // identity-service decides itself which auth endpoints need a token (/me)
-                        .pathMatchers("/identity-service/api/auth/**").permitAll()
+                        .pathMatchers("/identity-service/api/auth/**")
+                        .permitAll()
                         // FR-04: guests browse products before logging in
-                        .pathMatchers(HttpMethod.GET,
+                        .pathMatchers(
+                                HttpMethod.GET,
                                 "/catalog-service/api/products/**",
                                 "/catalog-service/api/order-profiles/**",
-                                "/catalog-service/api/reviews/**").permitAll()
-                        // shop product management: role SELLER only (catalog-service also checks the vendor is approved)
-                        .pathMatchers("/catalog-service/api/seller/**").hasRole("SELLER")
-                        .anyExchange().authenticated())
+                                "/catalog-service/api/reviews/**")
+                        .permitAll()
+                        // shop product management: role SELLER only (catalog-service also checks the vendor is
+                        // approved)
+                        .pathMatchers("/catalog-service/api/seller/**")
+                        .hasRole("SELLER")
+                        .anyExchange()
+                        .authenticated())
                 // role claim is a single string ("CUSTOMER"/"ADMIN") -> ROLE_CUSTOMER / ROLE_ADMIN
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
@@ -81,8 +92,8 @@ public class SecurityConfig {
     /** Same Base64 HS256 key as identity-service (jwt.secret). Only ACCESS tokens pass; refresh tokens are refused. */
     @Bean
     ReactiveJwtDecoder jwtDecoder(@Value("${jwt.secret}") String secret) {
-        NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder
-                .withSecretKey(new SecretKeySpec(Base64.getDecoder().decode(secret), "HmacSHA256"))
+        NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder.withSecretKey(
+                        new SecretKeySpec(Base64.getDecoder().decode(secret), "HmacSHA256"))
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
         OAuth2TokenValidator<Jwt> accessOnly = jwt -> "ACCESS".equals(jwt.getClaimAsString("type"))
@@ -98,7 +109,7 @@ public class SecurityConfig {
         cfg.setAllowedOrigins(origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        cfg.setMaxAge(3600L);
+        cfg.setMaxAge(Duration.ofHours(1));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;

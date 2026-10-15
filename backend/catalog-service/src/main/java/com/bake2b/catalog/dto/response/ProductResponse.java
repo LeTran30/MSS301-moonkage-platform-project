@@ -3,12 +3,11 @@ package com.bake2b.catalog.dto.response;
 import com.bake2b.catalog.entity.Product;
 import com.bake2b.catalog.enums.DeliveryLabel;
 import com.bake2b.catalog.enums.ProductStatus;
-import lombok.Builder;
-import lombok.Getter;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
 
 @Getter
 @Builder
@@ -26,6 +25,7 @@ public class ProductResponse {
     private Integer stock;
     /** AC-31.1: stock 0 means it cannot be bought right now. */
     private boolean inStock;
+
     private LocalDate expiryDate;
     private DeliveryLabel deliveryLabel;
     private Integer quoteThreshold;
@@ -55,7 +55,8 @@ public class ProductResponse {
                 .status(p.getStatus())
                 .removedReason(p.getRemovedReason())
                 .imageUrls(List.copyOf(p.getImageUrls()))
-                .priceTiers(p.getPriceTiers().stream().map(PriceTierResponse::from).toList())
+                .priceTiers(
+                        p.getPriceTiers().stream().map(PriceTierResponse::from).toList())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
                 .build();

@@ -13,5 +13,4 @@ public class TenderServiceApplication {
         DotEnvConfig.loadDotEnv();
         SpringApplication.run(TenderServiceApplication.class, args);
     }
-
 }

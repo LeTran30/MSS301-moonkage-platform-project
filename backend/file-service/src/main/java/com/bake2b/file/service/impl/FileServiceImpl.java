@@ -9,19 +9,18 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -30,6 +29,8 @@ public class FileServiceImpl implements FileService {
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private static final int MAX_FILES = 10;
     private static final int PRESIGNED_MINUTES = 10;
+    /** Object names are folder/userId/fileName. */
+    private static final int OBJECT_NAME_PARTS = 3;
     /** Content type comes from the extension, never from the client, so nothing but these types is ever served. */
     private static final Map<String, String> ALLOWED_TYPES = Map.of(
             ".jpg", "image/jpeg",
@@ -42,9 +43,10 @@ public class FileServiceImpl implements FileService {
     private final MinioClient publicMinioClient;
     private final MinIOConfig minIOConfig;
 
-    public FileServiceImpl(MinioClient minioClient,
-                           @Qualifier("publicMinioClient") MinioClient publicMinioClient,
-                           MinIOConfig minIOConfig) {
+    public FileServiceImpl(
+            MinioClient minioClient,
+            @Qualifier("publicMinioClient") MinioClient publicMinioClient,
+            MinIOConfig minIOConfig) {
         this.minioClient = minioClient;
         this.publicMinioClient = publicMinioClient;
         this.minIOConfig = minIOConfig;
@@ -79,7 +81,8 @@ public class FileServiceImpl implements FileService {
     @Override
     public String presignedUrl(String userId, String role, String url) {
         String objectName = toOwnedObjectName(userId, role, url);
-        if (FileFolder.fromPath(objectName.substring(0, objectName.indexOf('/'))).isPublicRead()) {
+        if (FileFolder.fromPath(objectName.substring(0, objectName.indexOf('/')))
+                .isPublicRead()) {
             return url;
         }
         try {
@@ -101,10 +104,8 @@ public class FileServiceImpl implements FileService {
         // <folder>/<uploader userId>/<uuid>.<ext>: the userId segment is what delete() checks ownership against
         String objectName = folder.getPath() + "/" + userId + "/" + UUID.randomUUID() + extension;
         try (InputStream in = file.getInputStream()) {
-            minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(minIOConfig.getBucketName())
-                    .object(objectName)
-                    .stream(in, file.getSize(), -1)
+            minioClient.putObject(PutObjectArgs.builder().bucket(minIOConfig.getBucketName()).object(objectName).stream(
+                            in, file.getSize(), -1)
                     .contentType(contentType)
                     .build());
         } catch (Exception e) {
@@ -128,19 +129,27 @@ public class FileServiceImpl implements FileService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File size exceeds maximum allowed size of 5MB");
         }
         if (!ALLOWED_TYPES.containsKey(extensionOf(file.getOriginalFilename()))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File type not allowed. Allowed types: jpg, jpeg, png, webp, pdf");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "File type not allowed. Allowed types: jpg, jpeg, png, webp, pdf");
         }
     }
 
-    /** Turns a URL returned by upload() into its object name; only the uploader (or an ADMIN, when role is given) may use it. */
+    /**
+     * Turns a URL returned by upload() into its object name; only the uploader (or an ADMIN, when role is given)
+     * may use it.
+     */
     private String toOwnedObjectName(String userId, String role, String url) {
         String base = publicBase();
         if (url == null || !url.startsWith(base)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a file of this service");
         }
         String objectName = url.substring(base.length());
-        String[] parts = objectName.split("/");
-        if (parts.length != 3 || FileFolder.fromPath(parts[0]) == null || objectName.contains("..")) {
+        // limit -1 keeps trailing empty parts, so "folder/user/" is rejected below
+        String[] parts = objectName.split("/", -1);
+        if (parts.length != OBJECT_NAME_PARTS
+                || FileFolder.fromPath(parts[0]) == null
+                || parts[2].isEmpty()
+                || objectName.contains("..")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a file of this service");
         }
         if (!parts[1].equals(userId) && !"ADMIN".equals(role)) {

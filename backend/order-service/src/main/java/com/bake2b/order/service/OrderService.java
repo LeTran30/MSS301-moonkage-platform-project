@@ -1,4 +1,3 @@
 package com.bake2b.order.service;
 
-public interface OrderService {
-}
+public interface OrderService {}

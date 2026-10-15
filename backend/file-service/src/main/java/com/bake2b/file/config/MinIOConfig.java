@@ -5,6 +5,8 @@ import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.SetBucketPolicyArgs;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,9 +14,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Configuration
@@ -65,7 +64,8 @@ public class MinIOConfig {
     @Bean
     public ApplicationRunner initBucket(MinioClient minioClient) {
         return args -> {
-            if (minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
+            if (minioClient.bucketExists(
+                    BucketExistsArgs.builder().bucket(bucketName).build())) {
                 return;
             }
             minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
@@ -77,7 +77,10 @@ public class MinIOConfig {
             String policy = """
                     {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},\
                     "Action":["s3:GetObject"],"Resource":[%s]}]}""".formatted(resources);
-            minioClient.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(bucketName).config(policy).build());
+            minioClient.setBucketPolicy(SetBucketPolicyArgs.builder()
+                    .bucket(bucketName)
+                    .config(policy)
+                    .build());
         };
     }
 }

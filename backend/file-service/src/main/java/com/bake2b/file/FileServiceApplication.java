@@ -11,5 +11,4 @@ public class FileServiceApplication {
         DotEnvConfig.loadDotEnv();
         SpringApplication.run(FileServiceApplication.class, args);
     }
-
 }

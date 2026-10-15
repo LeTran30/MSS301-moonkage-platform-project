@@ -1,17 +1,26 @@
 package com.bake2b.identity.entity;
 
-import com.bake2b.identity.enums.*;
-import jakarta.persistence.*;
+import com.bake2b.identity.enums.SupplySource;
+import com.bake2b.identity.enums.VendorEntityType;
+import com.bake2b.identity.enums.VendorStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
 
 /**
  * Registered business selling on the platform, owned by exactly one account (FR-26, BR-11).

@@ -1,7 +1,7 @@
 package com.bake2b.order.service.impl;
 
-import com.bake2b.order.repository.CommissionConfigRepository;
 import com.bake2b.order.repository.AuditLogRepository;
+import com.bake2b.order.repository.CommissionConfigRepository;
 import com.bake2b.order.service.CommissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

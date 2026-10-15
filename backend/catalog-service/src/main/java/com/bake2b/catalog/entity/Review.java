@@ -1,23 +1,23 @@
 package com.bake2b.catalog.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
 
 /**
  * Buyer review of a delivered order's product; one vendor reply, never deletable by vendor (FR-11, FR-34).
  */
 @Entity
-@Table(name = "reviews",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"orderId", "productId"}))
+@Table(name = "reviews", uniqueConstraints = @UniqueConstraint(columnNames = {"orderId", "productId"}))
 @Getter
 @Setter
 @NoArgsConstructor

@@ -16,6 +16,11 @@ import com.bake2b.catalog.repository.AuditLogRepository;
 import com.bake2b.catalog.repository.ProductRepository;
 import com.bake2b.catalog.service.ProductService;
 import feign.FeignException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -23,12 +28,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -80,18 +79,42 @@ public class ProductServiceImpl implements ProductService {
         Integer oldStock = product.getStock();
 
         // missing / null / blank = keep the old value, so the client can send just the field it changes
-        if (StringUtils.hasText(req.getName())) product.setName(req.getName().trim());
-        if (StringUtils.hasText(req.getDescription())) product.setDescription(req.getDescription().trim());
-        if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) product.setImageUrls(new ArrayList<>(req.getImageUrls()));
-        if (StringUtils.hasText(req.getCakeType())) product.setCakeType(req.getCakeType().trim());
-        if (StringUtils.hasText(req.getBrand())) product.setBrand(req.getBrand().trim());
-        if (StringUtils.hasText(req.getOrigin())) product.setOrigin(req.getOrigin().trim());
-        if (req.getPiecesPerBox() != null) product.setPiecesPerBox(req.getPiecesPerBox());
-        if (req.getListPrice() != null) product.setListPrice(req.getListPrice());
-        if (req.getStock() != null) product.setStock(req.getStock());
-        if (req.getExpiryDate() != null) product.setExpiryDate(req.getExpiryDate());
-        if (req.getDeliveryLabel() != null) product.setDeliveryLabel(req.getDeliveryLabel());
-        if (req.getQuoteThreshold() != null) product.setQuoteThreshold(req.getQuoteThreshold());
+        if (StringUtils.hasText(req.getName())) {
+            product.setName(req.getName().trim());
+        }
+        if (StringUtils.hasText(req.getDescription())) {
+            product.setDescription(req.getDescription().trim());
+        }
+        if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) {
+            product.setImageUrls(new ArrayList<>(req.getImageUrls()));
+        }
+        if (StringUtils.hasText(req.getCakeType())) {
+            product.setCakeType(req.getCakeType().trim());
+        }
+        if (StringUtils.hasText(req.getBrand())) {
+            product.setBrand(req.getBrand().trim());
+        }
+        if (StringUtils.hasText(req.getOrigin())) {
+            product.setOrigin(req.getOrigin().trim());
+        }
+        if (req.getPiecesPerBox() != null) {
+            product.setPiecesPerBox(req.getPiecesPerBox());
+        }
+        if (req.getListPrice() != null) {
+            product.setListPrice(req.getListPrice());
+        }
+        if (req.getStock() != null) {
+            product.setStock(req.getStock());
+        }
+        if (req.getExpiryDate() != null) {
+            product.setExpiryDate(req.getExpiryDate());
+        }
+        if (req.getDeliveryLabel() != null) {
+            product.setDeliveryLabel(req.getDeliveryLabel());
+        }
+        if (req.getQuoteThreshold() != null) {
+            product.setQuoteThreshold(req.getQuoteThreshold());
+        }
         if (req.getPriceTiers() != null) {
             validateTiers(req.getPriceTiers());
             replaceTiers(product, req.getPriceTiers());
@@ -145,7 +168,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductResponse> searchOnSale(String vendorId, String keyword, int page, int size) {
-        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
+        PageRequest pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         return PageResponse.from(productRepository
                 .searchOnSale(trimToNull(vendorId), trimToNull(keyword), pageable)
@@ -155,7 +180,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getOnSaleProduct(String productId) {
-        return productRepository.findByIdAndStatusAndDeletedFalse(productId, ProductStatus.ON_SALE)
+        return productRepository
+                .findByIdAndStatusAndDeletedFalse(productId, ProductStatus.ON_SALE)
                 .map(ProductResponse::from)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"));
     }
@@ -181,7 +207,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product requireOwnProduct(VendorInfo vendor, String productId) {
-        Product product = productRepository.findByIdAndDeletedFalse(productId)
+        Product product = productRepository
+                .findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"));
         if (!product.getVendorId().equals(vendor.id())) {
             // same answer as "not found": do not reveal other shops' product ids
