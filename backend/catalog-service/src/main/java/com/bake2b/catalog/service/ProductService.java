@@ -5,7 +5,6 @@ import com.bake2b.catalog.dto.request.UpdateProductRequest;
 import com.bake2b.catalog.dto.response.PageResponse;
 import com.bake2b.catalog.dto.response.ProductResponse;
 import com.bake2b.catalog.enums.ProductStatus;
-
 import java.util.List;
 
 public interface ProductService {

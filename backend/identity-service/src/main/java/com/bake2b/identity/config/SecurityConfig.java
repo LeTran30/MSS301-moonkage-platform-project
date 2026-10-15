@@ -1,10 +1,12 @@
 package com.bake2b.identity.config;
 
 import com.bake2b.identity.repository.AccountRepository;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -15,13 +17,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import java.util.Locale;
 
 @Configuration
 @EnableWebSecurity
@@ -36,8 +35,8 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return identifier -> (identifier.contains("@")
-                ? accountRepository.findByEmail(identifier.toLowerCase(Locale.ROOT))
-                : accountRepository.findByPhoneNumber(identifier))
+                        ? accountRepository.findByEmail(identifier.toLowerCase(Locale.ROOT))
+                        : accountRepository.findByPhoneNumber(identifier))
                 .orElseThrow(() -> new UsernameNotFoundException("Account not found"));
     }
 
@@ -53,8 +52,7 @@ public class SecurityConfig {
         provider.setPasswordEncoder(passwordEncoder());
         // check locked/disabled only AFTER the password matched, so a stranger cannot
         // learn that an email exists from a "not activated" / "locked" reply (FR-02)
-        provider.setPreAuthenticationChecks(user -> {
-        });
+        provider.setPreAuthenticationChecks(user -> {});
         provider.setPostAuthenticationChecks(new AccountStatusUserDetailsChecker());
         return provider;
     }
@@ -74,12 +72,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
+        http.csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(JwtFilter.PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth.requestMatchers(JwtFilter.PUBLIC_ENDPOINTS.toArray(String[]::new))
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

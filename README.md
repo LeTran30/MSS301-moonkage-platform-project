@@ -23,8 +23,7 @@ A comprehensive platform connecting corporate buyers with mooncake vendors throu
 
 ### Prerequisites
 
-- Java 17+
-- Maven 3.9+
+- JDK 21+ (Maven is not needed: use the wrapper `./mvnw`)
 - Node.js 18+
 - Docker & Docker Compose
 
@@ -32,8 +31,11 @@ A comprehensive platform connecting corporate buyers with mooncake vendors throu
 
 ```bash
 cp .env.example .env
-openssl rand -base64 48   # paste into JWT_SECRET
+openssl rand -base64 48   # paste into JWT_SECRET, also set ADMIN_PASSWORD
+git config core.hooksPath .githooks   # once per clone: enables the pre-commit format/style check
 ```
+
+Windows: if `git clone` fails with `Filename too long`, run `git config --global core.longpaths true` and clone again.
 
 ### Option A: whole backend in Docker
 
@@ -50,13 +52,25 @@ Gateway: `http://localhost:8080`, Eureka: `http://localhost:8761`. Business serv
 docker compose up -d identity-db catalog-db tender-db order-db minio
 
 cd backend
-mvn -pl discovery-server spring-boot:run   # start Eureka first
-mvn -pl api-gateway spring-boot:run        # then the rest, separate terminals
-mvn -pl identity-service spring-boot:run
-mvn -pl catalog-service spring-boot:run
-mvn -pl tender-service spring-boot:run
-mvn -pl order-service spring-boot:run
-mvn -pl file-service spring-boot:run
+./mvnw -pl discovery-server spring-boot:run   # start Eureka first
+./mvnw -pl api-gateway spring-boot:run        # then the rest, separate terminals
+./mvnw -pl identity-service spring-boot:run
+./mvnw -pl catalog-service spring-boot:run
+./mvnw -pl tender-service spring-boot:run
+./mvnw -pl order-service spring-boot:run
+./mvnw -pl file-service spring-boot:run
+```
+
+On Windows `cmd`/PowerShell use `mvnw.cmd` instead of `./mvnw`.
+
+### Code quality (backend)
+
+Spotless (format), Checkstyle and Error Prone run on every build; CI runs the same check on each pull request. Details: [`backend/docs/t0-t1-automation.md`](backend/docs/t0-t1-automation.md).
+
+```bash
+cd backend
+./mvnw spotless:apply   # auto-format before committing
+./mvnw clean verify     # format + Checkstyle + Error Prone + tests, same as CI
 ```
 
 ### Frontend
@@ -71,7 +85,9 @@ npm run dev
 
 ```
 ├── backend/
-│   ├── pom.xml                 # Parent POM
+│   ├── pom.xml                 # Parent POM (Java 21, Spotless, Checkstyle, Error Prone)
+│   ├── mvnw, mvnw.cmd          # Maven wrapper
+│   ├── config/checkstyle/      # Checkstyle rules
 │   ├── <service>/Dockerfile    # one image per service (build context = backend/)
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # API Gateway
@@ -82,6 +98,8 @@ npm run dev
 │   └── file-service/           # File uploads on MinIO
 ├── frontend/
 │   └── web-portal/             # React SPA
+├── .githooks/pre-commit        # format/style check before each commit
+├── .github/workflows/          # CI: Code quality
 ├── docker-compose.yml
 └── README.md
 ```

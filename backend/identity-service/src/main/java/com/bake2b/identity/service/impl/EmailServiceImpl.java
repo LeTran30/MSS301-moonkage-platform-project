@@ -3,6 +3,13 @@ package com.bake2b.identity.service.impl;
 import com.bake2b.identity.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -15,13 +22,6 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * OTPs live in memory keyed by email, like the Capstone project.
  * shortcut: in-memory store is lost on restart and not shared between instances;
@@ -32,10 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private record OtpEntry(String otp, Instant expiresAt, int attempts) {
-    }
+    // package-private, like storageMap, so tests can inspect stored entries
+    record OtpEntry(String otp, Instant expiresAt, int attempts) {}
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    // 6-digit OTP: 100000..999999
+    private static final int OTP_MIN = 100_000;
+    private static final int OTP_RANGE = 900_000;
 
     private final TemplateEngine templateEngine;
     private final ObjectProvider<JavaMailSender> mailSender;
@@ -95,7 +98,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public String generateOTP() {
-        return String.valueOf(100000 + RANDOM.nextInt(900000));
+        return String.valueOf(OTP_MIN + RANDOM.nextInt(OTP_RANGE));
     }
 
     @Override
@@ -116,7 +119,8 @@ public class EmailServiceImpl implements EmailService {
             storageMap.remove(email); // FR-01: expired -> user must request a new code
             return false;
         }
-        if (MessageDigest.isEqual(entry.otp().getBytes(), otpVerify.getBytes())) {
+        if (MessageDigest.isEqual(
+                entry.otp().getBytes(StandardCharsets.UTF_8), otpVerify.getBytes(StandardCharsets.UTF_8))) {
             return true;
         }
         storageMap.computeIfPresent(email, (k, e) -> new OtpEntry(e.otp(), e.expiresAt(), e.attempts() + 1));

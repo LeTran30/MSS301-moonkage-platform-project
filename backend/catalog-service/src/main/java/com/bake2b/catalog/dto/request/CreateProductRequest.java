@@ -2,11 +2,17 @@ package com.bake2b.catalog.dto.request;
 
 import com.bake2b.catalog.enums.DeliveryLabel;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
+import lombok.Data;
 
 /** AC-30.1: name, images, description, VAT-inclusive price, stock and expiry date are required. */
 @Data
@@ -53,7 +59,9 @@ public class CreateProductRequest {
     @NotNull(message = "Nhãn giao hàng không được để trống")
     private DeliveryLabel deliveryLabel;
 
-    /** Qty at/above which the buyer must send a request instead (FR-32). Only effective if the vendor accepts orders. */
+    /**
+     * Qty at/above which the buyer must send a request instead (FR-32). Only effective if the vendor accepts orders.
+     */
     @Min(value = 2, message = "Ngưỡng báo giá phải từ 2 trở lên")
     private Integer quoteThreshold;
 

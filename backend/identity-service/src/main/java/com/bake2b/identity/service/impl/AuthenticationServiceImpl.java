@@ -19,6 +19,7 @@ import com.bake2b.identity.service.AuthenticationService;
 import com.bake2b.identity.service.EmailService;
 import com.bake2b.identity.service.TokenService;
 import com.bake2b.identity.validate.AuthValidation;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,8 +31,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Locale;
 
 @Slf4j
 @Service
@@ -58,7 +57,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         request.setEmail(normalizeEmail(request.getEmail()));
         validation.validate(request);
 
-        Role defaultRole = roleRepository.findByRoleName(DEFAULT_ROLE)
+        Role defaultRole = roleRepository
+                .findByRoleName(DEFAULT_ROLE)
                 .orElseThrow(() -> new CustomException("Role " + DEFAULT_ROLE + " chưa được khởi tạo"));
         Account account = accountRepository.save(Account.builder()
                 .email(request.getEmail())
@@ -87,7 +87,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new CustomException("OTP không đúng hoặc đã hết hạn.");
         }
         emailService.clearOtp(email);
-        Account account = accountRepository.findByEmail(email)
+        Account account = accountRepository
+                .findByEmail(email)
                 .orElseThrow(() -> new CustomException("OTP không đúng hoặc đã hết hạn."));
         if (account.getStatus() == AccountStatus.INACTIVE) {
             account.setStatus(AccountStatus.ACTIVE);
@@ -99,7 +100,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     /** Silent when the email is unknown or already verified, so it cannot be used to probe accounts. */
     @Override
     public void resendOtp(String email) {
-        accountRepository.findByEmail(normalizeEmail(email))
+        accountRepository
+                .findByEmail(normalizeEmail(email))
                 .filter(a -> a.getStatus() == AccountStatus.INACTIVE)
                 .ifPresent(a -> sendVerifyOtp(a.getEmail(), fullName(a)));
     }
@@ -109,8 +111,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public LoginResponse login(LoginRequest request) {
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername().trim(), request.getPassword()));
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                    request.getUsername().trim(), request.getPassword()));
             Account account = (Account) authentication.getPrincipal();
             return buildLoginResponse(account, true);
         } catch (BadCredentialsException e) {
@@ -129,7 +131,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             account = tokenService.getAccountFromRefreshToken(refreshToken);
         } catch (Exception e) {
-            throw new InvalidCredentialsException("Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
+            throw new InvalidCredentialsException(
+                    "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
         }
         if (!account.isEnabled() || !account.isAccountNonLocked()) {
             throw new CustomException("Tài khoản đã bị khóa hoặc ngừng hoạt động.");
@@ -139,7 +142,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public LoginResponse getMyProfile(String accountId) {
-        Account account = accountRepository.findById(accountId)
+        Account account = accountRepository
+                .findById(accountId)
                 .orElseThrow(() -> new CustomException("Không tìm thấy tài khoản"));
         return buildLoginResponse(account, false);
     }
@@ -147,7 +151,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     /** AC-02.1: OTP only goes to a verified email. Silent otherwise (no account probing). */
     @Override
     public void forgotPasswordSendOtp(String email) {
-        accountRepository.findByEmail(normalizeEmail(email))
+        accountRepository
+                .findByEmail(normalizeEmail(email))
                 .filter(a -> Boolean.TRUE.equals(a.getAccountVerified()) && a.getStatus() == AccountStatus.ACTIVE)
                 .ifPresent(a -> {
                     String otp = emailService.generateOTP();
@@ -164,7 +169,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new CustomException("OTP không đúng hoặc đã hết hạn.");
         }
         emailService.clearOtp(normalized);
-        Account account = accountRepository.findByEmail(normalized)
+        Account account = accountRepository
+                .findByEmail(normalized)
                 .orElseThrow(() -> new CustomException("OTP không đúng hoặc đã hết hạn."));
         account.setPasswordHash(passwordEncoder.encode(newPassword));
     }
@@ -178,7 +184,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private LoginResponse buildLoginResponse(Account account, boolean withTokens) {
-        User user = userRepository.findByAccountId(account.getId())
+        User user = userRepository
+                .findByAccountId(account.getId())
                 .orElseThrow(() -> new CustomException("Không tìm thấy hồ sơ người dùng"));
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                 .accountId(account.getId())
@@ -188,18 +195,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .fullName(user.getFullName())
                 .role(account.getRole().getRoleName())
                 .vendorStatus("NONE");
-        vendorRepository.findByOwnerId(user.getId()).ifPresent(v -> builder
-                .vendorId(v.getId())
+        vendorRepository.findByOwnerId(user.getId()).ifPresent(v -> builder.vendorId(v.getId())
                 .vendorStatus(v.getStatus().name()));
         if (withTokens) {
-            builder.token(tokenService.createToken(account, user))
-                    .refreshToken(tokenService.refreshToken(account));
+            builder.token(tokenService.createToken(account, user)).refreshToken(tokenService.refreshToken(account));
         }
         return builder.build();
     }
 
     private String fullName(Account account) {
-        return userRepository.findByAccountId(account.getId()).map(User::getFullName).orElse(account.getEmail());
+        return userRepository
+                .findByAccountId(account.getId())
+                .map(User::getFullName)
+                .orElse(account.getEmail());
     }
 
     private static String normalizeEmail(String email) {

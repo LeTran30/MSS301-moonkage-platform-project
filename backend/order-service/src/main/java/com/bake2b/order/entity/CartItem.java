@@ -1,23 +1,24 @@
 package com.bake2b.order.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-
 /**
  * Multi-shop cart line (FR-08). Grouped by vendor at display; re-checked at checkout.
  */
 @Entity
-@Table(name = "cart_items",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"buyerUserId", "productId"}))
+@Table(name = "cart_items", uniqueConstraints = @UniqueConstraint(columnNames = {"buyerUserId", "productId"}))
 @Getter
 @Setter
 @NoArgsConstructor

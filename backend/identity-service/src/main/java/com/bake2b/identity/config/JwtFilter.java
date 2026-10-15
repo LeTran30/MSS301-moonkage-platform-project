@@ -10,6 +10,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,11 +22,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
-import java.io.IOException;
-import java.util.List;
-
 @Component
 public class JwtFilter extends OncePerRequestFilter {
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     static final List<String> PUBLIC_ENDPOINTS = List.of(
             "/error",
@@ -40,16 +41,17 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/auth/login",
             "/api/auth/refresh-token",
             "/api/auth/forgot-password/send-otp",
-            "/api/auth/forgot-password/reset"
-    );
+            "/api/auth/forgot-password/reset");
 
     private final TokenService tokenService;
     private final UserRepository userRepository;
     private final HandlerExceptionResolver resolver;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public JwtFilter(TokenService tokenService, UserRepository userRepository,
-                     @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+    public JwtFilter(
+            TokenService tokenService,
+            UserRepository userRepository,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
         this.tokenService = tokenService;
         this.userRepository = userRepository;
         this.resolver = resolver;
@@ -61,7 +63,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private String extractJwtFromRequest(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
-        return StringUtils.hasText(header) && header.startsWith("Bearer ") ? header.substring(7) : null;
+        return StringUtils.hasText(header) && header.startsWith(BEARER_PREFIX)
+                ? header.substring(BEARER_PREFIX.length())
+                : null;
     }
 
     @Override
@@ -74,8 +78,8 @@ public class JwtFilter extends OncePerRequestFilter {
             if (isPublic) {
                 filterChain.doFilter(request, response);
             } else {
-                resolver.resolveException(request, response, null,
-                        new InvalidCredentialsException("Thiếu Authorization Bearer token"));
+                resolver.resolveException(
+                        request, response, null, new InvalidCredentialsException("Thiếu Authorization Bearer token"));
             }
             return;
         }
@@ -102,8 +106,13 @@ public class JwtFilter extends OncePerRequestFilter {
         }
     }
 
-    private void fail(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-                      boolean isPublic, String message) throws ServletException, IOException {
+    private void fail(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain,
+            boolean isPublic,
+            String message)
+            throws ServletException, IOException {
         if (isPublic) {
             chain.doFilter(request, response);
         } else {

@@ -1,20 +1,27 @@
 package com.bake2b.order.entity;
 
-import com.bake2b.order.enums.*;
-import jakarta.persistence.*;
+import com.bake2b.order.enums.OrderKind;
+import com.bake2b.order.enums.OrderStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-
 /**
- * One order per vendor; a multi-shop checkout creates several (A-01). Prices, commission and address are copied at creation (BR-19).
+ * One order per vendor; a multi-shop checkout creates several (A-01).
+ * Prices, commission and address are copied at creation (BR-19).
  */
 @Entity
 @Table(name = "orders")

@@ -11,5 +11,4 @@ public class ApiGatewayApplication {
         DotEnvConfig.loadDotEnv();
         SpringApplication.run(ApiGatewayApplication.class, args);
     }
-
 }

@@ -9,14 +9,26 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
-/** Shop product management (FR-30 - FR-32). X-User-Id / X-User-Role come from the gateway, taken from the access token. */
+/**
+ * Shop product management (FR-30 - FR-32). X-User-Id / X-User-Role come from the gateway, taken from the access
+ * token.
+ */
 @RestController
 @RequestMapping("/api/seller/products")
 @RequiredArgsConstructor
@@ -28,8 +40,7 @@ public class SellerProductController {
     public ResponseEntity<ProductResponse> createProduct(
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
             @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
-            @Valid @RequestBody CreateProductRequest request
-    ) {
+            @Valid @RequestBody CreateProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(userId, role, request));
     }
 
@@ -37,8 +48,7 @@ public class SellerProductController {
     public List<ProductResponse> getMyProducts(
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
             @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
-            @RequestParam(required = false) ProductStatus status
-    ) {
+            @RequestParam(required = false) ProductStatus status) {
         return productService.getMyProducts(userId, role, status);
     }
 
@@ -46,8 +56,7 @@ public class SellerProductController {
     public ProductResponse getMyProduct(
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
             @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
-            @PathVariable String productId
-    ) {
+            @PathVariable String productId) {
         return productService.getMyProduct(userId, role, productId);
     }
 
@@ -58,10 +67,15 @@ public class SellerProductController {
             @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
             @PathVariable String productId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Chỉ gửi các trường cần sửa, trường không gửi giữ nguyên giá trị cũ",
-                    content = @Content(examples = @ExampleObject(value = "{\n  \"listPrice\": 470000,\n  \"stock\": 80\n}")))
-            @Valid @RequestBody UpdateProductRequest request
-    ) {
+                            description = "Chỉ gửi các trường cần sửa, trường không gửi giữ nguyên giá trị cũ",
+                            content =
+                                    @Content(
+                                            examples =
+                                                    @ExampleObject(
+                                                            value = "{\n  \"listPrice\": 470000,\n  \"stock\": 80\n}")))
+                    @Valid
+                    @RequestBody
+                    UpdateProductRequest request) {
         return productService.updateProduct(userId, role, productId, request);
     }
 
@@ -71,8 +85,7 @@ public class SellerProductController {
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
             @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
             @PathVariable String productId,
-            @RequestParam boolean visible
-    ) {
+            @RequestParam boolean visible) {
         return productService.setVisibility(userId, role, productId, visible);
     }
 
@@ -80,8 +93,7 @@ public class SellerProductController {
     public ResponseEntity<Void> deleteProduct(
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
             @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
-            @PathVariable String productId
-    ) {
+            @PathVariable String productId) {
         productService.deleteProduct(userId, role, productId);
         return ResponseEntity.noContent().build();
     }
