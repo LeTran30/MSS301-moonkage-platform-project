@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.3.13</version>
         <relativePath/>
     </parent>
 
@@ -25,11 +24,22 @@
         <module>catalog-service</module>
         <module>tender-service</module>
         <module>order-service</module>
+        <module>file-service</module>
     </modules>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <spring-cloud.version>2023.0.4</spring-cloud.version>
+        <springdoc.version>2.6.0</springdoc.version>
+        <!-- Newer than Spring Boot's managed version so Lombok also works on JDK 25 -->
+        <lombok.version>1.18.46</lombok.version>
+
+        <!-- ===== T0–T1 tool versions ===== -->
+        <spotless.version>3.7.0</spotless.version>
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+        <checkstyle.version>13.7.0</checkstyle.version>
+        <error-prone.version>2.50.0</error-prone.version>
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -56,6 +66,118 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- T0 — Spotless: auto-format.
+                 ./mvnw spotless:apply → reformat; spotless:check runs in validate -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.version}</version>
+                <configuration>
+                    <!-- LF everywhere, matching .editorconfig and CI (otherwise Windows gets CRLF) -->
+                    <lineEndings>UNIX</lineEndings>
+                    <java>
+                        <!-- Palantir: 4-space indent, 120 columns — matches .editorconfig and Checkstyle -->
+                        <palantirJavaFormat>
+                            <style>PALANTIR</style>
+                            <formatJavadoc>false</formatJavadoc>
+                        </palantirJavaFormat>
+                        <importOrder/>
+                        <removeUnusedImports/>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
+                    </java>
+                    <pom>
+                        <sortPom>
+                            <expandEmptyElements>false</expandEmptyElements>
+                            <nrOfIndentSpace>4</nrOfIndentSpace>
+                            <indentSchemaLocation>true</indentSchemaLocation>
+                        </sortPom>
+                    </pom>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- T1 — Checkstyle: per-file syntax rules (naming, banned imports/patterns, magic numbers…) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${maven-checkstyle-plugin.version}</version>
+                <configuration>
+                    <!-- Absolute path so every submodule resolves the shared config -->
+                    <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <consoleOutput>true</consoleOutput>
+                    <failOnViolation>true</failOnViolation>
+                    <violationSeverity>warning</violationSeverity>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- T1 — Error Prone: semantic checks at compile time. Requires .mvn/jvm.config. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>${java.version}</release>
+                    <encoding>UTF-8</encoding>
+                    <!-- UnusedVariable is WARN while controllers/services are still stubs with unused
+                         injected fields; raise it back to ERROR once they are implemented. -->
+                    <compilerArgs>
+                        <arg>-XDcompilePolicy=simple</arg>
+                        <arg>--should-stop=ifError=FLOW</arg>
+                        <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+                        <arg>-Xplugin:ErrorProne
+                            -XepDisableWarningsInGeneratedCode
+                            -XepExcludedPaths:.*/target/generated-sources/.*
+                            -Xep:UnusedVariable:WARN
+                            -Xep:UnusedMethod:ERROR
+                            -Xep:ReferenceEquality:ERROR
+                            -Xep:DefaultCharset:ERROR
+                            -Xep:StringSplitter:ERROR
+                            -Xep:JavaTimeDefaultTimeZone:ERROR
+                            -Xep:BadImport:ERROR
+                            -Xep:MissingCasesInEnumSwitch:ERROR
+                            -Xep:EqualsGetClass:ERROR</arg>
+                    </compilerArgs>
+                    <!-- Setting this disables processor discovery, so Lombok must be listed explicitly -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>${error-prone.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

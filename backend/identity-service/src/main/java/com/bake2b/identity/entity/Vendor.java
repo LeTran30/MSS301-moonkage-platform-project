@@ -1,51 +1,86 @@
 package com.bake2b.identity.entity;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import com.bake2b.identity.enums.SupplySource;
+import com.bake2b.identity.enums.VendorEntityType;
+import com.bake2b.identity.enums.VendorStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Represents a mooncake vendor/manufacturer on the platform.
+ * Registered business selling on the platform, owned by exactly one account (FR-26, BR-11).
  */
 @Entity
 @Table(name = "vendors")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Vendor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_user_id", nullable = false, unique = true)
+    private User owner;
+
     @Column(nullable = false)
-    private String companyName;
+    private String legalName;
 
-    private String businessLicense;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private VendorEntityType entityType;
 
-    private String contactEmail;
+    @Column(nullable = false)
+    private String taxCode;
 
-    private String contactPhone;
-
+    @Column(nullable = false)
     private String address;
 
-    private boolean verified;
+    /** Vendor's home area; an order outside it is inter-province (glossary). */
+    @Column(nullable = false)
+    private String areaCode;
 
+    @Embedded
+    private BankAccount bankAccount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SupplySource supplySource;
+
+    @Column(nullable = false)
+    private boolean sellsShop;
+
+    @Column(nullable = false)
+    private boolean acceptsOrders;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private VendorStatus status = VendorStatus.PENDING;
+
+    /** Reason for NEEDS_INFO / REJECTED / LOCKED (AC-27.2, AC-46.2, AC-47.2). */
+    @Column(columnDefinition = "TEXT")
+    private String statusReason;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

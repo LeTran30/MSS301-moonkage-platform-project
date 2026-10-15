@@ -1,53 +1,79 @@
 package com.bake2b.tender.entity;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import com.bake2b.tender.enums.QuoteStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 /**
- * Represents a vendor's price quote in response to a tender.
+ * Vendor quote in the standard format (FR-38). Withdraw + resend instead of edit (BR-05).
  */
 @Entity
 @Table(name = "quotes")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Quote {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
-    private String tenderRequestId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tender_request_id", nullable = false)
+    private TenderRequest tenderRequest;
 
     @Column(nullable = false)
     private String vendorId;
 
-    @Column(precision = 15, scale = 2)
-    private BigDecimal totalPrice;
-
-    @Column(precision = 12, scale = 2)
-    private BigDecimal unitPrice;
-
+    @Column(nullable = false)
     private Integer quantity;
 
-    private Integer leadTimeDays;
+    @Column(nullable = false)
+    private Long unitPrice;
+
+    private Long customSurcharge;
+
+    @Column(nullable = false)
+    private Long totalAmount;
+
+    /** Percent, e.g. 30.00. */
+    @Column(nullable = false, precision = 5, scale = 2)
+    private BigDecimal depositRate;
+
+    @Column(nullable = false)
+    private LocalDate deliveryDate;
+
+    @Column(nullable = false)
+    private String deliveryMethod;
+
+    @Column(nullable = false)
+    private LocalDateTime validUntil;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private QuoteStatus status = QuoteStatus.SUBMITTED;
 
-    private LocalDateTime submittedAt;
+    private LocalDateTime withdrawnAt;
 
-    @PrePersist
-    protected void onCreate() {
-        submittedAt = LocalDateTime.now();
-        if (status == null) status = "SUBMITTED";
-    }
+    @CreationTimestamp
+    private LocalDateTime createdAt;
 }

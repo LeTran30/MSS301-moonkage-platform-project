@@ -1,21 +1,33 @@
 package com.bake2b.order.entity;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import com.bake2b.order.enums.OrderKind;
+import com.bake2b.order.enums.OrderStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Represents a purchase order placed by a buyer.
+ * One order per vendor; a multi-shop checkout creates several (A-01).
+ * Prices, commission and address are copied at creation (BR-19).
  */
 @Entity
 @Table(name = "orders")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Order {
 
     @Id
@@ -23,37 +35,75 @@ public class Order {
     private String id;
 
     @Column(nullable = false)
-    private String companyId;
+    private String buyerUserId;
 
+    @Column(nullable = false)
     private String vendorId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderKind kind;
+
+    /** Required for CUSTOM_ORDER. */
     private String quoteId;
 
-    @Column(precision = 15, scale = 2)
-    private BigDecimal totalAmount;
+    /** Shared by all orders split from one checkout payment (A-01). */
+    private String checkoutId;
 
-    private String status;
+    @Column(nullable = false)
+    private Long itemsAmount;
 
-    private String shippingAddress;
+    @Column(nullable = false)
+    private Long shippingFee = 0L;
 
-    private LocalDateTime orderDate;
+    @Column(nullable = false)
+    private Long discountAmount = 0L;
 
-    private LocalDateTime deliveryDate;
+    private String voucherCode;
 
+    @Column(nullable = false)
+    private Long totalAmount;
+
+    /** CUSTOM_ORDER only: total x deposit rate (AC-19.2). */
+    private Long depositAmount;
+
+    @Column(nullable = false, precision = 5, scale = 2)
+    private BigDecimal commissionRate;
+
+    @Column(nullable = false)
+    private boolean interprovince;
+
+    /** CUSTOM_ORDER with custom work: must pass mockup approval (BR-15). */
+    @Column(nullable = false)
+    private boolean hasCustom;
+
+    /** Null = personal invoice (AC-24.5). */
+    @Embedded
+    private InvoiceInfo invoiceInfo;
+
+    @Column(nullable = false)
+    private String deliveryAddressDetail;
+
+    @Column(nullable = false)
+    private String deliveryAreaCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderStatus status;
+
+    /** Required for inter-province buy-now when shipping (AC-33.3). */
+    private String trackingCode;
+
+    /** Vendor-issued invoice file (FR-44, A-02). */
+    private String invoiceFileUrl;
+
+    private LocalDateTime deliveredAt;
+
+    private LocalDateTime receivedConfirmedAt;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        orderDate = LocalDateTime.now();
-        if (status == null) status = "PENDING";
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
