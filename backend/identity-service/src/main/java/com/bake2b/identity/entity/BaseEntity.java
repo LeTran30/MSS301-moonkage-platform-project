@@ -1,4 +1,4 @@
-package com.bake2b.identity.common;
+package com.bake2b.identity.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;

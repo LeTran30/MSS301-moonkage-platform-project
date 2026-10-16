@@ -60,7 +60,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async
     public void sendOtpForVerifyAccount(String email, String name, String otp) {
-        send(email, name, otp, "REGIS", "MoonKage - Mã xác nhận tài khoản");
+        send(email, name, otp, "REGISTRATION", "MoonKage - Mã xác nhận tài khoản");
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.bake2b.identity.config;
+package com.bake2b.identity.security;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

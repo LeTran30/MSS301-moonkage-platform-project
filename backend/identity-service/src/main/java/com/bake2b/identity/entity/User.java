@@ -1,6 +1,5 @@
 package com.bake2b.identity.entity;
 
-import com.bake2b.identity.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

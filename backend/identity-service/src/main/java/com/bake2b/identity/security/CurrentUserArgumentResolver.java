@@ -1,6 +1,5 @@
-package com.bake2b.identity.config;
+package com.bake2b.identity.security;
 
-import com.bake2b.identity.common.CurrentUserInfo;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

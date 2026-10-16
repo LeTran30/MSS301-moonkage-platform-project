@@ -6,7 +6,7 @@ import com.bake2b.identity.dto.request.VerifyRequest;
 import com.bake2b.identity.dto.response.AccountCreateResponse;
 import com.bake2b.identity.dto.response.LoginResponse;
 
-public interface AuthenticationService {
+public interface AuthService {
 
     AccountCreateResponse register(AccountCreateRequest request);
 
