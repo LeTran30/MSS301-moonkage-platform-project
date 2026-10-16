@@ -1,4 +1,4 @@
-package com.bake2b.identity.config;
+package com.bake2b.identity.security;
 
 import com.bake2b.identity.repository.AccountRepository;
 import java.util.Locale;

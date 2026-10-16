@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Loads the repo-root .env into System properties so application.properties can read ${VAR}.
+ * Loads the repo-root .env into System properties so application.yml can read ${VAR}.
  * Call loadDotEnv() in main() before SpringApplication.run().
  * Real environment variables / -D properties win over .env (useful for Docker / CI).
  */

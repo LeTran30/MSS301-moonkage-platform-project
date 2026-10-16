@@ -1,5 +1,6 @@
 package com.bake2b.identity.common.exception;
 
+import com.bake2b.identity.dto.response.ErrorResponse;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;

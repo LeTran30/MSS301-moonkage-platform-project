@@ -1,5 +1,6 @@
 package com.bake2b.identity.config;
 
+import com.bake2b.identity.security.CurrentUserArgumentResolver;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;

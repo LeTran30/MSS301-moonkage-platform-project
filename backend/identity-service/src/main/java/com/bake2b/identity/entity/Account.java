@@ -1,6 +1,5 @@
 package com.bake2b.identity.entity;
 
-import com.bake2b.identity.common.BaseEntity;
 import com.bake2b.identity.enums.AccountStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

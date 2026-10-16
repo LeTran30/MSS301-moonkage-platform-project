@@ -1,6 +1,7 @@
 package com.bake2b.identity.service.impl;
 
 import com.bake2b.identity.common.exception.CustomException;
+import com.bake2b.identity.common.exception.EmailAlreadyExistsException;
 import com.bake2b.identity.common.exception.InvalidCredentialsException;
 import com.bake2b.identity.dto.request.AccountCreateRequest;
 import com.bake2b.identity.dto.request.LoginRequest;
@@ -15,10 +16,9 @@ import com.bake2b.identity.repository.AccountRepository;
 import com.bake2b.identity.repository.RoleRepository;
 import com.bake2b.identity.repository.UserRepository;
 import com.bake2b.identity.repository.VendorRepository;
-import com.bake2b.identity.service.AuthenticationService;
+import com.bake2b.identity.service.AuthService;
 import com.bake2b.identity.service.EmailService;
 import com.bake2b.identity.service.TokenService;
-import com.bake2b.identity.validate.AuthValidation;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthenticationServiceImpl implements AuthenticationService {
+public class AuthServiceImpl implements AuthService {
 
     public static final String DEFAULT_ROLE = "CUSTOMER";
 
@@ -46,7 +46,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final VendorRepository vendorRepository;
     private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
-    private final AuthValidation validation;
     private final EmailService emailService;
 
     // ───────── FR-01 ─────────
@@ -55,7 +54,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional
     public AccountCreateResponse register(AccountCreateRequest request) {
         request.setEmail(normalizeEmail(request.getEmail()));
-        validation.validate(request);
+        validateUniqueness(request);
 
         Role defaultRole = roleRepository
                 .findByRoleName(DEFAULT_ROLE)
@@ -176,6 +175,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     // ───────── helpers ─────────
+
+    /** AC-01.3: an email or phone already bound to an account cannot register again. */
+    private void validateUniqueness(AccountCreateRequest request) {
+        String result = accountRepository.validateAccountUniqueness(request.getEmail(), request.getPhoneNumber());
+        switch (result) {
+            case "EMAIL_EXISTS" -> throw new EmailAlreadyExistsException("Email đã được sử dụng");
+            case "PHONE_EXISTS" -> throw new EmailAlreadyExistsException("Số điện thoại đã được sử dụng");
+            default -> {}
+        }
+    }
 
     private void sendVerifyOtp(String email, String name) {
         String otp = emailService.generateOTP();

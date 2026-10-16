@@ -1,4 +1,4 @@
-package com.bake2b.identity.common.exception;
+package com.bake2b.identity.dto.response;
 
 import java.time.Instant;
 
