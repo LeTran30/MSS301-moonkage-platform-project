@@ -45,9 +45,10 @@ class AddressServiceImplTest {
             }
             return a;
         });
-        when(addressRepository.findByIdAndAccountId(any(), any())).thenAnswer(inv -> stored.stream()
-                .filter(a -> a.getId().equals(inv.getArgument(0)) && ACCOUNT_ID.equals(inv.getArgument(1)))
-                .findFirst());
+        when(addressRepository.findByIdAndAccountId(any(), any()))
+                .thenAnswer(inv -> stored.stream()
+                        .filter(a -> a.getId().equals(inv.getArgument(0)) && ACCOUNT_ID.equals(inv.getArgument(1)))
+                        .findFirst());
         service = new AddressServiceImpl(addressRepository, accountRepository);
     }
 
