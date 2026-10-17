@@ -68,7 +68,7 @@ flowchart LR
     OR -. OpenFeign .-> ID
     OR -. OpenFeign .-> CA
     OR -. OpenFeign .-> TE
-    EU["Eureka :8761"] -. service discovery .- GW
+    EU["Eureka :8761"] -.-|service discovery| GW
 ```
 
 | Thành phần | Công nghệ | Port |
