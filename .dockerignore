@@ -1,0 +1,39 @@
+# Version Control & Git
+.git
+.gitignore
+.github
+.githooks
+
+# IDE & Editor specific files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Build outputs & target directories across all submodules
+**/target/
+api/**/target/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# Documentation, mobile, and web source files (nếu container backend không cần dùng đến)
+docs/
+mobile/
+web/
+
+# Local environment variables and secrets
+.env
+*.pem
+*.key
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
