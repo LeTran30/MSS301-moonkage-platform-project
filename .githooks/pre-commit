@@ -3,18 +3,33 @@
 #   git config core.hooksPath .githooks
 set -euo pipefail
 
-# Skip quickly when no backend .java / pom.xml file is staged
-if ! git diff --cached --name-only --diff-filter=ACMR | grep -qE '^backend/.*(\.java|pom\.xml)$'; then
-  exit 0
+root="$(git rev-parse --show-toplevel)"
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+# Backend: only when a .java / pom.xml file is staged
+if grep -qE '^backend/.*(\.java|pom\.xml)$' <<<"$staged"; then
+  cd "$root/backend"
+  echo "▶ Checking format (Spotless) and Checkstyle..."
+  if ! ./mvnw -q -B spotless:check checkstyle:check; then
+    echo ""
+    echo "✖ Commit blocked."
+    echo "  - Format errors:     cd backend && ./mvnw spotless:apply, then git add again."
+    echo "  - Checkstyle errors: fix them as reported above."
+    exit 1
+  fi
 fi
 
-cd "$(git rev-parse --show-toplevel)/backend"
-
-echo "▶ Checking format (Spotless) and Checkstyle..."
-if ! ./mvnw -q -B spotless:check checkstyle:check; then
-  echo ""
-  echo "✖ Commit blocked."
-  echo "  - Format errors:     cd backend && ./mvnw spotless:apply, then git add again."
-  echo "  - Checkstyle errors: fix them as reported above."
-  exit 1
+# Web: only when a .ts / .tsx / .js / .jsx file is staged
+if grep -qE '^web/.*\.(ts|tsx|js|jsx)$' <<<"$staged"; then
+  cd "$root/web"
+  if [ ! -d node_modules ]; then
+    echo "✖ Commit blocked: web/node_modules missing. Run: cd web && npm ci"
+    exit 1
+  fi
+  echo "▶ Checking web (oxlint + type-check)..."
+  if ! npx oxlint --deny-warnings || ! npx tsc -b; then
+    echo ""
+    echo "✖ Commit blocked. Fix the web errors reported above."
+    exit 1
+  fi
 fi
