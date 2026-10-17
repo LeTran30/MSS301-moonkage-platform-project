@@ -2,7 +2,7 @@
 # Build context = api/  (docker compose sets it; manual: docker build -f quotation-service/Dockerfile api)
 
 # ── build ──
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-26 AS build
 WORKDIR /workspace
 # every module pom is needed because the parent pom lists all modules
 COPY pom.xml .
