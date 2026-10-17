@@ -5,6 +5,7 @@ import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.Address;
 import com.moonkage.identity.exception.ResourceNotFoundException;
+import com.moonkage.identity.mapper.AddressMapper;
 import com.moonkage.identity.repository.AccountRepository;
 import com.moonkage.identity.repository.AddressRepository;
 import com.moonkage.identity.service.AddressService;
@@ -32,7 +33,7 @@ public class AddressServiceImpl implements AddressService {
     @Transactional(readOnly = true)
     public List<AddressResponse> getMyAddresses(String accountId) {
         return addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId).stream()
-                .map(AddressResponse::from)
+                .map(AddressMapper::toResponse)
                 .toList();
     }
 
@@ -51,7 +52,7 @@ public class AddressServiceImpl implements AddressService {
         }
         address.setDefault(makeDefault);
         // flush so the response carries the generated timestamps
-        return AddressResponse.from(addressRepository.saveAndFlush(address));
+        return AddressMapper.toResponse(addressRepository.saveAndFlush(address));
     }
 
     @Override
@@ -68,7 +69,7 @@ public class AddressServiceImpl implements AddressService {
         } else if (Boolean.FALSE.equals(request.getIsDefault())) {
             address.setDefault(false);
         }
-        return AddressResponse.from(addressRepository.saveAndFlush(address));
+        return AddressMapper.toResponse(addressRepository.saveAndFlush(address));
     }
 
     @Override

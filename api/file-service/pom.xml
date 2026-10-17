@@ -17,7 +17,15 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.7</version>
+            <version>8.6.0</version>
+        </dependency>
+        <!-- MinIO 8.6 depends on OkHttp 5, whose Maven "okhttp" jar is an empty stub (classes are
+             published as okhttp-jvm via Gradle metadata, which Maven ignores). Keep the version equal
+             to the okhttp version MinIO pulls in: ./mvnw -pl file-service dependency:tree -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp-jvm</artifactId>
+            <version>5.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

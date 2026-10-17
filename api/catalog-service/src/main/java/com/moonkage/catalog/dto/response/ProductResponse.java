@@ -1,6 +1,5 @@
 package com.moonkage.catalog.dto.response;
 
-import com.moonkage.catalog.entity.Product;
 import com.moonkage.catalog.enums.DeliveryLabel;
 import com.moonkage.catalog.enums.ProductStatus;
 import java.time.LocalDate;
@@ -35,30 +34,4 @@ public class ProductResponse {
     private List<PriceTierResponse> priceTiers;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    public static ProductResponse from(Product p) {
-        return ProductResponse.builder()
-                .id(p.getId())
-                .vendorId(p.getVendorId())
-                .name(p.getName())
-                .description(p.getDescription())
-                .cakeType(p.getCakeType())
-                .brand(p.getBrand())
-                .origin(p.getOrigin())
-                .piecesPerBox(p.getPiecesPerBox())
-                .listPrice(p.getListPrice())
-                .stock(p.getStock())
-                .inStock(p.getStock() != null && p.getStock() > 0)
-                .expiryDate(p.getExpiryDate())
-                .deliveryLabel(p.getDeliveryLabel())
-                .quoteThreshold(p.getQuoteThreshold())
-                .status(p.getStatus())
-                .removedReason(p.getRemovedReason())
-                .imageUrls(List.copyOf(p.getImageUrls()))
-                .priceTiers(
-                        p.getPriceTiers().stream().map(PriceTierResponse::from).toList())
-                .createdAt(p.getCreatedAt())
-                .updatedAt(p.getUpdatedAt())
-                .build();
-    }
 }

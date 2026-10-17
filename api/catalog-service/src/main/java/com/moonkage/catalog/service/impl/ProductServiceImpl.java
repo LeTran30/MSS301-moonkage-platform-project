@@ -11,6 +11,7 @@ import com.moonkage.catalog.dto.response.ProductResponse;
 import com.moonkage.catalog.entity.Product;
 import com.moonkage.catalog.entity.ProductPriceTier;
 import com.moonkage.catalog.enums.ProductStatus;
+import com.moonkage.catalog.mapper.ProductMapper;
 import com.moonkage.catalog.messaging.AuditEvent;
 import com.moonkage.catalog.repository.ProductRepository;
 import com.moonkage.catalog.service.ProductService;
@@ -66,7 +67,7 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(ProductStatus.ON_SALE);
         replaceTiers(product, request.getPriceTiers());
 
-        return ProductResponse.from(productRepository.save(product));
+        return ProductMapper.toResponse(productRepository.save(product));
     }
 
     @Override
@@ -127,7 +128,7 @@ public class ProductServiceImpl implements ProductService {
         audit(accountId, "PRODUCT_STOCK_CHANGED", product.getId(), oldStock, product.getStock());
 
         // flush now so the response carries the new updatedAt
-        return ProductResponse.from(productRepository.saveAndFlush(product));
+        return ProductMapper.toResponse(productRepository.saveAndFlush(product));
     }
 
     @Override
@@ -137,7 +138,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = requireOwnProduct(vendor, productId);
         requireNotRemoved(product);
         product.setStatus(visible ? ProductStatus.ON_SALE : ProductStatus.HIDDEN);
-        return ProductResponse.from(productRepository.save(product));
+        return ProductMapper.toResponse(productRepository.save(product));
     }
 
     @Override
@@ -156,14 +157,14 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products = status == null
                 ? productRepository.findByVendorIdAndDeletedFalseOrderByCreatedAtDesc(vendor.id())
                 : productRepository.findByVendorIdAndStatusAndDeletedFalseOrderByCreatedAtDesc(vendor.id(), status);
-        return products.stream().map(ProductResponse::from).toList();
+        return products.stream().map(ProductMapper::toResponse).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getMyProduct(String accountId, String role, String productId) {
         VendorInfo vendor = requireShop(accountId, role);
-        return ProductResponse.from(requireOwnProduct(vendor, productId));
+        return ProductMapper.toResponse(requireOwnProduct(vendor, productId));
     }
 
     @Override
@@ -175,7 +176,7 @@ public class ProductServiceImpl implements ProductService {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         return PageResponse.from(productRepository
                 .searchOnSale(trimToNull(vendorId), trimToNull(keyword), pageable)
-                .map(ProductResponse::from));
+                .map(ProductMapper::toResponse));
     }
 
     @Override
@@ -183,7 +184,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getOnSaleProduct(String productId) {
         return productRepository
                 .findByIdAndStatusAndDeletedFalse(productId, ProductStatus.ON_SALE)
-                .map(ProductResponse::from)
+                .map(ProductMapper::toResponse)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"));
     }
 

@@ -1,6 +1,7 @@
 package com.moonkage.vendor.service.impl;
 
 import com.moonkage.vendor.dto.response.VendorResponse;
+import com.moonkage.vendor.mapper.VendorMapper;
 import com.moonkage.vendor.repository.VendorRepository;
 import com.moonkage.vendor.service.VendorService;
 import java.util.Optional;
@@ -17,6 +18,6 @@ public class VendorServiceImpl implements VendorService {
     @Override
     @Transactional(readOnly = true)
     public Optional<VendorResponse> findByOwnerAccountId(String accountId) {
-        return vendorRepository.findByOwnerAccountId(accountId).map(VendorResponse::from);
+        return vendorRepository.findByOwnerAccountId(accountId).map(VendorMapper::toResponse);
     }
 }
