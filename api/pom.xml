@@ -43,6 +43,9 @@
         <checkstyle.version>13.7.0</checkstyle.version>
         <error-prone.version>2.50.0</error-prone.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+
+        <!-- ===== T4 tool versions ===== -->
+        <archunit.version>1.4.1</archunit.version>
     </properties>
 
     <dependencyManagement>
@@ -56,6 +59,16 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <!-- T4 — ArchUnit: layering rules, run as a test in every module (config/archunit/) -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -137,6 +150,27 @@
                             <goal>check</goal>
                         </goals>
                         <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- T4 — ArchUnit: one shared rule set, compiled into every module's tests.
+                 Dockerfiles do not copy config/, so image builds simply skip it. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-architecture-tests</id>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <phase>generate-test-sources</phase>
+                        <configuration>
+                            <sources>
+                                <source>${maven.multiModuleProjectDirectory}/config/archunit</source>
+                            </sources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
