@@ -109,7 +109,7 @@
                         <sortPom>
                             <expandEmptyElements>false</expandEmptyElements>
                             <nrOfIndentSpace>4</nrOfIndentSpace>
-                            <indentSchemaLocation>true</indentSchemaLocation>
+                            <indentAttribute>schemaLocation</indentAttribute>
                         </sortPom>
                     </pom>
                 </configuration>
