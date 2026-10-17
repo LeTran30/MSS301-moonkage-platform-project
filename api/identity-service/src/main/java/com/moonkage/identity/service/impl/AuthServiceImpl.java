@@ -13,6 +13,7 @@ import com.moonkage.identity.exception.CustomException;
 import com.moonkage.identity.exception.EmailAlreadyExistsException;
 import com.moonkage.identity.exception.EmailDeliveryException;
 import com.moonkage.identity.exception.InvalidCredentialsException;
+import com.moonkage.identity.mapper.AccountMapper;
 import com.moonkage.identity.repository.AccountRepository;
 import com.moonkage.identity.repository.RoleRepository;
 import com.moonkage.identity.repository.UserProfileRepository;
@@ -81,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
         } catch (EmailDeliveryException e) {
             otpSent = false;
         }
-        AccountCreateResponse response = AccountCreateResponse.from(account);
+        AccountCreateResponse response = AccountMapper.toCreateResponse(account);
         response.setOtpSent(otpSent);
         return response;
     }
@@ -101,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
             account.setStatus(AccountStatus.ACTIVE);
         }
         account.setAccountVerified(true);
-        return AccountCreateResponse.from(account);
+        return AccountMapper.toCreateResponse(account);
     }
 
     /** Silent when the email is unknown or already verified, so it cannot be used to probe accounts. */
