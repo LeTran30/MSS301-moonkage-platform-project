@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Build context = backend/  (docker compose sets it; manual: docker build -f identity-service/Dockerfile backend)
+# Build context = api/  (docker compose sets it; manual: docker build -f identity-service/Dockerfile api)
 
 # ── build ──
 FROM maven:3.9-eclipse-temurin-21 AS build

@@ -106,7 +106,7 @@ services:
   discovery-server:
     <<: *app
     container_name: bake2b-discovery-server
-    build: { context: ./backend, dockerfile: discovery-server/Dockerfile }
+    build: { context: ./api, dockerfile: discovery-server/Dockerfile }
     environment: { TZ: Asia/Ho_Chi_Minh }
     ports: ["8761:8761"]
     healthcheck:
@@ -118,7 +118,7 @@ services:
   api-gateway:
     <<: *app
     container_name: bake2b-api-gateway
-    build: { context: ./backend, dockerfile: api-gateway/Dockerfile }
+    build: { context: ./api, dockerfile: api-gateway/Dockerfile }
     environment: *app-env
     # the only business entry point exposed to the host; other services are reachable only through it
     ports: ["8080:8080"]
@@ -129,7 +129,7 @@ services:
   identity-service:
     <<: *app
     container_name: bake2b-identity-service
-    build: { context: ./backend, dockerfile: identity-service/Dockerfile }
+    build: { context: ./api, dockerfile: identity-service/Dockerfile }
     environment:
       <<: *app-env
       IDENTITY_DB_HOST: identity-db
@@ -141,7 +141,7 @@ services:
   catalog-service:
     <<: *app
     container_name: bake2b-catalog-service
-    build: { context: ./backend, dockerfile: catalog-service/Dockerfile }
+    build: { context: ./api, dockerfile: catalog-service/Dockerfile }
     environment:
       <<: *app-env
       CATALOG_DB_HOST: catalog-db
@@ -153,7 +153,7 @@ services:
   tender-service:
     <<: *app
     container_name: bake2b-tender-service
-    build: { context: ./backend, dockerfile: tender-service/Dockerfile }
+    build: { context: ./api, dockerfile: tender-service/Dockerfile }
     environment:
       <<: *app-env
       TENDER_DB_HOST: tender-db
@@ -165,7 +165,7 @@ services:
   order-service:
     <<: *app
     container_name: bake2b-order-service
-    build: { context: ./backend, dockerfile: order-service/Dockerfile }
+    build: { context: ./api, dockerfile: order-service/Dockerfile }
     environment:
       <<: *app-env
       ORDER_DB_HOST: order-db
@@ -177,7 +177,7 @@ services:
   file-service:
     <<: *app
     container_name: bake2b-file-service
-    build: { context: ./backend, dockerfile: file-service/Dockerfile }
+    build: { context: ./api, dockerfile: file-service/Dockerfile }
     environment:
       <<: *app-env
       MINIO_URL: http://minio:9000

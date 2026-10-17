@@ -46,7 +46,7 @@ public final class DotEnvConfig {
 
     /**
      * Walks up from the working dir, so it works whether the service runs from its module,
-     * backend/ or the repo root.
+     * api/ or the repo root.
      */
     private static Path findEnvFile() {
         for (Path dir = Paths.get("").toAbsolutePath(); dir != null; dir = dir.getParent()) {

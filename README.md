@@ -119,7 +119,7 @@ docker compose logs -f identity-service   # mã OTP được in ra đây khi MAI
 ```bash
 docker compose up -d identity-db catalog-db tender-db order-db minio
 
-cd backend
+cd api
 ./mvnw -pl discovery-server spring-boot:run   # chạy Eureka trước
 ./mvnw -pl api-gateway spring-boot:run        # các service còn lại, mỗi cái một terminal
 ./mvnw -pl identity-service spring-boot:run
@@ -160,7 +160,7 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 
 ## Cấu trúc thư mục
 ```
-├── backend/
+├── api/
 │   ├── pom.xml                 # Parent POM (Java 21, Spotless, Checkstyle, Error Prone)
 │   ├── mvnw, mvnw.cmd          # Maven wrapper
 │   ├── config/checkstyle/      # Luật Checkstyle
@@ -172,7 +172,7 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 │   ├── tender-service/         # Yêu cầu báo giá, lời mời, báo giá, mùa bán hàng
 │   ├── order-service/          # Giỏ hàng, đơn hàng, thanh toán, ký quỹ, khiếu nại, voucher
 │   └── file-service/           # Upload file lên MinIO
-│       (mỗi service có Dockerfile riêng, build context = backend/)
+│       (mỗi service có Dockerfile riêng, build context = api/)
 ├── web/                        # React SPA (web portal)
 ├── docs/                       # auth.md, ERD (PlantUML), Postman collection
 ├── .githooks/pre-commit        # kiểm tra format/style trước mỗi commit
@@ -208,7 +208,7 @@ Gọi qua gateway `http://localhost:8080/<service>/...`. Một số endpoint ch�
 
 ## Testing & chất lượng code
 ```bash
-cd backend
+cd api
 ./mvnw spotless:apply   # tự format trước khi commit
 ./mvnw test             # chỉ chạy test
 ./mvnw clean verify     # format + Checkstyle + Error Prone + test, giống CI

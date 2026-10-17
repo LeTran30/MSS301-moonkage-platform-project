@@ -4,17 +4,17 @@ name: Code quality
 
 on:
   pull_request:
-    paths: ['backend/**', '.github/workflows/code-quality.yml']
+    paths: ['api/**', '.github/workflows/code-quality.yml']
   push:
     branches: [main, develop]
-    paths: ['backend/**', '.github/workflows/code-quality.yml']
+    paths: ['api/**', '.github/workflows/code-quality.yml']
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: api
     steps:
       - uses: actions/checkout@v4
 
