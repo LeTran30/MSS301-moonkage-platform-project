@@ -1,7 +1,10 @@
 package com.moonkage.identity.security;
 
+import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.repository.AccountRepository;
+import com.moonkage.identity.util.PhoneNumbers;
 import java.util.Locale;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -36,7 +39,9 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         return identifier -> (identifier.contains("@")
                         ? accountRepository.findByEmail(identifier.toLowerCase(Locale.ROOT))
-                        : accountRepository.findByPhoneNumber(identifier))
+                        : identifier.matches(PhoneNumbers.PATTERN)
+                                ? accountRepository.findByPhoneNumber(PhoneNumbers.normalize(identifier))
+                                : Optional.<Account>empty())
                 .orElseThrow(() -> new UsernameNotFoundException("Account not found"));
     }
 

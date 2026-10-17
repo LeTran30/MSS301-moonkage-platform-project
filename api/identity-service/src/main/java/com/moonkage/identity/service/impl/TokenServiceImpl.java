@@ -1,7 +1,6 @@
 package com.moonkage.identity.service.impl;
 
 import com.moonkage.identity.entity.Account;
-import com.moonkage.identity.entity.User;
 import com.moonkage.identity.repository.AccountRepository;
 import com.moonkage.identity.service.TokenService;
 import io.jsonwebtoken.Claims;
@@ -45,7 +44,7 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public String createToken(Account account, User user) {
+    public String createToken(Account account) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(account.getId())
@@ -53,7 +52,6 @@ public class TokenServiceImpl implements TokenService {
                 .claim(TYPE, ACCESS)
                 .claim("role", account.getRole().getRoleName())
                 .claim("accountId", account.getId())
-                .claim("userId", user.getId())
                 .claim("account_verified", Boolean.TRUE.equals(account.getAccountVerified()))
                 .expiration(toDate(now.plusMillis(expirationMs)))
                 .signWith(getSignInKey(), Jwts.SIG.HS256)

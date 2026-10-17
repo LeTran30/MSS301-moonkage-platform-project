@@ -2,7 +2,6 @@ package com.moonkage.identity.security;
 
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.exception.InvalidCredentialsException;
-import com.moonkage.identity.repository.UserRepository;
 import com.moonkage.identity.service.TokenService;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -43,16 +42,12 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/auth/forgot-password/reset");
 
     private final TokenService tokenService;
-    private final UserRepository userRepository;
     private final HandlerExceptionResolver resolver;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public JwtFilter(
-            TokenService tokenService,
-            UserRepository userRepository,
-            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+            TokenService tokenService, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
         this.tokenService = tokenService;
-        this.userRepository = userRepository;
         this.resolver = resolver;
     }
 
@@ -91,7 +86,6 @@ public class JwtFilter extends OncePerRequestFilter {
             info.setAccountId(account.getId());
             info.setEmail(account.getEmail());
             info.setRole(account.getRole().getRoleName());
-            userRepository.findByAccountId(account.getId()).ifPresent(u -> info.setUserId(u.getId()));
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(info, null, account.getAuthorities());

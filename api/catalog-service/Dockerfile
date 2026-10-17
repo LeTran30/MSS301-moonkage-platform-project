@@ -12,9 +12,12 @@ COPY discovery-server/pom.xml discovery-server/
 COPY api-gateway/pom.xml api-gateway/
 COPY identity-service/pom.xml identity-service/
 COPY catalog-service/pom.xml catalog-service/
-COPY tender-service/pom.xml tender-service/
+COPY quotation-service/pom.xml quotation-service/
 COPY order-service/pom.xml order-service/
 COPY file-service/pom.xml file-service/
+COPY vendor-service/pom.xml vendor-service/
+COPY payment-service/pom.xml payment-service/
+COPY notification-service/pom.xml notification-service/
 COPY catalog-service/src catalog-service/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl catalog-service -am package -DskipTests -Dspotless.check.skip=true -Dcheckstyle.skip=true
 

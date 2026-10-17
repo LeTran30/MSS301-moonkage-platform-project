@@ -54,15 +54,22 @@ flowchart LR
     Web["Web Portal<br/>React :5173"] --> GW["API Gateway :8080<br/>JWT + phân quyền"]
     GW --> ID["identity-service :8081"]
     GW --> CA["catalog-service :8082"]
-    GW --> TE["tender-service :8083"]
+    GW --> TE["quotation-service :8083"]
     GW --> OR["order-service :8084"]
     GW --> FI["file-service :8085"]
+    GW --> VE["vendor-service :8086"]
+    GW --> PA["payment-service :8087"]
+    GW --> NO["notification-service :8088"]
     ID --> IDB[("identity_db :5441")]
     CA --> CDB[("catalog_db :5442")]
-    TE --> TDB[("tender_db :5443")]
+    TE --> TDB[("quotation_db :5443")]
     OR --> ODB[("order_db :5444")]
     FI --> MI[("MinIO :9000")]
-    CA -. OpenFeign .-> ID
+    VE --> VDB[("vendor_db :5445")]
+    PA --> PDB[("payment_db :5446")]
+    NO --> NDB[("notification_db :5447")]
+    CA -. OpenFeign .-> VE
+    VE -. OpenFeign .-> ID
     TE -. OpenFeign .-> ID
     TE -. OpenFeign .-> CA
     OR -. OpenFeign .-> ID
@@ -75,13 +82,17 @@ flowchart LR
 |---|---|---|
 | **Discovery Server** | Spring Cloud Eureka | `8761` |
 | **API Gateway** | Spring Cloud Gateway | `8080` |
-| **Identity Service** | Tài khoản, người dùng, địa chỉ, nhà bán | `8081` |
-| **Catalog Service** | Sản phẩm, hồ sơ đặt hàng, khu vực giao hàng, đánh giá | `8082` |
-| **Tender Service** | Yêu cầu báo giá, lời mời, báo giá, mùa bán hàng | `8083` |
-| **Order Service** | Giỏ hàng, đơn hàng, thanh toán, ký quỹ, mockup, khiếu nại, voucher | `8084` |
+| **Identity Service** | Tài khoản, hồ sơ người dùng, địa chỉ, xác minh NFC | `8081` |
+| **Catalog Service** | Sản phẩm, bậc giá, tồn kho | `8082` |
+| **Quotation Service** | Yêu cầu báo giá, lời mời, báo giá | `8083` |
+| **Order Service** | Giỏ hàng, đơn hàng, maket, tiến độ, khiếu nại, đánh giá, voucher | `8084` |
 | **File Service** | Upload file lên MinIO | `8085` |
+| **Vendor Service** | Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký | `8086` |
+| **Payment Service** | Thanh toán VNPay, sổ giữ tiền, giải ngân cọc, hoàn tiền (chưa có nghiệp vụ) | `8087` |
+| **Notification Service** | Audit log toàn nền tảng (nhận qua RabbitMQ), thông báo trong ứng dụng | `8088` |
+| **RabbitMQ** | Sự kiện giữa các service; UI quản trị http://localhost:15672 | `5672`, `15672` |
 | **Web Portal** | React SPA | `5173` |
-| **PostgreSQL ×4** | Mỗi service một DB | `5441`–`5444` |
+| **PostgreSQL ×7** | Mỗi service một DB | `5441`–`5447` |
 | **MinIO** | API / web console | `9000` / `9001` |
 
 Mọi request đi qua gateway với prefix là tên service, ví dụ `http://localhost:8080/identity-service/api/auth/login`. Khi chạy bằng Docker, các business service không mở port ra máy host. Đường dẫn `/internal/**` chỉ dùng cho các service gọi nhau, gateway luôn chặn.
@@ -117,16 +128,19 @@ docker compose logs -f identity-service   # mã OTP được in ra đây khi MAI
 
 ### Cách B: database chạy Docker, service chạy từ IDE
 ```bash
-docker compose up -d identity-db catalog-db tender-db order-db minio
+docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db notification-db minio rabbitmq
 
 cd api
 ./mvnw -pl discovery-server spring-boot:run   # chạy Eureka trước
 ./mvnw -pl api-gateway spring-boot:run        # các service còn lại, mỗi cái một terminal
 ./mvnw -pl identity-service spring-boot:run
 ./mvnw -pl catalog-service spring-boot:run
-./mvnw -pl tender-service spring-boot:run
+./mvnw -pl quotation-service spring-boot:run
 ./mvnw -pl order-service spring-boot:run
 ./mvnw -pl file-service spring-boot:run
+./mvnw -pl vendor-service spring-boot:run
+./mvnw -pl payment-service spring-boot:run
+./mvnw -pl notification-service spring-boot:run
 ```
 
 Trên Windows `cmd`/PowerShell dùng `mvnw.cmd` thay cho `./mvnw`. Mỗi service tự đọc file `.env` ở thư mục gốc.
@@ -167,12 +181,16 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 │   ├── docs/                   # Ghi chú kỹ thuật backend
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # Gateway, JWT, CORS, Swagger tổng
-│   ├── identity-service/       # Tài khoản, người dùng, địa chỉ, nhà bán
-│   ├── catalog-service/        # Sản phẩm, hồ sơ đặt hàng, khu vực giao hàng, đánh giá
-│   ├── tender-service/         # Yêu cầu báo giá, lời mời, báo giá, mùa bán hàng
-│   ├── order-service/          # Giỏ hàng, đơn hàng, thanh toán, ký quỹ, khiếu nại, voucher
-│   └── file-service/           # Upload file lên MinIO
-│       (mỗi service có Dockerfile riêng, build context = api/)
+│   ├── identity-service/       # Tài khoản, hồ sơ người dùng, địa chỉ, xác minh NFC
+│   ├── catalog-service/        # Sản phẩm, bậc giá, tồn kho
+│   ├── quotation-service/      # Yêu cầu báo giá, lời mời, báo giá
+│   ├── order-service/          # Giỏ hàng, đơn hàng, maket, khiếu nại, đánh giá, voucher
+│   ├── file-service/           # Upload file lên MinIO
+│   ├── vendor-service/         # Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký
+│   ├── payment-service/        # VNPay, giữ tiền, giải ngân, hoàn tiền
+│   ├── notification-service/   # Audit log (RabbitMQ), thông báo
+│   │   (mỗi service có Dockerfile riêng, build context = api/)
+│   └── db/                     # Script dọn dữ liệu dev khi đổi ranh giới service
 ├── web/                        # React SPA (web portal)
 ├── docs/                       # auth.md, ERD (PlantUML), Postman collection
 ├── .githooks/pre-commit        # kiểm tra format/style trước mỗi commit

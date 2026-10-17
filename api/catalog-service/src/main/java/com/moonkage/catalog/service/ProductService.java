@@ -9,17 +9,17 @@ import java.util.List;
 
 public interface ProductService {
 
-    ProductResponse createProduct(String userId, String role, CreateProductRequest request);
+    ProductResponse createProduct(String accountId, String role, CreateProductRequest request);
 
-    ProductResponse updateProduct(String userId, String role, String productId, UpdateProductRequest request);
+    ProductResponse updateProduct(String accountId, String role, String productId, UpdateProductRequest request);
 
-    ProductResponse setVisibility(String userId, String role, String productId, boolean visible);
+    ProductResponse setVisibility(String accountId, String role, String productId, boolean visible);
 
-    void deleteProduct(String userId, String role, String productId);
+    void deleteProduct(String accountId, String role, String productId);
 
-    List<ProductResponse> getMyProducts(String userId, String role, ProductStatus status);
+    List<ProductResponse> getMyProducts(String accountId, String role, ProductStatus status);
 
-    ProductResponse getMyProduct(String userId, String role, String productId);
+    ProductResponse getMyProduct(String accountId, String role, String productId);
 
     PageResponse<ProductResponse> searchOnSale(String vendorId, String keyword, int page, int size);
 

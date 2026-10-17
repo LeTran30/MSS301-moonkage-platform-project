@@ -43,7 +43,9 @@ import org.springframework.web.server.ServerWebExchange;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    /** No longer set; still stripped so a client cannot smuggle it to a service that reads it. */
     static final String USER_ID = "X-User-Id";
+
     static final String ACCOUNT_ID = "X-Account-Id";
     static final String USER_ROLE = "X-User-Role";
 
@@ -73,10 +75,7 @@ public class SecurityConfig {
                         .permitAll()
                         // FR-04: guests browse products before logging in
                         .pathMatchers(
-                                HttpMethod.GET,
-                                "/catalog-service/api/products/**",
-                                "/catalog-service/api/order-profiles/**",
-                                "/catalog-service/api/reviews/**")
+                                HttpMethod.GET, "/catalog-service/api/products/**", "/order-service/api/reviews/**")
                         .permitAll()
                         // shop product management: role SELLER only (catalog-service also checks the vendor is
                         // approved)
@@ -137,8 +136,8 @@ public class SecurityConfig {
         headers.remove(ACCOUNT_ID);
         headers.remove(USER_ROLE);
         if (jwt != null) {
-            headers.set(USER_ID, jwt.getClaimAsString("userId"));
-            headers.set(ACCOUNT_ID, jwt.getClaimAsString("accountId"));
+            // one id per person: the account id, the JWT subject
+            headers.set(ACCOUNT_ID, jwt.getSubject());
             headers.set(USER_ROLE, jwt.getClaimAsString("role"));
         }
         HttpHeaders readOnly = HttpHeaders.readOnlyHttpHeaders(headers);

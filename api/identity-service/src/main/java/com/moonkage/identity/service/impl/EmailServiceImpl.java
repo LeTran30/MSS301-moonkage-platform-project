@@ -1,5 +1,6 @@
 package com.moonkage.identity.service.impl;
 
+import com.moonkage.identity.exception.EmailDeliveryException;
 import com.moonkage.identity.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -57,16 +58,21 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.host:}")
     private String mailHost;
 
+    /** Synchronous so a failure reaches the user, who can then resend the code (FR-01). */
     @Override
-    @Async
     public void sendOtpForVerifyAccount(String email, String name, String otp) {
         send(email, name, otp, "REGISTRATION", "MoonKage - Mã xác nhận tài khoản");
     }
 
+    /** Async and silent on failure: the reply must not reveal whether the email has an account (FR-02). */
     @Override
     @Async
     public void sendOtpForForgotPassword(String email, String name, String otp) {
-        send(email, name, otp, "FORGOT_PASSWORD", "MoonKage - Đặt lại mật khẩu");
+        try {
+            send(email, name, otp, "FORGOT_PASSWORD", "MoonKage - Đặt lại mật khẩu");
+        } catch (EmailDeliveryException e) {
+            // already logged in send()
+        }
     }
 
     private void send(String email, String name, String otp, String template, String subject) {
@@ -93,6 +99,7 @@ public class EmailServiceImpl implements EmailService {
             log.info("{} email sent to {}", template, email);
         } catch (MessagingException | MailException e) {
             log.error("Failed to send {} email to {}: {}", template, email, e.getMessage());
+            throw new EmailDeliveryException();
         }
     }
 
