@@ -88,7 +88,7 @@ Bước 5, 6, 7 không đạt thì tính một lần thử; 5 lần thì tạm k
 
 | Method, đường dẫn | Xác thực | Body | Phản hồi |
 |---|---|---|---|
-| `POST /api/auth/login` | – | `{username, password}` | `LoginResponse` (`docs/auth.md`) |
+| `POST /api/auth/login` | – | `{username, password}` | `LoginResponse` (`project/auth.md`) |
 | `POST /api/nfc-sessions/{sessionId}/card` | Bearer | `{fullName, sex, nationality, placeOfBirth, dateOfIssue, dateOfExpiry, encryptedFields, appVersion}` | `{status, reasonCode, attemptsLeft, lockedUntil}` |
 
 - `sex` gửi dạng `MALE` / `FEMALE`.
