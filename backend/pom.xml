@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>com.bake2b</groupId>
-    <artifactId>bake2b-platform</artifactId>
+    <artifactId>api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Bake2B Platform</name>

@@ -2,13 +2,13 @@
 
 ## 0. Về tài liệu này
 
-> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `Moonkage Context.md`, `Moonkage_User_Stories.md`, `Moonkage_Requirement_v1.5.md`. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
+> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `Moonkage Context Final.md`, `Moonkage User Stories Final.md`, `Moonkage Requirement Final.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
 
 User Stories diễn đạt nhu cầu của từng bên bằng lời của người dùng: ai, muốn gì, để làm gì. Tài liệu đứng giữa Context và Requirement trong chuỗi:
 
 **Context → User Stories → Requirement → Design**
 
-- **Nguồn gốc:** mỗi story phải truy được về `Moonkage Context.md` (vấn đề ở mục 2, giải pháp ở mục 4 và 5, các bên ở mục 6, tình huống ở mục 7, ràng buộc ở mục 9). Tài liệu này chỉ dẫn chiếu lên Context, không dẫn chiếu mã của Requirement hay Design.
+- **Nguồn gốc:** mỗi story phải truy được về `Moonkage Context Final.md` (vấn đề ở mục 2, giải pháp ở mục 4 và 5, các bên ở mục 6, tình huống ở mục 7, ràng buộc ở mục 9). Tài liệu này chỉ dẫn chiếu lên Context, không dẫn chiếu mã của Requirement hay Design.
 - **Truy vết xuống:** mỗi US-xx là gốc của FR-xx cùng số trong Requirement. Requirement viết chi tiết thành Acceptance Criteria, quy tắc nghiệp vụ, dữ liệu và yêu cầu phi chức năng.
 - **Khi các tài liệu nói khác nhau:** khi triển khai thì theo Requirement, vì nó chính xác nhất. Khi sửa thì sửa từ trên xuống: Context trước, rồi User Stories, rồi Requirement. Requirement phát hiện một nhu cầu chưa có story thì thêm story ở đây trước.
 - **Không đưa vào đây:** cách hệ thống kiểm tra, công nghệ, dịch vụ bên ngoài cụ thể, giá trị tạm, phạm vi demo.
@@ -70,12 +70,15 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 
 ### US-04 · Xác minh NFC chủ tài khoản · Must
 **Là** người dùng muốn bán hàng hoặc đặt hàng qua báo giá, **tôi muốn** xác minh danh tính bằng cách đọc chip CCCD qua điện thoại có NFC, **để** tài khoản của tôi được gắn với một con người cụ thể (Context mục 5).
-- Tôi bắt đầu xác minh trên web và hoàn tất bằng điện thoại có NFC; xong thì trang web tự cập nhật và đưa tôi về bước đang làm.
-- Họ tên và số CCCD của tôi được ghi nhận vào tài khoản; tài khoản chuyển sang "đã xác minh".
+- Tôi bắt đầu xác minh trên web và thấy mã QR. Tôi đăng nhập ứng dụng xác minh bằng chính tài khoản đó rồi quét QR; mã QR của tài khoản khác thì không dùng được.
+- Tôi chạm thẻ; điện thoại hiện đầy đủ thông tin trên thẻ, kể cả số định danh, để tôi tự kiểm (Context mục 5).
+- Tôi bấm Lưu thì thông tin mới được gửi lên nền tảng; bấm Hủy thì không gửi gì. Xong thì trang web tự cập nhật và đưa tôi về bước đang làm.
+- Nền tảng chỉ giữ họ tên, giới tính, ngày sinh, quốc tịch và số định danh của tôi; tài khoản chuyển sang "đã xác minh". Các thông tin khác trên thẻ không được giữ lại.
+- Số định danh, ngày sinh và nơi thường trú của tôi được giữ kín khi gửi đi và khi lưu (Context mục 9). Ngoài màn xác nhận trên điện thoại của tôi, số định danh không hiển thị đầy đủ ở bất kỳ đâu.
+- CCCD đã hết hạn thì bị từ chối (Context mục 5).
 - Một CCCD chỉ gắn với một tài khoản. CCCD đã gắn với tài khoản khác thì bị từ chối kèm lý do.
-- Thẻ đọc không được hoặc không đúng loại thì tôi được báo và thử lại; thử sai quá nhiều lần thì việc xác minh bị tạm khóa một thời gian.
+- Thẻ đọc không được, không đúng loại hoặc sai nội dung thì tôi được báo và thử lại; thử sai quá nhiều lần thì việc xác minh bị tạm khóa một thời gian.
 - Điện thoại không có NFC thì tôi được báo và gợi ý dùng máy khác. Không có cách xác minh thay thế; tôi vẫn mua ngay bình thường (Context mục 5).
-- Số CCCD của tôi không hiển thị đầy đủ ở bất kỳ đâu, vì đây là dữ liệu cá nhân (Context mục 9).
 - Thẻ là của tôi, có trước khi tôi dùng nền tảng; nền tảng không cấp thẻ.
 - Trong dự án, chip CCCD được mô phỏng bằng thẻ NFC chứa dữ liệu mẫu và không xác thực được (Context mục 9).
 
@@ -250,6 +253,7 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 **Là** người mua có đăng ký kinh doanh, **tôi muốn** khai hồ sơ người bán bằng chính tài khoản của mình, **để** được bán trên nền tảng.
 - Tôi phải xác minh NFC trước khi khai hồ sơ (US-04).
 - Hồ sơ gồm tên đơn vị, loại hình (hộ kinh doanh, doanh nghiệp tư nhân hoặc công ty), mã số thuế, địa chỉ trụ sở, họ tên và số định danh cá nhân của chủ hộ / chủ doanh nghiệp tư nhân / người đại diện theo pháp luật như ghi trên giấy chứng nhận đăng ký, file giấy chứng nhận đăng ký, giấy tờ an toàn thực phẩm, tài khoản ngân hàng đứng tên đơn vị.
+- Họ tên của chủ hộ / chủ doanh nghiệp tư nhân / người đại diện tôi nhập không dấu, cùng số định danh, để nền tảng đối chiếu với thông tin trên CCCD đã xác minh của tôi.
 - Nếu đơn vị là hộ kinh doanh hoặc doanh nghiệp tư nhân, tôi phải chính là chủ: số định danh tôi khai phải trùng với số CCCD đã ghi nhận khi tôi xác minh NFC, nếu không thì không nộp được hồ sơ (Context mục 5).
 - Nếu đơn vị là công ty, tôi không bắt buộc là người đại diện theo pháp luật; sau khi nộp, nền tảng sẽ liên hệ làm việc trực tiếp và ký thỏa thuận hợp tác do người đại diện ký, ghi rõ tài khoản của tôi làm chủ (Context mục 5).
 - Tôi khai nguồn hàng: tự sản xuất, bán lại, hoặc cả hai.
@@ -394,7 +398,7 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 ### US-45 · Duyệt hồ sơ người bán · Must
 **Là** quản trị, **tôi muốn** xem và duyệt hồ sơ người bán, **để** chỉ đơn vị hợp lệ mới được bán.
 - Tôi xem được giấy chứng nhận đăng ký, giấy tờ an toàn thực phẩm, tài khoản ngân hàng, kết quả xác minh NFC của chủ tài khoản, và thông tin chủ hộ / chủ doanh nghiệp tư nhân / người đại diện đã khai. Số CCCD và số định danh chỉ hiện dạng đã che.
-- Tôi thấy kết quả so số định danh đã khai với CCCD đã xác minh của chủ tài khoản. Với công ty, không trùng là bình thường khi chủ tài khoản không phải người đại diện.
+- Tôi thấy kết quả so số định danh và họ tên đã khai với thông tin CCCD đã xác minh của chủ tài khoản. Với công ty, không trùng là bình thường khi chủ tài khoản không phải người đại diện.
 - Trước khi duyệt, tôi xác nhận đã đối chiếu thông tin đã khai với file giấy chứng nhận; với doanh nghiệp tư nhân và công ty, xác nhận thêm đã tra cứu mã số trên Cổng thông tin quốc gia về đăng ký doanh nghiệp. Việc tra cứu làm thủ công (Context mục 9).
 - Với công ty, tôi chỉ duyệt được khi đã ghi nhận buổi làm việc trực tiếp và có file thỏa thuận hợp tác đã ký, ghi rõ tài khoản làm chủ (Context mục 5).
 - Tôi duyệt, yêu cầu bổ sung, hoặc từ chối; yêu cầu bổ sung và từ chối bắt buộc kèm lý do.

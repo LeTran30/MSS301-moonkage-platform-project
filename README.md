@@ -3,9 +3,11 @@
 > Nền tảng B2B2C bánh trung thu: kết nối doanh nghiệp mua quà với các nhà bán bánh qua quy trình đấu thầu, đặt hàng và theo dõi sản xuất. Kiến trúc microservices.
 
 [![Code quality](https://github.com/LeTran30/MSS301-moonkage-platform-project/actions/workflows/code-quality.yml/badge.svg)](https://github.com/LeTran30/MSS301-moonkage-platform-project/actions/workflows/code-quality.yml)
+[![Web quality](https://github.com/LeTran30/MSS301-moonkage-platform-project/actions/workflows/web-quality.yml/badge.svg)](https://github.com/LeTran30/MSS301-moonkage-platform-project/actions/workflows/web-quality.yml)
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-6DB33F)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
 [📖 API Docs (Swagger, chạy local)](http://localhost:8080/swagger-ui.html) · [🔐 Tài liệu xác thực](docs/auth.md) · [🐛 Báo lỗi](https://github.com/LeTran30/MSS301-moonkage-platform-project/issues)
 
@@ -131,7 +133,7 @@ Trên Windows `cmd`/PowerShell dùng `mvnw.cmd` thay cho `./mvnw`. Mỗi service
 
 ### Frontend
 ```bash
-cd frontend/web-portal
+cd web
 npm install
 npm run dev        # http://localhost:5173
 ```
@@ -171,11 +173,10 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 │   ├── order-service/          # Giỏ hàng, đơn hàng, thanh toán, ký quỹ, khiếu nại, voucher
 │   └── file-service/           # Upload file lên MinIO
 │       (mỗi service có Dockerfile riêng, build context = backend/)
-├── frontend/
-│   └── web-portal/             # React SPA
+├── web/                        # React SPA (web portal)
 ├── docs/                       # auth.md, ERD (PlantUML), Postman collection
 ├── .githooks/pre-commit        # kiểm tra format/style trước mỗi commit
-├── .github/workflows/          # CI: Code quality
+├── .github/workflows/          # CI: Code quality (backend), Web quality (web)
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -214,7 +215,7 @@ cd backend
 ```
 
 ```bash
-cd frontend/web-portal
+cd web
 npm run lint            # oxlint
 npm run build           # type-check + build
 ```
@@ -223,6 +224,7 @@ Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-c
 
 ## CI/CD
 - Workflow [`code-quality.yml`](.github/workflows/code-quality.yml) chạy `./mvnw clean verify` trên JDK 21 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `backend/`.
+- Workflow [`web-quality.yml`](.github/workflows/web-quality.yml) chạy `npm ci`, `oxlint --deny-warnings` và `npm run build` (type-check + build) trên Node 24 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `web/`.
 - Chưa có môi trường deploy, hệ thống chạy local bằng Docker Compose.
 
 ## Roadmap
@@ -243,4 +245,4 @@ Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-c
 4. Mở Pull Request, CI phải pass trước khi merge
 
 ## License
-Dự án học tập cho môn MSS301, Đại học FPT, Fall 2026. Chưa có giấy phép mã nguồn mở.
+Dự án học tập cho môn MSS301, Đại học FPT, Fall 2026. Phát hành theo giấy phép [MIT](LICENSE), © 2026 The Moonkage Team.
