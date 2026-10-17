@@ -68,7 +68,7 @@ flowchart LR
     OR -. OpenFeign .-> ID
     OR -. OpenFeign .-> CA
     OR -. OpenFeign .-> TE
-    EU["Eureka :8761"] -. service discovery .- GW
+    EU["Eureka :8761"] -.-|service discovery| GW
 ```
 
 | Thành phần | Công nghệ | Port |
@@ -119,7 +119,7 @@ docker compose logs -f identity-service   # mã OTP được in ra đây khi MAI
 ```bash
 docker compose up -d identity-db catalog-db tender-db order-db minio
 
-cd backend
+cd api
 ./mvnw -pl discovery-server spring-boot:run   # chạy Eureka trước
 ./mvnw -pl api-gateway spring-boot:run        # các service còn lại, mỗi cái một terminal
 ./mvnw -pl identity-service spring-boot:run
@@ -160,7 +160,7 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 
 ## Cấu trúc thư mục
 ```
-├── backend/
+├── api/
 │   ├── pom.xml                 # Parent POM (Java 21, Spotless, Checkstyle, Error Prone)
 │   ├── mvnw, mvnw.cmd          # Maven wrapper
 │   ├── config/checkstyle/      # Luật Checkstyle
@@ -172,7 +172,7 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 │   ├── tender-service/         # Yêu cầu báo giá, lời mời, báo giá, mùa bán hàng
 │   ├── order-service/          # Giỏ hàng, đơn hàng, thanh toán, ký quỹ, khiếu nại, voucher
 │   └── file-service/           # Upload file lên MinIO
-│       (mỗi service có Dockerfile riêng, build context = backend/)
+│       (mỗi service có Dockerfile riêng, build context = api/)
 ├── web/                        # React SPA (web portal)
 ├── docs/                       # auth.md, ERD (PlantUML), Postman collection
 ├── .githooks/pre-commit        # kiểm tra format/style trước mỗi commit
@@ -208,7 +208,7 @@ Gọi qua gateway `http://localhost:8080/<service>/...`. Một số endpoint ch�
 
 ## Testing & chất lượng code
 ```bash
-cd backend
+cd api
 ./mvnw spotless:apply   # tự format trước khi commit
 ./mvnw test             # chỉ chạy test
 ./mvnw clean verify     # format + Checkstyle + Error Prone + test, giống CI
@@ -220,10 +220,10 @@ npm run lint            # oxlint
 npm run build           # type-check + build
 ```
 
-Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-commit` kiểm tra trước khi commit. Chi tiết: [`backend/docs/t0-t1-automation.md`](backend/docs/t0-t1-automation.md).
+Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-commit` kiểm tra trước khi commit. Chi tiết: [`api`](api/docs/t0-t1-automation.md).
 
 ## CI/CD
-- Workflow [`code-quality.yml`](.github/workflows/code-quality.yml) chạy `./mvnw clean verify` trên JDK 21 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `backend/`.
+- Workflow [`code-quality.yml`](.github/workflows/code-quality.yml) chạy `./mvnw clean verify` trên JDK 21 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `api`.
 - Workflow [`web-quality.yml`](.github/workflows/web-quality.yml) chạy `npm ci`, `oxlint --deny-warnings` và `npm run build` (type-check + build) trên Node 24 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `web/`.
 - Chưa có môi trường deploy, hệ thống chạy local bằng Docker Compose.
 
@@ -240,7 +240,7 @@ Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-c
 
 ## Đóng góp
 1. Tạo nhánh từ `develop`: `git checkout -b feature/ten-tinh-nang`
-2. Chạy `./mvnw spotless:apply` và `./mvnw clean verify` trong `backend/` trước khi commit
+2. Chạy `./mvnw spotless:apply` và `./mvnw clean verify` trong `api` trước khi commit
 3. Commit theo [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`, `docs:`...)
 4. Mở Pull Request, CI phải pass trước khi merge
 

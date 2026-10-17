@@ -6,14 +6,14 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 staged="$(git diff --cached --name-only --diff-filter=ACMR)"
 
-# Backend: only when a .java / pom.xml file is staged
-if grep -qE '^backend/.*(\.java|pom\.xml)$' <<<"$staged"; then
-  cd "$root/backend"
+# API: only when a .java / pom.xml file is staged
+if grep -qE '^api/.*(\.java|pom\.xml)$' <<<"$staged"; then
+  cd "$root/api"
   echo "▶ Checking format (Spotless) and Checkstyle..."
   if ! ./mvnw -q -B spotless:check checkstyle:check; then
     echo ""
     echo "✖ Commit blocked."
-    echo "  - Format errors:     cd backend && ./mvnw spotless:apply, then git add again."
+    echo "  - Format errors:     cd api && ./mvnw spotless:apply, then git add again."
     echo "  - Checkstyle errors: fix them as reported above."
     exit 1
   fi
