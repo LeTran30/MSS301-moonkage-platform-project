@@ -1,14 +1,14 @@
 # =============================================
-# Bake2B Platform — Comprehensive .gitignore
+# Moonkage Platform — Comprehensive .gitignore
 # =============================================
 
 # ── Java / Maven ──
 target/
-!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 *.class
 *.jar
+!**/.mvn/wrapper/maven-wrapper.jar
 *.war
 *.ear
 *.log
@@ -70,9 +70,6 @@ docker-compose.override.yml
 ehthumbs.db
 Thumbs.db
 Desktop.ini
-
-# ── Agent Config (keep tracked) ──
-# .agent/ is intentionally tracked
 
 # ── Misc ──
 *.swp

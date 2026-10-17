@@ -2,7 +2,7 @@
 
 ## 0. Về tài liệu này
 
-> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `Moonkage Context.md`, `Moonkage_User_Stories.md`, `Moonkage_Requirement_v1.5.md`. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
+> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `Moonkage Context Final.md`, `Moonkage User Stories Final.md`, `Moonkage Requirement Final.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
 
 ### Mục đích
 
@@ -279,9 +279,12 @@ Phía bán   Tài khoản ── làm chủ ──▶ Người bán (Shop, hồ 
 
 ### Xác minh NFC
 
-Xác minh NFC gắn tài khoản với một con người cụ thể, qua họ tên và số CCCD đọc từ chip trên thẻ CCCD. Ngoài đời, việc này giống như một bên ghi lại giấy tờ tùy thân của bên kia trước khi giao hay nhận tiền cọc. Với phía bán, nó cho biết ai đứng sau người bán. Với phía mua, nó gắn mỗi tài khoản tham gia giao dịch có cọc với một danh tính.
+Xác minh NFC gắn tài khoản với một con người cụ thể, qua thông tin đọc từ chip trên thẻ CCCD. Ngoài đời, việc này giống như một bên ghi lại giấy tờ tùy thân của bên kia trước khi giao hay nhận tiền cọc. Với phía bán, nó cho biết ai đứng sau người bán. Với phía mua, nó gắn mỗi tài khoản tham gia giao dịch có cọc với một danh tính.
 
-- Người dùng đọc chip CCCD của chính mình bằng điện thoại có NFC. Họ tên và số CCCD được ghi nhận vào tài khoản, và tài khoản chuyển sang "đã xác minh".
+- Người dùng đăng nhập ứng dụng xác minh bằng tài khoản của mình, rồi đọc chip CCCD của chính mình bằng điện thoại có NFC.
+- Thông tin trên thẻ hiện đầy đủ trên điện thoại để người dùng tự kiểm. Người dùng đồng ý thì thông tin mới được gửi lên nền tảng; không đồng ý thì không gửi gì.
+- Nền tảng chỉ giữ những thông tin cần để xác định một con người: họ tên, giới tính, ngày sinh, quốc tịch và số định danh cá nhân. Các thông tin khác trên thẻ không được giữ lại. Tài khoản chuyển sang "đã xác minh".
+- CCCD đã hết hạn thì không dùng để xác minh được, như ngoài đời giấy tờ hết hạn không còn giá trị.
 - Một CCCD chỉ gắn với một tài khoản, để một số CCCD không dùng cho nhiều tài khoản.
 - Xác minh NFC chỉ gắn tài khoản với một con người. Nó không chứng minh người đó có quyền đại diện cho doanh nghiệp ghi trên hóa đơn.
 - Trong dự án, chip CCCD được mô phỏng và không xác thực được (mục 9).
@@ -339,7 +342,7 @@ Lý do tách hai luồng: với chủ thể không có tư cách pháp nhân, ng
 | Mức | Kiểm chứng | Mở khóa |
 | --- | --- | --- |
 | Tài khoản | Xác nhận email hoặc số điện thoại | Mua ngay; yêu cầu xuất hóa đơn doanh nghiệp khi mua ngay |
-| Xác minh NFC | Đọc chip CCCD bằng điện thoại có NFC; ghi nhận họ tên và số CCCD vào tài khoản; một CCCD một tài khoản | Đặt hàng qua báo giá (gửi yêu cầu trực tiếp, yêu cầu mở, đặt lại); khai hồ sơ người bán |
+| Xác minh NFC | Đọc chip CCCD bằng điện thoại có NFC, người dùng xác nhận; CCCD còn hạn; ghi nhận họ tên, giới tính, ngày sinh, quốc tịch, số định danh vào tài khoản; một CCCD một tài khoản | Đặt hàng qua báo giá (gửi yêu cầu trực tiếp, yêu cầu mở, đặt lại); khai hồ sơ người bán |
 | Người bán | Quản trị duyệt giấy chứng nhận đăng ký, giấy tờ an toàn thực phẩm, tài khoản ngân hàng đứng tên đơn vị. Hộ kinh doanh, doanh nghiệp tư nhân: số định danh của chủ trên giấy trùng số CCCD đã ghi nhận của chủ tài khoản. Công ty: làm việc trực tiếp và có thỏa thuận hợp tác do người đại diện theo pháp luật ký | Mở Shop, nhận đặt hàng |
 
 Kênh đặt hàng không phân biệt người mua là cá nhân hay doanh nghiệp. Điều kiện để đặt hàng là tài khoản đã xác minh NFC, số lượng tối thiểu của người bán và tiền cọc. Lý do thêm xác minh NFC: đơn đặt hàng có tiền cọc được giữ và một phần được giải ngân trước khi giao, nên mỗi tài khoản tham gia cần gắn với một số CCCD duy nhất.
@@ -400,7 +403,7 @@ Các ràng buộc dưới đây do thị trường, pháp luật hoặc điều 
 - Bán thực phẩm đòi hỏi đăng ký kinh doanh, điều kiện an toàn thực phẩm và lập hóa đơn, nên chỉ đơn vị có đăng ký kinh doanh được bán (mục 4).
 - Lần bán nào cũng chịu thuế giá trị gia tăng và có hóa đơn do người bán lập (mục 3).
 - Hộ kinh doanh và doanh nghiệp tư nhân không có tư cách pháp nhân; công ty là pháp nhân. Điều này quyết định cách xác minh người bán (mục 3, mục 5).
-- Họ tên, số CCCD, số định danh, giấy tờ pháp lý và tài khoản ngân hàng là dữ liệu cá nhân. Pháp luật về bảo vệ dữ liệu cá nhân buộc nền tảng chỉ thu thập phần cần dùng, bảo vệ dữ liệu đó và không để lộ ra ngoài người có quyền xem.
+- Họ tên, số CCCD, số định danh, giấy tờ pháp lý và tài khoản ngân hàng là dữ liệu cá nhân. Pháp luật về bảo vệ dữ liệu cá nhân buộc nền tảng chỉ thu thập phần cần dùng, bảo vệ dữ liệu đó và không để lộ ra ngoài người có quyền xem. Số định danh, ngày sinh và nơi thường trú là những thông tin cần giữ kín nhất, cả khi truyền đi và khi lưu.
 
 ### Điều kiện của dự án
 
@@ -483,5 +486,5 @@ Tài liệu này chỉ nêu câu hỏi. Câu trả lời tạm và trạng thái
 | Vùng giao hàng | Các khu vực người bán khai giao được |
 | Phí giao | Khoản người mua trả cho việc giao một đơn: trong vùng giao của người bán thì theo mức người bán khai; ngoài vùng thì theo bảng phí liên tỉnh; đơn đặt hàng thì theo báo giá |
 | Giao nội thành / giao toàn quốc | Nhãn giao của sản phẩm trong Shop; "toàn quốc" chỉ cho sản phẩm đạt tiêu chuẩn đóng gói |
-| Xác minh NFC | Ghi nhận họ tên và số CCCD của chủ tài khoản bằng cách đọc chip CCCD qua điện thoại có NFC |
+| Xác minh NFC | Ghi nhận họ tên, giới tính, ngày sinh, quốc tịch và số định danh của chủ tài khoản bằng cách đọc chip CCCD qua điện thoại có NFC, sau khi người dùng tự kiểm và đồng ý |
 | Tự giao dịch | Tài khoản mua chính là tài khoản chủ của người bán; bị cấm |
