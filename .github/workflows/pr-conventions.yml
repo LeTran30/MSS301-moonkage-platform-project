@@ -29,8 +29,8 @@ jobs:
             status=1
           fi
 
-          # §16: develop is checked above; Dependabot cannot change its prefix
-          if [[ "$BRANCH" != develop && "$BRANCH" != dependabot/* && ! "$BRANCH" =~ $branch_re ]]; then
+          # §16: develop is checked above
+          if [[ "$BRANCH" != develop && ! "$BRANCH" =~ $branch_re ]]; then
             echo "::error::Branch '$BRANCH' is invalid. Expected <type>/<mo-ta>, e.g. feat/tao-bao-gia (CONTRIBUTING §16)."
             status=1
           fi

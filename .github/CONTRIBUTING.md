@@ -206,8 +206,6 @@ cd web && npm run lint -- --deny-warnings && npm run build   # Web
 
 **Mobile:** có `mobile/analysis_options.yaml` để IDE cảnh báo, nhưng **chưa có hook hay CI**. Tự chạy `flutter analyze` trước khi push.
 
-**Dependencies:** Dependabot (`.github/dependabot.yml`) mở PR cập nhật minor/patch mỗi thứ Hai. Đây là đề xuất, không chặn merge.
-
 Maven chạy các công cụ theo thứ tự từ rẻ đến đắt, nên lỗi đơn giản được báo trong vài giây:
 
 ```
@@ -461,7 +459,7 @@ Không có luồng hotfix riêng. Lỗi trên `main` được sửa như mọi l
 
 **Không hợp lệ:** `Feat/TaoBaoGia`, `fix_bug`, `minh-test`, `feature/nfc` (`feature` không phải type)
 
-CI kiểm tra bằng regex `^(feat|fix|refactor|docs|test|chore|ci|perf)/[a-z0-9._-]+$`. Nhánh `dependabot/...` được miễn.
+CI kiểm tra bằng regex `^(feat|fix|refactor|docs|test|chore|ci|perf)/[a-z0-9._-]+$`.
 
 ### 17. Commit message
 
