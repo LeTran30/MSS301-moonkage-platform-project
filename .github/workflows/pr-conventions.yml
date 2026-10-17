@@ -1,0 +1,45 @@
+# Remote conventions (CONTRIBUTING §14–§17): PR direction, branch name, PR title.
+# Squash merge uses the PR title as the commit on develop, so the title must follow Conventional Commits.
+name: PR conventions
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # Values come in through env, never ${{ }} inside the script, so a crafted title cannot inject shell.
+      - name: Check PR direction, branch name and PR title
+        env:
+          BRANCH: ${{ github.head_ref }}
+          BASE: ${{ github.base_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          status=0
+          branch_re='^(feat|fix|refactor|docs|test|chore|ci|perf)/[a-z0-9._-]+$'
+          title_re='^(feat|fix|refactor|docs|test|chore|ci|perf|style)(\([a-z0-9-]+\))?!?: .+'
+
+          # §15: work → develop, only develop → main (release)
+          if [[ "$BASE" == main && "$BRANCH" != develop ]]; then
+            echo "::error::Only develop may target main (release). Open this PR into develop instead (CONTRIBUTING §15)."
+            status=1
+          fi
+
+          # §16: develop is checked above; Dependabot cannot change its prefix
+          if [[ "$BRANCH" != develop && "$BRANCH" != dependabot/* && ! "$BRANCH" =~ $branch_re ]]; then
+            echo "::error::Branch '$BRANCH' is invalid. Expected <type>/<mo-ta>, e.g. feat/tao-bao-gia (CONTRIBUTING §16)."
+            status=1
+          fi
+
+          # §17
+          if [[ ! "$TITLE" =~ $title_re ]]; then
+            echo "::error::PR title '$TITLE' is not Conventional Commits. Example: fix(order): sửa lỗi làm tròn tiền (CONTRIBUTING §17)."
+            status=1
+          fi
+
+          [[ $status -eq 0 ]] && echo "✔ '$BRANCH' → '$BASE' with title '$TITLE' follows the conventions"
+          exit $status

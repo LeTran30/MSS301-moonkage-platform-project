@@ -1,0 +1,9 @@
+#!/bin/sh
+first_line=$(head -n1 "$1")
+case "$first_line" in Merge*|Revert*|fixup!*|squash!*) exit 0 ;; esac
+pattern='^(feat|fix|chore|docs|refactor|test|perf|ci|style)(\([a-z0-9-]+\))?!?: .+'
+if ! echo "$first_line" | grep -Eq "$pattern"; then
+  echo "❌ Commit message không đúng Conventional Commits: $first_line"
+  echo "   Ví dụ: fix(auth): sửa lỗi đăng nhập"
+  exit 1
+fi
