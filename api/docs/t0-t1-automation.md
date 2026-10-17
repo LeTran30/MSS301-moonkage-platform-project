@@ -23,7 +23,7 @@ Bộ mẫu viết cho project **một module**, git root trùng Maven root. Repo
 
 | Repo này | Hệ quả |
 |---|---|
-| Git root là thư mục repo, Maven root là `backend/` (7 module) | Hook và CI đặt ở git root nhưng phải chạy Maven trong `backend/`. Đường dẫn Checkstyle tương đối sẽ không tìm thấy từ submodule. |
+| Git root là thư mục repo, Maven root là `..` (7 module) | Hook và CI đặt ở git root nhưng phải chạy Maven trong `..`. Đường dẫn Checkstyle tương đối sẽ không tìm thấy từ submodule. |
 | Đang dùng Java 17, Dockerfile dùng `temurin-17` | Checkstyle 13.7 và Error Prone 2.50 yêu cầu JDK 21+ → **nâng toàn bộ lên Java 21**. |
 | 4 service dùng Lombok | `annotationProcessorPaths` tắt việc tự tìm processor → phải khai báo Lombok. |
 | Chưa có `mvnw`, máy chưa cài `mvn`/`jq` | Hook và CI gọi `./mvnw` → phải tạo Maven wrapper. |
@@ -33,20 +33,20 @@ Bộ mẫu viết cho project **một module**, git root trùng Maven root. Repo
 ### 3.1. Tạo branch và Maven wrapper
 - Tạo branch `chore/t0-t1-automation` từ `develop`.
 - Dùng Maven 3.9.16 có sẵn trong `~/.m2/wrapper/dists` để sinh wrapper:
-  `backend/mvnw`, `backend/mvnw.cmd`, `backend/.mvn/wrapper/maven-wrapper.properties`.
+  `..`, `..`, `..`.
 
 ### 3.2. Chép file cấu hình
 | File | Vị trí | Ghi chú |
 |---|---|---|
-| `jvm.config` | `backend/.mvn/` | Bắt buộc cho Error Prone; phải nằm nơi chạy `mvn`. |
-| `checkstyle.xml` | `backend/config/checkstyle/` | |
+| `jvm.config` | `..` | Bắt buộc cho Error Prone; phải nằm nơi chạy `mvn`. |
+| `checkstyle.xml` | `..` | |
 | `.editorconfig` | gốc repo | Thêm rule `indent_size = 2` cho `js/jsx/ts/tsx/css/html` để không đụng frontend (đang dùng 2 space). |
 | `pre-commit` | `.githooks/` (gốc repo) | Viết lại, xem 3.4. |
 | `code-quality.yml` | `.github/workflows/` (gốc repo) | Viết lại, xem 3.5. |
 
 Không chép `src/` (2 file demo) và hook Claude Code `.claude/settings.json` (cần `jq`, máy chưa có).
 
-### 3.3. Sửa `backend/pom.xml` (parent — 7 module kế thừa)
+### 3.3. Sửa `..` (parent — 7 module kế thừa)
 - `java.version`: `17` → `21`.
 - Thêm `lombok.version = 1.18.46` (mới hơn bản Spring Boot 3.3 quản lý, để chạy được trên JDK 25 ở máy local).
 - Thêm 5 property version công cụ: Spotless 3.7.0, maven-checkstyle-plugin 3.6.0, Checkstyle 13.7.0, Error Prone 2.50.0, maven-compiler-plugin 3.14.0.
@@ -59,12 +59,12 @@ Không chép `src/` (2 file demo) và hook Claude Code `.claude/settings.json` (
     - **Bỏ `<formatAnnotations/>`** — bước này coi `@NotBlank`, `@Size`, `@Email` (Jakarta Validation có target `TYPE_USE`) là type annotation và kéo chúng về cùng dòng với field → vượt 120 ký tự → Checkstyle `LineLength` báo lỗi. Đây là chỗ duy nhất Spotless và Checkstyle "cãi nhau". Palantir đã tự xử lý bố cục annotation nên bỏ bước này không mất gì.
 
 ### 3.4. Git hook `.githooks/pre-commit`
-- Chỉ chạy khi có file `backend/**/*.java` hoặc `backend/**/pom.xml` được stage.
-- `cd` vào `backend/` rồi chạy `./mvnw -q -B spotless:check checkstyle:check`.
+- Chỉ chạy khi có file `..` hoặc `..` được stage.
+- `cd` vào `..` rồi chạy `./mvnw -q -B spotless:check checkstyle:check`.
 - Đã set executable bit trong git (`git add --chmod=+x`) và chạy `git config core.hooksPath .githooks` trên máy này.
 
 ### 3.5. CI `.github/workflows/code-quality.yml`
-- Trigger: pull request và push vào `main`, `develop`, chỉ khi thay đổi `backend/**` hoặc chính file workflow.
+- Trigger: pull request và push vào `main`, `develop`, chỉ khi thay đổi `..` hoặc chính file workflow.
 - `working-directory: backend`, JDK Temurin 21, chạy `./mvnw -B -ntp clean verify`.
 
 ### 3.6. Sửa 7 Dockerfile (gồm `file-service`)
@@ -135,7 +135,7 @@ Kiểm tra nhanh qua gateway (`http://localhost:8080`):
 - [ ] Mỗi thành viên chạy một lần: `git config core.hooksPath .githooks`.
 - [ ] Khi các service hết là stub: nâng `-Xep:UnusedVariable:WARN` lại thành `ERROR`.
 
-## 5. Lệnh hằng ngày (chạy trong `backend/`)
+## 5. Lệnh hằng ngày (chạy trong `..`)
 
 | Việc | Lệnh |
 |---|---|

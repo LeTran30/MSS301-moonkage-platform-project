@@ -78,7 +78,7 @@ Mọi lỗi trả theo cùng một dạng, giống Capstone:
 
 ## Cấu hình (`.env`)
 
-Mọi giá trị cấu hình nằm trong file **`.env` ở thư mục gốc repo**. File này đã có trong `.gitignore` nên không bị commit. `application.yml` chỉ tham chiếu `${VAR}` và không chứa giá trị nào. `DotEnvConfig.loadDotEnv()` trong `main()` của mọi service đi ngược từ thư mục đang chạy lên các thư mục cha để tìm `.env`. Vì vậy chạy từ thư mục module, từ `backend/` hay từ gốc repo đều được. Biến môi trường thật của hệ điều hành được ưu tiên hơn giá trị trong `.env`.
+Mọi giá trị cấu hình nằm trong file **`.env` ở thư mục gốc repo**. File này đã có trong `.gitignore` nên không bị commit. `application.yml` chỉ tham chiếu `${VAR}` và không chứa giá trị nào. `DotEnvConfig.loadDotEnv()` trong `main()` của mọi service đi ngược từ thư mục đang chạy lên các thư mục cha để tìm `.env`. Vì vậy chạy từ thư mục module, từ `../api` hay từ gốc repo đều được. Biến môi trường thật của hệ điều hành được ưu tiên hơn giá trị trong `.env`.
 
 Cách thiết lập cho thành viên mới:
 

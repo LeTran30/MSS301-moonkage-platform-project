@@ -220,10 +220,10 @@ npm run lint            # oxlint
 npm run build           # type-check + build
 ```
 
-Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-commit` kiểm tra trước khi commit. Chi tiết: [`backend/docs/t0-t1-automation.md`](backend/docs/t0-t1-automation.md).
+Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-commit` kiểm tra trước khi commit. Chi tiết: [`api`](api/docs/t0-t1-automation.md).
 
 ## CI/CD
-- Workflow [`code-quality.yml`](.github/workflows/code-quality.yml) chạy `./mvnw clean verify` trên JDK 21 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `backend/`.
+- Workflow [`code-quality.yml`](.github/workflows/code-quality.yml) chạy `./mvnw clean verify` trên JDK 21 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `api`.
 - Workflow [`web-quality.yml`](.github/workflows/web-quality.yml) chạy `npm ci`, `oxlint --deny-warnings` và `npm run build` (type-check + build) trên Node 24 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `web/`.
 - Chưa có môi trường deploy, hệ thống chạy local bằng Docker Compose.
 
@@ -240,7 +240,7 @@ Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-c
 
 ## Đóng góp
 1. Tạo nhánh từ `develop`: `git checkout -b feature/ten-tinh-nang`
-2. Chạy `./mvnw spotless:apply` và `./mvnw clean verify` trong `backend/` trước khi commit
+2. Chạy `./mvnw spotless:apply` và `./mvnw clean verify` trong `api` trước khi commit
 3. Commit theo [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`, `docs:`...)
 4. Mở Pull Request, CI phải pass trước khi merge
 
