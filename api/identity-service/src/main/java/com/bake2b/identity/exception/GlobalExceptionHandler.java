@@ -1,4 +1,4 @@
-package com.bake2b.identity.common.exception;
+package com.bake2b.identity.exception;
 
 import com.bake2b.identity.dto.response.ErrorResponse;
 import io.jsonwebtoken.JwtException;

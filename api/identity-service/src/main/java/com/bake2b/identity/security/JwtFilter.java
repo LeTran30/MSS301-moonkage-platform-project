@@ -1,7 +1,7 @@
 package com.bake2b.identity.security;
 
-import com.bake2b.identity.common.exception.InvalidCredentialsException;
 import com.bake2b.identity.entity.Account;
+import com.bake2b.identity.exception.InvalidCredentialsException;
 import com.bake2b.identity.repository.UserRepository;
 import com.bake2b.identity.service.TokenService;
 import io.jsonwebtoken.ExpiredJwtException;

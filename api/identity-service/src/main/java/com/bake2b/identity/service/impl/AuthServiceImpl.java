@@ -1,8 +1,5 @@
 package com.bake2b.identity.service.impl;
 
-import com.bake2b.identity.common.exception.CustomException;
-import com.bake2b.identity.common.exception.EmailAlreadyExistsException;
-import com.bake2b.identity.common.exception.InvalidCredentialsException;
 import com.bake2b.identity.dto.request.AccountCreateRequest;
 import com.bake2b.identity.dto.request.LoginRequest;
 import com.bake2b.identity.dto.request.VerifyRequest;
@@ -12,6 +9,9 @@ import com.bake2b.identity.entity.Account;
 import com.bake2b.identity.entity.Role;
 import com.bake2b.identity.entity.User;
 import com.bake2b.identity.enums.AccountStatus;
+import com.bake2b.identity.exception.CustomException;
+import com.bake2b.identity.exception.EmailAlreadyExistsException;
+import com.bake2b.identity.exception.InvalidCredentialsException;
 import com.bake2b.identity.repository.AccountRepository;
 import com.bake2b.identity.repository.RoleRepository;
 import com.bake2b.identity.repository.UserRepository;
@@ -179,10 +179,10 @@ public class AuthServiceImpl implements AuthService {
     /** AC-01.3: an email or phone already bound to an account cannot register again. */
     private void validateUniqueness(AccountCreateRequest request) {
         String result = accountRepository.validateAccountUniqueness(request.getEmail(), request.getPhoneNumber());
-        switch (result) {
-            case "EMAIL_EXISTS" -> throw new EmailAlreadyExistsException("Email đã được sử dụng");
-            case "PHONE_EXISTS" -> throw new EmailAlreadyExistsException("Số điện thoại đã được sử dụng");
-            default -> {}
+        if (result.equals("EMAIL_EXISTS")) {
+            throw new EmailAlreadyExistsException("Email đã được sử dụng");
+        } else if (result.equals("PHONE_EXISTS")) {
+            throw new EmailAlreadyExistsException("Số điện thoại đã được sử dụng");
         }
     }
 

@@ -1,21 +1,21 @@
 # =============================================
-# MoonKage / Bake2B - full stack
+# Moonkage - full stack
 #   Everything:          docker compose up -d --build
 #   Only the databases:  docker compose up -d identity-db catalog-db tender-db order-db minio
 #                        (then run the services from the IDE / mvn)
 # Values come from .env in this folder (see .env.example).
 # =============================================
-name: bake2b
+name: moonkage
 
 x-postgres: &postgres
   image: postgres:17-alpine
   restart: unless-stopped
-  networks: [bake2b-network]
+  networks: [moonkage-network]
 
 x-app: &app
   restart: unless-stopped
   env_file: .env
-  networks: [bake2b-network]
+  networks: [moonkage-network]
 
 x-app-env: &app-env
   EUREKA_URL: http://discovery-server:8761/eureka/
@@ -25,7 +25,7 @@ services:
   # ───────────── Databases: one PostgreSQL per service ─────────────
   identity-db:
     <<: *postgres
-    container_name: bake2b-identity-db
+    container_name: moonkage-identity-db
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -40,7 +40,7 @@ services:
 
   catalog-db:
     <<: *postgres
-    container_name: bake2b-catalog-db
+    container_name: moonkage-catalog-db
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -55,7 +55,7 @@ services:
 
   tender-db:
     <<: *postgres
-    container_name: bake2b-tender-db
+    container_name: moonkage-tender-db
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -70,7 +70,7 @@ services:
 
   order-db:
     <<: *postgres
-    container_name: bake2b-order-db
+    container_name: moonkage-order-db
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -86,9 +86,9 @@ services:
   # ───────────── File storage (used only by file-service) ─────────────
   minio:
     image: chainguard/minio:latest
-    container_name: bake2b-minio
+    container_name: moonkage-minio
     restart: unless-stopped
-    networks: [bake2b-network]
+    networks: [moonkage-network]
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -105,7 +105,7 @@ services:
   # ───────────── Infrastructure services ─────────────
   discovery-server:
     <<: *app
-    container_name: bake2b-discovery-server
+    container_name: moonkage-discovery-server
     build: { context: ./api, dockerfile: discovery-server/Dockerfile }
     environment: { TZ: Asia/Ho_Chi_Minh }
     ports: ["8761:8761"]
@@ -117,7 +117,7 @@ services:
 
   api-gateway:
     <<: *app
-    container_name: bake2b-api-gateway
+    container_name: moonkage-api-gateway
     build: { context: ./api, dockerfile: api-gateway/Dockerfile }
     environment: *app-env
     # the only business entry point exposed to the host; other services are reachable only through it
@@ -128,7 +128,7 @@ services:
   # ───────────── Business services (no host ports: go through the gateway) ─────────────
   identity-service:
     <<: *app
-    container_name: bake2b-identity-service
+    container_name: moonkage-identity-service
     build: { context: ./api, dockerfile: identity-service/Dockerfile }
     environment:
       <<: *app-env
@@ -140,7 +140,7 @@ services:
 
   catalog-service:
     <<: *app
-    container_name: bake2b-catalog-service
+    container_name: moonkage-catalog-service
     build: { context: ./api, dockerfile: catalog-service/Dockerfile }
     environment:
       <<: *app-env
@@ -152,7 +152,7 @@ services:
 
   tender-service:
     <<: *app
-    container_name: bake2b-tender-service
+    container_name: moonkage-tender-service
     build: { context: ./api, dockerfile: tender-service/Dockerfile }
     environment:
       <<: *app-env
@@ -164,7 +164,7 @@ services:
 
   order-service:
     <<: *app
-    container_name: bake2b-order-service
+    container_name: moonkage-order-service
     build: { context: ./api, dockerfile: order-service/Dockerfile }
     environment:
       <<: *app-env
@@ -176,7 +176,7 @@ services:
 
   file-service:
     <<: *app
-    container_name: bake2b-file-service
+    container_name: moonkage-file-service
     build: { context: ./api, dockerfile: file-service/Dockerfile }
     environment:
       <<: *app-env
@@ -193,5 +193,5 @@ volumes:
   minio-data:
 
 networks:
-  bake2b-network:
+  moonkage-network:
     driver: bridge
