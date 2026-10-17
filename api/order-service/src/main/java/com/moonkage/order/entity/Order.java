@@ -11,7 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +20,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * One order per vendor; a multi-shop checkout creates several (A-01).
- * Prices, commission and address are copied at creation (BR-19).
+ * Prices, delivery fee and address are copied at creation (BR-19).
  */
 @Entity
 @Table(name = "orders")
@@ -66,9 +65,6 @@ public class Order {
 
     /** CUSTOM_ORDER only: total x deposit rate (AC-19.2). */
     private Long depositAmount;
-
-    @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal commissionRate;
 
     @Column(nullable = false)
     private boolean interprovince;

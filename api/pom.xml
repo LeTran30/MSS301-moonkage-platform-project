@@ -22,9 +22,12 @@
         <module>api-gateway</module>
         <module>identity-service</module>
         <module>catalog-service</module>
-        <module>tender-service</module>
+        <module>quotation-service</module>
         <module>order-service</module>
         <module>file-service</module>
+        <module>vendor-service</module>
+        <module>payment-service</module>
+        <module>notification-service</module>
     </modules>
 
     <properties>

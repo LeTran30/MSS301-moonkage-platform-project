@@ -1,5 +1,6 @@
 package com.moonkage.identity.dto.request;
 
+import com.moonkage.identity.util.PhoneNumbers;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -20,7 +21,7 @@ public class AccountCreateRequest {
     @Email(message = "Email không đúng định dạng")
     private String email;
 
-    @Pattern(regexp = "^(84|0[35789])\\d{8}$", message = "Số điện thoại không hợp lệ")
+    @Pattern(regexp = PhoneNumbers.PATTERN, message = "Số điện thoại không hợp lệ")
     private String phoneNumber;
 
     @NotBlank(message = "Họ tên không được để trống")

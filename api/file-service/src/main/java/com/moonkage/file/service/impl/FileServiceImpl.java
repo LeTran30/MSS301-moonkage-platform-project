@@ -29,7 +29,7 @@ public class FileServiceImpl implements FileService {
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private static final int MAX_FILES = 10;
     private static final int PRESIGNED_MINUTES = 10;
-    /** Object names are folder/userId/fileName. */
+    /** Object names are folder/accountId/fileName. */
     private static final int OBJECT_NAME_PARTS = 3;
     /** Content type comes from the extension, never from the client, so nothing but these types is ever served. */
     private static final Map<String, String> ALLOWED_TYPES = Map.of(
@@ -53,7 +53,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<FileUploadResponse> upload(String userId, FileFolder folder, List<MultipartFile> files) {
+    public List<FileUploadResponse> upload(String accountId, FileFolder folder, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No files provided");
         }
@@ -61,12 +61,12 @@ public class FileServiceImpl implements FileService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At most " + MAX_FILES + " files per request");
         }
         files.forEach(this::validateFile);
-        return files.stream().map(f -> uploadOne(userId, folder, f)).toList();
+        return files.stream().map(f -> uploadOne(accountId, folder, f)).toList();
     }
 
     @Override
-    public void delete(String userId, String url) {
-        String objectName = toOwnedObjectName(userId, null, url);
+    public void delete(String accountId, String url) {
+        String objectName = toOwnedObjectName(accountId, null, url);
         try {
             minioClient.removeObject(RemoveObjectArgs.builder()
                     .bucket(minIOConfig.getBucketName())
@@ -79,8 +79,8 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public String presignedUrl(String userId, String role, String url) {
-        String objectName = toOwnedObjectName(userId, role, url);
+    public String presignedUrl(String accountId, String role, String url) {
+        String objectName = toOwnedObjectName(accountId, role, url);
         if (FileFolder.fromPath(objectName.substring(0, objectName.indexOf('/')))
                 .isPublicRead()) {
             return url;
@@ -98,11 +98,11 @@ public class FileServiceImpl implements FileService {
         }
     }
 
-    private FileUploadResponse uploadOne(String userId, FileFolder folder, MultipartFile file) {
+    private FileUploadResponse uploadOne(String accountId, FileFolder folder, MultipartFile file) {
         String extension = extensionOf(file.getOriginalFilename());
         String contentType = ALLOWED_TYPES.get(extension);
-        // <folder>/<uploader userId>/<uuid>.<ext>: the userId segment is what delete() checks ownership against
-        String objectName = folder.getPath() + "/" + userId + "/" + UUID.randomUUID() + extension;
+        // <folder>/<uploader accountId>/<uuid>.<ext>: the accountId segment is what delete() checks ownership against
+        String objectName = folder.getPath() + "/" + accountId + "/" + UUID.randomUUID() + extension;
         try (InputStream in = file.getInputStream()) {
             minioClient.putObject(PutObjectArgs.builder().bucket(minIOConfig.getBucketName()).object(objectName).stream(
                             in, file.getSize(), -1)
@@ -138,7 +138,7 @@ public class FileServiceImpl implements FileService {
      * Turns a URL returned by upload() into its object name; only the uploader (or an ADMIN, when role is given)
      * may use it.
      */
-    private String toOwnedObjectName(String userId, String role, String url) {
+    private String toOwnedObjectName(String accountId, String role, String url) {
         String base = publicBase();
         if (url == null || !url.startsWith(base)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a file of this service");
@@ -152,7 +152,7 @@ public class FileServiceImpl implements FileService {
                 || objectName.contains("..")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not a file of this service");
         }
-        if (!parts[1].equals(userId) && !"ADMIN".equals(role)) {
+        if (!parts[1].equals(accountId) && !"ADMIN".equals(role)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this file");
         }
         return objectName;

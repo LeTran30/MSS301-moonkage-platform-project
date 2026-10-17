@@ -1,9 +1,9 @@
 package com.moonkage.catalog.dto.client;
 
-/** Mirror of identity-service VendorInternalResponse. */
+/** Mirror of vendor-service VendorResponse. */
 public record VendorInfo(
         String id,
-        String ownerUserId,
+        String ownerAccountId,
         String legalName,
         String status,
         String supplySource,

@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** CUSTOMER, SELLER (owns an approved vendor) or ADMIN. */
+/** CUSTOMER, SELLER (owns an approved vendor, see vendor-service) or ADMIN. */
 @Entity
 @Table(name = "roles")
 @Getter

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/** The gateway sets X-User-Id / X-User-Role from the access token; clients cannot forge them. */
+/** The gateway sets X-Account-Id / X-User-Role from the access token; clients cannot forge them. */
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
@@ -29,25 +29,25 @@ public class FileController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public List<FileUploadResponse> upload(
-            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
             @RequestParam FileFolder folder,
             @RequestPart("files") List<MultipartFile> files) {
-        return fileService.upload(userId, folder, files);
+        return fileService.upload(accountId, folder, files);
     }
 
     @DeleteMapping
     public ResponseEntity<Void> delete(
-            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId, @RequestParam String url) {
-        fileService.delete(userId, url);
+            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId, @RequestParam String url) {
+        fileService.delete(accountId, url);
         return ResponseEntity.noContent().build();
     }
 
     /** Short-lived link to open a private file (owner or ADMIN). Public files return their URL unchanged. */
     @GetMapping("/presigned")
     public Map<String, String> presigned(
-            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
             @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
             @RequestParam String url) {
-        return Map.of("url", fileService.presignedUrl(userId, role, url));
+        return Map.of("url", fileService.presignedUrl(accountId, role, url));
     }
 }

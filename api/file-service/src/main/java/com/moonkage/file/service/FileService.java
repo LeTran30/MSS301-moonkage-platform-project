@@ -7,9 +7,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface FileService {
 
-    List<FileUploadResponse> upload(String userId, FileFolder folder, List<MultipartFile> files);
+    List<FileUploadResponse> upload(String accountId, FileFolder folder, List<MultipartFile> files);
 
-    void delete(String userId, String url);
+    void delete(String accountId, String url);
 
-    String presignedUrl(String userId, String role, String url);
+    String presignedUrl(String accountId, String role, String url);
 }

@@ -1,6 +1,6 @@
 package com.moonkage.catalog.service.impl;
 
-import com.moonkage.catalog.client.IdentityClient;
+import com.moonkage.catalog.client.VendorClient;
 import com.moonkage.catalog.common.exception.CustomException;
 import com.moonkage.catalog.dto.client.VendorInfo;
 import com.moonkage.catalog.dto.request.CreateProductRequest;
@@ -8,20 +8,21 @@ import com.moonkage.catalog.dto.request.PriceTierRequest;
 import com.moonkage.catalog.dto.request.UpdateProductRequest;
 import com.moonkage.catalog.dto.response.PageResponse;
 import com.moonkage.catalog.dto.response.ProductResponse;
-import com.moonkage.catalog.entity.AuditLog;
 import com.moonkage.catalog.entity.Product;
 import com.moonkage.catalog.entity.ProductPriceTier;
 import com.moonkage.catalog.enums.ProductStatus;
-import com.moonkage.catalog.repository.AuditLogRepository;
+import com.moonkage.catalog.messaging.AuditEvent;
 import com.moonkage.catalog.repository.ProductRepository;
 import com.moonkage.catalog.service.ProductService;
 import feign.FeignException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -37,13 +38,13 @@ public class ProductServiceImpl implements ProductService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ProductRepository productRepository;
-    private final AuditLogRepository auditLogRepository;
-    private final IdentityClient identityClient;
+    private final ApplicationEventPublisher eventPublisher;
+    private final VendorClient vendorClient;
 
     @Override
     @Transactional
-    public ProductResponse createProduct(String userId, String role, CreateProductRequest request) {
-        VendorInfo vendor = requireShop(userId, role);
+    public ProductResponse createProduct(String accountId, String role, CreateProductRequest request) {
+        VendorInfo vendor = requireShop(accountId, role);
         requireResaleInfo(vendor, request.getBrand(), request.getOrigin());
         validateTiers(request.getPriceTiers());
 
@@ -70,8 +71,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(String userId, String role, String productId, UpdateProductRequest req) {
-        VendorInfo vendor = requireShop(userId, role);
+    public ProductResponse updateProduct(String accountId, String role, String productId, UpdateProductRequest req) {
+        VendorInfo vendor = requireShop(accountId, role);
         Product product = requireOwnProduct(vendor, productId);
         requireNotRemoved(product);
 
@@ -122,8 +123,8 @@ public class ProductServiceImpl implements ProductService {
         requireResaleInfo(vendor, product.getBrand(), product.getOrigin());
 
         // AC-31.2: paid orders keep their own copied price, so changing it here never touches them
-        audit(userId, "PRODUCT_PRICE_CHANGED", product.getId(), oldPrice, product.getListPrice());
-        audit(userId, "PRODUCT_STOCK_CHANGED", product.getId(), oldStock, product.getStock());
+        audit(accountId, "PRODUCT_PRICE_CHANGED", product.getId(), oldPrice, product.getListPrice());
+        audit(accountId, "PRODUCT_STOCK_CHANGED", product.getId(), oldStock, product.getStock());
 
         // flush now so the response carries the new updatedAt
         return ProductResponse.from(productRepository.saveAndFlush(product));
@@ -131,8 +132,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse setVisibility(String userId, String role, String productId, boolean visible) {
-        VendorInfo vendor = requireShop(userId, role);
+    public ProductResponse setVisibility(String accountId, String role, String productId, boolean visible) {
+        VendorInfo vendor = requireShop(accountId, role);
         Product product = requireOwnProduct(vendor, productId);
         requireNotRemoved(product);
         product.setStatus(visible ? ProductStatus.ON_SALE : ProductStatus.HIDDEN);
@@ -141,8 +142,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void deleteProduct(String userId, String role, String productId) {
-        VendorInfo vendor = requireShop(userId, role);
+    public void deleteProduct(String accountId, String role, String productId) {
+        VendorInfo vendor = requireShop(accountId, role);
         Product product = requireOwnProduct(vendor, productId);
         product.setDeleted(true);
         productRepository.save(product);
@@ -150,8 +151,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> getMyProducts(String userId, String role, ProductStatus status) {
-        VendorInfo vendor = requireShop(userId, role);
+    public List<ProductResponse> getMyProducts(String accountId, String role, ProductStatus status) {
+        VendorInfo vendor = requireShop(accountId, role);
         List<Product> products = status == null
                 ? productRepository.findByVendorIdAndDeletedFalseOrderByCreatedAtDesc(vendor.id())
                 : productRepository.findByVendorIdAndStatusAndDeletedFalseOrderByCreatedAtDesc(vendor.id(), status);
@@ -160,8 +161,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductResponse getMyProduct(String userId, String role, String productId) {
-        VendorInfo vendor = requireShop(userId, role);
+    public ProductResponse getMyProduct(String accountId, String role, String productId) {
+        VendorInfo vendor = requireShop(accountId, role);
         return ProductResponse.from(requireOwnProduct(vendor, productId));
     }
 
@@ -187,13 +188,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /** Role SELLER (from the token) plus an APPROVED vendor that opened a Shop (FR-27, FR-30). */
-    private VendorInfo requireShop(String userId, String role) {
+    private VendorInfo requireShop(String accountId, String role) {
         if (!SELLER.equals(role)) {
             throw new CustomException(HttpStatus.FORBIDDEN, "Chỉ người bán mới được quản lý sản phẩm");
         }
         VendorInfo vendor;
         try {
-            vendor = identityClient.getVendorByOwnerUserId(userId);
+            vendor = vendorClient.getVendorByOwnerAccountId(accountId);
         } catch (FeignException.NotFound e) {
             throw new CustomException(HttpStatus.FORBIDDEN, "Tài khoản chưa đăng ký người bán");
         }
@@ -259,18 +260,21 @@ public class ProductServiceImpl implements ProductService {
                 });
     }
 
-    private void audit(String userId, String action, String productId, Object before, Object after) {
+    private void audit(String accountId, String action, String productId, Object before, Object after) {
         if (Objects.equals(before, after)) {
             return;
         }
-        AuditLog log = new AuditLog();
-        log.setActorUserId(userId);
-        log.setAction(action);
-        log.setTargetType("PRODUCT");
-        log.setTargetId(productId);
-        log.setBeforeValue(String.valueOf(before));
-        log.setAfterValue(String.valueOf(after));
-        auditLogRepository.save(log);
+        // NFR-07: stored by notification-service; AuditPublisher sends it once this transaction commits
+        eventPublisher.publishEvent(new AuditEvent(
+                "catalog-service",
+                accountId,
+                action,
+                "PRODUCT",
+                productId,
+                String.valueOf(before),
+                String.valueOf(after),
+                null,
+                Instant.now()));
     }
 
     private static String trimToNull(String value) {

@@ -17,7 +17,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Saved delivery address of an account (FR-03). At most one default per user.
+ * Saved delivery address of an account (FR-03). At most one default per account.
  */
 @Entity
 @Table(name = "addresses")
@@ -31,8 +31,8 @@ public class Address {
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 
     @Column(nullable = false)
     private String detail;

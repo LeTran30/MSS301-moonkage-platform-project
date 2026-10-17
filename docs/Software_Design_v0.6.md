@@ -135,7 +135,7 @@ flowchart TB
 
 | Service | Sở hữu thực thể | FR | Database |
 |---|---|---|---|
-| identity-service | Account, Address, NfcSession; khóa băm số CCCD (pepper) | FR-01, 02, 03, 04; so số định danh cho FR-26 (BR-27); gửi email xác nhận và đặt lại mật khẩu (A-17) | `identity_db` |
+| identity-service | Account (lưu thành `accounts`, `user_profiles`, `legal_profiles`, D-21), Address, NfcSession; khóa băm số CCCD (pepper) | FR-01, 02, 03, 04; so số định danh cho FR-26 (BR-27); gửi email xác nhận và đặt lại mật khẩu (A-17) | `identity_db` |
 | vendor-service | Vendor (gồm thông tin người đại diện, owner_check, onboarding_meeting, phí giao nội thành, phí đăng ký mở bán), OrderProfile, RegistrationFeeConfig | FR-26, 27, 28, 35, 45, 53; BR-26, BR-27, BR-31; khóa người bán (FR-46) | `vendor_db` |
 | catalog-service | Product, StockReservation, bậc giá, InterprovinceFee | FR-05, 06, 07, 29, 30, 31, 33, 34, 52; giữ tồn kho (BR-28); tính phí giao (BR-30); gỡ sản phẩm (FR-46) | `catalog_db` |
 | quotation-service | Request, Quote | FR-14, 15, 16, 17, 36, 38; phía báo giá của FR-19; hoãn: FR-18, 23, 37 | `quotation_db` |
@@ -696,6 +696,7 @@ moonkage/
 | D-18 | **Đã chốt (v0.6).** Đường dẫn công khai theo tài nguyên: `/api/<tài-nguyên>/...`, không tên service, không số phiên bản; gateway định tuyến theo bảng ở mục 5.1. Thao tác theo vai dưới `/api/seller/...`, `/api/admin/...`; nội bộ dưới `/internal/...`. JSON `camelCase` cho cả API nội bộ. Thay `/<tên-service>/api/...` của backend hiện có (`docs/auth.md`) và `/api/<miền>/...`, `snake_case` của v0.5. Code gateway, controller và app mobile cần sửa theo | Toàn bộ API |
 | D-19 | **Đã chốt vai; HS256 còn đề xuất.** Hai vai `MEMBER`, `ADMIN` (thay `CUSTOMER` của `docs/auth.md` và `USER` của v0.5); chủ người bán không phải vai. JWT HS256 theo backend hiện có, đổi lại mọi service kiểm token phải giữ cùng khóa bí mật | Mục 8 |
 | D-20 | **Đã chốt (v0.6).** Xác minh NFC chỉ có một endpoint gửi thẻ, gọi sau khi người dùng xác nhận trên điện thoại; máy chủ không lưu tạm dữ liệu thẻ. App mobile cần bỏ hai endpoint `confirm`, `DELETE card` và bước lưu tạm đang có | FR-04 (AC-04.4, AC-04.5) |
+| D-21 | **Đã chốt.** Thực thể logic `Account` (Requirement 7.1) lưu thành ba bảng, cùng khóa chính `account_id`: `accounts` (đăng nhập: email, số điện thoại, mật khẩu, trạng thái, vai, trạng thái khóa xác minh NFC), `user_profiles` (thông tin hiển thị: họ tên tự nhập, avatar) và `legal_profiles` (kết quả xác minh NFC theo AC-04.11; có bản ghi = đã xác minh). Mỗi người chỉ có một id là `accountId` (= `sub` của JWT, header `X-Account-Id`); Address và Vendor trỏ vào `accounts`. Lý do: tách PII khỏi bảng được nạp ở mọi request (NFR-03), đổi khóa băm chỉ quét một bảng, email và số điện thoại chỉ lưu một nơi | Mục 4.2, Requirement 7.1 |
 
 ---
 

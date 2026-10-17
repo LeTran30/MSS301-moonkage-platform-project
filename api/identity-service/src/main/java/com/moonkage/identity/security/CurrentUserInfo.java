@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 public class CurrentUserInfo {
     private String accountId;
-    private String userId;
     private String email;
     private String role;
 }

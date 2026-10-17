@@ -1,7 +1,7 @@
 # =============================================
 # Moonkage - full stack
 #   Everything:          docker compose up -d --build
-#   Only the databases:  docker compose up -d identity-db catalog-db tender-db order-db minio
+#   Only the databases:  docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db notification-db minio rabbitmq
 #                        (then run the services from the IDE / mvn)
 # Values come from .env in this folder (see .env.example).
 # =============================================
@@ -19,6 +19,8 @@ x-app: &app
 
 x-app-env: &app-env
   EUREKA_URL: http://discovery-server:8761/eureka/
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: 5672
   TZ: Asia/Ho_Chi_Minh
 
 services:
@@ -53,15 +55,15 @@ services:
       timeout: 5s
       retries: 5
 
-  tender-db:
+  quotation-db:
     <<: *postgres
-    container_name: moonkage-tender-db
+    container_name: moonkage-quotation-db
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: tender_db
-    ports: ["${TENDER_DB_PORT}:5432"]
-    volumes: [tender-db-data:/var/lib/postgresql/data]
+      POSTGRES_DB: quotation_db
+    ports: ["${QUOTATION_DB_PORT}:5432"]
+    volumes: [quotation-db-data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -77,6 +79,51 @@ services:
       POSTGRES_DB: order_db
     ports: ["${ORDER_DB_PORT}:5432"]
     volumes: [order-db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vendor-db:
+    <<: *postgres
+    container_name: moonkage-vendor-db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: vendor_db
+    ports: ["${VENDOR_DB_PORT}:5432"]
+    volumes: [vendor-db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-db:
+    <<: *postgres
+    container_name: moonkage-payment-db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: payment_db
+    ports: ["${PAYMENT_DB_PORT}:5432"]
+    volumes: [payment-db-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notification-db:
+    <<: *postgres
+    container_name: moonkage-notification-db
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: notification_db
+    ports: ["${NOTIFICATION_DB_PORT}:5432"]
+    volumes: [notification-db-data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -101,6 +148,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ───────────── Message broker (domain events, Software Design 5.4) ─────────────
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    container_name: moonkage-rabbitmq
+    restart: unless-stopped
+    networks: [moonkage-network]
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    # 5672 = AMQP, 15672 = management UI
+    ports: ["${RABBITMQ_PORT}:5672", "${RABBITMQ_MANAGEMENT_PORT}:15672"]
+    volumes: [rabbitmq-data:/var/lib/rabbitmq]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # ───────────── Infrastructure services ─────────────
   discovery-server:
@@ -150,16 +215,16 @@ services:
       catalog-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
-  tender-service:
+  quotation-service:
     <<: *app
-    container_name: moonkage-tender-service
-    build: { context: ./api, dockerfile: tender-service/Dockerfile }
+    container_name: moonkage-quotation-service
+    build: { context: ./api, dockerfile: quotation-service/Dockerfile }
     environment:
       <<: *app-env
-      TENDER_DB_HOST: tender-db
-      TENDER_DB_PORT: 5432
+      QUOTATION_DB_HOST: quotation-db
+      QUOTATION_DB_PORT: 5432
     depends_on:
-      tender-db: { condition: service_healthy }
+      quotation-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
   order-service:
@@ -185,12 +250,52 @@ services:
       minio: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
+  vendor-service:
+    <<: *app
+    container_name: moonkage-vendor-service
+    build: { context: ./api, dockerfile: vendor-service/Dockerfile }
+    environment:
+      <<: *app-env
+      VENDOR_DB_HOST: vendor-db
+      VENDOR_DB_PORT: 5432
+    depends_on:
+      vendor-db: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
+
+  payment-service:
+    <<: *app
+    container_name: moonkage-payment-service
+    build: { context: ./api, dockerfile: payment-service/Dockerfile }
+    environment:
+      <<: *app-env
+      PAYMENT_DB_HOST: payment-db
+      PAYMENT_DB_PORT: 5432
+    depends_on:
+      payment-db: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
+
+  notification-service:
+    <<: *app
+    container_name: moonkage-notification-service
+    build: { context: ./api, dockerfile: notification-service/Dockerfile }
+    environment:
+      <<: *app-env
+      NOTIFICATION_DB_HOST: notification-db
+      NOTIFICATION_DB_PORT: 5432
+    depends_on:
+      notification-db: { condition: service_healthy }
+      discovery-server: { condition: service_healthy }
+
 volumes:
   identity-db-data:
   catalog-db-data:
-  tender-db-data:
+  quotation-db-data:
   order-db-data:
+  vendor-db-data:
+  payment-db-data:
+  notification-db-data:
   minio-data:
+  rabbitmq-data:
 
 networks:
   moonkage-network:

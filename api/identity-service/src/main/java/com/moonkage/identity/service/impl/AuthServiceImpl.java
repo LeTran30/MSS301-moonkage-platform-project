@@ -7,18 +7,19 @@ import com.moonkage.identity.dto.response.AccountCreateResponse;
 import com.moonkage.identity.dto.response.LoginResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.Role;
-import com.moonkage.identity.entity.User;
+import com.moonkage.identity.entity.UserProfile;
 import com.moonkage.identity.enums.AccountStatus;
 import com.moonkage.identity.exception.CustomException;
 import com.moonkage.identity.exception.EmailAlreadyExistsException;
+import com.moonkage.identity.exception.EmailDeliveryException;
 import com.moonkage.identity.exception.InvalidCredentialsException;
 import com.moonkage.identity.repository.AccountRepository;
 import com.moonkage.identity.repository.RoleRepository;
-import com.moonkage.identity.repository.UserRepository;
-import com.moonkage.identity.repository.VendorRepository;
+import com.moonkage.identity.repository.UserProfileRepository;
 import com.moonkage.identity.service.AuthService;
 import com.moonkage.identity.service.EmailService;
 import com.moonkage.identity.service.TokenService;
+import com.moonkage.identity.util.PhoneNumbers;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,9 +42,8 @@ public class AuthServiceImpl implements AuthService {
 
     private final PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
     private final RoleRepository roleRepository;
-    private final VendorRepository vendorRepository;
     private final TokenService tokenService;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
@@ -54,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AccountCreateResponse register(AccountCreateRequest request) {
         request.setEmail(normalizeEmail(request.getEmail()));
+        request.setPhoneNumber(PhoneNumbers.normalize(request.getPhoneNumber()));
         validateUniqueness(request);
 
         Role defaultRole = roleRepository
@@ -67,15 +68,22 @@ public class AuthServiceImpl implements AuthService {
                 .accountVerified(false)
                 .role(defaultRole)
                 .build());
-        userRepository.save(User.builder()
-                .fullName(request.getFullName().trim())
-                .email(account.getEmail())
-                .phoneNumber(account.getPhoneNumber())
+        userProfileRepository.save(UserProfile.builder()
                 .account(account)
+                .fullName(request.getFullName().trim())
                 .build());
 
-        sendVerifyOtp(account.getEmail(), request.getFullName());
-        return AccountCreateResponse.from(account);
+        // FR-01: keep the account when the email fails; the user retries with /resend-otp instead of
+        // registering again (which would now hit "email already used")
+        boolean otpSent = true;
+        try {
+            sendVerifyOtp(account.getEmail(), request.getFullName());
+        } catch (EmailDeliveryException e) {
+            otpSent = false;
+        }
+        AccountCreateResponse response = AccountCreateResponse.from(account);
+        response.setOtpSent(otpSent);
+        return response;
     }
 
     @Override
@@ -189,33 +197,34 @@ public class AuthServiceImpl implements AuthService {
     private void sendVerifyOtp(String email, String name) {
         String otp = emailService.generateOTP();
         emailService.storageOtp(email, otp);
-        emailService.sendOtpForVerifyAccount(email, name, otp);
+        try {
+            emailService.sendOtpForVerifyAccount(email, name, otp);
+        } catch (EmailDeliveryException e) {
+            emailService.clearOtp(email); // the user never received it
+            throw e;
+        }
     }
 
     private LoginResponse buildLoginResponse(Account account, boolean withTokens) {
-        User user = userRepository
-                .findByAccountId(account.getId())
+        UserProfile profile = userProfileRepository
+                .findById(account.getId())
                 .orElseThrow(() -> new CustomException("Không tìm thấy hồ sơ người dùng"));
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder()
                 .accountId(account.getId())
-                .userId(user.getId())
                 .email(account.getEmail())
                 .phoneNumber(account.getPhoneNumber())
-                .fullName(user.getFullName())
-                .role(account.getRole().getRoleName())
-                .vendorStatus("NONE");
-        vendorRepository.findByOwnerId(user.getId()).ifPresent(v -> builder.vendorId(v.getId())
-                .vendorStatus(v.getStatus().name()));
+                .fullName(profile.getFullName())
+                .role(account.getRole().getRoleName());
         if (withTokens) {
-            builder.token(tokenService.createToken(account, user)).refreshToken(tokenService.refreshToken(account));
+            builder.token(tokenService.createToken(account)).refreshToken(tokenService.refreshToken(account));
         }
         return builder.build();
     }
 
     private String fullName(Account account) {
-        return userRepository
-                .findByAccountId(account.getId())
-                .map(User::getFullName)
+        return userProfileRepository
+                .findById(account.getId())
+                .map(UserProfile::getFullName)
                 .orElse(account.getEmail());
     }
 

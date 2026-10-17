@@ -1,11 +1,10 @@
 package com.moonkage.identity.service;
 
 import com.moonkage.identity.entity.Account;
-import com.moonkage.identity.entity.User;
 
 public interface TokenService {
 
-    String createToken(Account account, User user);
+    String createToken(Account account);
 
     String refreshToken(Account account);
 
