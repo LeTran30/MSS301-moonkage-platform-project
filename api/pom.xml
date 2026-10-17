@@ -70,6 +70,43 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <!-- Ép Maven Central dùng HTTPS chuẩn -->
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <!-- Vô hiệu hóa kho lưu trữ cũ của java.net gây lỗi chứng chỉ -->
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>jvnet-nexus-releases</id>
+            <url>https://maven.java.net/content/repositories/releases/</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <!-- Vô hiệu hóa ở cả pluginRepositories nếu bị plugin gọi ngầm -->
+        <pluginRepository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>jvnet-nexus-releases</id>
+            <url>https://maven.java.net/content/repositories/releases/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <build>
         <plugins>
             <plugin>
