@@ -1,0 +1,20 @@
+# Cấu hình màn hình chọn template khi tạo issue.
+# ⚠ Thay YOUR-ORG/YOUR-REPO bằng tên tổ chức và repo thật.
+
+# Bắt buộc chọn template, không cho tạo issue trống
+blank_issues_enabled: false
+
+contact_links:
+  - name: Báo lỗ hổng bảo mật
+    # Cần bật "Private vulnerability reporting" trong Settings → Security của repo
+    url: https://github.com/YOUR-ORG/YOUR-REPO/security/advisories/new
+    about: Báo cáo được giữ kín, chỉ người quản lý repo thấy. Không báo lỗ hổng bằng issue công khai.
+
+  - name: Hỏi đáp
+    # Cần bật Discussions trong Settings → General của repo
+    url: https://github.com/YOUR-ORG/YOUR-REPO/discussions/categories/q-a
+    about: Câu hỏi về cách dùng, cách làm, hoặc quy trình. Issue chỉ dành cho lỗi và đề xuất tính năng.
+
+  - name: Hướng dẫn đóng góp
+    url: https://github.com/YOUR-ORG/YOUR-REPO/blob/main/.github/CONTRIBUTING.md
+    about: Quy trình code, chất lượng code, branch, commit và PR.

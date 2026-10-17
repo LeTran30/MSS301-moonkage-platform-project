@@ -1,0 +1,53 @@
+# Dependabot: tự đề xuất cập nhật dependency.
+# Tên file phải là dependabot.yml (chữ thường), GitHub không nhận DEPENDABOT.yml.
+#
+# Chính sách:
+# - Minor và patch được gom thành MỘT PR mỗi tuần để giảm nhiễu.
+# - Major KHÔNG được tự mở PR. Nâng major do người làm chủ động,
+#   dùng PULL_REQUEST_TEMPLATE/major_upgrade_template.md.
+# - Tiêu đề PR theo Conventional Commits: "chore(deps): bump ..."
+# - PR của Dependabot vẫn cần người thật approve, không tự merge.
+
+version: 2
+updates:
+
+  # ---------------------------------------------------------------------------
+  # Maven: dependency và plugin trong pom.xml
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      maven-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions: các action dùng trong .github/workflows/
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 3
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns: ["*"]

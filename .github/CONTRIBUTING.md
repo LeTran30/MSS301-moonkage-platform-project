@@ -10,7 +10,7 @@ Tài liệu này dành cho **mọi người đóng góp: thành viên team và A
 
 Tài liệu chia làm hai phần, tương ứng với hai nơi code đi qua:
 
-```
+```text
   PHẦN I · LOCAL                                PHẦN II · REMOTE
   Việc của mỗi người                            Việc của cả team
  ┌────────────────────────────────┐            ┌────────────────────────────────┐
