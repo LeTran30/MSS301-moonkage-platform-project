@@ -1,4 +1,4 @@
-package com.bake2b.identity.common.exception;
+package com.bake2b.identity.exception;
 
 public class InvalidCredentialsException extends CustomException {
     public InvalidCredentialsException() {
