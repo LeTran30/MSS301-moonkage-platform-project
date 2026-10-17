@@ -1,0 +1,107 @@
+package com.moonkage.identity.service.impl;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.moonkage.identity.dto.request.AddressRequest;
+import com.moonkage.identity.dto.response.AddressResponse;
+import com.moonkage.identity.entity.Account;
+import com.moonkage.identity.entity.Address;
+import com.moonkage.identity.exception.ResourceNotFoundException;
+import com.moonkage.identity.repository.AccountRepository;
+import com.moonkage.identity.repository.AddressRepository;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+class AddressServiceImplTest {
+
+    private static final String ACCOUNT_ID = "acc1";
+
+    private AddressRepository addressRepository;
+    private AddressServiceImpl service;
+    private final List<Address> stored = new ArrayList<>();
+
+    @BeforeEach
+    void setUp() {
+        addressRepository = mock(AddressRepository.class);
+        AccountRepository accountRepository = mock(AccountRepository.class);
+        Account account = Account.builder().id(ACCOUNT_ID).build();
+        when(accountRepository.findByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(account));
+        when(addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(ACCOUNT_ID))
+                .thenAnswer(inv -> List.copyOf(stored));
+        when(addressRepository.saveAndFlush(any(Address.class))).thenAnswer(inv -> {
+            Address a = inv.getArgument(0);
+            if (a.getId() == null) {
+                a.setId("a" + (stored.size() + 1));
+                stored.add(a);
+            }
+            return a;
+        });
+        when(addressRepository.findByIdAndAccountId(any(), any())).thenAnswer(inv -> stored.stream()
+                .filter(a -> a.getId().equals(inv.getArgument(0)) && ACCOUNT_ID.equals(inv.getArgument(1)))
+                .findFirst());
+        service = new AddressServiceImpl(addressRepository, accountRepository);
+    }
+
+    private static AddressRequest request(Boolean isDefault) {
+        return AddressRequest.builder()
+                .detail("  12 Le Loi  ")
+                .areaCode(" hcm ")
+                .isDefault(isDefault)
+                .build();
+    }
+
+    private long defaults() {
+        return stored.stream().filter(Address::isDefault).count();
+    }
+
+    @Test
+    void firstAddressBecomesDefaultAndIsNormalized() {
+        AddressResponse first = service.create(ACCOUNT_ID, request(null));
+        assertTrue(first.getIsDefault());
+        assertEquals("12 Le Loi", first.getDetail());
+        assertEquals("HCM", first.getAreaCode());
+    }
+
+    @Test
+    void newDefaultTakesOverFromOldOne() {
+        service.create(ACCOUNT_ID, request(null));
+        AddressResponse second = service.create(ACCOUNT_ID, request(false));
+        assertFalse(second.getIsDefault());
+
+        service.create(ACCOUNT_ID, request(true));
+        assertEquals(1, defaults());
+        assertTrue(stored.get(2).isDefault());
+    }
+
+    @Test
+    void updateToDefaultClearsTheOthers() {
+        service.create(ACCOUNT_ID, request(null));
+        service.create(ACCOUNT_ID, request(null));
+        service.update(ACCOUNT_ID, "a2", request(true));
+        assertEquals(1, defaults());
+        assertTrue(stored.get(1).isDefault());
+    }
+
+    @Test
+    void updateWithoutFlagKeepsDefault() {
+        service.create(ACCOUNT_ID, request(null));
+        service.update(ACCOUNT_ID, "a1", request(null));
+        assertTrue(stored.get(0).isDefault());
+    }
+
+    @Test
+    void addressOfAnotherUserIsNotFound() {
+        service.create(ACCOUNT_ID, request(null));
+        assertThrows(ResourceNotFoundException.class, () -> service.update("other", "a1", request(null)));
+        assertThrows(ResourceNotFoundException.class, () -> service.delete("other", "a1"));
+    }
+}
