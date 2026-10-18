@@ -1,100 +1,98 @@
 package com.moonkage.identity.exception;
 
-import com.moonkage.identity.dto.response.ErrorResponse;
-import io.jsonwebtoken.JwtException;
+import com.moonkage.identity.dto.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
-import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * Turns every error into {@link ApiResponse} with {@code data = null}. Token errors arrive here already as
+ * AppException (JwtTokenProvider converts them), so there is no handler for the JWT library's own exceptions.
+ */
+@Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private final MessageSource messageSource;
 
-    // 400 - Validation
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex, HttpServletRequest request) {
+        ErrorCode ec = ex.getErrorCode();
+        String message = localize(ec, ex.getArgs());
+        log.warn("Business Exception: code={}, message={}", ec.getCode(), message);
+        return build(ec, message, null, request);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
-                .collect(Collectors.joining("; "));
-        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+        List<ApiResponse.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ApiResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
+                .toList();
+        return build(ErrorCode.INVALID_INPUT, localize(ErrorCode.INVALID_INPUT, null), fieldErrors, request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleUnreadable(
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, "Request body không hợp lệ", request);
+        return build(ErrorCode.MALFORMED_JSON, request);
     }
 
-    // 401 - Authentication & token
-    @ExceptionHandler({InvalidCredentialsException.class, JwtException.class, AuthenticationException.class})
-    public ResponseEntity<ErrorResponse> handleBadCredentials(Exception ex, HttpServletRequest request) {
-        String message = (ex.getMessage() != null
-                        && !ex.getMessage().isBlank()
-                        && !ex.getMessage().equalsIgnoreCase("Bad credentials"))
-                ? ex.getMessage()
-                : "Email/số điện thoại hoặc mật khẩu không đúng";
-        return buildResponse(HttpStatus.UNAUTHORIZED, message, request);
+    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(Exception ex, HttpServletRequest request) {
+        return build(ErrorCode.INVALID_CREDENTIALS, request);
     }
 
-    // 403 - Account status / forbidden (more specific than AuthenticationException, so it wins)
+    /** The only account state Spring Security can refuse is "e-mail not confirmed" (Account.isEnabled). */
     @ExceptionHandler(AccountStatusException.class)
-    public ResponseEntity<ErrorResponse> handleAccountStatus(AccountStatusException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    public ResponseEntity<ApiResponse<Void>> handleAccountStatus(
+            AccountStatusException ex, HttpServletRequest request) {
+        return build(ErrorCode.ACCOUNT_NOT_ACTIVATED, request);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthException(
+            AuthenticationException ex, HttpServletRequest request) {
+        return build(ErrorCode.TOKEN_INVALID, request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện hành động này", request);
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        return build(ErrorCode.ACCESS_DENIED, request);
     }
 
-    // 409 - Conflict
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailExists(EmailAlreadyExistsException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
-    }
-
-    // 404 - Not found or not owned by the caller (same reply, so ids of other users cannot be probed)
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-    }
-
-    // 503 - SMTP failed (FR-01: user should resend the code)
-    @ExceptionHandler(EmailDeliveryException.class)
-    public ResponseEntity<ErrorResponse> handleEmailDelivery(EmailDeliveryException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
-    }
-
-    // 400 - Business
-    @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ErrorResponse> handleCustomException(CustomException ex, HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-    }
-
-    // 500 - Fallback
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnhandled(Exception ex, HttpServletRequest request) {
-        log.error("Unexpected error", ex);
-        return buildResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.", request);
+    public ResponseEntity<ApiResponse<Void>> handleUncaughtException(Exception ex, HttpServletRequest request) {
+        log.error("Unhandled Exception: ", ex);
+        return build(ErrorCode.INTERNAL_SERVER_ERROR, request);
     }
 
-    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String message, HttpServletRequest request) {
-        return ResponseEntity.status(status)
-                .body(new ErrorResponse(
-                        status.value(), status.getReasonPhrase(), message, request.getRequestURI(), Instant.now()));
+    private ResponseEntity<ApiResponse<Void>> build(ErrorCode errorCode, HttpServletRequest request) {
+        return build(errorCode, localize(errorCode, null), null, request);
+    }
+
+    private ResponseEntity<ApiResponse<Void>> build(
+            ErrorCode errorCode, String message, List<ApiResponse.FieldError> errors, HttpServletRequest request) {
+        return ResponseEntity.status(errorCode.getHttpStatus())
+                .body(ApiResponse.error(
+                        errorCode.getHttpStatus(), errorCode.getCode(), message, errors, request.getRequestURI()));
+    }
+
+    private String localize(ErrorCode errorCode, Object[] args) {
+        return messageSource.getMessage(errorCode.getMessageKey(), args, LocaleContextHolder.getLocale());
     }
 }

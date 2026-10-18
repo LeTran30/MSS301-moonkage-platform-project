@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RefreshTokenRequest {
 
-    @NotBlank(message = "Refresh token không được để trống")
+    @NotBlank(message = "{validation.refresh_token.required}")
     private String refreshToken;
 }

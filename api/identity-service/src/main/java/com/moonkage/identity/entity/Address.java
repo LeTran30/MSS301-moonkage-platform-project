@@ -9,22 +9,20 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Saved delivery address of an account (FR-03). At most one default per account.
+ * Saved delivery address of an account (FR-03). At most one default per account. Timestamps come from BaseEntity
+ * (Instant, so the API returns them with a time zone, Software Design 5.1 rule 7).
  */
 @Entity
 @Table(name = "addresses")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Address {
+public class Address extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -43,10 +41,4 @@ public class Address {
 
     @Column(nullable = false)
     private boolean isDefault;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
 }

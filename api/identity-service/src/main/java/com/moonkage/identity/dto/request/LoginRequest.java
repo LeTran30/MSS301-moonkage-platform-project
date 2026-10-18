@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
 
     /** Email or phone number (FR-02). */
-    @NotBlank(message = "Vui lòng nhập username")
+    @NotBlank(message = "{validation.username.required}")
     private String username;
 
-    @NotBlank(message = "Vui lòng nhập mật khẩu")
+    @NotBlank(message = "{validation.password.required}")
     private String password;
 }

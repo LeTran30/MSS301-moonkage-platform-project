@@ -1,6 +1,6 @@
 package com.moonkage.identity.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +16,6 @@ public class AddressResponse {
     private String detail;
     private String areaCode;
     private Boolean isDefault;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

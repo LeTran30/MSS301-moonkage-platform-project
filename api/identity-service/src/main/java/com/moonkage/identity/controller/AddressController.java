@@ -2,6 +2,7 @@ package com.moonkage.identity.controller;
 
 import com.moonkage.identity.dto.request.AddressRequest;
 import com.moonkage.identity.dto.response.AddressResponse;
+import com.moonkage.identity.dto.response.ApiResponse;
 import com.moonkage.identity.security.CurrentUser;
 import com.moonkage.identity.security.CurrentUserInfo;
 import com.moonkage.identity.service.AddressService;
@@ -28,28 +29,29 @@ public class AddressController {
     private final AddressService addressService;
 
     @GetMapping
-    public ResponseEntity<List<AddressResponse>> getMyAddresses(@CurrentUser CurrentUserInfo currentUser) {
-        return ResponseEntity.ok(addressService.getMyAddresses(currentUser.getAccountId()));
+    public ResponseEntity<ApiResponse<List<AddressResponse>>> getMyAddresses(@CurrentUser CurrentUserInfo currentUser) {
+        return ResponseEntity.ok(ApiResponse.ok(addressService.getMyAddresses(currentUser.accountId())));
     }
 
     @PostMapping
-    public ResponseEntity<AddressResponse> create(
+    public ResponseEntity<ApiResponse<AddressResponse>> create(
             @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid AddressRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(addressService.create(currentUser.getAccountId(), request));
+                .body(ApiResponse.created(addressService.create(currentUser.accountId(), request)));
     }
 
     @PutMapping("/{addressId}")
-    public ResponseEntity<AddressResponse> update(
+    public ResponseEntity<ApiResponse<AddressResponse>> update(
             @CurrentUser CurrentUserInfo currentUser,
             @PathVariable String addressId,
             @RequestBody @Valid AddressRequest request) {
-        return ResponseEntity.ok(addressService.update(currentUser.getAccountId(), addressId, request));
+        return ResponseEntity.ok(ApiResponse.ok(addressService.update(currentUser.accountId(), addressId, request)));
     }
 
+    /** 204: nothing to wrap. */
     @DeleteMapping("/{addressId}")
     public ResponseEntity<Void> delete(@CurrentUser CurrentUserInfo currentUser, @PathVariable String addressId) {
-        addressService.delete(currentUser.getAccountId(), addressId);
+        addressService.delete(currentUser.accountId(), addressId);
         return ResponseEntity.noContent().build();
     }
 }

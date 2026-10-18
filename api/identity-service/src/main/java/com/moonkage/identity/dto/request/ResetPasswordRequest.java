@@ -1,5 +1,6 @@
 package com.moonkage.identity.dto.request;
 
+import com.moonkage.identity.constant.AccountConstant;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -12,14 +13,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "{validation.email.required}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
 
-    @NotBlank(message = "OTP không được để trống")
+    @NotBlank(message = "{validation.otp.required}")
     private String otp;
 
-    @NotBlank(message = "Mật khẩu mới không được để trống")
-    @Size(min = 8, max = 72, message = "Mật khẩu từ 8 đến 72 ký tự")
+    @NotBlank(message = "{validation.new_password.required}")
+    @Size(
+            min = AccountConstant.PASSWORD_MIN_LENGTH,
+            max = AccountConstant.PASSWORD_MAX_LENGTH,
+            message = "{validation.password.size}")
     private String newPassword;
 }

@@ -23,11 +23,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    # off by default: every statement in the log is noise and may carry personal data in literals.
+    # Local debugging: JPA_SHOW_SQL=true in .env. The dialect is detected from the connection.
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: "true"
+        format_sql: ${JPA_SHOW_SQL:false}
 
 eureka:
   client:

@@ -35,7 +35,6 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private static final String SELLER = "SELLER";
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ProductRepository productRepository;
@@ -44,8 +43,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse createProduct(String accountId, String role, CreateProductRequest request) {
-        VendorInfo vendor = requireShop(accountId, role);
+    public ProductResponse createProduct(String accountId, CreateProductRequest request) {
+        VendorInfo vendor = requireShop(accountId);
         requireResaleInfo(vendor, request.getBrand(), request.getOrigin());
         validateTiers(request.getPriceTiers());
 
@@ -72,8 +71,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(String accountId, String role, String productId, UpdateProductRequest req) {
-        VendorInfo vendor = requireShop(accountId, role);
+    public ProductResponse updateProduct(String accountId, String productId, UpdateProductRequest req) {
+        VendorInfo vendor = requireShop(accountId);
         Product product = requireOwnProduct(vendor, productId);
         requireNotRemoved(product);
 
@@ -133,8 +132,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse setVisibility(String accountId, String role, String productId, boolean visible) {
-        VendorInfo vendor = requireShop(accountId, role);
+    public ProductResponse setVisibility(String accountId, String productId, boolean visible) {
+        VendorInfo vendor = requireShop(accountId);
         Product product = requireOwnProduct(vendor, productId);
         requireNotRemoved(product);
         product.setStatus(visible ? ProductStatus.ON_SALE : ProductStatus.HIDDEN);
@@ -143,8 +142,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void deleteProduct(String accountId, String role, String productId) {
-        VendorInfo vendor = requireShop(accountId, role);
+    public void deleteProduct(String accountId, String productId) {
+        VendorInfo vendor = requireShop(accountId);
         Product product = requireOwnProduct(vendor, productId);
         product.setDeleted(true);
         productRepository.save(product);
@@ -152,8 +151,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> getMyProducts(String accountId, String role, ProductStatus status) {
-        VendorInfo vendor = requireShop(accountId, role);
+    public List<ProductResponse> getMyProducts(String accountId, ProductStatus status) {
+        VendorInfo vendor = requireShop(accountId);
         List<Product> products = status == null
                 ? productRepository.findByVendorIdAndDeletedFalseOrderByCreatedAtDesc(vendor.id())
                 : productRepository.findByVendorIdAndStatusAndDeletedFalseOrderByCreatedAtDesc(vendor.id(), status);
@@ -162,8 +161,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public ProductResponse getMyProduct(String accountId, String role, String productId) {
-        VendorInfo vendor = requireShop(accountId, role);
+    public ProductResponse getMyProduct(String accountId, String productId) {
+        VendorInfo vendor = requireShop(accountId);
         return ProductMapper.toResponse(requireOwnProduct(vendor, productId));
     }
 
@@ -188,11 +187,11 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"));
     }
 
-    /** Role SELLER (from the token) plus an APPROVED vendor that opened a Shop (FR-27, FR-30). */
-    private VendorInfo requireShop(String accountId, String role) {
-        if (!SELLER.equals(role)) {
-            throw new CustomException(HttpStatus.FORBIDDEN, "Chỉ người bán mới được quản lý sản phẩm");
-        }
+    /**
+     * An APPROVED vendor that opened a Shop (FR-27, FR-30). Owning a vendor is not a role (D-19): it is looked up by
+     * account id.
+     */
+    private VendorInfo requireShop(String accountId) {
         VendorInfo vendor;
         try {
             vendor = vendorClient.getVendorByOwnerAccountId(accountId);

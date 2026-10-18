@@ -12,7 +12,8 @@ import com.moonkage.identity.dto.request.AddressRequest;
 import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.Address;
-import com.moonkage.identity.exception.ResourceNotFoundException;
+import com.moonkage.identity.exception.AppException;
+import com.moonkage.identity.exception.ErrorCode;
 import com.moonkage.identity.repository.AccountRepository;
 import com.moonkage.identity.repository.AddressRepository;
 import java.util.ArrayList;
@@ -26,13 +27,14 @@ class AddressServiceImplTest {
     private static final String ACCOUNT_ID = "acc1";
 
     private AddressRepository addressRepository;
+    private AccountRepository accountRepository;
     private AddressServiceImpl service;
     private final List<Address> stored = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         addressRepository = mock(AddressRepository.class);
-        AccountRepository accountRepository = mock(AccountRepository.class);
+        accountRepository = mock(AccountRepository.class);
         Account account = Account.builder().id(ACCOUNT_ID).build();
         when(accountRepository.findByIdForUpdate(ACCOUNT_ID)).thenReturn(Optional.of(account));
         when(addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(ACCOUNT_ID))
@@ -102,7 +104,13 @@ class AddressServiceImplTest {
     @Test
     void addressOfAnotherUserIsNotFound() {
         service.create(ACCOUNT_ID, request(null));
-        assertThrows(ResourceNotFoundException.class, () -> service.update("other", "a1", request(null)));
-        assertThrows(ResourceNotFoundException.class, () -> service.delete("other", "a1"));
+        Account otherAccount = Account.builder().id("other").build();
+        when(accountRepository.findByIdForUpdate("other")).thenReturn(Optional.of(otherAccount));
+
+        AppException exUpdate = assertThrows(AppException.class, () -> service.update("other", "a1", request(null)));
+        assertEquals(ErrorCode.ADDRESS_NOT_FOUND, exUpdate.getErrorCode());
+
+        AppException exDelete = assertThrows(AppException.class, () -> service.delete("other", "a1"));
+        assertEquals(ErrorCode.ADDRESS_NOT_FOUND, exDelete.getErrorCode());
     }
 }

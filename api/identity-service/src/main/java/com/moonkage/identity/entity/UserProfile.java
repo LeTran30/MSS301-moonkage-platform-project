@@ -1,5 +1,6 @@
 package com.moonkage.identity.entity;
 
+import com.moonkage.identity.constant.AccountConstant;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,7 +40,7 @@ public class UserProfile extends BaseEntity {
     private Account account;
 
     /** Name the user typed at registration; not the legal name from the ID card. */
-    @Column(name = "full_name", nullable = false, length = 100)
+    @Column(name = "full_name", nullable = false, length = AccountConstant.MAX_FULL_NAME_LENGTH)
     private String fullName;
 
     @Column(name = "avatar_url")

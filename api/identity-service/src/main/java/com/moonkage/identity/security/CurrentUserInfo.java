@@ -1,11 +1,6 @@
 package com.moonkage.identity.security;
 
-import lombok.Data;
+import com.moonkage.identity.enums.Role;
 
-/** Injected into controllers via @CurrentUser. */
-@Data
-public class CurrentUserInfo {
-    private String accountId;
-    private String email;
-    private String role;
-}
+/** Injected into controllers via @CurrentUser; built once per request by JwtFilter. */
+public record CurrentUserInfo(String accountId, String email, Role role) {}

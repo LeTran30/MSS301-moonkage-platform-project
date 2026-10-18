@@ -3,7 +3,7 @@ package com.moonkage.identity.mapper;
 import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.entity.Address;
 
-/** Entity → DTO for addresses. DTOs must not depend on entities (ArchitectureTest). */
+/** Address → response DTO. */
 public final class AddressMapper {
 
     private AddressMapper() {}
