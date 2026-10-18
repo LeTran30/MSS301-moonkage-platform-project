@@ -6,7 +6,7 @@
 #   quotation_db : seasons removed (no season cut-off, BR-14); audit_logs -> notification
 # The new tables are created by Hibernate in vendor_db / order_db / payment_db / notification_db.
 # Refuses to drop a table that still has rows. Run from the repo root (Git Bash on Windows):
-#   bash api/db/2026-10-17_service_boundaries.sh
+#   bash api/docs/2026-10-17_service_boundaries.sh
 set -euo pipefail
 
 set -a

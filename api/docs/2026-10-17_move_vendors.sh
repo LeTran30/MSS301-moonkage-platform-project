@@ -5,9 +5,9 @@
 # Run from the repo root (Git Bash on Windows), ONCE, BEFORE the new vendor-service starts for the
 # first time (otherwise DemoVendorSeeder creates a second demo Shop with a new id):
 #   docker compose stop identity-service vendor-service
-#   bash api/vendor-service/db/2026-10-17_move_vendors.sh
+#   bash api/docs/2026-10-17_move_vendors.sh
 #   docker compose up -d --build
-# Run 2026-10-17_user_profiles.sql (identity-service/db) first if your identity_db still has a users table.
+# Run 2026-10-17_user_profiles.sql (api/docs) first if your identity_db still has a users table.
 set -euo pipefail
 
 set -a

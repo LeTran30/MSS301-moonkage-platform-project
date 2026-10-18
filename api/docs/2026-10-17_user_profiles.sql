@@ -2,7 +2,7 @@
 -- Only for databases created before this change; a fresh database is built by Hibernate (ddl-auto: update).
 -- Run ONCE with identity-service STOPPED, before starting the new version:
 --   docker compose stop identity-service
---   docker exec -i moonkage-identity-db psql -U <DB_USERNAME> -d identity_db < api/identity-service/db/2026-10-17_user_profiles.sql
+--   docker exec -i moonkage-identity-db psql -U <DB_USERNAME> -d identity_db < api/docs/2026-10-17_user_profiles.sql
 --   docker compose up -d --build identity-service
 -- Ids of accounts, addresses and vendors are kept, so vendorId references in other services stay valid.
 
