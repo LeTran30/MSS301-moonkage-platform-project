@@ -6,6 +6,12 @@ interface SessionData {
   expiresAt: string;
 }
 
+function getRemainingSeconds(expiresAt: string): number {
+  const expTime = new Date(expiresAt).getTime();
+  const now = Date.now();
+  return Math.max(0, Math.floor((expTime - now) / 1000));
+}
+
 export const NfcVerification: React.FC = () => {
   // Configuration & Auth State
   const [apiBaseUrl, setApiBaseUrl] = useState<string>('http://localhost:8080');
@@ -103,10 +109,7 @@ export const NfcVerification: React.FC = () => {
       setQrSvg(qr.toSvgString(2));
 
       // Calculate initial countdown
-      const expTime = new Date(sessionData.expiresAt).getTime();
-      const now = Date.now();
-      const remainingSeconds = Math.max(0, Math.floor((expTime - now) / 1000));
-      setCountdown(remainingSeconds);
+      setCountdown(getRemainingSeconds(sessionData.expiresAt));
 
       // Start countdown timer
       countdownIntervalRef.current = setInterval(() => {
@@ -153,7 +156,7 @@ export const NfcVerification: React.FC = () => {
             if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore network blips during polling
       }
     }, 2000);

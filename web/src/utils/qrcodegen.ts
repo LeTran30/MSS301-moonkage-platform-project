@@ -419,7 +419,7 @@ export class QrCode {
     data: Readonly<Array<int>>,
     divisor: Readonly<Array<int>>
   ): Array<int> {
-    const result: Array<int> = divisor.map((_) => 0);
+    const result: Array<int> = divisor.map(() => 0);
     for (const b of data) {
       const factor: int = b ^ (result.shift() as int);
       result.push(0);
