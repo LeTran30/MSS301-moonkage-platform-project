@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .email-container { width: 100%; background-color: #ffffff; padding: 20px; max-width: 600px; margin: 0 auto; border: 1px solid #dddddd; }
+    .header { text-align: center; padding: 20px 0; background-color: #7a1f1f; color: #ffffff; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 20px; }
+    .order-box { background-color: #fafafa; border: 1px dashed #d4a017; padding: 15px; border-radius: 6px; margin: 15px 0; }
+    .footer { text-align: center; padding: 20px; font-size: 12px; color: #888888; }
+  </style>
+</head>
+<body>
+<div class="email-container">
+  <div class="header">
+    <h1>Xác nhận đơn hàng</h1>
+  </div>
+  <div class="content">
+    <p>Xin chào <strong th:text="${userName}">Quý khách</strong>,</p>
+    <p>Cảm ơn bạn đã đặt hàng tại MoonKage. Đơn hàng của bạn đã được tiếp nhận thành công!</p>
+    <div class="order-box">
+      <p><strong>Mã đơn hàng:</strong> <span th:text="${orderId}">#123456</span></p>
+      <p><strong>Tổng tiền:</strong> <span th:text="${totalAmount}">0</span> VND</p>
+    </div>
+    <p>Chúng tôi sẽ thông báo cho bạn ngay khi người bán chuẩn bị hàng và bàn giao cho đơn vị vận chuyển.</p>
+  </div>
+  <div class="footer">
+    <p>Cảm ơn bạn đã đồng hành cùng MoonKage – Marketplace quà Trung thu.</p>
+  </div>
+</div>
+</body>
+</html>
