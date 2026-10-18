@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Shop product management (FR-30 - FR-32). X-Account-Id / X-User-Role come from the gateway, taken from the access
+ * Shop product management (FR-30 - FR-32). X-Account-Id comes from the gateway, taken from the access
  * token.
  */
 @RestController
@@ -39,32 +39,27 @@ public class SellerProductController {
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(
             @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody CreateProductRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(accountId, role, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(accountId, request));
     }
 
     @GetMapping
     public List<ProductResponse> getMyProducts(
             @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
             @RequestParam(required = false) ProductStatus status) {
-        return productService.getMyProducts(accountId, role, status);
+        return productService.getMyProducts(accountId, status);
     }
 
     @GetMapping("/{productId}")
     public ProductResponse getMyProduct(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
-            @PathVariable String productId) {
-        return productService.getMyProduct(accountId, role, productId);
+            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId, @PathVariable String productId) {
+        return productService.getMyProduct(accountId, productId);
     }
 
     /** Send only the fields to change; everything else keeps its value. */
     @PutMapping("/{productId}")
     public ProductResponse updateProduct(
             @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
             @PathVariable String productId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                             description = "Chỉ gửi các trường cần sửa, trường không gửi giữ nguyên giá trị cũ",
@@ -76,25 +71,22 @@ public class SellerProductController {
                     @Valid
                     @RequestBody
                     UpdateProductRequest request) {
-        return productService.updateProduct(accountId, role, productId, request);
+        return productService.updateProduct(accountId, productId, request);
     }
 
     /** visible=true: ON_SALE, visible=false: HIDDEN. */
     @PatchMapping("/{productId}/visibility")
     public ProductResponse setVisibility(
             @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
             @PathVariable String productId,
             @RequestParam boolean visible) {
-        return productService.setVisibility(accountId, role, productId, visible);
+        return productService.setVisibility(accountId, productId, visible);
     }
 
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> deleteProduct(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader("X-User-Role") String role,
-            @PathVariable String productId) {
-        productService.deleteProduct(accountId, role, productId);
+            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId, @PathVariable String productId) {
+        productService.deleteProduct(accountId, productId);
         return ResponseEntity.noContent().build();
     }
 }

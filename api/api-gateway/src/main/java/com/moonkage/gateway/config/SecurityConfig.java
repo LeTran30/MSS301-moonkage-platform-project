@@ -77,13 +77,11 @@ public class SecurityConfig {
                         .pathMatchers(
                                 HttpMethod.GET, "/catalog-service/api/products/**", "/order-service/api/reviews/**")
                         .permitAll()
-                        // shop product management: role SELLER only (catalog-service also checks the vendor is
-                        // approved)
-                        .pathMatchers("/catalog-service/api/seller/**")
-                        .hasRole("SELLER")
+                        // shop product management (/catalog-service/api/seller/**): any logged-in account;
+                        // catalog-service checks the account owns an approved vendor (D-19: owner is not a role)
                         .anyExchange()
                         .authenticated())
-                // role claim is a single string ("CUSTOMER"/"ADMIN") -> ROLE_CUSTOMER / ROLE_ADMIN
+                // role claim is a single string ("MEMBER"/"ADMIN") -> ROLE_MEMBER / ROLE_ADMIN
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
     }
