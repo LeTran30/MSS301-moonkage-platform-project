@@ -7,17 +7,14 @@ spring:
   application:
     name: identity-service
   # all values come from the repo-root .env (see .env.example)
-  mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: "true"
-          starttls:
-            enable: "true"
+  # RabbitMQ (domain events, Software Design 5.4)
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    # OutboxRelay waits for the broker's confirm before marking an event sent
+    publisher-confirm-type: simple
   datasource:
     url: "jdbc:postgresql://${IDENTITY_DB_HOST}:${IDENTITY_DB_PORT}/identity_db"
     username: ${DB_USERNAME}
@@ -48,12 +45,49 @@ jwt:
 otp:
   expiration: ${OTP_EXPIRATION}
   max-attempts: ${OTP_MAX_ATTEMPTS}
+  min: 100000
+  range: 900000
+  resend-cooldown: ${OTP_RESEND_COOLDOWN:60s}
+  max-resend-per-hour: ${OTP_MAX_RESEND_PER_HOUR:5}
+  lockout-duration: ${OTP_LOCKOUT_DURATION:15m}
+  cleanup-interval: 5m
+
+# FR-04 NFC verification (Software Design 4.2): sessions live in memory, lockout is kept on the account
+nfc:
+  session-ttl: ${NFC_SESSION_TTL:5m}
+  max-attempts: ${NFC_MAX_ATTEMPTS:5}
+  lockout-duration: ${NFC_LOCKOUT_DURATION:15m}
+  session-cleanup-interval: 60s
+  # secrets, identity-service only (D-08, D-17); stored rows record key version 1
+  transport-private-key: ${NFC_TRANSPORT_PRIVATE_KEY_V1:}
+  pii-key: ${PII_ENC_KEY_V1:}
+  id-hash-pepper: ${ID_HASH_PEPPER_V1:}
+
+# domain events go through the outbox_events table (Software Design 6)
+outbox:
+  relay-interval: 2s
+  batch-size: 100
+  confirm-timeout: 5s
+
+security:
+  public-endpoints:
+    - /error
+    - /actuator/health
+    - /internal/**
+    - /v3/api-docs/**
+    - /swagger-ui/**
+    - /swagger-ui.html
+    - /api/auth/register
+    - /api/auth/verify
+    - /api/auth/resend-otp
+    - /api/auth/login
+    - /api/auth/refresh-token
+    - /api/auth/forgot-password/send-otp
+    - /api/auth/forgot-password/reset
 
 app:
   admin:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
-  # demo seller with an approved Shop (DataInitializer)
-  seller:
-    email: "${SELLER_EMAIL:seller@moonkage.vn}"
-    password: "${SELLER_PASSWORD:Seller@123}"
+    full-name: "Quản trị viên MoonKage"
+  # demo seller and its Shop: not seeded by code, see api/docs/seed/README.md

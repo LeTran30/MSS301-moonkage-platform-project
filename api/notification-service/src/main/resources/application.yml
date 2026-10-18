@@ -1,0 +1,53 @@
+server:
+  port: 8088
+  # trust X-Forwarded-* from the gateway so Swagger "Try it out" calls go through http://localhost:8080/<service>
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: "jdbc:postgresql://${NOTIFICATION_DB_HOST}:${NOTIFICATION_DB_PORT}/notification_db"
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  # Mail configuration
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: "true"
+          starttls:
+            enable: "true"
+  # RabbitMQ (domain events, Software Design 5.4)
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    listener:
+      simple:
+        retry:
+          # a message that still fails after 3 tries is dropped (logged), not requeued forever
+          enabled: true
+          max-attempts: 3
+        default-requeue-rejected: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL}
+  instance:
+    # register the container IP, not its random hostname, so the gateway can reach it inside Docker
+    prefer-ip-address: true

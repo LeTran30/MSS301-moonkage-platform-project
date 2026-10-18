@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL}
+  instance:
+    # register the container IP, not its random hostname, so the gateway can reach it inside Docker
+    prefer-ip-address: true
+
+# values come from the repo-root .env (see .env.example)
+jwt:
+  secret: ${JWT_SECRET}
+
+moonkage:
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+
+springdoc:
+  webjars:
+    prefix: ""
+  # Swagger UI for all services: http://localhost:8080/swagger-ui.html (pick a service top-right)
+  swagger-ui:
+    urls-primary-name: identity-service
+    urls:
+      - name: identity-service
+        url: /identity-service/v3/api-docs
+      - name: catalog-service
+        url: /catalog-service/v3/api-docs
+      - name: quotation-service
+        url: /quotation-service/v3/api-docs
+      - name: order-service
+        url: /order-service/v3/api-docs
+      - name: file-service
+        url: /file-service/v3/api-docs
+      - name: vendor-service
+        url: /vendor-service/v3/api-docs
+      - name: payment-service
+        url: /payment-service/v3/api-docs
+      - name: notification-service
+        url: /notification-service/v3/api-docs

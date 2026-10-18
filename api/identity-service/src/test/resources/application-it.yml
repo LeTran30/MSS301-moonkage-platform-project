@@ -1,0 +1,31 @@
+# Integration tests (@ActiveProfiles("it")): values for the ${...} placeholders of application.yml, which read the
+# repo-root .env at runtime. The datasource comes from the Testcontainers PostgreSQL (@ServiceConnection).
+RABBITMQ_HOST: localhost
+RABBITMQ_PORT: 5672
+RABBITMQ_USERNAME: test
+RABBITMQ_PASSWORD: test
+IDENTITY_DB_HOST: localhost
+IDENTITY_DB_PORT: 5432
+DB_USERNAME: test
+DB_PASSWORD: test
+EUREKA_URL: http://localhost:8761/eureka/
+# throw-away test key (Base64, 48 bytes)
+JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+JWT_EXPIRATION: 3600000
+JWT_REFRESH_EXPIRATION: 604800000
+OTP_EXPIRATION: 5m
+OTP_MAX_ATTEMPTS: 5
+ADMIN_EMAIL: admin@moonkage.test
+ADMIN_PASSWORD: Admin@12345
+
+eureka:
+  client:
+    enabled: false
+
+spring:
+  jpa:
+    show-sql: false
+
+# no broker in tests: the relay would only log failures
+outbox:
+  relay-interval: 1h
