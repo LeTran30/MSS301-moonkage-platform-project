@@ -1,6 +1,7 @@
 package com.moonkage.identity.dto.request;
 
-import com.moonkage.identity.util.PhoneNumbers;
+import com.moonkage.identity.constant.AccountConstant;
+import com.moonkage.identity.constant.PhoneConstant;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -17,18 +18,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AccountCreateRequest {
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
+    @NotBlank(message = "{validation.email.required}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
 
-    @Pattern(regexp = PhoneNumbers.PATTERN, message = "Số điện thoại không hợp lệ")
+    @Pattern(regexp = PhoneConstant.PATTERN, message = "{validation.phone.invalid}")
     private String phoneNumber;
 
-    @NotBlank(message = "Họ tên không được để trống")
-    @Size(max = 100, message = "Họ tên tối đa 100 ký tự")
+    @NotBlank(message = "{validation.full_name.required}")
+    @Size(max = AccountConstant.MAX_FULL_NAME_LENGTH, message = "{validation.full_name.too_long}")
     private String fullName;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 8, max = 72, message = "Mật khẩu từ 8 đến 72 ký tự")
+    @NotBlank(message = "{validation.password.required}")
+    @Size(
+            min = AccountConstant.PASSWORD_MIN_LENGTH,
+            max = AccountConstant.PASSWORD_MAX_LENGTH,
+            message = "{validation.password.size}")
     private String password;
 }

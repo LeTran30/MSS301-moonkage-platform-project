@@ -1,20 +1,35 @@
 package com.moonkage.identity.mapper;
 
 import com.moonkage.identity.dto.response.AccountCreateResponse;
+import com.moonkage.identity.dto.response.LoginResponse;
 import com.moonkage.identity.entity.Account;
+import com.moonkage.identity.entity.UserProfile;
 
-/** Entity → DTO for accounts. DTOs must not depend on entities (ArchitectureTest). */
+/** Account → response DTOs. The only place that reads Account to build an API response (ArchUnit: dto ↛ entity). */
 public final class AccountMapper {
 
     private AccountMapper() {}
 
-    /** {@code otpSent} is left null; register sets it after trying to send the email. */
     public static AccountCreateResponse toCreateResponse(Account account) {
         return AccountCreateResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
                 .phoneNumber(account.getPhoneNumber())
-                .status(account.getStatus().name())
+                .verified(account.isAccountVerified())
+                .build();
+    }
+
+    /** {@code token} / {@code refreshToken} null for GET /me, which returns no new tokens. */
+    public static LoginResponse toLoginResponse(
+            Account account, UserProfile profile, String token, String refreshToken) {
+        return LoginResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .accountId(account.getId())
+                .email(account.getEmail())
+                .phoneNumber(account.getPhoneNumber())
+                .fullName(profile.getFullName())
+                .role(account.getRole())
                 .build();
     }
 }

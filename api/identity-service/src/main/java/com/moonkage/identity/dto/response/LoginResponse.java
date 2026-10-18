@@ -1,6 +1,7 @@
 package com.moonkage.identity.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.moonkage.identity.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,5 +20,5 @@ public class LoginResponse {
     private String email;
     private String phoneNumber;
     private String fullName;
-    private String role;
+    private Role role;
 }

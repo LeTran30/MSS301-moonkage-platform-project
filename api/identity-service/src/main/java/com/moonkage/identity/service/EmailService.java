@@ -5,17 +5,12 @@ public interface EmailService {
     /**
      * Sends the registration code synchronously, so the caller learns about a failure (FR-01).
      *
-     * @throws com.moonkage.identity.exception.EmailDeliveryException when SMTP fails
+     * @throws com.moonkage.identity.exception.AppException when broker/SMTP fails
      */
     void sendOtpForVerifyAccount(String email, String name, String otp);
 
+    /**
+     * Sends password reset code. Silent on failure to prevent account probing (FR-02).
+     */
     void sendOtpForForgotPassword(String email, String name, String otp);
-
-    String generateOTP();
-
-    void storageOtp(String email, String otp);
-
-    boolean verifyOtp(String email, String otpVerify);
-
-    void clearOtp(String email);
 }

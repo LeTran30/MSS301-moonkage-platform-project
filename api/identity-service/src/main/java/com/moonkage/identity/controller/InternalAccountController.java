@@ -1,13 +1,13 @@
 package com.moonkage.identity.controller;
 
-import com.moonkage.identity.dto.response.AccountRefResponse;
-import com.moonkage.identity.service.AccountService;
+import com.moonkage.identity.dto.response.NfcStatusResponse;
+import com.moonkage.identity.service.LegalProfileService;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Called by other services through OpenFeign only; the gateway blocks internal paths from outside. */
@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class InternalAccountController {
 
-    private final AccountService accountService;
+    private final LegalProfileService legalProfileService;
 
-    /** Used by vendor-service to attach the demo Shop to the seeded seller account. 404 when unknown. */
-    @GetMapping("/by-email")
-    public ResponseEntity<AccountRefResponse> getByEmail(@RequestParam String email) {
-        return ResponseEntity.of(accountService.findRefByEmail(email));
+    /** BR-23 for vendor-service and quotation-service; AC-45.1. 404 when the account is unknown. */
+    @GetMapping("/{accountId}/nfc-status")
+    public ResponseEntity<NfcStatusResponse> getNfcStatus(@PathVariable String accountId) {
+        return ResponseEntity.ok(legalProfileService.getNfcStatus(accountId));
     }
 }

@@ -4,7 +4,8 @@ import com.moonkage.identity.dto.request.AddressRequest;
 import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.Address;
-import com.moonkage.identity.exception.ResourceNotFoundException;
+import com.moonkage.identity.exception.AppException;
+import com.moonkage.identity.exception.ErrorCode;
 import com.moonkage.identity.mapper.AddressMapper;
 import com.moonkage.identity.repository.AccountRepository;
 import com.moonkage.identity.repository.AddressRepository;
@@ -23,8 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class AddressServiceImpl implements AddressService {
-
-    private static final String NOT_FOUND = "Không tìm thấy địa chỉ";
 
     private final AddressRepository addressRepository;
     private final AccountRepository accountRepository;
@@ -81,14 +80,14 @@ public class AddressServiceImpl implements AddressService {
     private Account lockAccount(String accountId) {
         return accountRepository
                 .findByIdForUpdate(accountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản"));
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId));
     }
 
     /** Another account's address answers like a missing one. */
     private Address findOwned(String accountId, String addressId) {
         return addressRepository
                 .findByIdAndAccountId(addressId, accountId)
-                .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND, addressId));
     }
 
     private static void apply(Address address, AddressRequest request) {

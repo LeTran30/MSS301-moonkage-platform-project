@@ -12,11 +12,17 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, String> {
 
+    String VALIDATION_EMAIL_EXISTS = "EMAIL_EXISTS";
+    String VALIDATION_PHONE_EXISTS = "PHONE_EXISTS";
+
     Optional<Account> findByEmail(String email);
 
     Optional<Account> findByPhoneNumber(String phoneNumber);
 
-    /** Row lock that serialises address changes of one account, so two requests cannot both set a default (FR-03). */
+    /**
+     * Row lock that serialises changes of one account: two requests cannot both set a default address (FR-03) or
+     * both pass the NFC attempt counter (FR-04).
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.id = :id")
     Optional<Account> findByIdForUpdate(@Param("id") String id);

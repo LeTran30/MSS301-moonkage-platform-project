@@ -1,8 +1,9 @@
 package com.moonkage.identity.security;
 
+import com.moonkage.identity.constant.PhoneConstant;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.repository.AccountRepository;
-import com.moonkage.identity.util.PhoneNumbers;
+import com.moonkage.identity.security.jwt.JwtFilter;
 import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -33,16 +34,17 @@ public class SecurityConfig {
 
     private final AccountRepository accountRepository;
     private final JwtFilter jwtFilter;
+    private final SecurityProperties securityProperties;
 
     /** FR-02: log in with email or phone number. */
     @Bean
     public UserDetailsService userDetailsService() {
         return identifier -> (identifier.contains("@")
                         ? accountRepository.findByEmail(identifier.toLowerCase(Locale.ROOT))
-                        : identifier.matches(PhoneNumbers.PATTERN)
-                                ? accountRepository.findByPhoneNumber(PhoneNumbers.normalize(identifier))
+                        : identifier.matches(PhoneConstant.PATTERN)
+                                ? accountRepository.findByPhoneNumber(Account.storedPhoneNumber(identifier))
                                 : Optional.<Account>empty())
-                .orElseThrow(() -> new UsernameNotFoundException("Account not found"));
+                .orElseThrow(() -> new UsernameNotFoundException(identifier));
     }
 
     @Bean
@@ -55,8 +57,8 @@ public class SecurityConfig {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService());
         provider.setPasswordEncoder(passwordEncoder());
-        // check locked/disabled only AFTER the password matched, so a stranger cannot
-        // learn that an email exists from a "not activated" / "locked" reply (FR-02)
+        // check "e-mail not confirmed" (Account.isEnabled) only AFTER the password matched, so a stranger
+        // cannot learn that an email exists from a "not activated" reply (FR-02)
         provider.setPreAuthenticationChecks(user -> {});
         provider.setPostAuthenticationChecks(new AccountStatusUserDetailsChecker());
         return provider;
@@ -79,7 +81,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.requestMatchers(JwtFilter.PUBLIC_ENDPOINTS.toArray(String[]::new))
+                .authorizeHttpRequests(auth -> auth.requestMatchers(
+                                securityProperties.getPublicEndpoints().toArray(String[]::new))
                         .permitAll()
                         .anyRequest()
                         .authenticated())
