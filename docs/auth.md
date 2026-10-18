@@ -1,6 +1,6 @@
 # Xác thực (FR-01, FR-02)
 
-Cách làm theo project Capstone (E-commerce): `Account` + `Role`, JWT không lưu DB (jjwt), OTP giữ trong bộ nhớ và gửi qua email bằng template Thymeleaf, `JwtFilter` + `@CurrentUser`.
+Cách làm theo project Capstone (E-commerce): `Account` có vai (`Role` enum), JWT không lưu DB (jjwt), OTP giữ trong bộ nhớ và gửi qua email (sự kiện RabbitMQ, notification-service gửi), `JwtFilter` + `@CurrentUser`.
 
 Mọi request đi qua gateway `http://localhost:8080`. Prefix của identity-service: `/identity-service/api/auth`.
 
@@ -8,13 +8,14 @@ Mọi request đi qua gateway `http://localhost:8080`. Prefix của identity-ser
 
 | Bảng | Vai trò |
 |---|---|
-| `accounts` | Thông tin đăng nhập: email (bắt buộc), phone_number, password_hash (BCrypt), `status` (`INACTIVE` → `ACTIVE` sau khi xác nhận OTP, `BANNED`), `account_verified`, role |
-| `roles` | `CUSTOMER`, `ADMIN`, được tạo khi khởi động (`DataInitializer`) |
+| `accounts` | Thông tin đăng nhập: email (bắt buộc), phone_number, password_hash (BCrypt), `account_verified` (đã xác nhận email bằng OTP), `role` (`MEMBER` / `ADMIN`, D-19; không có bảng role), `password_changed_at`, bộ đếm khóa xác minh NFC |
+
+**Trạng thái của một tài khoản** (Requirement 7.1) chỉ có hai chiều độc lập: **xác nhận email** (`account_verified`: chưa thì không đăng nhập được, nên cũng không mua, không gửi yêu cầu, không nhận mã đặt lại mật khẩu) và **xác minh NFC** (chưa / đã / tạm khóa 15 phút; suy ra từ `legal_profiles` và `nfc_locked_until`). Không có trạng thái "bị quản trị khóa": requirement không có chức năng này (FR-46 khóa *người bán* ở vendor-service, không khóa tài khoản). Database tạo trước 2026-10-19 phải chạy `api/docs/2026-10-19_drop_account_status.sql` để bỏ cột `status` cũ.
 | `user_profiles` | Thông tin hiển thị trong hệ thống (full_name do người dùng nhập, avatar). Khóa chính là `account_id`. Không chứa email/số điện thoại: hai trường này chỉ nằm ở `accounts` |
 
 Mỗi người chỉ có **một id là `accountId`** (= `sub` trong JWT). `addresses.account_id` và `vendors.owner_account_id` trỏ vào `accounts`. Thông tin pháp lý từ thẻ NFC sẽ nằm ở bảng `legal_profiles` (FR-04), cũng lấy `account_id` làm khóa chính (Software Design D-21).
 
-Database tạo trước ngày 2026-10-17 (còn bảng `users`) phải chạy `api/identity-service/db/2026-10-17_user_profiles.sql` một lần, khi identity-service đang dừng. Hướng dẫn nằm ở đầu file.
+Database tạo trước ngày 2026-10-17 (còn bảng `users`) phải chạy `api/docs/2026-10-17_user_profiles.sql` một lần, khi identity-service đang dừng. Database còn bảng `roles` thì chạy thêm `api/docs/2026-10-19_roles_to_enum.sql`. Hướng dẫn nằm ở đầu mỗi file.
 
 Không có bảng refresh token và không có bảng mã OTP.
 
@@ -22,19 +23,23 @@ Không có bảng refresh token và không có bảng mã OTP.
 
 | Token | Claim | Hạn |
 |---|---|---|
-| Access (`token`) | `sub`=accountId, `type=ACCESS`, `role`, `accountId`, `account_verified` | 12 giờ (`JWT_EXPIRATION`) |
-| Refresh (`refreshToken`) | `sub`=accountId, `type=REFRESH`, `accountId` | 7 ngày (`JWT_REFRESH_EXPIRATION`) |
+| Access (`token`) | `sub`=accountId, `type=ACCESS`, `role`, `iat`, `exp` | 12 giờ (`JWT_EXPIRATION`) |
+| Refresh (`refreshToken`) | `sub`=accountId, `type=REFRESH`, `iat`, `exp` | 7 ngày (`JWT_REFRESH_EXPIRATION`) |
+
+Đúng các claim của Software Design mục 8. Không còn claim `accountId` (trùng `sub`) và `account_verified` (luôn `true`, vì tài khoản chưa xác nhận không đăng nhập được): client đọc id từ `sub`.
 
 Cả hai đều là JWT HS256, ký bằng `jwt.secret` (dạng Base64). Mỗi lần gọi `/refresh-token` sẽ nhận một cặp mới. Refresh token **không dùng thay access token được**: identity-service và gateway đều kiểm tra claim `type`.
 
 **Đăng xuất:** vì token không lưu trên server, frontend chỉ cần xóa `token` và `refreshToken`. Token cũ vẫn hợp lệ đến khi hết hạn.
 
+**Đặt lại mật khẩu cắt mọi phiên cũ:** identity-service từ chối mọi token (access và refresh) có `iat` trước `password_changed_at`. Gateway không tra DB nên access token cũ vẫn đi qua gateway tới service khác cho đến khi hết hạn (tối đa 12 giờ); refresh token cũ thì không đổi được cặp mới.
+
 ## Endpoint
 
 | Method | Path | Auth | Body | Kết quả |
 |---|---|---|---|---|
-| POST | `/register` | – | `{email, phoneNumber?, fullName, password}` | 200 `AccountCreateResponse` (status `INACTIVE`, `otpSent`), gửi OTP qua email |
-| POST | `/verify` | – | `{email, otp}` | 200, status chuyển `ACTIVE` |
+| POST | `/register` | – | `{email, phoneNumber?, fullName, password}` | 200 `AccountCreateResponse` (`verified: false`, `otpSent`), gửi OTP qua email |
+| POST | `/verify` | – | `{email, otp}` | 200 `AccountCreateResponse` với `verified: true` |
 | POST | `/resend-otp` | – | `{email}` | 200; 503 nếu gửi email thất bại |
 | POST | `/login` | – | `{username, password}` (`username` = email **hoặc** số điện thoại) | 200 `LoginResponse` |
 | POST | `/refresh-token` | – | `{refreshToken}` | 200 `LoginResponse` với cặp token mới |
@@ -43,13 +48,13 @@ Cả hai đều là JWT HS256, ký bằng `jwt.secret` (dạng Base64). Mỗi l�
 | POST | `/forgot-password/reset` | – | `{email, otp, newPassword}` | 200 |
 
 ```json
-// LoginResponse
+// LoginResponse (nội dung của "data")
 { "token": "...", "refreshToken": "...", "accountId": "...",
-  "email": "lan@example.com", "phoneNumber": "0912345678", "fullName": "Nguyen Lan",
-  "role": "CUSTOMER" }
+  "email": "lan@example.com", "phoneNumber": "912345678", "fullName": "Nguyen Lan",
+  "role": "MEMBER" }
 ```
 
-**Số điện thoại** nhận `0912345678`, `84912345678` hoặc `+84912345678` (đầu số di động 3/5/7/8/9) và luôn được lưu dạng `0xxxxxxxxx`. Vì vậy ba dạng trên là cùng một số khi kiểm trùng (AC-01.3) và khi đăng nhập.
+**Số điện thoại** nhận `0912345678`, `84912345678` hoặc `+84912345678` (đầu số di động 3/5/7/8/9) và luôn được lưu dạng **9 số cuối** (`912345678`, `Account.storedPhoneNumber`). Vì vậy ba dạng trên là cùng một số khi kiểm trùng (AC-01.3) và khi đăng nhập. API trả `phoneNumber` dạng 9 số; frontend tự thêm `0` khi hiển thị.
 
 **Gửi email thất bại (FR-01):** `/register` vẫn tạo tài khoản nhưng trả `"otpSent": false`; frontend hiện thông báo và nút "Gửi lại mã" (gọi `/resend-otp`), không bắt đăng ký lại (sẽ bị 409). `/resend-otp` thất bại thì trả 503. Riêng `/forgot-password/send-otp` vẫn luôn trả 200 để không lộ email nào đã đăng ký.
 
@@ -57,25 +62,36 @@ Thông tin người bán **không** còn nằm trong `LoginResponse` (Vendor đ�
 
 ## OTP
 
-- 6 chữ số, có hiệu lực 5 phút (`otp.expiration`). Nhập sai 5 lần (`otp.max-attempts`) thì mã bị hủy và phải gọi `/resend-otp`.
-- Mã được giữ trong bộ nhớ của identity-service, theo email. Khởi động lại service thì mã đang chờ sẽ mất, người dùng chỉ cần gửi lại.
-- **Local dev:** để trống `MAIL_HOST` thì mã không được gửi mà được in ra log của identity-service: `[DEV] spring.mail.host not set, OTP for ...`.
-- **Gửi mail thật:** đặt các biến `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (ví dụ Gmail App Password). Template nằm ở `resources/templates/REGIS.html` và `FORGOT_PASSWORD.html`.
+- 6 chữ số, có hiệu lực 5 phút (`otp.expiration`). Nhập sai 5 lần (`otp.max-attempts`) thì email bị khóa nhập mã 15 phút (`otp.lockout-duration`). Gửi lại mã cách nhau ít nhất 60 giây, tối đa 5 lần mỗi giờ.
+- Mã được giữ trong bộ nhớ của identity-service, theo **mục đích và email**: mã xác nhận đăng ký không dùng được để đặt lại mật khẩu, và ngược lại. Khởi động lại service thì mã đang chờ sẽ mất, người dùng chỉ cần gửi lại. Chỉ đúng khi chạy một instance identity-service.
+- identity-service chỉ phát sự kiện `notification.email.identity`; việc gửi mail (và chế độ in mã ra log khi để trống `MAIL_HOST`) do notification-service làm. Tiêu đề email nằm trong `messages.properties` (`email.subject.*`).
+- **Gửi mail thật:** đặt các biến `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (ví dụ Gmail App Password).
 
 ## Lỗi
 
-Mọi lỗi trả theo cùng một dạng, giống Capstone:
+Thành công và lỗi dùng **một dạng body** `ApiResponse<T>` (Software Design 5.1 quy tắc 8): `{status, code, message, data, timestamp}`. Thành công: `code = "SUCCESS"`, `message = "OK"`, dữ liệu nằm trong `data` (các ví dụ `LoginResponse`, `AddressResponse` trong tài liệu này là nội dung của `data`). Lỗi: `code` là mã nghiệp vụ (`ErrorCode`), `message` là câu cho người dùng, `data = null`, thêm `path`; lỗi validation thêm `errors`. API nội bộ `/internal/**` trả thẳng dữ liệu, không bọc.
 
 ```json
-{ "status": 409, "error": "Conflict", "message": "Email đã được sử dụng", "path": "/api/auth/register", "timestamp": "..." }
+{ "status": 200, "code": "SUCCESS", "message": "OK",
+  "data": { "token": "...", "refreshToken": "...", "role": "MEMBER" }, "timestamp": "2026-10-19T03:00:00Z" }
+
+{ "status": 409, "code": "AUTH_007", "message": "Email lan@example.com đã được sử dụng.", "data": null,
+  "path": "/api/auth/register", "timestamp": "2026-10-19T03:00:00Z" }
+
+{ "status": 400, "code": "COMMON_400", "message": "Dữ liệu đầu vào không hợp lệ.", "data": null,
+  "errors": [ { "field": "email", "message": "Email không đúng định dạng" } ], "path": "...", "timestamp": "..." }
 ```
+
+`DELETE` trả 204 không có body.
 
 | HTTP | Khi nào |
 |---|---|
-| 400 | Validation (`field: message; ...`), OTP sai hoặc hết hạn, tài khoản chưa kích hoạt, tài khoản bị khóa |
-| 401 | Sai thông tin đăng nhập (một câu chung cho mọi trường hợp, FR-02), token thiếu, sai hoặc hết hạn |
+| 400 | Validation (`COMMON_400`, kèm `errors`), JSON sai dạng (`COMMON_400_JSON`), OTP sai hoặc hết hạn |
+| 401 | Sai thông tin đăng nhập (một câu chung cho mọi trường hợp, FR-02), token thiếu, sai, hết hạn, hoặc phát trước lần đặt lại mật khẩu |
+| 403 | Tài khoản chưa xác nhận email (`AUTH_002`) |
 | 404 | Không tìm thấy tài nguyên, hoặc tài nguyên thuộc người khác (ví dụ địa chỉ) |
 | 409 | Email hoặc số điện thoại đã được dùng (AC-01.3) |
+| 429 | Gửi lại mã quá sớm, quá số lần mỗi giờ, hoặc nhập sai mã quá số lần |
 | 503 | Không gửi được email chứa mã xác nhận; người dùng thử gửi lại mã |
 
 "Chưa kích hoạt" hoặc "bị khóa" **chỉ** được báo khi mật khẩu đúng, để người lạ không dò được email nào đã đăng ký.
@@ -92,9 +108,9 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
 | DELETE | `/{addressId}` | – | 204 |
 
 ```json
-// AddressResponse
+// AddressResponse (nội dung của "data")
 { "id": "...", "detail": "12 Le Loi, Q1", "areaCode": "HCM", "isDefault": true,
-  "createdAt": "2026-10-17T18:30:17", "updatedAt": "2026-10-17T18:30:17" }
+  "createdAt": "2026-10-17T11:30:17Z", "updatedAt": "2026-10-17T11:30:17Z" }
 ```
 
 - `areaCode`: mã tỉnh/thành (Q-12, giá trị tạm), cùng bộ mã với vùng giao của người bán; được viết hoa khi lưu. Chỉ gồm chữ, số, `_`, `-`, tối đa 20 ký tự.

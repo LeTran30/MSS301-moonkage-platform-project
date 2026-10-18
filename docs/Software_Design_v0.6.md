@@ -338,7 +338,7 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
    - Các đường dẫn `/api/...` còn lại: thao tác của người mua (Member) hoặc khách. Đường dẫn cho khách (không JWT) liệt kê ở mục 8.
 6. Service gọi nhau qua `/internal/<tài-nguyên>/...`, cùng quy tắc đặt tên. Gateway không định tuyến `/internal/**`.
 7. JSON: tên trường `camelCase`; giá trị enum viết `UPPER_SNAKE_CASE` (`VERIFIED`, `REGISTRATION_FEE`); ngày `yyyy-MM-dd`, thời điểm ISO 8601 có múi giờ; tiền là số nguyên VND. Tên cột database vẫn `snake_case`, không lộ ra API.
-8. Danh sách trả về có phân trang theo tham số `page`, `size`, `sort`. Lỗi trả cùng một dạng `{status, error, message, path, timestamp}` như `docs/auth.md`; lỗi nghiệp vụ có thêm `code` (ví dụ `reasonCode` của xác minh NFC).
+8. Danh sách trả về có phân trang theo tham số `page`, `size`, `sort`. API công khai trả **một dạng body** cho cả thành công và lỗi (`ApiResponse<T>`, `docs/auth.md`): `{status, code, message, data, timestamp}`. Thành công: `code = SUCCESS`, dữ liệu trong `data`. Lỗi: `code` là mã lỗi nghiệp vụ, `data = null`, thêm `path`, và `errors` khi lỗi validation. Kết quả nghiệp vụ không phải lỗi (ví dụ `status`/`reasonCode` của xác minh NFC) nằm trong `data`. API nội bộ `/internal/**` trả thẳng dữ liệu; lỗi của nó cùng dạng trên. (Cập nhật 2026-10-19.)
 9. WebSocket thông báo đi qua gateway ở `/ws` (notification-service).
 
 **Bảng định tuyến ở gateway.** Mỗi tiền tố trỏ tới đúng một service (`lb://<service>`); đường dẫn giữ nguyên khi chuyển vào service. Tiền tố cụ thể của từng nhóm FR có thể bổ sung khi thiết kế chi tiết API, nhưng phải theo quy tắc trên và mỗi tiền tố chỉ thuộc một service.
