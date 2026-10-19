@@ -124,7 +124,7 @@ Hiện trạng: identity đã ghi event `account.nfc_*` vào outbox; orchestrato
 | 5.2 | Mobile: `checkSession` coi `status = VERIFIED` là `SESSION_USED`, không cho sang màn chạm thẻ | M5 |
 | 5.3 | Mobile: thứ tự ngày giống server (ngày cấp **sau** ngày sinh); cảnh báo CCCD hết hạn ngay ở màn xác nhận trước khi bấm Lưu | M6, M7 |
 | 5.4 | Mobile: viết `docs/NFC_CARD_GUIDE.md` (định dạng JSON trên thẻ, cách dùng `tool/make_card.dart`) | M8 |
-| 5.5 | Software Design: đổi `gender` → `sex` trong body `.../card`, ghi đường dẫn WebSocket và destination `/user/queue/nfc` | A5 |
+| 5.5 | Đồng bộ tên trường với Software Design: body `.../card` và cột `legal_profiles` dùng `gender` (không phải `sex`; migration `api/docs/2026-10-19_legal_profiles_gender.sql`, app phải gửi `gender`); ghi đường dẫn WebSocket và destination `/user/queue/nfc` | A5 |
 | 5.6 | Postman: thêm thư mục NFC (tạo phiên, xem phiên, xem trạng thái) vào `postman-collections` | — |
 | 5.7 | Cập nhật `nfc-survey.md` thành trạng thái mới, hoặc đánh dấu đã xử lý | — |
 

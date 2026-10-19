@@ -22,8 +22,8 @@ class NfcCardValidatorTest {
         return request("NGUYEN VAN A", "MALE", "2021-01-01", "2046-01-01");
     }
 
-    static SubmitCardRequest request(String fullName, String sex, String dateOfIssue, String dateOfExpiry) {
-        return new SubmitCardRequest(fullName, sex, "VIET NAM", "HA NOI", dateOfIssue, dateOfExpiry, "jwe", "1.0.0");
+    static SubmitCardRequest request(String fullName, String gender, String dateOfIssue, String dateOfExpiry) {
+        return new SubmitCardRequest(fullName, gender, "VIET NAM", "HA NOI", dateOfIssue, dateOfExpiry, "jwe", "1.0.0");
     }
 
     static Map<String, Object> validFields() {
@@ -64,8 +64,8 @@ class NfcCardValidatorTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"Nam", "Nu", "male", "OTHER"})
-    void sexMustBeMaleOrFemale(String sex) {
-        assertTrue(NfcCardValidator.validate(request("NGUYEN VAN A", sex, "2021-01-01", "2046-01-01"), validFields())
+    void genderMustBeMaleOrFemale(String gender) {
+        assertTrue(NfcCardValidator.validate(request("NGUYEN VAN A", gender, "2021-01-01", "2046-01-01"), validFields())
                 .isEmpty());
     }
 
