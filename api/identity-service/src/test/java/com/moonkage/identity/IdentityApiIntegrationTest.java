@@ -363,7 +363,7 @@ class IdentityApiIntegrationTest {
         String dateOfExpiry =
                 LocalDate.now(TimeConstant.VIETNAM_ZONE).plusYears(5).toString();
         String card = """
-                {"fullName":"NGUYEN VAN AN","gender":"MALE","nationality":"Viet Nam","placeOfBirth":"Tinh Lam Dong",
+                {"fullName":"NGUYEN VAN AN","sex":"MALE","nationality":"Viet Nam","placeOfBirth":"Tinh Lam Dong",
                 "dateOfIssue":"2024-01-01","dateOfExpiry":"%s","encryptedFields":"%s","appVersion":"it"}
                 """.formatted(dateOfExpiry, jwe.serialize());
         return mvc.perform(post("/api/nfc/sessions/" + sessionId + "/card")
