@@ -1,7 +1,7 @@
 # =============================================
 # Moonkage - full stack
 #   Everything:          docker compose up -d --build
-#   Only the databases:  docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db orchestrator-db minio rabbitmq
+#   Only the databases:  docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db orchestrator-db minio minio-init rabbitmq
 #                        (then run the services from the IDE / mvn)
 # Values come from .env in this folder (see .env.example).
 # =============================================
@@ -12,16 +12,15 @@ x-postgres: &postgres
   restart: unless-stopped
   networks: [moonkage-network]
 
+# Each service lists only the variables it reads (least privilege): no container gets the whole .env, so
+# e.g. catalog never sees the JWT key, the ID pepper or the MinIO root account.
+#   - VAR        value from .env; left out of the container when .env does not set it, so the default in
+#                application.yml still applies
+#   - VAR=value  fixed for the Docker network (database host, Eureka URL…)
+# When a service starts reading a new variable, add it to its list here.
 x-app: &app
   restart: unless-stopped
-  env_file: .env
   networks: [moonkage-network]
-
-x-app-env: &app-env
-  EUREKA_URL: http://discovery-server:8761/eureka/
-  RABBITMQ_HOST: rabbitmq
-  RABBITMQ_PORT: 5672
-  TZ: Asia/Ho_Chi_Minh
 
 services:
   # ───────────── Databases: one PostgreSQL per service ─────────────
@@ -130,7 +129,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ───────────── File storage (used only by file-service) ─────────────
+  # ───────────── File storage (services that own files sign MinIO links themselves) ─────────────
   minio:
     image: chainguard/minio:latest
     container_name: moonkage-minio
@@ -148,6 +147,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Runs once with the root account: buckets, lifecycle, and one MinIO user per service limited to its own
+  # key prefixes (minio/init.sh). Services get only their own user, never the root account.
+  minio-init:
+    image: chainguard/minio:latest
+    container_name: moonkage-minio-init
+    restart: "no"
+    networks: [moonkage-network]
+    entrypoint: ["sh", "/init/init.sh"]
+    volumes: ["./minio/init.sh:/init/init.sh:ro"]
+    environment:
+      MINIO_INTERNAL_URL: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_PUBLIC_BUCKET: ${MINIO_PUBLIC_BUCKET}
+      MINIO_PRIVATE_BUCKET: ${MINIO_PRIVATE_BUCKET}
+      MINIO_VENDOR_DOCS_BUCKET: ${MINIO_VENDOR_DOCS_BUCKET}
+      MINIO_TEMP_RETENTION_DAYS: ${MINIO_TEMP_RETENTION_DAYS:-1}
+      MINIO_CATALOG_ACCESS_KEY: ${MINIO_CATALOG_ACCESS_KEY}
+      MINIO_CATALOG_SECRET_KEY: ${MINIO_CATALOG_SECRET_KEY}
+      MINIO_ORDER_ACCESS_KEY: ${MINIO_ORDER_ACCESS_KEY}
+      MINIO_ORDER_SECRET_KEY: ${MINIO_ORDER_SECRET_KEY}
+      MINIO_VENDOR_ACCESS_KEY: ${MINIO_VENDOR_ACCESS_KEY}
+      MINIO_VENDOR_SECRET_KEY: ${MINIO_VENDOR_SECRET_KEY}
+    depends_on:
+      minio: { condition: service_healthy }
 
   # ───────────── Message broker (domain events, Software Design 5.4) ─────────────
   rabbitmq:
@@ -172,7 +197,8 @@ services:
     <<: *app
     container_name: moonkage-discovery-server
     build: { context: ./api, dockerfile: discovery-server/Dockerfile }
-    environment: { TZ: Asia/Ho_Chi_Minh }
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
     ports: ["8761:8761"]
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8761/ || exit 1"]
@@ -184,7 +210,12 @@ services:
     <<: *app
     container_name: moonkage-api-gateway
     build: { context: ./api, dockerfile: api-gateway/Dockerfile }
-    environment: *app-env
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - JWT_SECRET
+      - CORS_ORIGINS
+      - GATEWAY_TRUSTED_PROXIES
     # the only business entry point exposed to the host; other services are reachable only through it
     ports: ["8080:8080"]
     depends_on:
@@ -196,9 +227,33 @@ services:
     container_name: moonkage-identity-service
     build: { context: ./api, dockerfile: identity-service/Dockerfile }
     environment:
-      <<: *app-env
-      IDENTITY_DB_HOST: identity-db
-      IDENTITY_DB_PORT: 5432
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - DB_USERNAME
+      - DB_PASSWORD
+      - IDENTITY_DB_HOST=identity-db
+      - IDENTITY_DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
+      - JPA_SHOW_SQL
+      - JWT_SECRET
+      - JWT_EXPIRATION
+      - JWT_REFRESH_EXPIRATION
+      - OTP_EXPIRATION
+      - OTP_MAX_ATTEMPTS
+      - OTP_LOCKOUT_DURATION
+      - OTP_RESEND_COOLDOWN
+      - OTP_MAX_RESEND_PER_HOUR
+      - NFC_SESSION_TTL
+      - NFC_MAX_ATTEMPTS
+      - NFC_LOCKOUT_DURATION
+      - NFC_TRANSPORT_PRIVATE_KEY_V1
+      - PII_ENC_KEY_V1
+      - ID_HASH_PEPPER_V1
+      - ADMIN_EMAIL
+      - ADMIN_PASSWORD
     depends_on:
       identity-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -208,11 +263,32 @@ services:
     container_name: moonkage-catalog-service
     build: { context: ./api, dockerfile: catalog-service/Dockerfile }
     environment:
-      <<: *app-env
-      CATALOG_DB_HOST: catalog-db
-      CATALOG_DB_PORT: 5432
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - DB_USERNAME
+      - DB_PASSWORD
+      - CATALOG_DB_HOST=catalog-db
+      - CATALOG_DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
+      # catalog's own MinIO user only, never the root account (minio/init.sh)
+      - MINIO_INTERNAL_URL=http://minio:9000
+      - MINIO_API_PORT
+      - MINIO_BROWSER_URL
+      - MINIO_REGION
+      - MINIO_CATALOG_ACCESS_KEY
+      - MINIO_CATALOG_SECRET_KEY
+      - MINIO_PUBLIC_BUCKET
+      - MINIO_PRIVATE_BUCKET
+      - MINIO_UPLOAD_LINK_LIFETIME
+      - MINIO_DOWNLOAD_LINK_LIFETIME
+      - PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES
+      - PRODUCT_IMAGE_MAX_SIZE
     depends_on:
       catalog-db: { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
       discovery-server: { condition: service_healthy }
 
   quotation-service:
@@ -220,9 +296,12 @@ services:
     container_name: moonkage-quotation-service
     build: { context: ./api, dockerfile: quotation-service/Dockerfile }
     environment:
-      <<: *app-env
-      QUOTATION_DB_HOST: quotation-db
-      QUOTATION_DB_PORT: 5432
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - DB_USERNAME
+      - DB_PASSWORD
+      - QUOTATION_DB_HOST=quotation-db
+      - QUOTATION_DB_PORT=5432
     depends_on:
       quotation-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -232,22 +311,14 @@ services:
     container_name: moonkage-order-service
     build: { context: ./api, dockerfile: order-service/Dockerfile }
     environment:
-      <<: *app-env
-      ORDER_DB_HOST: order-db
-      ORDER_DB_PORT: 5432
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - DB_USERNAME
+      - DB_PASSWORD
+      - ORDER_DB_HOST=order-db
+      - ORDER_DB_PORT=5432
     depends_on:
       order-db: { condition: service_healthy }
-      discovery-server: { condition: service_healthy }
-
-  file-service:
-    <<: *app
-    container_name: moonkage-file-service
-    build: { context: ./api, dockerfile: file-service/Dockerfile }
-    environment:
-      <<: *app-env
-      MINIO_URL: http://minio:9000
-    depends_on:
-      minio: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
   vendor-service:
@@ -255,9 +326,12 @@ services:
     container_name: moonkage-vendor-service
     build: { context: ./api, dockerfile: vendor-service/Dockerfile }
     environment:
-      <<: *app-env
-      VENDOR_DB_HOST: vendor-db
-      VENDOR_DB_PORT: 5432
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - DB_USERNAME
+      - DB_PASSWORD
+      - VENDOR_DB_HOST=vendor-db
+      - VENDOR_DB_PORT=5432
     depends_on:
       vendor-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -267,9 +341,12 @@ services:
     container_name: moonkage-payment-service
     build: { context: ./api, dockerfile: payment-service/Dockerfile }
     environment:
-      <<: *app-env
-      PAYMENT_DB_HOST: payment-db
-      PAYMENT_DB_PORT: 5432
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - DB_USERNAME
+      - DB_PASSWORD
+      - PAYMENT_DB_HOST=payment-db
+      - PAYMENT_DB_PORT=5432
     depends_on:
       payment-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -279,9 +356,22 @@ services:
     container_name: moonkage-orchestrator-service
     build: { context: ./api, dockerfile: orchestrator-service/Dockerfile }
     environment:
-      <<: *app-env
-      ORCHESTRATOR_DB_HOST: orchestrator-db
-      ORCHESTRATOR_DB_PORT: 5432
+      - TZ=Asia/Ho_Chi_Minh
+      - EUREKA_URL=http://discovery-server:8761/eureka/
+      - DB_USERNAME
+      - DB_PASSWORD
+      - ORCHESTRATOR_DB_HOST=orchestrator-db
+      - ORCHESTRATOR_DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
+      - JWT_SECRET
+      - CORS_ORIGINS
+      - MAIL_HOST
+      - MAIL_PORT
+      - MAIL_USERNAME
+      - MAIL_PASSWORD
     depends_on:
       orchestrator-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }

@@ -5,13 +5,15 @@ import com.moonkage.catalog.dto.response.ProductResponse;
 import com.moonkage.catalog.entity.Product;
 import com.moonkage.catalog.entity.ProductPriceTier;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /** Entity → DTO for products. DTOs must not depend on entities (ArchitectureTest). */
 public final class ProductMapper {
 
     private ProductMapper() {}
 
-    public static ProductResponse toResponse(Product p) {
+    /** imageUrl turns an image object key into the URL a browser loads. */
+    public static ProductResponse toResponse(Product p, UnaryOperator<String> imageUrl) {
         return ProductResponse.builder()
                 .id(p.getId())
                 .vendorId(p.getVendorId())
@@ -29,7 +31,8 @@ public final class ProductMapper {
                 .quoteThreshold(p.getQuoteThreshold())
                 .status(p.getStatus())
                 .removedReason(p.getRemovedReason())
-                .imageUrls(List.copyOf(p.getImageUrls()))
+                .imageKeys(List.copyOf(p.getImageKeys()))
+                .imageUrls(p.getImageKeys().stream().map(imageUrl).toList())
                 .priceTiers(p.getPriceTiers().stream()
                         .map(ProductMapper::toResponse)
                         .toList())

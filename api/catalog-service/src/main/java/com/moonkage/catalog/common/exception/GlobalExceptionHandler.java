@@ -1,10 +1,16 @@
 package com.moonkage.catalog.common.exception;
 
+import com.moonkage.storage.InvalidFileException;
+import com.moonkage.storage.StorageErrorCode;
+import com.moonkage.storage.StorageUnavailableException;
 import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,7 +23,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 /** Same error body as identity-service. */
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    /** Holds storage-messages (spring.messages.basename). */
+    private final MessageSource messageSource;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(
@@ -45,6 +55,17 @@ public class GlobalExceptionHandler {
         return build(ex.getStatus(), ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidFile(InvalidFileException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, localize(ex.getErrorCode(), ex.getMessageArgs()), request);
+    }
+
+    @ExceptionHandler(StorageUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleStorage(StorageUnavailableException ex, HttpServletRequest request) {
+        log.error("MinIO call failed", ex);
+        return build(HttpStatus.SERVICE_UNAVAILABLE, localize(StorageErrorCode.UNAVAILABLE), request);
+    }
+
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ErrorResponse> handleFeign(FeignException ex, HttpServletRequest request) {
         log.error("Call to another service failed", ex);
@@ -64,5 +85,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status)
                 .body(new ErrorResponse(
                         status.value(), status.getReasonPhrase(), message, request.getRequestURI(), Instant.now()));
+    }
+
+    private String localize(StorageErrorCode errorCode, Object... args) {
+        return messageSource.getMessage(errorCode.getMessageKey(), args, LocaleContextHolder.getLocale());
     }
 }

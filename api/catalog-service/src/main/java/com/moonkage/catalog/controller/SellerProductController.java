@@ -1,7 +1,9 @@
 package com.moonkage.catalog.controller;
 
 import com.moonkage.catalog.dto.request.CreateProductRequest;
+import com.moonkage.catalog.dto.request.ImageUploadRequest;
 import com.moonkage.catalog.dto.request.UpdateProductRequest;
+import com.moonkage.catalog.dto.response.PresignedUploadLinkResponse;
 import com.moonkage.catalog.dto.response.ProductResponse;
 import com.moonkage.catalog.enums.ProductStatus;
 import com.moonkage.catalog.service.ProductService;
@@ -41,6 +43,18 @@ public class SellerProductController {
             @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
             @Valid @RequestBody CreateProductRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(accountId, request));
+    }
+
+    /**
+     * Upload a product image straight to MinIO: POST formFields and the file to uploadUrl, then send tempKey in
+     * imageKeys when creating or updating the product. Its EXIF/GPS metadata is removed then. An upload never
+     * attached to a product is removed after a day.
+     */
+    @PostMapping("/images/uploads")
+    public PresignedUploadLinkResponse createImageUploadLink(
+            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
+            @Valid @RequestBody ImageUploadRequest request) {
+        return productService.createImageUploadLink(accountId, request);
     }
 
     @GetMapping

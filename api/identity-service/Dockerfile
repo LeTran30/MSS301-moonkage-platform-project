@@ -14,7 +14,7 @@ COPY identity-service/pom.xml identity-service/
 COPY catalog-service/pom.xml catalog-service/
 COPY quotation-service/pom.xml quotation-service/
 COPY order-service/pom.xml order-service/
-COPY file-service/pom.xml file-service/
+COPY common-storage/pom.xml common-storage/
 COPY vendor-service/pom.xml vendor-service/
 COPY payment-service/pom.xml payment-service/
 COPY orchestrator-service/pom.xml orchestrator-service/

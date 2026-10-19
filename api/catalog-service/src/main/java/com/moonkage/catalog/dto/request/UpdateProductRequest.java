@@ -13,7 +13,8 @@ import java.util.List;
 import lombok.Data;
 
 /**
- * Partial update: a field that is missing, null, blank text or an empty image list keeps its old value.
+ * Partial update: a field that is missing, null, blank text or an empty imageKeys list keeps its old value.
+ * imageKeys, when sent, is the full new list in display order (images left out are deleted).
  * priceTiers is the exception: when sent it replaces all tiers, and [] removes them.
  */
 @Data
@@ -25,8 +26,9 @@ public class UpdateProductRequest {
     @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự")
     private String description;
 
+    /** tempKey from POST /api/seller/products/images/uploads, or a key the product already has. */
     @Size(max = 10, message = "Tối đa 10 ảnh")
-    private List<@NotBlank(message = "URL ảnh không được để trống") String> imageUrls;
+    private List<@NotBlank(message = "Mã ảnh không được để trống") String> imageKeys;
 
     @Size(max = 100, message = "Loại bánh tối đa 100 ký tự")
     private String cakeType;

@@ -55,8 +55,6 @@ springdoc:
         url: /quotation-service/v3/api-docs
       - name: order-service
         url: /order-service/v3/api-docs
-      - name: file-service
-        url: /file-service/v3/api-docs
       - name: vendor-service
         url: /vendor-service/v3/api-docs
       - name: payment-service

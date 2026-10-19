@@ -30,7 +30,7 @@
 - ✅ API Gateway kiểm tra JWT và phân quyền theo role (`CUSTOMER`, `SELLER`, `ADMIN`)
 - ✅ Khách chưa đăng nhập vẫn xem và tìm kiếm sản phẩm
 - ✅ Shop quản lý sản phẩm: tạo, sửa, ẩn/hiện, xóa, bảng giá theo số lượng
-- ✅ Upload file lên MinIO dùng chung cho mọi service, có presigned URL
+- ✅ Ảnh sản phẩm upload thẳng lên MinIO qua presigned URL do catalog-service cấp (không có file-service)
 - ✅ Swagger UI gộp tất cả service tại gateway
 - 🚧 Địa chỉ, đăng ký nhà bán (vendor), khu vực giao hàng, đánh giá
 - 🚧 Đấu thầu: yêu cầu báo giá, báo giá, mùa bán hàng
@@ -56,7 +56,6 @@ flowchart LR
     GW --> CA["catalog-service :8082"]
     GW --> TE["quotation-service :8083"]
     GW --> OR["order-service :8084"]
-    GW --> FI["file-service :8085"]
     GW --> VE["vendor-service :8086"]
     GW --> PA["payment-service :8087"]
     GW --> NO["orchestrator-service :8088"]
@@ -64,7 +63,7 @@ flowchart LR
     CA --> CDB[("catalog_db :5442")]
     TE --> TDB[("quotation_db :5443")]
     OR --> ODB[("order_db :5444")]
-    FI --> MI[("MinIO :9000")]
+    CA --> MI[("MinIO :9000")]
     VE --> VDB[("vendor_db :5445")]
     PA --> PDB[("payment_db :5446")]
     NO --> NDB[("orchestrator_db :5447")]
@@ -86,7 +85,7 @@ flowchart LR
 | **Catalog Service** | Sản phẩm, bậc giá, tồn kho | `8082` |
 | **Quotation Service** | Yêu cầu báo giá, lời mời, báo giá | `8083` |
 | **Order Service** | Giỏ hàng, đơn hàng, maket, tiến độ, khiếu nại, đánh giá, voucher | `8084` |
-| **File Service** | Upload file lên MinIO | `8085` |
+| **common-storage** | Thư viện (không phải service): presigned upload/xem file MinIO cho service sở hữu file | – |
 | **Vendor Service** | Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký | `8086` |
 | **Payment Service** | Thanh toán VNPay, sổ giữ tiền, giải ngân cọc, hoàn tiền (chưa có nghiệp vụ) | `8087` |
 | **Orchestrator Service** | Audit log toàn nền tảng (nhận qua RabbitMQ), thông báo trong ứng dụng | `8088` |
@@ -128,7 +127,7 @@ docker compose logs -f identity-service   # mã OTP được in ra đây khi MAI
 
 ### Cách B: database chạy Docker, service chạy từ IDE
 ```bash
-docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db orchestrator-db minio rabbitmq
+docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db orchestrator-db minio minio-init rabbitmq
 
 cd api
 ./mvnw -pl discovery-server spring-boot:run   # chạy Eureka trước
@@ -137,7 +136,6 @@ cd api
 ./mvnw -pl catalog-service spring-boot:run
 ./mvnw -pl quotation-service spring-boot:run
 ./mvnw -pl order-service spring-boot:run
-./mvnw -pl file-service spring-boot:run
 ./mvnw -pl vendor-service spring-boot:run
 ./mvnw -pl payment-service spring-boot:run
 ./mvnw -pl orchestrator-service spring-boot:run
@@ -158,6 +156,8 @@ Khi identity-service khởi động lần đầu, một tài khoản admin đư�
 ## Biến môi trường
 Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 
+Trong Docker, mỗi container chỉ nhận các biến nó đọc (danh sách `environment` của service trong `docker-compose.yml`), không nạp cả `.env`. Khi một service đọc thêm biến mới trong `application.yml`, nhớ thêm biến đó vào danh sách của service trong `docker-compose.yml`. Chạy từ IDE thì service vẫn đọc cả `.env` ở thư mục gốc.
+
 | Biến | Mô tả | Ví dụ |
 |---|---|---|
 | `DB_USERNAME`, `DB_PASSWORD` | Tài khoản PostgreSQL dùng chung cho 4 DB | `bake2b` / `bake2b_secret` |
@@ -169,8 +169,11 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP gửi OTP. Để trống `MAIL_HOST` khi dev | `smtp.gmail.com`, `587` |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Tài khoản admin tạo lúc khởi động | `admin@moonkage.vn` |
 | `CORS_ORIGINS` | Origin frontend được phép gọi gateway (phân cách bằng dấu phẩy) | `http://localhost:5173` |
-| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Tài khoản MinIO | `minioadmin` |
-| `MINIO_API_PORT`, `MINIO_CONSOLE_PORT`, `MINIO_BUCKET_NAME` | Port và bucket MinIO | `9000`, `9001`, `ecommerce` |
+| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Tài khoản root MinIO, chỉ container `minio` và `minio-init` dùng | `minioadmin` |
+| `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` | Port MinIO (API, console) | `9000`, `9001` |
+| `MINIO_BROWSER_URL` | Địa chỉ trình duyệt dùng để tới MinIO (URL ảnh, link upload); bắt buộc đặt khi deploy | `http://localhost:9000` |
+| `MINIO_PUBLIC_BUCKET`, `MINIO_PRIVATE_BUCKET`, `MINIO_VENDOR_DOCS_BUCKET` | Bucket đọc công khai (ảnh sản phẩm), riêng tư (file của order, upload tạm) và giấy tờ người bán (chỉ vendor-service) | `moonkage-public`, `moonkage-private`, `moonkage-vendor-docs` |
+| `MINIO_CATALOG_ACCESS_KEY` / `_SECRET_KEY`, `MINIO_ORDER_…`, `MINIO_VENDOR_…` | User MinIO riêng của từng service, do `minio-init` tạo; service không dùng tài khoản root | `catalog-service`, … |
 
 ## Cấu trúc thư mục
 ```
@@ -179,13 +182,13 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 │   ├── mvnw, mvnw.cmd          # Maven wrapper
 │   ├── config/checkstyle/      # Luật Checkstyle
 │   ├── docs/                   # Ghi chú kỹ thuật backend
+│   ├── common-storage/         # Thư viện presigned upload/xem file MinIO (không phải service)
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # Gateway, JWT, CORS, Swagger tổng
 │   ├── identity-service/       # Tài khoản, hồ sơ người dùng, địa chỉ, xác minh NFC
 │   ├── catalog-service/        # Sản phẩm, bậc giá, tồn kho
 │   ├── quotation-service/      # Yêu cầu báo giá, lời mời, báo giá
 │   ├── order-service/          # Giỏ hàng, đơn hàng, maket, khiếu nại, đánh giá, voucher
-│   ├── file-service/           # Upload file lên MinIO
 │   ├── vendor-service/         # Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký
 │   ├── payment-service/        # VNPay, giữ tiền, giải ngân, hoàn tiền
 │   ├── orchestrator-service/   # Audit log (RabbitMQ), thông báo
@@ -217,8 +220,7 @@ Gọi qua gateway `http://localhost:8080/<service>/...`. Một số endpoint ch�
 | PUT | `/catalog-service/api/seller/products/{productId}` | Shop sửa sản phẩm | ✅ `SELLER` |
 | PATCH | `/catalog-service/api/seller/products/{productId}/visibility` | Ẩn/hiện sản phẩm | ✅ `SELLER` |
 | DELETE | `/catalog-service/api/seller/products/{productId}` | Xóa sản phẩm | ✅ `SELLER` |
-| POST | `/file-service/api/files` | Upload file (multipart) | ✅ |
-| GET | `/file-service/api/files/presigned` | Lấy presigned URL | ✅ |
+| POST | `/catalog-service/api/seller/products/images/uploads` | Xin link upload ảnh sản phẩm: POST multipart lên `uploadUrl` với mọi `formFields` rồi file ở trường `file`, sau đó gửi `tempKey` trong `imageKeys` | ✅ `SELLER` |
 
 - Tài liệu đầy đủ: [Swagger UI](http://localhost:8080/swagger-ui.html). Đăng nhập qua `/api/auth/login`, dán `token` vào nút **Authorize**.
 - Chi tiết luồng xác thực, token, OTP và định dạng lỗi: [`docs/iden-service/auth.md`](docs/iden-service/auth.md).

@@ -124,7 +124,7 @@ flowchart TB
 2. Quy tắc nào cần một transaction thì các thực thể liên quan nằm cùng service. Ví dụ NFR-09 buộc Payment, Escrow/Ledger, DisbursementRequest nằm chung.
 3. Không chia mịn hơn khi các phần luôn thay đổi cùng nhau (giỏ, đơn, maket, tiến độ, khiếu nại đều xoay quanh Order).
 4. Không có admin-service. Quản trị là một vai; mỗi service tự có endpoint quản trị cho dữ liệu nó sở hữu.
-5. Không có file-service. Service sở hữu file tự cấp presigned URL MinIO.
+5. Không có file-service. Service sở hữu file tự cấp presigned URL MinIO, qua thư viện dùng chung `common-storage`.
 6. Không tạo thực thể nghiệp vụ trước khi Requirement cho phép tạo. Ví dụ Order chỉ được tạo sau khi thanh toán thành công (FR-09, FR-19); trạng thái chờ thanh toán nằm ở bản ghi kỹ thuật (D-10, D-11).
 
 ---
@@ -198,7 +198,7 @@ Hạ tầng: `api-gateway`, `discovery-server` (Eureka), `postgres`, `rabbitmq`,
 
 **Tên trường:** tên đơn vị là `business_name`, dùng thống nhất từ bảng database, entity, DTO đến giao diện. Không dùng `legal_name` ở vendor-service; tên đó chỉ thuộc về `Account` ở identity (họ tên người).
 
-**File:** giấy chứng nhận đăng ký, giấy tờ an toàn thực phẩm, file thỏa thuận hợp tác và hóa đơn phí đăng ký lưu ở bucket MinIO riêng tư `vendor-docs`; chỉ chủ và quản trị được cấp URL (NFR-03).
+**File:** giấy chứng nhận đăng ký, giấy tờ an toàn thực phẩm, file thỏa thuận hợp tác và hóa đơn phí đăng ký lưu ở bucket MinIO riêng tư `vendor-docs` (`MINIO_VENDOR_DOCS_BUCKET`), chỉ user MinIO của vendor-service truy cập được; chỉ chủ và quản trị được cấp URL (NFR-03).
 
 **Phát sự kiện `vendor.updated`** mỗi khi dữ liệu dưới đây đổi. Đây là nguồn cho bản sao ở catalog, quotation, order:
 `vendor_id, owner_account_id, business_name, status, can_operate, sells_shop, accepts_orders, supply_source, delivery_areas, local_delivery_fee, order_profile {min_qty, ref_price_tiers, lead_time_days, custom_capabilities, early_bird_offer, weekly_capacity, cake_types, packaging_types, logo_printing, distributed_brands, gatherable_qty}`.
@@ -604,7 +604,10 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 - **Phân quyền ở hai lớp:** gateway chặn theo đường dẫn (`/api/admin/**` cần `ADMIN`, `/api/seller/**` cần JWT); service kiểm lại bằng Spring Security. Mọi quy tắc nghiệp vụ kiểm ở service, không dựa vào giao diện (Requirement mục 9).
 - **Endpoint nội bộ:** gateway không định tuyến `/internal/**`. Trong Docker Compose các service nằm trên mạng nội bộ, chỉ gateway mở cổng ra ngoài.
 - **Endpoint công khai không JWT:** đăng ký, xác nhận, đăng nhập, làm mới token, khôi phục mật khẩu dưới `/api/auth/**` (trừ `/api/auth/me`); `GET` xem sản phẩm, đánh giá, đơn vị cung cấp (`/api/products/**`, `/api/reviews/**`, `/api/suppliers/**`); IPN VNPay dưới `/api/payments/**` (xác thực bằng checksum của VNPay). Gateway giới hạn số request cho `POST /api/nfc/sessions/{sessionId}/card` theo tài khoản và theo IP.
-- **File:** bucket MinIO đều riêng tư; tải lên và tải xuống qua presigned URL có thời hạn; tên object là UUID, không chứa dữ liệu cá nhân (NFR-03). File thỏa thuận hợp tác và hóa đơn phí đăng ký thuộc `vendor-docs`, cùng mức bảo vệ với giấy tờ pháp lý.
+- **File:** tên object là `<loại>/<uuid>.<ext>`, không chứa accountId hay dữ liệu cá nhân (NFR-03); database lưu object key, không lưu URL.
+  - Bucket `MINIO_PUBLIC_BUCKET`: chỉ ảnh sản phẩm, ai cũng đọc được. Bucket `MINIO_PRIVATE_BUCKET`: mọi file còn lại, chỉ xem qua presigned GET có thời hạn, service sở hữu cấp sau khi kiểm quyền theo nghiệp vụ (ví dụ maket: người mua hoặc người bán của đơn). Bucket `MINIO_VENDOR_DOCS_BUCKET` (`vendor-docs`): giấy tờ người bán, file thỏa thuận hợp tác và hóa đơn phí đăng ký, cùng mức bảo vệ với giấy tờ pháp lý.
+  - Mỗi service một user MinIO, chỉ có `GetObject`/`PutObject`/`DeleteObject` trên tiền tố của mình: catalog `public/products/`, `private/tmp/catalog/`; order `private/order/`, `private/tmp/order/`; vendor `vendor-docs/vendor/`, `vendor-docs/tmp/vendor/`. Service không giữ tài khoản root và không tạo bucket; bucket, policy, lifecycle và user do container `minio-init` (`minio/init.sh`) tạo bằng root. Service kiểm quyền truy cập vùng tạm lúc khởi động và dừng nếu sai.
+  - Tải lên hai bước, upload đi thẳng lên MinIO: (1) client gửi loại và kích thước, service kiểm quyền rồi trả presigned POST vào `tmp/<service>/` của bucket riêng tư; policy ký sẵn khiến MinIO từ chối key khác, `Content-Type` khác hoặc file lớn hơn kích thước đã khai; (2) client POST file lên MinIO rồi gửi object key trong request nghiệp vụ; service đọc file một lần (tối đa giới hạn dung lượng), kiểm lại loại, kích thước và magic bytes, xóa metadata ảnh (EXIF/GPS, XMP, IPTC, text chunk; JPEG giữ Orientation), rồi ghi sang chỗ chính. Upload không được xác nhận bị lifecycle rule xóa sau 1 ngày.
 - **Dữ liệu NFC và số định danh:**
   - Chỉ lưu theo AC-04.11 và mục 7.1 của Requirement; không lưu nội dung thô của thẻ. Số định danh và ngày sinh mã hóa khi lưu; nơi sinh, nơi thường trú, ngày cấp, ngày hết hạn chỉ tồn tại trong bộ nhớ lúc kiểm.
   - Số định danh, ngày sinh, nơi thường trú đi từ app lên dưới dạng JWE, ngoài HTTPS (AC-04.10); gateway không giải mã được.
@@ -613,7 +616,7 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
   - Pepper bị lộ thì xử lý theo mục 4.2: thêm phiên bản mới, băm lại tài khoản từ bản mã hóa, băm lại hồ sơ người bán khi chủ nộp lại. Trong lúc chuyển tiếp, mã băm phiên bản cũ vẫn bị coi là có thể dò được; đây là rủi ro còn lại được chấp nhận.
   - Số đầy đủ chỉ tồn tại trong bộ nhớ lúc kiểm và lúc băm. Log ứng dụng và gateway không ghi body của `POST /api/nfc/sessions/{sessionId}/card` và `POST /internal/accounts/check` (cấu hình bộ lọc log).
   - Payload sự kiện và audit chỉ chứa dạng đã che.
-- **Bí mật cấu hình:** khóa VNPay, khóa JWT, pepper, khóa riêng giải mã JWE, khóa AES lưu dữ liệu xác minh, mật khẩu ứng dụng Gmail, mật khẩu database và MinIO đặt qua biến môi trường, không đưa vào repository.
+- **Bí mật cấu hình:** khóa VNPay, khóa JWT, pepper, khóa riêng giải mã JWE, khóa AES lưu dữ liệu xác minh, mật khẩu ứng dụng Gmail, mật khẩu database và MinIO đặt qua biến môi trường, không đưa vào repository. Trong Docker Compose mỗi container chỉ nhận biến nó đọc (danh sách `environment` của từng service), không nạp cả `.env`; ví dụ catalog không thấy khóa JWT, pepper hay tài khoản root MinIO.
 
 ---
 
@@ -639,6 +642,7 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 | orchestrator-db | ${ORCHESTRATOR_DB_PORT} (5438) | Chỉ khi phát triển |
 | rabbitmq | 5672, 15672 (giao diện quản lý) | Chỉ khi phát triển |
 | minio | 9000, 9001 (giao diện quản lý) | 9000 cho presigned URL |
+| minio-init | không mở cổng; chạy một lần rồi thoát | Không |
 | React (dev server hoặc Nginx) | 3000 | Có |
 
 - **Postgres:** mỗi service sở hữu một container database PostgreSQL độc lập (`identity-db`, `catalog-db`, `quotation-db`, `order-db`, `vendor-db`, `payment-db`, `orchestrator-db`), bảo đảm phân tách dữ liệu tuyệt đối theo kiến trúc microservices.
@@ -671,8 +675,9 @@ moonkage/
 │   │   ├── order-service/       # Đơn hàng, khiếu nại (cổng 8085)
 │   │   ├── payment-service/     # Giao dịch, VNPay, sổ tiền (cổng 8086)
 │   │   ├── orchestrator-service/# WebSocket, thông báo (cổng 8087)
-│   │   ├── file-service/        # Quản lý tệp MinIO S3
+│   │   ├── common-storage/      # Thư viện presigned upload/xem file MinIO (không phải service)
 │   │   └── docs/                # Migration scripts SQL & seed SQL ban đầu
+│   ├── minio/                   # init.sh: bucket, lifecycle, user MinIO cho từng service (container minio-init)
 │   ├── web/                     # React web frontend
 │   ├── docs/                    # Tài liệu đặc tả (Requirement, Software Design, Auth)
 │   ├── scripts/                 # Runner scripts tự động hoá (seed DB, dev tools)
@@ -728,4 +733,7 @@ Các mã FR, AC trong các dòng đến v0.4 là mã cũ (Requirement đến v1.
 | v0.5 | 2026-10-17 | | Đồng bộ Requirement v1.5 và mã FR mới. (1) Bỏ hoa hồng (CommissionConfig, `commission` trong sổ tiền, sự kiện `commission.changed`); bỏ Season và kiểm hạn chót mùa; bỏ sự kiện `product.deleted`, `season.cutoff_changed`; bỏ ghi thẻ NFC (thẻ do người dùng tự có). (2) Thêm phí đăng ký mở bán ở vendor (RegistrationFeeConfig, `can_operate`, luồng đóng phí trong 7.8, `purpose = REGISTRATION_FEE`), bảng phí liên tỉnh và tính phí giao ở catalog, `payment_group_id`, đối soát toàn nền tảng ở payment. (3) Sửa các điểm v0.4 trái hoặc thiếu so với Requirement: phiên checkout thay "đơn chờ" (D-10), `quote_acceptance` thay trạng thái "chờ cọc" (D-11), sự kiện `quote.accepted` (D-12), `complaint_deadline` (D-13), `vendor.updated` đủ trường (D-16). (4) Mục 5.1 trả thêm `legal_name`, `id_number_masked` (Flutter plan P-03). (5) Tech stack: các công cụ hạ tầng là đề xuất của tài liệu này. Thêm D-10 → D-16, đã chốt cùng bản này | Đã xác nhận |
 | v0.6 | 2026-10-17 | | Đồng bộ Requirement v1.6 (luồng xác minh NFC theo app mobile). identity: phiên gắn tài khoản, một endpoint `card` có JWT, kiểm `SESSION_NOT_OWNED`, `CARD_EXPIRED`, giải mã JWE, lưu 5 trường (mã hóa số định danh, ngày sinh), đổi khóa băm từ bản mã hóa. Hàm so họ tên còn hai mức. Mục 5.1, 7.7, 8, 9 viết lại phần NFC; bỏ endpoint không JWT. Thêm D-17 → D-20. Chốt D-17, D-20; chốt D-18 với quy ước URL theo tài nguyên (mục 5.1 viết lại: quy tắc, bảng định tuyến gateway; API nội bộ đổi sang `camelCase`); D-19 chốt hai vai `MEMBER`, `ADMIN` | |
 | v0.6.1 | 2026-10-19 | | Cập nhật tài liệu thiết kế: (1) Mục 5.1 quy ước response `ApiResponse<T>` thống nhất cho API công khai. (2) Mục 9 chuẩn hóa mô hình database gồm 7 container PostgreSQL riêng biệt; chính thức hóa chiến lược seed dữ liệu độc lập qua thư mục scripts runner (D-22), gỡ bỏ auto-seeder trong code backend. (3) Mục 10 cập nhật cấu trúc repository thực tế (`platform/api`, `platform/web`, `platform/scripts/`, `mobile/`). | |
+| v0.6.2 | 2026-10-20 | | Gỡ file-service cho đúng nguyên tắc 3.5: thêm thư viện `common-storage`; mục 8 ghi luồng tải lên hai bước, cách đặt tên object và hai bucket công khai / riêng tư; mục 10 cập nhật cấu trúc repository | |
+| v0.6.4 | 2026-10-20 | | Mục 8: tải lên bằng presigned POST có policy (key, Content-Type, dung lượng), kiểm magic bytes, xóa metadata ảnh khi xác nhận; mỗi container Docker Compose chỉ nhận biến nó cần | |
+| v0.6.3 | 2026-10-20 | | Mục 4.3, 8: mỗi service một user MinIO giới hạn theo tiền tố, tách bucket `vendor-docs`, service không giữ tài khoản root; mục 9 thêm container `minio-init`; mục 10 thêm thư mục `minio/` | |
 
