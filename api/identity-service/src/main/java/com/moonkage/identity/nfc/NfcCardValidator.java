@@ -48,7 +48,7 @@ final class NfcCardValidator {
         LocalDate dateOfBirth = encrypted.get(DATE_OF_BIRTH) instanceof String s ? parseDate(s) : null;
         LocalDate dateOfIssue = parseDate(request.dateOfIssue());
         LocalDate dateOfExpiry = parseDate(request.dateOfExpiry());
-        Gender gender = parseGender(request.sex());
+        Gender gender = parseGender(request.gender());
 
         boolean valid = idNumber != null
                 && ID_NUMBER_PATTERN.matcher(idNumber).matches()

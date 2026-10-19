@@ -9,7 +9,7 @@ package com.moonkage.identity.dto.request;
  */
 public record SubmitCardRequest(
         String fullName,
-        String sex,
+        String gender,
         String nationality,
         String placeOfBirth,
         String dateOfIssue,
