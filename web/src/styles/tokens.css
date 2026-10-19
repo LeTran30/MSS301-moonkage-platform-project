@@ -1,0 +1,151 @@
+/* Moonkage DS tokens (tokens.css of "DS: Moonkage"), checked against tokens.json: gold-ink and focus-on-night
+   corrected to tokens.json. Do not edit values by hand; update from the design system. */
+/* Moonkage — generated from tokens.json */
+:root, [data-theme="light"] {
+  --paper: #f5ecdc; /* Nền trang. Sáng: màu giấy dó ngả kem, không bao giờ dùng trắng tinh. Tối: xanh đêm lấy từ nền logo. */
+  --paper-raised: #fbf6ec; /* Thẻ sản phẩm, bảng báo giá, ô nhập liệu — mọi thứ nổi lên trên `paper`. */
+  --paper-sunk: #ebdfc8; /* Vùng lõm: thanh lọc, hàng tổng cộng của bảng, nền ảnh sản phẩm khi ảnh chưa tải. */
+  --paper-hover: #f1e5d0; /* Nền khi rê chuột lên control nền giấy: nút `mk-btn--quiet`, chip lọc đang tắt. Chữ `ink` trên nó ≥10:1. Chỉ là tín hiệu phụ — viền `line-strong` vẫn giữ nguyên. */
+  --ink: #1f2642; /* Chữ chính trên `paper`, `paper-raised`, `paper-sunk` và `lotus`. Sáng là mực xanh than, không dùng đen #000. */
+  --ink-muted: #6a5b4a; /* Chữ phụ (hạn dùng, tên Shop, ghi chú) trên `paper`, `paper-raised`, `paper-sunk`. ≥4.9:1 ở cả hai theme. */
+  --line: #d6c4a6; /* Đường kẻ trang trí và vách ngăn giữa các hàng. Chỉ để chia vùng, không dùng làm viền control (chưa đạt 3:1). */
+  --line-strong: #8c7657; /* Viền ô nhập, checkbox, nút phụ — control cần nhìn thấy được. ≥3.6:1 trên `paper` và `paper-raised`. */
+  --night: #1c2b4b; /* Xanh đêm thương hiệu: thanh điều hướng, nút chính, dải tiêu đề mùa. Chữ trên nó dùng `on-night`. */
+  --night-hover: #2a3d66; /* Nền `mk-btn--primary` khi rê chuột hoặc nhấn. Chữ `on-night` trên nó ≥7.8:1. */
+  --on-night: #f5ecdc; /* Chữ và icon đặt trên `night` (≥10:1). */
+  --gold: #c9a14a; /* Vàng đồng của logo: mặt trăng, nét viền trang trí, nền huy hiệu 'Đặt sớm'. Là màu nền/nét, KHÔNG phải màu chữ trên `paper` sáng (2:1). Chữ trên nó dùng `on-gold`. */
+  --on-gold: #1f2642; /* Chữ trên nền `gold`. */
+  --gold-ink: #7a560c; /* Khi cần chữ màu vàng: giá đã giảm theo bậc, liên kết trong đoạn văn, số liệu nhấn. Trên `paper` và `paper-raised` (≥4.8:1). */
+  --lacquer: #9e2f27; /* Đỏ sơn mài từ áo nhân vật trong logo: nút hành động mua (Thêm vào giỏ, Đặt cọc), cảnh báo hạn chót, lỗi. Dùng ít: tối đa một vùng đỏ lớn mỗi màn hình. Làm chữ được trên `paper`, `paper-raised`. */
+  --lacquer-hover: #83241e; /* Nền `mk-btn--buy` khi rê chuột hoặc nhấn. Sáng: đậm hơn; tối: sáng hơn. Chữ `on-lacquer` trên nó ≥7.6:1. */
+  --on-lacquer: #fbf3e6; /* Chữ trên `lacquer`. Ở theme tối đỏ sáng lên nên chữ chuyển sang tối. */
+  --jade: #2f6a49; /* Trạng thái thành công: đã duyệt, đã giao, maket đã duyệt. Luôn đi kèm chữ, không dùng màu một mình. Trên `paper`, `paper-raised`. */
+  --lotus: #efd5c4; /* Hồng sen nhạt — màu dịu để làm nền thông báo nhẹ, huy hiệu 'Custom', ô chọn đang bật. Chữ trên nó dùng `ink`. */
+  --focus-on-night: #c9a14a;
+  --focus: #1c2b4b; /* Vòng focus bàn phím: viền liền `border-thick`, cách `border-thick`, trên mọi control (≥8:1 trên mọi bề mặt). */
+  --shadow-paper: 0 1px 0 rgba(120, 90, 50, 0.10), 0 6px 18px -10px rgba(90, 60, 30, 0.35); /* Bóng duy nhất của hệ: ấm, thấp, như tờ giấy đặt lên bàn gỗ. Cho thẻ sản phẩm và menu nổi. Không chồng nhiều lớp bóng. */
+}
+[data-theme="dark"] {
+  --paper: #131e36;
+  --paper-raised: #1b2945;
+  --paper-sunk: #0d162a;
+  --paper-hover: #243555;
+  --ink: #f3eadb;
+  --ink-muted: #bfb19b;
+  --line: #33456a;
+  --line-strong: #6b7fa6;
+  --night: #24365a;
+  --night-hover: #2f4673;
+  --on-night: #f3eadb;
+  --gold: #d8b45e;
+  --on-gold: #131e36;
+  --gold-ink: #e4c47e;
+  --lacquer: #e07062;
+  --lacquer-hover: #ea8a7d;
+  --on-lacquer: #160d0a;
+  --jade: #8fcaa2;
+  --lotus: #5a3d4c;
+  --focus-on-night: #e4c47e;
+  --focus: #e4c47e;
+  --shadow-paper: 0 1px 0 rgba(0, 0, 0, 0.25), 0 8px 20px -12px rgba(0, 0, 0, 0.6);
+}
+:root {
+  --space-1: 4px; /* Khoảng giữa icon và chữ, giữa giá và ghi chú VAT. */
+  --space-2: 8px; /* Khoảng giữa các huy hiệu, giữa nhãn và ô nhập. */
+  --space-3: 12px; /* Padding dọc của nút, khoảng giữa các dòng trong thẻ. */
+  --space-4: 16px; /* Padding thẻ trên mobile, lề hai bên màn hình 360px. */
+  --space-5: 20px; /* Khoảng giữa các trường trong một form. */
+  --space-6: 24px; /* Padding thẻ trên desktop, khoảng giữa các thẻ trong lưới. */
+  --space-8: 32px; /* Khoảng giữa các khối lớn trong một trang. */
+  --space-12: 48px; /* Khoảng thở quanh tiêu đề `display` và dải mùa. */
+  --radius-sm: 6px; /* Ô nhập, checkbox, ô trong bảng. */
+  --radius-md: 10px; /* Nút, thẻ thông báo. */
+  --radius-lg: 18px; /* Thẻ sản phẩm, khung ảnh, hộp thoại. */
+  --radius-full: 999px; /* Huy hiệu, chip lọc, chấm trạng thái — hình viên thuốc và tròn như trăng. */
+  --control-h: 44px; /* Chiều cao tối thiểu của nút, ô nhập — vùng chạm đủ cho ngón tay. */
+  --control-h-sm: 36px; /* Chiều cao của `mk-btn--sm` và chip lọc, trong bảng và thẻ hẹp. */
+  --border-thin: 1px; /* Viền mặc định của control, vách ngăn hàng. */
+  --border-thick: 2px; /* Viền trạng thái (lỗi, mốc tiến độ), đường nối timeline, vòng focus. */
+  --font-display: "Fraunces", "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --text-display: 500 48px/52px var(--font-display); /* Tiêu đề trang chủ mùa, tên Shop trên trang hồ sơ. Mỗi màn hình tối đa một. */
+  --text-title: 500 30px/36px var(--font-display); /* Tiêu đề trang: chi tiết sản phẩm, chi tiết đơn, yêu cầu mở. */
+  --text-heading: 600 21px/28px var(--font-display); /* Tiêu đề khối trong trang, tên sản phẩm trên thẻ lớn. */
+  --text-card-title: 600 19px/25px var(--font-display); /* Tên bánh trên `ProductCard`, tên người bán ở đầu cột `QuoteCompare`. */
+  --text-body: 400 16px/26px var(--font-sans); /* Đoạn văn, mô tả sản phẩm, ghi chú tiến độ. */
+  --text-body-strong: 600 16px/24px var(--font-sans); /* Tiêu đề mốc trong `OrderTimeline`, hàng tổng trong `QuoteCompare`, chữ trong ô nhập (đặt `font-weight` 400). */
+  --text-body-sm: 400 14px/22px var(--font-sans); /* Thông tin phụ trên thẻ, hàng trong bảng báo giá, ngày và người cập nhật trong `OrderTimeline`, gợi ý dưới ô nhập. */
+  --text-label: 600 14px/20px var(--font-sans); /* Nhãn trường nhập, chữ trên nút và chip lọc. */
+  --text-price: 600 20px/26px var(--font-sans); /* Giá niêm yết, tổng tiền. Dùng chữ số tabular (`font-variant-numeric: tabular-nums`) để cột giá thẳng hàng. */
+  --text-caption: 500 12px/16px var(--font-sans); /* Ghi chú dưới giá, mốc thời gian, chữ trong huy hiệu. */
+}
+.display {
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 52px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.heading {
+  font-family: var(--font-display);
+  font-size: 21px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 25px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.body-strong {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.body-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.price {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}

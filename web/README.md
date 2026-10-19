@@ -1,32 +1,35 @@
-# React + TypeScript + Vite
+# Moonkage web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + TypeScript + Vite. Giao diện theo design system "DS: Moonkage" (`src/styles/tokens.css`, `src/styles/components.css`, class `mk-*`).
 
-Currently, two official plugins are available:
+## Chạy
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+cp .env.example .env.local   # sửa VITE_API_BASE_URL nếu gateway không ở localhost:8080
+npm install
+npm run dev                  # http://localhost:5173 (đã có trong CORS_ORIGINS của gateway)
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Thiếu `VITE_API_BASE_URL` thì app dừng ở màn lỗi cấu hình.
+
+## Kiểm tra trước khi commit
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+## Cấu trúc `src/`
+
+| Thư mục / file | Nội dung |
+| --- | --- |
+| `config.ts` | Đọc biến `VITE_*` |
+| `strings.ts` | Mọi câu chữ hiển thị |
+| `routes.ts` | Đường dẫn các trang |
+| `api/` | axios client (gắn Bearer, 401 → đăng xuất, `ApiError`), endpoint, gọi identity-service |
+| `auth/` | `AuthProvider`, `useAuth`, `RequireAuth` |
+| `realtime/` | Kết nối STOMP tới orchestrator-service (gateway `/ws`, token trong CONNECT), `useRealtime().subscribe` |
+| `features/nfc/` | Xác minh CCCD (FR-04): `useNfcSession`, panel QR, thẻ trạng thái |
+| `pages/` | Trang gắn vào router |
+| `styles/` | Token và component của DS (chép từ DS, không sửa tay), `app.css` cho bố cục |
