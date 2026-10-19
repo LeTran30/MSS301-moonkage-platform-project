@@ -13,10 +13,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.jayway.jsonpath.JsonPath;
 import com.moonkage.identity.config.RabbitConfig;
+import com.moonkage.identity.constant.TimeConstant;
 import com.moonkage.identity.messaging.EmailNotificationEvent;
+import com.nimbusds.jose.EncryptionMethod;
+import com.nimbusds.jose.JWEAlgorithm;
+import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.JWEObject;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.RSAEncrypter;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.interfaces.RSAPublicKey;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -31,6 +44,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -59,14 +73,20 @@ class IdentityApiIntegrationTest {
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
 
-    /** A throw-away transport key, so a submitted card reaches the database step instead of a missing-key 500. */
+    /** Throw-away transport key pair: the test plays the app and encrypts with the public half. */
+    private static final KeyPair NFC_TRANSPORT_KEYS = rsaKeyPair();
+
+    /** Throw-away NFC keys, so a submitted card reaches the database step instead of a missing-key 500. */
     @DynamicPropertySource
-    static void nfcTransportKey(DynamicPropertyRegistry registry) throws Exception {
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(2048);
-        String privateKey = Base64.getEncoder()
-                .encodeToString(generator.generateKeyPair().getPrivate().getEncoded());
+    static void nfcKeys(DynamicPropertyRegistry registry) {
+        Base64.Encoder base64 = Base64.getEncoder();
+        String privateKey =
+                base64.encodeToString(NFC_TRANSPORT_KEYS.getPrivate().getEncoded());
+        byte[] piiKey = new byte[32];
+        new SecureRandom().nextBytes(piiKey);
         registry.add("nfc.transport-private-key", () -> privateKey);
+        registry.add("nfc.pii-key", () -> base64.encodeToString(piiKey));
+        registry.add("nfc.id-hash-pepper", () -> "it-pepper");
     }
 
     @Autowired
@@ -286,7 +306,82 @@ class IdentityApiIntegrationTest {
         }
     }
 
+    /** The whole FR-04 round over HTTP with a real JWE, as the app sends it (Software Design 5.1). */
+    @Test
+    void verifiedCardLinksTheAccountAndUsesTheSession() throws Exception {
+        String owner = token(login(activeAccount(), PASSWORD));
+        String idNumber = String.format("0791%08d", SEQ.incrementAndGet());
+        String sessionId = createNfcSession(owner);
+
+        submitCard(owner, sessionId, idNumber)
+                .andExpect(jsonPath("$.data.status").value("VERIFIED"))
+                .andExpect(jsonPath("$.data.reasonCode", nullValue()));
+
+        // the web's fallback poll sees the result; the same QR cannot be used twice
+        mvc.perform(get("/api/nfc/sessions/" + sessionId).header("Authorization", "Bearer " + owner))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("VERIFIED"));
+        submitCard(owner, sessionId, idNumber)
+                .andExpect(jsonPath("$.data.status").value("REJECTED"))
+                .andExpect(jsonPath("$.data.reasonCode").value("SESSION_USED"));
+
+        mvc.perform(get("/api/nfc/status").header("Authorization", "Bearer " + owner))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nfcStatus").value("VERIFIED"))
+                .andExpect(jsonPath("$.data.legalName").value("NGUYEN VAN AN"))
+                .andExpect(jsonPath("$.data.idNumberMasked").value("********" + idNumber.substring(8)));
+        mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + owner))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("NFC_001"));
+
+        // BR-23: the same card on another account is refused and counted
+        String other = token(login(activeAccount(), PASSWORD));
+        submitCard(other, createNfcSession(other), idNumber)
+                .andExpect(jsonPath("$.data.status").value("REJECTED"))
+                .andExpect(jsonPath("$.data.reasonCode").value("ID_ALREADY_LINKED"))
+                .andExpect(jsonPath("$.data.attemptsLeft").value(4));
+    }
+
     // ───────── helpers ─────────
+
+    private String createNfcSession(String token) throws Exception {
+        String created = mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return JsonPath.read(created, "$.data.sessionId");
+    }
+
+    /** A valid card body; the three sensitive fields go in a JWE for the transport key, like the app does. */
+    private ResultActions submitCard(String token, String sessionId, String idNumber) throws Exception {
+        JWEObject jwe = new JWEObject(
+                new JWEHeader(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM),
+                new Payload(Map.of(
+                        "idNumber", idNumber, "dateOfBirth", "1990-01-01", "placeOfResidence", "So 1 Duong Le Loi")));
+        jwe.encrypt(new RSAEncrypter((RSAPublicKey) NFC_TRANSPORT_KEYS.getPublic()));
+        String dateOfExpiry =
+                LocalDate.now(TimeConstant.VIETNAM_ZONE).plusYears(5).toString();
+        String card = """
+                {"fullName":"NGUYEN VAN AN","sex":"MALE","nationality":"Viet Nam","placeOfBirth":"Tinh Lam Dong",
+                "dateOfIssue":"2024-01-01","dateOfExpiry":"%s","encryptedFields":"%s","appVersion":"it"}
+                """.formatted(dateOfExpiry, jwe.serialize());
+        return mvc.perform(post("/api/nfc/sessions/" + sessionId + "/card")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(card))
+                .andExpect(status().isOk());
+    }
+
+    private static KeyPair rsaKeyPair() {
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            generator.initialize(2048);
+            return generator.generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     /** Registered, e-mail confirmed, ready to log in with PASSWORD. */
     private String activeAccount() throws Exception {

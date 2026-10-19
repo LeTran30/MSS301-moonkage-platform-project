@@ -27,7 +27,7 @@
         <module>file-service</module>
         <module>vendor-service</module>
         <module>payment-service</module>
-        <module>notification-service</module>
+        <module>orchestrator-service</module>
     </modules>
 
     <properties>

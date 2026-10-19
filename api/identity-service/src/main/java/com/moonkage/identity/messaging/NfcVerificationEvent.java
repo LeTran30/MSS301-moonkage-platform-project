@@ -7,7 +7,8 @@ import java.util.UUID;
 
 /**
  * Outcome of one NFC card attempt, published as {@code account.nfc_verified / nfc_failed / nfc_locked}. Masked data
- * only (Software Design 8); {@code sessionId} lets the web match the push to the QR it shows (AC-04.5).
+ * only (Software Design 8); {@code sessionId} lets the web match the push to the QR it shows (AC-04.5), and
+ * {@code attemptsLeft} lets it say how many tries remain. orchestrator-service keeps a mirror of this record.
  */
 public record NfcVerificationEvent(
         String eventId,
@@ -15,6 +16,7 @@ public record NfcVerificationEvent(
         String accountId,
         String sessionId,
         NfcReasonCode reasonCode,
+        Integer attemptsLeft,
         String idNumberMasked,
         Instant lockedUntil,
         Instant occurredAt) {
@@ -36,16 +38,19 @@ public record NfcVerificationEvent(
     }
 
     public static NfcVerificationEvent verified(String accountId, String sessionId, String idNumberMasked, Instant at) {
-        return new NfcVerificationEvent(newId(), Type.VERIFIED, accountId, sessionId, null, idNumberMasked, null, at);
+        return new NfcVerificationEvent(
+                newId(), Type.VERIFIED, accountId, sessionId, null, null, idNumberMasked, null, at);
     }
 
-    public static NfcVerificationEvent failed(String accountId, String sessionId, NfcReasonCode reason, Instant at) {
-        return new NfcVerificationEvent(newId(), Type.FAILED, accountId, sessionId, reason, null, null, at);
+    public static NfcVerificationEvent failed(
+            String accountId, String sessionId, NfcReasonCode reason, int attemptsLeft, Instant at) {
+        return new NfcVerificationEvent(
+                newId(), Type.FAILED, accountId, sessionId, reason, attemptsLeft, null, null, at);
     }
 
     public static NfcVerificationEvent locked(
             String accountId, String sessionId, NfcReasonCode reason, Instant lockedUntil, Instant at) {
-        return new NfcVerificationEvent(newId(), Type.LOCKED, accountId, sessionId, reason, null, lockedUntil, at);
+        return new NfcVerificationEvent(newId(), Type.LOCKED, accountId, sessionId, reason, 0, null, lockedUntil, at);
     }
 
     private static String newId() {

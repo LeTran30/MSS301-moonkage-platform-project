@@ -61,7 +61,7 @@ Dự án môn Microservices (FPT University) bắt buộc:
 | Hash mật khẩu                      | bcrypt                                                                                                            | Đề xuất (NFR-03 cho phép bcrypt/argon2) | Spring Security `BCryptPasswordEncoder`                                           |
 | Mã hóa dữ liệu xác minh khi truyền | JWE compact (`RSA-OAEP-256` + `A256GCM`), khóa công khai của identity cấu hình sẵn trong app                      | Đã chốt (D-17)                          | AC-04.10. Chỉ bọc số định danh, ngày sinh, nơi thường trú                         |
 | Mã hóa dữ liệu xác minh khi lưu    | AES-256-GCM, khóa có phiên bản, chỉ ở identity-service                                                            | Đã chốt (D-17)                          | AC-04.11: số định danh, ngày sinh                                                 |
-| Xác thực                           | JWT HS256 theo backend hiện có (`docs/auth.md`); hai vai `MEMBER`, `ADMIN`                                        | Vai: đã chốt; HS256: đề xuất (D-19)     | App mobile dùng chung endpoint đăng nhập                                          |
+| Xác thực                           | JWT HS256 theo backend hiện có (`iden-service/auth.md`); hai vai `MEMBER`, `ADMIN`                                        | Vai: đã chốt; HS256: đề xuất (D-19)     | App mobile dùng chung endpoint đăng nhập                                          |
 | Băm số CCCD / số định danh         | HMAC-SHA256 với khóa bí mật (pepper) có phiên bản                                                                 | Đã chốt (D-07, D-08)                    | Pepper chỉ nằm ở identity-service; mỗi mã băm lưu kèm phiên bản khóa (mục 4.2, 8) |
 | Phần cứng demo                     | Thẻ NFC NTAG215                                                                                                   | Đã chốt (A-08)                          |                                                                                   |
 
@@ -95,7 +95,7 @@ flowchart TB
         QT[quotation-service]
         OD[order-service]
         PM[payment-service]
-        NT[notification-service]
+        NT[orchestrator-service]
     end
 
     MQ[(RabbitMQ)]
@@ -141,7 +141,7 @@ flowchart TB
 | quotation-service | Request, Quote | FR-14, 15, 16, 17, 36, 38; phía báo giá của FR-19; hoãn: FR-18, 23, 37 | `quotation_db` |
 | order-service | Order, MockupVersion, ProgressUpdate, Review, Dispute; giỏ hàng | FR-08, 10, 11, 12, 20, 21, 24, 25, 32, 39, 40, 42, 44; quyết định khiếu nại (FR-49) | `order_db` |
 | payment-service | Payment, Escrow/Ledger, DisbursementRequest | FR-09 và FR-19 (phần thanh toán), 22, 41, 43, 47, 48, 51; thanh toán phí đăng ký mở bán (BR-31); thực hiện hoàn tiền (FR-49); hoãn: FR-13, 50 | `payment_db` |
-| notification-service | Notification, AuditLog | NFR-07, NFR-10 | `notification_db` |
+| orchestrator-service | Notification, AuditLog | NFR-07, NFR-10 | `orchestrator_db` |
 
 Hạ tầng: `api-gateway`, `discovery-server` (Eureka), `postgres`, `rabbitmq`, `minio`.
 
@@ -305,7 +305,7 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
 
 **Bất biến tiền (NFR-09):** kiểm trong cùng transaction với mỗi lần ghi sổ: `disbursed + refunded + paid_out ≤ tổng đã thu của đơn`. Tiền lưu `bigint` (VND, không số lẻ).
 
-### 4.8 notification-service (gồm audit)
+### 4.8 orchestrator-service (gồm audit)
 
 | Phần | Queue | Dữ liệu | Ai đọc |
 |---|---|---|---|
@@ -338,8 +338,8 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
    - Các đường dẫn `/api/...` còn lại: thao tác của người mua (Member) hoặc khách. Đường dẫn cho khách (không JWT) liệt kê ở mục 8.
 6. Service gọi nhau qua `/internal/<tài-nguyên>/...`, cùng quy tắc đặt tên. Gateway không định tuyến `/internal/**`.
 7. JSON: tên trường `camelCase`; giá trị enum viết `UPPER_SNAKE_CASE` (`VERIFIED`, `REGISTRATION_FEE`); ngày `yyyy-MM-dd`, thời điểm ISO 8601 có múi giờ; tiền là số nguyên VND. Tên cột database vẫn `snake_case`, không lộ ra API.
-8. Danh sách trả về có phân trang theo tham số `page`, `size`, `sort`. API công khai trả **một dạng body** cho cả thành công và lỗi (`ApiResponse<T>`, `docs/auth.md`): `{status, code, message, data, timestamp}`. Thành công: `code = SUCCESS`, dữ liệu trong `data`. Lỗi: `code` là mã lỗi nghiệp vụ, `data = null`, thêm `path`, và `errors` khi lỗi validation. Kết quả nghiệp vụ không phải lỗi (ví dụ `status`/`reasonCode` của xác minh NFC) nằm trong `data`. API nội bộ `/internal/**` trả thẳng dữ liệu; lỗi của nó cùng dạng trên. (Cập nhật 2026-10-19.)
-9. WebSocket thông báo đi qua gateway ở `/ws` (notification-service).
+8. Danh sách trả về có phân trang theo tham số `page`, `size`, `sort`. API công khai trả **một dạng body** cho cả thành công và lỗi (`ApiResponse<T>`, `iden-service/auth.md`): `{status, code, message, data, timestamp}`. Thành công: `code = SUCCESS`, dữ liệu trong `data`. Lỗi: `code` là mã lỗi nghiệp vụ, `data = null`, thêm `path`, và `errors` khi lỗi validation. Kết quả nghiệp vụ không phải lỗi (ví dụ `status`/`reasonCode` của xác minh NFC) nằm trong `data`. API nội bộ `/internal/**` trả thẳng dữ liệu; lỗi của nó cùng dạng trên. (Cập nhật 2026-10-19.)
+9. WebSocket thông báo đi qua gateway ở `/ws` (orchestrator-service).
 
 **Bảng định tuyến ở gateway.** Mỗi tiền tố trỏ tới đúng một service (`lb://<service>`); đường dẫn giữ nguyên khi chuyển vào service. Tiền tố cụ thể của từng nhóm FR có thể bổ sung khi thiết kế chi tiết API, nhưng phải theo quy tắc trên và mỗi tiền tố chỉ thuộc một service.
 
@@ -600,7 +600,7 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 
 ## 8. Bảo mật
 
-- **Xác thực:** identity phát JWT theo `docs/auth.md` (HS256; gateway và service kiểm bằng cùng khóa bí mật, D-19). Claim gồm `sub` (accountId), `type` (`ACCESS` / `REFRESH`) và `role`. Hệ thống có đúng hai vai: `MEMBER` (mọi tài khoản đã đăng ký) và `ADMIN` (quản trị). App mobile dùng cùng endpoint đăng nhập và cùng loại token. Chủ người bán không phải một vai: quyền chủ không nằm trong JWT, service tự tra bản sao người bán theo `sub`.
+- **Xác thực:** identity phát JWT theo `iden-service/auth.md` (HS256; gateway và service kiểm bằng cùng khóa bí mật, D-19). Claim gồm `sub` (accountId), `type` (`ACCESS` / `REFRESH`) và `role`. Hệ thống có đúng hai vai: `MEMBER` (mọi tài khoản đã đăng ký) và `ADMIN` (quản trị). App mobile dùng cùng endpoint đăng nhập và cùng loại token. Chủ người bán không phải một vai: quyền chủ không nằm trong JWT, service tự tra bản sao người bán theo `sub`.
 - **Phân quyền ở hai lớp:** gateway chặn theo đường dẫn (`/api/admin/**` cần `ADMIN`, `/api/seller/**` cần JWT); service kiểm lại bằng Spring Security. Mọi quy tắc nghiệp vụ kiểm ở service, không dựa vào giao diện (Requirement mục 9).
 - **Endpoint nội bộ:** gateway không định tuyến `/internal/**`. Trong Docker Compose các service nằm trên mạng nội bộ, chỉ gateway mở cổng ra ngoài.
 - **Endpoint công khai không JWT:** đăng ký, xác nhận, đăng nhập, làm mới token, khôi phục mật khẩu dưới `/api/auth/**` (trừ `/api/auth/me`); `GET` xem sản phẩm, đánh giá, đơn vị cung cấp (`/api/products/**`, `/api/reviews/**`, `/api/suppliers/**`); IPN VNPay dưới `/api/payments/**` (xác thực bằng checksum của VNPay). Gateway giới hạn số request cho `POST /api/nfc/sessions/{sessionId}/card` theo tài khoản và theo IP.
@@ -629,19 +629,19 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 | quotation-service | 8084 | Không |
 | order-service | 8085 | Không |
 | payment-service | 8086 | Không |
-| notification-service | 8087 | Không (WebSocket đi qua gateway) |
+| orchestrator-service | 8087 | Không (WebSocket đi qua gateway) |
 | identity-db | ${IDENTITY_DB_PORT} (5432) | Chỉ khi phát triển |
 | catalog-db | ${CATALOG_DB_PORT} (5433) | Chỉ khi phát triển |
 | quotation-db | ${QUOTATION_DB_PORT} (5434) | Chỉ khi phát triển |
 | order-db | ${ORDER_DB_PORT} (5435) | Chỉ khi phát triển |
 | vendor-db | ${VENDOR_DB_PORT} (5436) | Chỉ khi phát triển |
 | payment-db | ${PAYMENT_DB_PORT} (5437) | Chỉ khi phát triển |
-| notification-db | ${NOTIFICATION_DB_PORT} (5438) | Chỉ khi phát triển |
+| orchestrator-db | ${ORCHESTRATOR_DB_PORT} (5438) | Chỉ khi phát triển |
 | rabbitmq | 5672, 15672 (giao diện quản lý) | Chỉ khi phát triển |
 | minio | 9000, 9001 (giao diện quản lý) | 9000 cho presigned URL |
 | React (dev server hoặc Nginx) | 3000 | Có |
 
-- **Postgres:** mỗi service sở hữu một container database PostgreSQL độc lập (`identity-db`, `catalog-db`, `quotation-db`, `order-db`, `vendor-db`, `payment-db`, `notification-db`), bảo đảm phân tách dữ liệu tuyệt đối theo kiến trúc microservices.
+- **Postgres:** mỗi service sở hữu một container database PostgreSQL độc lập (`identity-db`, `catalog-db`, `quotation-db`, `order-db`, `vendor-db`, `payment-db`, `orchestrator-db`), bảo đảm phân tách dữ liệu tuyệt đối theo kiến trúc microservices.
 - **VNPay IPN khi chạy ở máy cá nhân:** VNPay cần gọi được một URL công khai, nên dùng tunnel (ngrok hoặc Cloudflare Tunnel) trỏ vào gateway.
 - **App mobile khi demo:** điện thoại phải gọi được gateway; dùng IP mạng LAN của máy chạy Docker hoặc chính tunnel ở trên.
 - **Migration & Quản lý Schema:** mỗi service tự quản và đồng bộ schema qua Spring Data JPA/Hibernate (`ddl-auto: update`). Các thay đổi schema đột biến (drop cột, đổi kiểu dữ liệu) được lưu thành script SQL theo mốc ngày trong `api/docs/`.
@@ -670,7 +670,7 @@ moonkage/
 │   │   ├── quotation-service/   # Yêu cầu báo giá B2B (cổng 8084)
 │   │   ├── order-service/       # Đơn hàng, khiếu nại (cổng 8085)
 │   │   ├── payment-service/     # Giao dịch, VNPay, sổ tiền (cổng 8086)
-│   │   ├── notification-service/# WebSocket, thông báo (cổng 8087)
+│   │   ├── orchestrator-service/# WebSocket, thông báo (cổng 8087)
 │   │   ├── file-service/        # Quản lý tệp MinIO S3
 │   │   └── docs/                # Migration scripts SQL & seed SQL ban đầu
 │   ├── web/                     # React web frontend
@@ -707,8 +707,8 @@ moonkage/
 | D-15 | **Đã chốt (v0.5).** `RegistrationFeeConfig` và trạng thái đã đóng phí ở vendor-service; bản sao người bán mang `can_operate`; giao dịch phí đi qua payment với `purpose = REGISTRATION_FEE` | BR-31, FR-27, FR-53 |
 | D-16 | **Đã chốt (v0.5).** `vendor.updated` mang thêm `business_name`, `supply_source`, `local_delivery_fee`, `can_operate` và đủ hồ sơ nhận đặt hàng (bậc giá tham khảo, ưu đãi đặt sớm, năng lực). Lý do: v0.4 thiếu dữ liệu cho FR-06, FR-14, AC-29.2, AC-38.2 | FR-06, FR-14, FR-29, FR-38 |
 | D-17 | **Đã chốt (v0.6).** Mã hóa khi truyền bằng JWE compact (`RSA-OAEP-256` + `A256GCM`) với khóa công khai của identity cấu hình trong app; mã hóa khi lưu bằng AES-256-GCM có phiên bản. Khóa riêng và khóa AES chỉ ở identity-service. Lý do: Requirement AC-04.10, AC-04.11; JWE có sẵn thư viện ở Flutter (`jose`) và Java (`nimbus-jose-jwt`) | FR-04, NFR-03 |
-| D-18 | **Đã chốt (v0.6).** Đường dẫn công khai theo tài nguyên: `/api/<tài-nguyên>/...`, không tên service, không số phiên bản; gateway định tuyến theo bảng ở mục 5.1. Thao tác theo vai dưới `/api/seller/...`, `/api/admin/...`; nội bộ dưới `/internal/...`. JSON `camelCase` cho cả API nội bộ. Thay `/<tên-service>/api/...` của backend hiện có (`docs/auth.md`) và `/api/<miền>/...`, `snake_case` của v0.5. Code gateway, controller và app mobile cần sửa theo | Toàn bộ API |
-| D-19 | **Đã chốt vai; HS256 còn đề xuất.** Hai vai `MEMBER`, `ADMIN` (thay `CUSTOMER` của `docs/auth.md` và `USER` của v0.5); chủ người bán không phải vai. JWT HS256 theo backend hiện có, đổi lại mọi service kiểm token phải giữ cùng khóa bí mật | Mục 8 |
+| D-18 | **Đã chốt (v0.6).** Đường dẫn công khai theo tài nguyên: `/api/<tài-nguyên>/...`, không tên service, không số phiên bản; gateway định tuyến theo bảng ở mục 5.1. Thao tác theo vai dưới `/api/seller/...`, `/api/admin/...`; nội bộ dưới `/internal/...`. JSON `camelCase` cho cả API nội bộ. Thay `/<tên-service>/api/...` của backend hiện có (`iden-service/auth.md`) và `/api/<miền>/...`, `snake_case` của v0.5. Code gateway, controller và app mobile cần sửa theo | Toàn bộ API |
+| D-19 | **Đã chốt vai; HS256 còn đề xuất.** Hai vai `MEMBER`, `ADMIN` (thay `CUSTOMER` của `iden-service/auth.md` và `USER` của v0.5); chủ người bán không phải vai. JWT HS256 theo backend hiện có, đổi lại mọi service kiểm token phải giữ cùng khóa bí mật | Mục 8 |
 | D-20 | **Đã chốt (v0.6).** Xác minh NFC chỉ có một endpoint gửi thẻ, gọi sau khi người dùng xác nhận trên điện thoại; máy chủ không lưu tạm dữ liệu thẻ. App mobile cần bỏ hai endpoint `confirm`, `DELETE card` và bước lưu tạm đang có | FR-04 (AC-04.4, AC-04.5) |
 | D-21 | **Đã chốt.** Thực thể logic `Account` (Requirement 7.1) lưu thành ba bảng, cùng khóa chính `account_id`: `accounts` (đăng nhập: email, số điện thoại, mật khẩu, trạng thái, vai, trạng thái khóa xác minh NFC), `user_profiles` (thông tin hiển thị: họ tên tự nhập, avatar) và `legal_profiles` (kết quả xác minh NFC theo AC-04.11; có bản ghi = đã xác minh). Mỗi người chỉ có một id là `accountId` (= `sub` của JWT, header `X-Account-Id`); Address và Vendor trỏ vào `accounts`. Lý do: tách PII khỏi bảng được nạp ở mọi request (NFR-03), đổi khóa băm chỉ quét một bảng, email và số điện thoại chỉ lưu một nơi | Mục 4.2, Requirement 7.1 |
 | D-22 | **Đã chốt (2026-10-19).** Không tự động seed dữ liệu demo (tài khoản người bán, shop, danh mục, sản phẩm) qua code Java (`DataInitializer`) lúc khởi động service. Quản lý dữ liệu seed tập trung bằng các script SQL idempotent độc lập trong thư mục `scripts/seed/`, chạy qua runner script (`seed.sh`, `seed.ps1`) nạp trực tiếp vào container PostgreSQL tương ứng khi cần môi trường dev/demo. | Mục 9, 10 |

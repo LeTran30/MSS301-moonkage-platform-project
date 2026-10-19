@@ -264,7 +264,7 @@ public class ProductServiceImpl implements ProductService {
         if (Objects.equals(before, after)) {
             return;
         }
-        // NFR-07: stored by notification-service; AuditPublisher sends it once this transaction commits
+        // NFR-07: stored by orchestrator-service; AuditPublisher sends it once this transaction commits
         eventPublisher.publishEvent(new AuditEvent(
                 "catalog-service",
                 accountId,

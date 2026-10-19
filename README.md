@@ -9,7 +9,7 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-[📖 API Docs (Swagger, chạy local)](http://localhost:8080/swagger-ui.html) · [🔐 Tài liệu xác thực](docs/auth.md) · [🐛 Báo lỗi](https://github.com/LeTran30/MSS301-moonkage-platform-project/issues)
+[📖 API Docs (Swagger, chạy local)](http://localhost:8080/swagger-ui.html) · [🔐 Tài liệu xác thực](docs/iden-service/auth.md) · [🐛 Báo lỗi](https://github.com/LeTran30/MSS301-moonkage-platform-project/issues)
 
 ## Mục lục
 - [Tính năng](#tính-năng)
@@ -59,7 +59,7 @@ flowchart LR
     GW --> FI["file-service :8085"]
     GW --> VE["vendor-service :8086"]
     GW --> PA["payment-service :8087"]
-    GW --> NO["notification-service :8088"]
+    GW --> NO["orchestrator-service :8088"]
     ID --> IDB[("identity_db :5441")]
     CA --> CDB[("catalog_db :5442")]
     TE --> TDB[("quotation_db :5443")]
@@ -67,7 +67,7 @@ flowchart LR
     FI --> MI[("MinIO :9000")]
     VE --> VDB[("vendor_db :5445")]
     PA --> PDB[("payment_db :5446")]
-    NO --> NDB[("notification_db :5447")]
+    NO --> NDB[("orchestrator_db :5447")]
     CA -. OpenFeign .-> VE
     VE -. OpenFeign .-> ID
     TE -. OpenFeign .-> ID
@@ -89,7 +89,7 @@ flowchart LR
 | **File Service** | Upload file lên MinIO | `8085` |
 | **Vendor Service** | Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký | `8086` |
 | **Payment Service** | Thanh toán VNPay, sổ giữ tiền, giải ngân cọc, hoàn tiền (chưa có nghiệp vụ) | `8087` |
-| **Notification Service** | Audit log toàn nền tảng (nhận qua RabbitMQ), thông báo trong ứng dụng | `8088` |
+| **Orchestrator Service** | Audit log toàn nền tảng (nhận qua RabbitMQ), thông báo trong ứng dụng | `8088` |
 | **RabbitMQ** | Sự kiện giữa các service; UI quản trị http://localhost:15672 | `5672`, `15672` |
 | **Web Portal** | React SPA | `5173` |
 | **PostgreSQL ×7** | Mỗi service một DB | `5441`–`5447` |
@@ -128,7 +128,7 @@ docker compose logs -f identity-service   # mã OTP được in ra đây khi MAI
 
 ### Cách B: database chạy Docker, service chạy từ IDE
 ```bash
-docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db notification-db minio rabbitmq
+docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db orchestrator-db minio rabbitmq
 
 cd api
 ./mvnw -pl discovery-server spring-boot:run   # chạy Eureka trước
@@ -140,7 +140,7 @@ cd api
 ./mvnw -pl file-service spring-boot:run
 ./mvnw -pl vendor-service spring-boot:run
 ./mvnw -pl payment-service spring-boot:run
-./mvnw -pl notification-service spring-boot:run
+./mvnw -pl orchestrator-service spring-boot:run
 ```
 
 Trên Windows `cmd`/PowerShell dùng `mvnw.cmd` thay cho `./mvnw`. Mỗi service tự đọc file `.env` ở thư mục gốc.
@@ -188,7 +188,7 @@ Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
 │   ├── file-service/           # Upload file lên MinIO
 │   ├── vendor-service/         # Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký
 │   ├── payment-service/        # VNPay, giữ tiền, giải ngân, hoàn tiền
-│   ├── notification-service/   # Audit log (RabbitMQ), thông báo
+│   ├── orchestrator-service/   # Audit log (RabbitMQ), thông báo
 │   │   (mỗi service có Dockerfile riêng, build context = api/)
 │   └── db/                     # Script dọn dữ liệu dev khi đổi ranh giới service
 ├── web/                        # React SPA (web portal)
@@ -221,8 +221,8 @@ Gọi qua gateway `http://localhost:8080/<service>/...`. Một số endpoint ch�
 | GET | `/file-service/api/files/presigned` | Lấy presigned URL | ✅ |
 
 - Tài liệu đầy đủ: [Swagger UI](http://localhost:8080/swagger-ui.html). Đăng nhập qua `/api/auth/login`, dán `token` vào nút **Authorize**.
-- Chi tiết luồng xác thực, token, OTP và định dạng lỗi: [`docs/auth.md`](docs/auth.md).
-- Postman: [`docs/MoonKage-Auth.postman_collection.json`](docs/MoonKage-Auth.postman_collection.json).
+- Chi tiết luồng xác thực, token, OTP và định dạng lỗi: [`docs/iden-service/auth.md`](docs/iden-service/auth.md).
+- Postman: [`docs/postman-collections`](docs/postman-collections/mk-auth.json).
 
 ## Testing & chất lượng code
 ```bash

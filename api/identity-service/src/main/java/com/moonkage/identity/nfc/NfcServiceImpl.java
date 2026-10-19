@@ -229,9 +229,10 @@ public class NfcServiceImpl implements NfcService {
     private SubmitCardResponse fail(Account account, String sessionId, NfcReasonCode reason, Instant now) {
         int attempts = account.getNfcFailedAttempts() + 1;
         if (attempts < nfcProperties.getMaxAttempts()) {
+            int attemptsLeft = nfcProperties.getMaxAttempts() - attempts;
             account.setNfcFailedAttempts(attempts);
-            record(NfcVerificationEvent.failed(account.getId(), sessionId, reason, now));
-            return SubmitCardResponse.rejected(reason, nfcProperties.getMaxAttempts() - attempts, null);
+            record(NfcVerificationEvent.failed(account.getId(), sessionId, reason, attemptsLeft, now));
+            return SubmitCardResponse.rejected(reason, attemptsLeft, null);
         }
         Instant lockedUntil = now.plus(nfcProperties.getLockoutDuration());
         account.setNfcFailedAttempts(0);

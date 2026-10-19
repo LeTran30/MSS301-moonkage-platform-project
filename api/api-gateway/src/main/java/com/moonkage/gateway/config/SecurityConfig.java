@@ -49,6 +49,9 @@ public class SecurityConfig {
     static final String ACCOUNT_ID = "X-Account-Id";
     static final String USER_ROLE = "X-User-Role";
 
+    /** Route orchestrator-websocket in application.yml. */
+    static final String WEBSOCKET_PATH = "/ws/**";
+
     @Bean
     SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -69,6 +72,10 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/webjars/**",
                                 "/*/v3/api-docs/**")
+                        .permitAll()
+                        // WebSocket of orchestrator-service: the token comes in the STOMP CONNECT frame and
+                        // orchestrator-service checks it (a browser cannot set headers on the handshake)
+                        .pathMatchers(WEBSOCKET_PATH)
                         .permitAll()
                         // identity-service decides itself which auth endpoints need a token (/me)
                         .pathMatchers("/identity-service/api/auth/**")

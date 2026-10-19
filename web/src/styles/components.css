@@ -1,0 +1,141 @@
+/* Moonkage DS components/bundle.css, copied unchanged except the font @import, which is a <link> in index.html. */
+
+/* Moonkage — component styles. Every size, colour and type value comes from tokens.css.
+   Motion lives here (tokens.json has no motion family); keep these two the only durations. */
+:root {
+  --duration-fast: 120ms;
+  --duration-spin: 800ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration-fast: 0ms; --duration-spin: 2400ms; }
+}
+
+body { margin: 0; background: var(--paper); color: var(--ink); font: var(--text-body); }
+.mk-num { font-variant-numeric: tabular-nums; }
+.mk-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Focus — one rule for the whole system */
+.mk-btn:focus-visible, .mk-field input:focus-visible, .mk-field select:focus-visible, .mk-chip:focus-visible, .mk-card a:focus-visible {
+  outline: var(--border-thick) solid var(--focus); outline-offset: var(--border-thick);
+}
+
+/* Focus trên nền xanh đêm: `focus` trùng màu `night` (1:1), nên vùng tối đổi sang `focus-on-night` (≥5.8:1) */
+.mk-on-night, .mk-season { --focus: var(--focus-on-night); }
+.mk-on-night a:focus-visible, .mk-on-night button:focus-visible, .mk-season a:focus-visible, .mk-season button:focus-visible {
+  outline: var(--border-thick) solid var(--focus); outline-offset: var(--border-thick);
+}
+
+/* Button */
+.mk-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  font: var(--text-label); padding: var(--space-3) var(--space-6); border-radius: var(--radius-md);
+  border: var(--border-thin) solid transparent; cursor: pointer; text-decoration: none; min-height: var(--control-h); box-sizing: border-box;
+  transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
+.mk-btn--primary { background: var(--night); color: var(--on-night); }
+.mk-btn--primary:hover, .mk-btn--primary:active { background: var(--night-hover); }
+.mk-btn--buy { background: var(--lacquer); color: var(--on-lacquer); }
+.mk-btn--buy:hover, .mk-btn--buy:active { background: var(--lacquer-hover); }
+.mk-btn--quiet { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.mk-btn--quiet:hover, .mk-btn--quiet:active { background: var(--paper-hover); border-color: var(--ink); }
+.mk-btn--text { background: transparent; color: var(--gold-ink); padding-inline: var(--space-2); text-decoration: underline; text-underline-offset: 0.2em; }
+.mk-btn--text:hover { text-decoration-thickness: var(--border-thick); }
+.mk-btn:active { transform: translateY(var(--border-thin)); }
+.mk-btn--sm { min-height: var(--control-h-sm); padding: var(--space-2) var(--space-4); }
+.mk-btn:disabled, .mk-btn[aria-disabled="true"] { background: var(--paper-sunk); color: var(--ink-muted); border-color: var(--line); cursor: not-allowed; transform: none; }
+/* Loading: keep the colour and the label, add a spinner, block a second press */
+.mk-btn[aria-busy="true"] { cursor: progress; pointer-events: none; }
+.mk-btn[aria-busy="true"]::before { content: ""; width: var(--space-4); height: var(--space-4); box-sizing: border-box; border-radius: var(--radius-full);
+  border: var(--border-thick) solid currentColor; border-right-color: transparent; animation: mk-spin var(--duration-spin) linear infinite; }
+@keyframes mk-spin { to { transform: rotate(360deg); } }
+
+/* Badge (delivery label, status) */
+.mk-badge { display: inline-flex; align-items: center; gap: var(--space-1); font: var(--text-caption); letter-spacing: 0.02em;
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); border: var(--border-thin) solid var(--line-strong); color: var(--ink); background: var(--paper-raised); white-space: nowrap; }
+.mk-badge::before { content: ""; width: var(--space-2); height: var(--space-2); border-radius: var(--radius-full); background: currentColor; }
+.mk-badge--plain::before { display: none; }
+.mk-badge--local { color: var(--ink); }
+.mk-badge--national { background: var(--night); color: var(--on-night); border-color: var(--night); }
+.mk-badge--early { background: var(--gold); color: var(--on-gold); border-color: var(--gold); }
+.mk-badge--custom { background: var(--lotus); color: var(--ink); border-color: var(--lotus); }
+.mk-badge--ok { color: var(--jade); border-color: currentColor; }
+.mk-badge--warn { color: var(--lacquer); border-color: currentColor; }
+.mk-badge--muted { color: var(--ink-muted); }
+
+/* Field — state comes from the input's own attributes */
+.mk-field { display: grid; gap: var(--space-2); }
+.mk-field label { font: var(--text-label); color: var(--ink); }
+.mk-field input, .mk-field select { font: var(--text-body-strong); font-weight: 400; color: var(--ink); background: var(--paper-raised);
+  border: var(--border-thin) solid var(--line-strong); border-radius: var(--radius-sm); padding: 0 var(--space-3); min-height: var(--control-h); box-sizing: border-box; width: 100%;
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out); }
+.mk-field input:hover, .mk-field select:hover { border-color: var(--ink); }
+.mk-field input:disabled, .mk-field select:disabled { background: var(--paper-sunk); color: var(--ink-muted); border-color: var(--line); cursor: not-allowed; }
+.mk-field input:read-only:not(:disabled) { background: var(--paper-sunk); border-color: var(--line); }
+.mk-field input[aria-invalid="true"], .mk-field select[aria-invalid="true"] { border-color: var(--lacquer); box-shadow: inset 0 0 0 var(--border-thin) var(--lacquer); }
+.mk-field .mk-hint { font: var(--text-body-sm); color: var(--ink-muted); }
+.mk-field--error .mk-hint { color: var(--lacquer); }
+
+/* Product card */
+.mk-card { background: var(--paper-raised); border-radius: var(--radius-lg); box-shadow: var(--shadow-paper); overflow: hidden; display: flex; flex-direction: column; }
+.mk-card__img { aspect-ratio: 4 / 3; background: var(--paper-sunk); display: grid; place-items: center; position: relative; }
+.mk-card__img .mk-badge { position: absolute; top: var(--space-3); left: var(--space-3); }
+.mk-card__body { padding: var(--space-4); display: grid; gap: var(--space-1); }
+.mk-card__shop { font: var(--text-body-sm); color: var(--ink-muted); }
+.mk-card__name { font: var(--text-card-title); color: var(--ink); margin: 0; }
+.mk-card__meta { font: var(--text-body-sm); color: var(--ink-muted); }
+.mk-card__foot { display: flex; align-items: end; justify-content: space-between; gap: var(--space-3); padding: 0 var(--space-4) var(--space-4); }
+.mk-price { font: var(--text-price); font-variant-numeric: tabular-nums; color: var(--ink); }
+.mk-price small { display: block; font: var(--text-caption); color: var(--ink-muted); letter-spacing: 0.02em; }
+.mk-card--soldout .mk-price { color: var(--ink-muted); text-decoration: line-through; }
+
+/* Price tiers */
+.mk-tiers { width: 100%; border-collapse: collapse; font: var(--text-body-sm); font-variant-numeric: tabular-nums; }
+.mk-tiers th { text-align: left; font-weight: 600; color: var(--ink-muted); padding: var(--space-2) var(--space-3); border-bottom: var(--border-thin) solid var(--line); }
+.mk-tiers td { padding: var(--space-2) var(--space-3); border-bottom: var(--border-thin) solid var(--line); color: var(--ink); }
+.mk-tiers td:last-child, .mk-tiers th:last-child { text-align: right; }
+.mk-tiers tr[aria-current="true"] td { background: var(--lotus); font-weight: 600; }
+.mk-tiers .mk-save { color: var(--gold-ink); font-weight: 600; }
+
+/* Quote comparison */
+.mk-quotes { width: 100%; border-collapse: separate; border-spacing: 0; font: var(--text-body-sm); font-variant-numeric: tabular-nums;
+  background: var(--paper-raised); border: var(--border-thin) solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.mk-quotes th, .mk-quotes td { color: var(--ink); padding: var(--space-3) var(--space-4); text-align: right; border-bottom: var(--border-thin) solid var(--line); vertical-align: top; }
+.mk-quotes th:first-child, .mk-quotes td:first-child { text-align: left; color: var(--ink-muted); font-weight: 500; }
+.mk-quotes thead th { font: var(--text-card-title); color: var(--ink); background: var(--paper-sunk); }
+.mk-quotes thead td { background: var(--paper-sunk); }
+.mk-quotes .mk-total td { font: var(--text-body-strong); color: var(--ink); }
+.mk-quotes .mk-best { color: var(--gold-ink); font-weight: 600; }
+.mk-quotes .mk-expired { color: var(--ink-muted); }
+.mk-quotes tr:last-child td { border-bottom: 0; }
+
+/* Order timeline — the current step is marked with aria-current="step" */
+.mk-timeline { list-style: none; margin: 0; padding: 0; display: grid; }
+.mk-step { display: grid; grid-template-columns: var(--space-6) 1fr; column-gap: var(--space-3); position: relative; padding-bottom: var(--space-6); }
+.mk-step:last-child { padding-bottom: 0; }
+.mk-step::before { content: ""; position: absolute; left: calc((var(--space-6) - var(--border-thick)) / 2); top: var(--space-6); bottom: 0; width: var(--border-thick); background: var(--line); }
+.mk-step:last-child::before { display: none; }
+.mk-step__dot { width: var(--space-6); height: var(--space-6); border-radius: var(--radius-full); border: var(--border-thick) solid var(--line-strong); background: var(--paper); box-sizing: border-box; }
+.mk-step--done .mk-step__dot { background: var(--gold); border-color: var(--gold-ink); }
+.mk-step--done::before { background: var(--gold-ink); }
+.mk-step[aria-current="step"] .mk-step__dot { border-color: var(--ink); box-shadow: inset 0 0 0 var(--space-1) var(--ink); }
+.mk-step__title { font: var(--text-body-strong); color: var(--ink); }
+.mk-step--todo .mk-step__title { color: var(--ink-muted); font-weight: 500; }
+.mk-step__meta { font: var(--text-body-sm); color: var(--ink-muted); }
+.mk-step__note { font: var(--text-body-sm); color: var(--ink); margin: var(--space-1) 0 0; }
+
+/* Season band — the one place the logo's ornament appears */
+.mk-season { background: var(--night); color: var(--on-night); border-radius: var(--radius-lg); padding: var(--space-6); display: grid; gap: var(--space-2); position: relative; overflow: hidden; }
+.mk-season__rule { height: var(--border-thin); background: var(--gold); width: var(--space-12); }
+.mk-season h2 { font: var(--text-title); margin: 0; }
+.mk-season p { margin: 0; font: var(--text-body); }
+/* Ornament geometry: the moon is drawn at 160px and pushed half a step off the corner */
+.mk-season svg { position: absolute; right: calc(var(--space-6) * -1); top: calc(var(--space-6) * -1); width: 160px; height: 160px; }
+.mk-season .moon { fill: var(--gold); }
+.mk-season .cut { fill: var(--night); }
+
+/* Chip (filter) */
+.mk-chip { font: var(--text-label); padding: var(--space-2) var(--space-4); border-radius: var(--radius-full); border: var(--border-thin) solid var(--line-strong);
+  background: var(--paper-raised); color: var(--ink); cursor: pointer; min-height: var(--control-h-sm);
+  transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out); }
+.mk-chip:hover { background: var(--paper-hover); border-color: var(--ink); }
+.mk-chip[aria-pressed="true"] { background: var(--lotus); border-color: var(--ink); }
+.mk-chip:disabled { background: var(--paper-sunk); color: var(--ink-muted); border-color: var(--line); cursor: not-allowed; }

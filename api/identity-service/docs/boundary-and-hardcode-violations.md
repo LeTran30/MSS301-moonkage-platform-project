@@ -18,7 +18,7 @@
 - **Mô tả**:
   - `identity-service` hiện đang định nghĩa và tạo 3 vai trò: `CUSTOMER`, `SELLER`, `ADMIN`.
 - **Quy chuẩn kiến trúc (D-19 trong `Software_Design_v0.6.md`)**:
-  > *"Hai vai `MEMBER`, `ADMIN` (thay `CUSTOMER` của `docs/auth.md` và `USER` của v0.5); chủ người bán **không phải vai**. Quyền chủ không nằm trong JWT, service tự tra bản sao người bán theo `sub`."*
+  > *"Hai vai `MEMBER`, `ADMIN` (thay `CUSTOMER` của `../../../docs/iden-service/auth.md` và `USER` của v0.5); chủ người bán **không phải vai**. Quyền chủ không nằm trong JWT, service tự tra bản sao người bán theo `sub`."*
 - **Tác động**:
   - `identity-service` đang xâm phạm ranh giới của `vendor-service` khi coi "Người bán" là một quyền/role do identity cấp.
   - Role mặc định khi người dùng đăng ký (`AuthServiceImpl.DEFAULT_ROLE`) đang là `"CUSTOMER"` thay vì `"MEMBER"`.
