@@ -53,12 +53,12 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/verify",
+          "raw": "{{baseUrl}}/verify-account",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
-            "verify"
+            "verify-account"
           ]
         },
         "description": "",
@@ -80,7 +80,7 @@
       ]
     },
     {
-      "name": "3. Resend OTP",
+      "name": "3. Send verify-account OTP",
       "request": {
         "method": "POST",
         "header": [
@@ -90,12 +90,12 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/resend-otp",
+          "raw": "{{baseUrl}}/send-verify-account-otp",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
-            "resend-otp"
+            "send-verify-account-otp"
           ]
         },
         "description": "Chỉ gửi lại khi tài khoản còn INACTIVE. Luôn trả 200.",
@@ -304,7 +304,7 @@
       ]
     },
     {
-      "name": "7. Forgot password - send OTP",
+      "name": "7. Send reset-password OTP",
       "request": {
         "method": "POST",
         "header": [
@@ -314,13 +314,12 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/forgot-password/send-otp",
+          "raw": "{{baseUrl}}/send-reset-password-otp",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
-            "forgot-password",
-            "send-otp"
+            "send-reset-password-otp"
           ]
         },
         "description": "Lấy mã OTP mới như bước 1 rồi copy vào biến `otp`.",
@@ -331,7 +330,7 @@
       }
     },
     {
-      "name": "8. Forgot password - reset",
+      "name": "8. Reset password",
       "request": {
         "method": "POST",
         "header": [
@@ -341,13 +340,12 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/forgot-password/reset",
+          "raw": "{{baseUrl}}/reset-password",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
-            "forgot-password",
-            "reset"
+            "reset-password"
           ]
         },
         "description": "Sau bước này đăng nhập lại bằng newPassword.",

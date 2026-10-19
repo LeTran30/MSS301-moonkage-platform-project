@@ -1,7 +1,7 @@
 package com.moonkage.identity.mapper;
 
-import com.moonkage.identity.dto.response.AccountCreateResponse;
 import com.moonkage.identity.dto.response.LoginResponse;
+import com.moonkage.identity.dto.response.RegisterAccountResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.UserProfile;
 
@@ -10,12 +10,14 @@ public final class AccountMapper {
 
     private AccountMapper() {}
 
-    public static AccountCreateResponse toCreateResponse(Account account) {
-        return AccountCreateResponse.builder()
+    /** {@code otpSent} null for /verify, which sends no email. */
+    public static RegisterAccountResponse toRegisterResponse(Account account, Boolean otpSent) {
+        return RegisterAccountResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
                 .phoneNumber(account.getPhoneNumber())
                 .verified(account.isAccountVerified())
+                .otpSent(otpSent)
                 .build();
     }
 

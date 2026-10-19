@@ -47,7 +47,7 @@ Mã `Q-xx` trỏ tới danh sách phát hiện ở mục 3.
 |---|---|---|---|
 | `AuthController` | 🟢 | 🟢 | Mỏng, chỉ chuyển tiếp. `resend-otp` dùng lại `ForgotPasswordRequest` (tên DTO không khớp mục đích, Q-19) |
 | `AddressController` | 🟢 | 🟢 | FR-03; lấy `accountId` từ JWT, không nhận từ body |
-| `NfcSessionController` | 🟢 | 🟢 | Đúng bảng API 5.1; `/card` luôn 200 theo contract app |
+| `NfcController` | 🟢 | 🟢 | Đúng bảng API 5.1; `/card` luôn 200 theo contract app |
 | `InternalAccountController` | 🟢 | 🟡 | `nfc-status` đúng 5.3; `by-email` chỉ phục vụ seed seller demo (Q-14) |
 | `InternalIdNumberController` | 🟢 | 🟢 | D-07: pepper không rời identity |
 
@@ -102,7 +102,7 @@ Mã `Q-xx` trỏ tới danh sách phát hiện ở mục 3.
 
 | File | Sạch | Nghiệp vụ | Ghi chú |
 |---|---|---|---|
-| `AccountCreateRequest` | 🟡 | 🟢 | Message validation viết thẳng (Q-08); 100 / 8–72 lặp (Q-09). Bắt buộc email: khớp A-17 "demo chỉ đăng ký bằng email" (AC-01.1 cho phép SĐT) |
+| `RegisterRequest` | 🟡 | 🟢 | Message validation viết thẳng (Q-08); 100 / 8–72 lặp (Q-09). Bắt buộc email: khớp A-17 "demo chỉ đăng ký bằng email" (AC-01.1 cho phép SĐT) |
 | `ResetPasswordRequest`, `VerifyRequest`, `LoginRequest`, `ForgotPasswordRequest`, `RefreshTokenRequest` | 🟡 | 🟢 | Message validation viết thẳng (Q-08) |
 | `AddressRequest` | 🟡 | 🟢 | Regex `areaCode` viết thẳng (Q-09) |
 | `SubmitCardRequest`, `IdNumberCheckRequest` | 🟢 | 🟢 | Bỏ bean validation có chủ đích (BAD_FORMAT tính lần thử) |
@@ -166,7 +166,7 @@ Sửa: xóa nhánh; chuyển tiêu đề vào `messages.properties` (hoặc đ�
 Sửa: một hàm duy nhất (ví dụ trong `AccountService`) cho cả ba nơi gọi.
 
 **Q-08 — Message validation viết thẳng tiếng Việt trong 7 DTO**
-`AccountCreateRequest`, `ResetPasswordRequest`, `VerifyRequest`, `LoginRequest`, `ForgotPasswordRequest`, `RefreshTokenRequest`, `AddressRequest`. Vi phạm nguyên tắc không hardcode; `LocaleConfig` hỗ trợ `en` nhưng các message này luôn là tiếng Việt.
+`RegisterRequest`, `ResetPasswordRequest`, `VerifyRequest`, `LoginRequest`, `ForgotPasswordRequest`, `RefreshTokenRequest`, `AddressRequest`. Vi phạm nguyên tắc không hardcode; `LocaleConfig` hỗ trợ `en` nhưng các message này luôn là tiếng Việt.
 Sửa: `message = "{validation.email.required}"` cùng key trong `messages.properties`, và cấu hình `LocalValidatorFactoryBean` dùng `MessageSource`.
 
 **Q-10 — Định dạng lỗi khác chuẩn đã chốt**

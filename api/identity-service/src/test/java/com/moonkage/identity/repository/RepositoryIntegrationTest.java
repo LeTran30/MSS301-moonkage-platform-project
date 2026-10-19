@@ -9,8 +9,8 @@ import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.Address;
 import com.moonkage.identity.entity.LegalProfile;
 import com.moonkage.identity.entity.OutboxEvent;
+import com.moonkage.identity.enums.Gender;
 import com.moonkage.identity.enums.Role;
-import com.moonkage.identity.enums.Sex;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -159,7 +159,7 @@ class RepositoryIntegrationTest {
         return LegalProfile.builder()
                 .account(account)
                 .legalName("NGUYEN VAN A")
-                .sex(Sex.MALE)
+                .gender(Gender.MALE)
                 .nationality("VIET NAM")
                 .idNumberHash(idHash)
                 .idHashKeyVer(1)

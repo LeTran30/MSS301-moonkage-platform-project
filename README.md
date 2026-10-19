@@ -205,12 +205,12 @@ Gọi qua gateway `http://localhost:8080/<service>/...`. Một số endpoint ch�
 | Method | Endpoint | Mô tả | Auth |
 |---|---|---|---|
 | POST | `/identity-service/api/auth/register` | Đăng ký, gửi OTP | ❌ |
-| POST | `/identity-service/api/auth/verify` | Xác nhận OTP, kích hoạt tài khoản | ❌ |
+| POST | `/identity-service/api/auth/verify-account` | Xác nhận OTP, kích hoạt tài khoản | ❌ |
 | POST | `/identity-service/api/auth/login` | Đăng nhập (email hoặc số điện thoại) | ❌ |
 | POST | `/identity-service/api/auth/refresh-token` | Lấy cặp token mới | ❌ |
 | GET | `/identity-service/api/auth/me` | Thông tin tài khoản hiện tại | ✅ |
-| POST | `/identity-service/api/auth/forgot-password/send-otp` | Gửi OTP quên mật khẩu | ❌ |
-| POST | `/identity-service/api/auth/forgot-password/reset` | Đặt lại mật khẩu | ❌ |
+| POST | `/identity-service/api/auth/send-reset-password-otp` | Gửi OTP quên mật khẩu | ❌ |
+| POST | `/identity-service/api/auth/reset-password` | Đặt lại mật khẩu | ❌ |
 | GET | `/catalog-service/api/products` | Tìm kiếm sản phẩm | ❌ |
 | GET | `/catalog-service/api/products/{productId}` | Chi tiết sản phẩm | ❌ |
 | POST | `/catalog-service/api/seller/products` | Shop tạo sản phẩm | ✅ `SELLER` |

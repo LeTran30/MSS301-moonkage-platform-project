@@ -32,11 +32,11 @@ public interface OtpService {
      *
      * @param purpose what the code must have been issued for
      * @param email user email
-     * @param otpVerify OTP entered by the user
-     * @return true if valid
-     * @throws com.moonkage.identity.exception.AppException if locked out due to excessive failed attempts
+     * @param otp OTP entered by the user
+     * @throws com.moonkage.identity.exception.AppException OTP_INVALID_OR_EXPIRED for a wrong, expired or missing
+     *     code; OTP_MAX_ATTEMPTS_EXCEEDED once locked out
      */
-    boolean verifyOtp(OtpPurpose purpose, String email, String otpVerify);
+    void verifyOtp(OtpPurpose purpose, String email, String otp);
 
     /**
      * Drops the pending code (e.g. it could not be delivered). Rate limit counters are kept.

@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import com.moonkage.identity.config.RabbitConfig;
 import com.moonkage.identity.messaging.EmailNotificationEvent;
+import java.security.KeyPairGenerator;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -32,8 +36,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * The real application over HTTP (security filter chain, validation, error shape, JPA on PostgreSQL). Only the
- * broker is mocked: it also hands the test the OTP that would have been emailed. Skipped when Docker is not running.
+ * The real application over HTTP (security filter chain, validation, error
+ * shape, JPA on PostgreSQL). Only the
+ * broker is mocked: it also hands the test the OTP that would have been
+ * emailed. Skipped when Docker is not running.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -53,6 +59,16 @@ class IdentityApiIntegrationTest {
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
 
+    /** A throw-away transport key, so a submitted card reaches the database step instead of a missing-key 500. */
+    @DynamicPropertySource
+    static void nfcTransportKey(DynamicPropertyRegistry registry) throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        String privateKey = Base64.getEncoder()
+                .encodeToString(generator.generateKeyPair().getPrivate().getEncoded());
+        registry.add("nfc.transport-private-key", () -> privateKey);
+    }
+
     @Autowired
     IdentityApiIntegrationTest(MockMvc mvc) {
         this.mvc = mvc;
@@ -69,8 +85,8 @@ class IdentityApiIntegrationTest {
         mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                        {"email":"%s","phoneNumber":"+84%s","fullName":"Nguyen Lan","password":"%s"}
-                        """.formatted(email, phoneDigits, PASSWORD)))
+                                {"email":"%s","phoneNumber":"+84%s","fullName":"Nguyen Lan","password":"%s"}
+                                """.formatted(email, phoneDigits, PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -87,18 +103,18 @@ class IdentityApiIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("AUTH_002"));
 
-        mvc.perform(post("/api/auth/verify")
+        mvc.perform(post("/api/auth/verify-account")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                        {"email":"%s","otp":"%s"}
-                        """.formatted(email, lastOtp(email))))
+                                                {"email":"%s","otp":"%s"}
+                                                """.formatted(email, lastOtp(email))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.verified").value(true));
 
         // registered as +84…, logs in as 0…: one stored form (AC-01.3)
         String token = token(login("0" + phoneDigits, PASSWORD));
 
-        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+        mvc.perform(get("/api/accounts/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.email").value(email))
                 .andExpect(jsonPath("$.data.phoneNumber").value(phoneDigits))
@@ -110,8 +126,8 @@ class IdentityApiIntegrationTest {
         mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                        {"email":"not-an-email","fullName":"Lan","password":"short"}
-                        """))
+                                                {"email":"not-an-email","fullName":"Lan","password":"short"}
+                                                """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("COMMON_400"))
@@ -149,21 +165,22 @@ class IdentityApiIntegrationTest {
     void passwordResetEndsEveryOtherSession() throws Exception {
         String email = activeAccount();
         String oldLogin = login(email, PASSWORD);
-        // JWT iat has whole seconds: the reset must happen in a later second than the old login
+        // JWT iat has whole seconds: the reset must happen in a later second than the
+        // old login
         Thread.sleep(1100);
 
-        mvc.perform(post("/api/auth/forgot-password/send-otp")
+        mvc.perform(post("/api/auth/send-reset-password-otp")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"%s\"}".formatted(email)))
                 .andExpect(status().isOk());
-        mvc.perform(post("/api/auth/forgot-password/reset")
+        mvc.perform(post("/api/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                        {"email":"%s","otp":"%s","newPassword":"NewSecret@123"}
-                        """.formatted(email, lastOtp(email))))
+                                                {"email":"%s","otp":"%s","newPassword":"NewSecret@123"}
+                                                """.formatted(email, lastOtp(email))))
                 .andExpect(status().isOk());
 
-        mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token(oldLogin)))
+        mvc.perform(get("/api/accounts/me").header("Authorization", "Bearer " + token(oldLogin)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_012"));
         mvc.perform(post("/api/auth/refresh-token")
@@ -179,11 +196,11 @@ class IdentityApiIntegrationTest {
         String email = "q05-" + SEQ.incrementAndGet() + "@x.vn";
         register(email);
 
-        mvc.perform(post("/api/auth/forgot-password/reset")
+        mvc.perform(post("/api/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                        {"email":"%s","otp":"%s","newPassword":"NewSecret@123"}
-                        """.formatted(email, lastOtp(email))))
+                                                {"email":"%s","otp":"%s","newPassword":"NewSecret@123"}
+                                                """.formatted(email, lastOtp(email))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("AUTH_005"));
     }
@@ -210,19 +227,63 @@ class IdentityApiIntegrationTest {
         String owner = token(login(activeAccount(), PASSWORD));
         String stranger = token(login(activeAccount(), PASSWORD));
 
-        String created = mvc.perform(post("/api/nfc-sessions").header("Authorization", "Bearer " + owner))
+        String created = mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + owner))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         String sessionId = JsonPath.read(created, "$.data.sessionId");
 
-        mvc.perform(get("/api/nfc-sessions/" + sessionId).header("Authorization", "Bearer " + owner))
+        mvc.perform(get("/api/nfc/sessions/" + sessionId).header("Authorization", "Bearer " + owner))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("PENDING"));
-        mvc.perform(get("/api/nfc-sessions/" + sessionId).header("Authorization", "Bearer " + stranger))
+        mvc.perform(get("/api/nfc/sessions/" + sessionId).header("Authorization", "Bearer " + stranger))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("NFC_004"));
+    }
+
+    @Test
+    void nfcStatusOfOwnAccountStartsNotVerified() throws Exception {
+        String owner = token(login(activeAccount(), PASSWORD));
+
+        mvc.perform(get("/api/nfc/status").header("Authorization", "Bearer " + owner))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nfcStatus").value("NOT_VERIFIED"));
+        mvc.perform(get("/api/nfc/status")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void internalNfcStatusAnswersForAnyAccountUnwrapped() throws Exception {
+        String accountId = JsonPath.read(login(activeAccount(), PASSWORD), "$.data.accountId");
+
+        // other services get the bare body, not ApiResponse (Software Design 5.1 rule 8)
+        mvc.perform(get("/internal/nfc/status/" + accountId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nfcStatus").value("NOT_VERIFIED"));
+        mvc.perform(get("/internal/nfc/status/unknown-account")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void rejectedCardCountsTheAttemptInItsOwnTransaction() throws Exception {
+        String owner = token(login(activeAccount(), PASSWORD));
+        String created = mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + owner))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String sessionId = JsonPath.read(created, "$.data.sessionId");
+        String card = "{\"fullName\":\"NGUYEN VAN A\",\"encryptedFields\":\"not-a-jwe\"}";
+
+        // row lock and outbox both need the transaction; the second answer proves the first attempt was committed
+        for (int attemptsLeft : new int[] {4, 3}) {
+            mvc.perform(post("/api/nfc/sessions/" + sessionId + "/card")
+                            .header("Authorization", "Bearer " + owner)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(card))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.reasonCode").value("BAD_FORMAT"))
+                    .andExpect(jsonPath("$.data.attemptsLeft").value(attemptsLeft));
+        }
     }
 
     // ───────── helpers ─────────
@@ -231,7 +292,7 @@ class IdentityApiIntegrationTest {
     private String activeAccount() throws Exception {
         String email = "user" + SEQ.incrementAndGet() + "@x.vn";
         register(email);
-        mvc.perform(post("/api/auth/verify")
+        mvc.perform(post("/api/auth/verify-account")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"%s\",\"otp\":\"%s\"}".formatted(email, lastOtp(email))))
                 .andExpect(status().isOk());
@@ -267,7 +328,10 @@ class IdentityApiIntegrationTest {
         return JsonPath.read(loginResponse, "$.data.refreshToken");
     }
 
-    /** The code in the last email event sent to this address (what the user would read in the inbox). */
+    /**
+     * The code in the last email event sent to this address (what the user would
+     * read in the inbox).
+     */
     private String lastOtp(String email) {
         ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
         verify(rabbitTemplate, atLeastOnce())
@@ -276,6 +340,6 @@ class IdentityApiIntegrationTest {
                 .map(EmailNotificationEvent.class::cast)
                 .filter(e -> e.to().equals(email))
                 .toList();
-        return (String) mine.get(mine.size() - 1).params().get("otp");
+        return (String) mine.get(mine.size() - 1).params().get(EmailNotificationEvent.PARAM_OTP);
     }
 }

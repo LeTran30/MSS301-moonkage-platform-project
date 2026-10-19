@@ -1,6 +1,6 @@
 package com.moonkage.identity.service.impl;
 
-import com.moonkage.identity.dto.request.AddressRequest;
+import com.moonkage.identity.dto.request.SaveAddressRequest;
 import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.Address;
@@ -29,6 +29,26 @@ public class AddressServiceImpl implements AddressService {
     private final AccountRepository accountRepository;
 
     @Override
+    @Transactional
+    public AddressResponse create(String accountId, SaveAddressRequest request) {
+        Account account = lockAccount(accountId);
+        List<Address> existingAddresses = addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId);
+
+        Address address = new Address();
+        address.setAccount(account);
+        apply(address, request);
+        boolean makeDefault = existingAddresses.isEmpty() || Boolean.TRUE.equals(request.isDefault());
+        if (makeDefault) {
+            clearDefaults(existingAddresses);
+        }
+        address.setDefault(makeDefault);
+
+        // flush so the response carries the generated timestamps
+        Address saved = addressRepository.saveAndFlush(address);
+        return AddressMapper.toResponse(saved);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<AddressResponse> getMyAddresses(String accountId) {
         return addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId).stream()
@@ -38,60 +58,54 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponse create(String accountId, AddressRequest request) {
-        Account account = lockAccount(accountId);
-        List<Address> existing = addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId);
-
-        Address address = new Address();
-        address.setAccount(account);
-        apply(address, request);
-        boolean makeDefault = existing.isEmpty() || Boolean.TRUE.equals(request.getIsDefault());
-        if (makeDefault) {
-            existing.forEach(a -> a.setDefault(false));
-        }
-        address.setDefault(makeDefault);
-        // flush so the response carries the generated timestamps
-        return AddressMapper.toResponse(addressRepository.saveAndFlush(address));
-    }
-
-    @Override
-    @Transactional
-    public AddressResponse update(String accountId, String addressId, AddressRequest request) {
+    public AddressResponse update(String accountId, String addressId, SaveAddressRequest request) {
         lockAccount(accountId);
-        Address address = findOwned(accountId, addressId);
+        Address address = getOwned(accountId, addressId);
+
         apply(address, request);
-        if (Boolean.TRUE.equals(request.getIsDefault())) {
-            addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId).stream()
-                    .filter(a -> !a.getId().equals(addressId))
-                    .forEach(a -> a.setDefault(false));
+        if (Boolean.TRUE.equals(request.isDefault())) {
+            clearOtherDefaults(accountId, addressId);
             address.setDefault(true);
-        } else if (Boolean.FALSE.equals(request.getIsDefault())) {
+        } else if (Boolean.FALSE.equals(request.isDefault())) {
             address.setDefault(false);
         }
-        return AddressMapper.toResponse(addressRepository.saveAndFlush(address));
+
+        Address saved = addressRepository.saveAndFlush(address);
+        return AddressMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
     public void delete(String accountId, String addressId) {
-        addressRepository.delete(findOwned(accountId, addressId));
+        addressRepository.delete(getOwned(accountId, addressId));
     }
 
+    /** Row lock on the account: two parallel requests cannot both leave a default (AC-03.1). */
     private Account lockAccount(String accountId) {
         return accountRepository
                 .findByIdForUpdate(accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId));
     }
 
+    private static void apply(Address address, SaveAddressRequest request) {
+        address.setDetail(request.detail().trim());
+        address.setAreaCode(request.areaCode().trim().toUpperCase(Locale.ROOT));
+    }
+
+    private static void clearDefaults(List<Address> addresses) {
+        addresses.forEach(a -> a.setDefault(false));
+    }
+
     /** Another account's address answers like a missing one. */
-    private Address findOwned(String accountId, String addressId) {
+    private Address getOwned(String accountId, String addressId) {
         return addressRepository
                 .findByIdAndAccountId(addressId, accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND, addressId));
     }
 
-    private static void apply(Address address, AddressRequest request) {
-        address.setDetail(request.getDetail().trim());
-        address.setAreaCode(request.getAreaCode().trim().toUpperCase(Locale.ROOT));
+    private void clearOtherDefaults(String accountId, String keptAddressId) {
+        clearDefaults(addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId).stream()
+                .filter(a -> !a.getId().equals(keptAddressId))
+                .toList());
     }
 }

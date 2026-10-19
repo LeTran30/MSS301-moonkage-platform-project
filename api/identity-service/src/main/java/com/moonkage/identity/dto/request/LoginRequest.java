@@ -1,19 +1,18 @@
 package com.moonkage.identity.dto.request;
 
+import com.moonkage.identity.constant.SecurityConstant;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class LoginRequest {
+/** @param username email or phone number (FR-02) */
+public record LoginRequest(
+        @NotBlank(message = "{validation.username.required}")
+        String username,
 
-    /** Email or phone number (FR-02). */
-    @NotBlank(message = "{validation.username.required}")
-    private String username;
+        @NotBlank(message = "{validation.password.required}")
+        String password) {
 
-    @NotBlank(message = "{validation.password.required}")
-    private String password;
+    @Override
+    public String toString() {
+        return "LoginRequest[username=" + username + ", password=" + SecurityConstant.REDACTED + "]";
+    }
 }

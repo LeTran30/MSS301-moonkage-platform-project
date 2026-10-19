@@ -39,7 +39,6 @@ public class UserProfile extends BaseEntity {
     @JoinColumn(name = "account_id")
     private Account account;
 
-    /** Name the user typed at registration; not the legal name from the ID card. */
     @Column(name = "full_name", nullable = false, length = AccountConstant.MAX_FULL_NAME_LENGTH)
     private String fullName;
 

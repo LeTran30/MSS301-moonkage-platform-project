@@ -33,15 +33,15 @@ public class EmailServiceImpl implements EmailService {
     private final OtpProperties otpProperties;
     private final MessageSource messageSource;
 
-    /** Synchronous broker publish so a broker failure reaches the user, who can then resend the code (FR-01). */
+    /** Synchronous broker publish so a broker failure reaches the user, who can then ask for a new code (FR-01). */
     @Override
-    public void sendOtpForVerifyAccount(String email, String name, String otp) {
+    public void sendVerifyAccountOtp(String email, String name, String otp) {
         send(email, name, otp, TEMPLATE_REGISTRATION, SUBJECT_REGISTRATION);
     }
 
     /** Silent on failure: the reply must not reveal whether the email has an account (FR-02). */
     @Override
-    public void sendOtpForForgotPassword(String email, String name, String otp) {
+    public void sendResetPasswordOtp(String email, String name, String otp) {
         try {
             send(email, name, otp, TEMPLATE_FORGOT_PASSWORD, SUBJECT_FORGOT_PASSWORD);
         } catch (AppException e) {
@@ -56,11 +56,11 @@ public class EmailServiceImpl implements EmailService {
                 messageSource.getMessage(subjectKey, null, LocaleContextHolder.getLocale()),
                 template,
                 Map.of(
-                        "name",
+                        EmailNotificationEvent.PARAM_NAME,
                         name,
-                        "otp",
+                        EmailNotificationEvent.PARAM_OTP,
                         otp,
-                        "minutes",
+                        EmailNotificationEvent.PARAM_MINUTES,
                         otpProperties.getExpiration().toMinutes()));
         try {
             emailNotificationPublisher.publish(event);

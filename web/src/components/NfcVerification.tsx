@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { QrCode, Ecc } from '../utils/qrcodegen';
+import QRCode from 'qrcode';
 
 interface SessionData {
   sessionId: string;
@@ -23,15 +23,15 @@ export const NfcVerification: React.FC = () => {
   // Session State
   const [session, setSession] = useState<SessionData | null>(null);
   const [sessionStatus, setSessionStatus] = useState<'PENDING' | 'VERIFIED' | 'EXPIRED' | null>(null);
-  const [qrSvg, setQrSvg] = useState<string>('');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [countdown, setCountdown] = useState<number>(0);
 
   // UI State
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const pollIntervalRef = useRef<number | null>(null);
-  const countdownIntervalRef = useRef<number | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Clean intervals on unmount
   useEffect(() => {
@@ -86,7 +86,7 @@ export const NfcVerification: React.FC = () => {
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
 
     try {
-      const res = await fetch(`${apiBaseUrl}/identity-service/api/nfc-sessions`, {
+      const res = await fetch(`${apiBaseUrl}/identity-service/api/nfc/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,8 +105,16 @@ export const NfcVerification: React.FC = () => {
 
       // Generate QR Code format: moonkage-verify:v1:<sessionId>
       const qrPayload = `moonkage-verify:v1:${sessionData.sessionId}`;
-      const qr = QrCode.encodeText(qrPayload, Ecc.MEDIUM);
-      setQrSvg(qr.toSvgString(2));
+      const dataUrl = await QRCode.toDataURL(qrPayload, {
+        margin: 3,
+        width: 320,
+        errorCorrectionLevel: 'M',
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
+      });
+      setQrDataUrl(dataUrl);
 
       // Calculate initial countdown
       setCountdown(getRemainingSeconds(sessionData.expiresAt));
@@ -137,7 +145,7 @@ export const NfcVerification: React.FC = () => {
   const startPolling = (sessionId: string, authToken: string) => {
     pollIntervalRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`${apiBaseUrl}/identity-service/api/nfc-sessions/${sessionId}`, {
+        const res = await fetch(`${apiBaseUrl}/identity-service/api/nfc/sessions/${sessionId}`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
 
@@ -277,10 +285,15 @@ export const NfcVerification: React.FC = () => {
             <div className="flex flex-col items-center">
               {/* QR Code Container */}
               <div className="relative p-4 bg-white rounded-2xl border-2 border-slate-200 shadow-sm flex flex-col items-center">
-                <div
-                  className="w-56 h-56 flex items-center justify-center"
-                  dangerouslySetInnerHTML={{ __html: qrSvg }}
-                />
+                <div className="w-60 h-60 flex items-center justify-center p-1 bg-white">
+                  {qrDataUrl && (
+                    <img
+                      src={qrDataUrl}
+                      alt="Mã QR phiên xác minh"
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                </div>
 
                 {/* Status Overlays */}
                 {sessionStatus === 'VERIFIED' && (

@@ -89,6 +89,11 @@ public class Account extends BaseEntity implements UserDetails {
                 || (issuedAt != null && !issuedAt.isBefore(passwordChangedAt.truncatedTo(ChronoUnit.SECONDS)));
     }
 
+    /** NFC verification is blocked until {@code nfcLockedUntil} (AC-04.9); a past lockout no longer counts. */
+    public boolean isNfcLocked(Instant now) {
+        return nfcLockedUntil != null && now.isBefore(nfcLockedUntil);
+    }
+
     /**
      * The form {@code phone_number} is stored and looked up in: the 9 subscriber digits, so 0912…, 84912… and
      * +84912… are one account (AC-01.3). Null / blank stays null. The input must already match
