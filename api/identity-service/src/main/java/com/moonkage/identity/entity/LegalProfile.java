@@ -54,7 +54,7 @@ public class LegalProfile extends BaseEntity {
     private String legalName;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "sex", nullable = false, length = 10)
+    @Column(name = "gender", nullable = false, length = 10)
     private Gender gender;
 
     @Column(name = "nationality", nullable = false, length = IdCardConstant.MAX_NATIONALITY_LENGTH)

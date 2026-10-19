@@ -86,7 +86,7 @@ final class NfcCardValidator {
         }
     }
 
-    /** The app sends the card's "sex" field as MALE / FEMALE; anything else is BAD_FORMAT. */
+    /** The app sends the card's "gender" field as MALE / FEMALE; anything else is BAD_FORMAT. */
     private static Gender parseGender(String value) {
         for (Gender gender : Gender.values()) {
             if (gender.name().equals(value)) {
