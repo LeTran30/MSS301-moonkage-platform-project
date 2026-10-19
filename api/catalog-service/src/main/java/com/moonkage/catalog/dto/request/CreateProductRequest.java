@@ -26,9 +26,10 @@ public class CreateProductRequest {
     @Size(max = 5000, message = "Mô tả tối đa 5000 ký tự")
     private String description;
 
+    /** tempKey from POST /api/seller/products/images/uploads, or a key the product already has. */
     @NotEmpty(message = "Cần ít nhất 1 ảnh")
     @Size(max = 10, message = "Tối đa 10 ảnh")
-    private List<@NotBlank(message = "URL ảnh không được để trống") String> imageUrls;
+    private List<@NotBlank(message = "Mã ảnh không được để trống") String> imageKeys;
 
     @Size(max = 100, message = "Loại bánh tối đa 100 ký tự")
     private String cakeType;

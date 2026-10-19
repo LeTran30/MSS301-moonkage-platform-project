@@ -2,11 +2,14 @@ package com.moonkage.catalog.service.impl;
 
 import com.moonkage.catalog.client.VendorClient;
 import com.moonkage.catalog.common.exception.CustomException;
+import com.moonkage.catalog.config.ProductImageProperties;
 import com.moonkage.catalog.dto.client.VendorInfo;
 import com.moonkage.catalog.dto.request.CreateProductRequest;
+import com.moonkage.catalog.dto.request.ImageUploadRequest;
 import com.moonkage.catalog.dto.request.PriceTierRequest;
 import com.moonkage.catalog.dto.request.UpdateProductRequest;
 import com.moonkage.catalog.dto.response.PageResponse;
+import com.moonkage.catalog.dto.response.PresignedUploadLinkResponse;
 import com.moonkage.catalog.dto.response.ProductResponse;
 import com.moonkage.catalog.entity.Product;
 import com.moonkage.catalog.entity.ProductPriceTier;
@@ -15,6 +18,9 @@ import com.moonkage.catalog.mapper.ProductMapper;
 import com.moonkage.catalog.messaging.AuditEvent;
 import com.moonkage.catalog.repository.ProductRepository;
 import com.moonkage.catalog.service.ProductService;
+import com.moonkage.storage.BucketAccess;
+import com.moonkage.storage.ObjectStorage;
+import com.moonkage.storage.PresignedUploadLink;
 import feign.FeignException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,6 +35,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 @Service
@@ -36,10 +44,23 @@ import org.springframework.util.StringUtils;
 public class ProductServiceImpl implements ProductService {
 
     private static final int MAX_PAGE_SIZE = 100;
+    /** Key prefix of product images in the public bucket; minio/init.sh grants catalog's MinIO user only this one. */
+    private static final String IMAGE_KEY_PREFIX = "products";
 
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final VendorClient vendorClient;
+    private final ObjectStorage objectStorage;
+    private final ProductImageProperties productImageProperties;
+
+    @Override
+    public PresignedUploadLinkResponse createImageUploadLink(String accountId, ImageUploadRequest request) {
+        requireShop(accountId);
+        PresignedUploadLink uploadLink = objectStorage.createPresignedUploadLink(
+                request.contentType(), request.sizeBytes(), productImageProperties.toFileLimit());
+        return new PresignedUploadLinkResponse(
+                uploadLink.tempKey(), uploadLink.uploadUrl(), uploadLink.formFields(), uploadLink.expiresAt());
+    }
 
     @Override
     @Transactional
@@ -52,7 +73,7 @@ public class ProductServiceImpl implements ProductService {
         product.setVendorId(vendor.id());
         product.setName(request.getName().trim());
         product.setDescription(request.getDescription().trim());
-        product.setImageUrls(new ArrayList<>(request.getImageUrls()));
+        replaceImages(product, request.getImageKeys());
         product.setCakeType(trimToNull(request.getCakeType()));
         product.setBrand(trimToNull(request.getBrand()));
         product.setOrigin(trimToNull(request.getOrigin()));
@@ -66,7 +87,7 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(ProductStatus.ON_SALE);
         replaceTiers(product, request.getPriceTiers());
 
-        return ProductMapper.toResponse(productRepository.save(product));
+        return toResponse(productRepository.save(product));
     }
 
     @Override
@@ -86,8 +107,8 @@ public class ProductServiceImpl implements ProductService {
         if (StringUtils.hasText(req.getDescription())) {
             product.setDescription(req.getDescription().trim());
         }
-        if (req.getImageUrls() != null && !req.getImageUrls().isEmpty()) {
-            product.setImageUrls(new ArrayList<>(req.getImageUrls()));
+        if (req.getImageKeys() != null && !req.getImageKeys().isEmpty()) {
+            replaceImages(product, req.getImageKeys());
         }
         if (StringUtils.hasText(req.getCakeType())) {
             product.setCakeType(req.getCakeType().trim());
@@ -127,7 +148,7 @@ public class ProductServiceImpl implements ProductService {
         audit(accountId, "PRODUCT_STOCK_CHANGED", product.getId(), oldStock, product.getStock());
 
         // flush now so the response carries the new updatedAt
-        return ProductMapper.toResponse(productRepository.saveAndFlush(product));
+        return toResponse(productRepository.saveAndFlush(product));
     }
 
     @Override
@@ -137,7 +158,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = requireOwnProduct(vendor, productId);
         requireNotRemoved(product);
         product.setStatus(visible ? ProductStatus.ON_SALE : ProductStatus.HIDDEN);
-        return ProductMapper.toResponse(productRepository.save(product));
+        return toResponse(productRepository.save(product));
     }
 
     @Override
@@ -156,14 +177,14 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products = status == null
                 ? productRepository.findByVendorIdAndDeletedFalseOrderByCreatedAtDesc(vendor.id())
                 : productRepository.findByVendorIdAndStatusAndDeletedFalseOrderByCreatedAtDesc(vendor.id(), status);
-        return products.stream().map(ProductMapper::toResponse).toList();
+        return products.stream().map(this::toResponse).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getMyProduct(String accountId, String productId) {
         VendorInfo vendor = requireShop(accountId);
-        return ProductMapper.toResponse(requireOwnProduct(vendor, productId));
+        return toResponse(requireOwnProduct(vendor, productId));
     }
 
     @Override
@@ -175,7 +196,7 @@ public class ProductServiceImpl implements ProductService {
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         return PageResponse.from(productRepository
                 .searchOnSale(trimToNull(vendorId), trimToNull(keyword), pageable)
-                .map(ProductMapper::toResponse));
+                .map(this::toResponse));
     }
 
     @Override
@@ -183,7 +204,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getOnSaleProduct(String productId) {
         return productRepository
                 .findByIdAndStatusAndDeletedFalse(productId, ProductStatus.ON_SALE)
-                .map(ProductMapper::toResponse)
+                .map(this::toResponse)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm"));
     }
 
@@ -244,6 +265,72 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    /**
+     * Sets the product's images to requestedKeys, in that order: keys it already has stay, new uploads are checked and
+     * moved to the public bucket. MinIO is brought in line with the database once the transaction ends.
+     */
+    private void replaceImages(Product product, List<String> requestedKeys) {
+        List<String> currentKeys = List.copyOf(product.getImageKeys());
+        validateImageKeys(requestedKeys, currentKeys);
+        List<String> finalKeys = moveNewUploads(requestedKeys, currentKeys);
+
+        List<String> addedKeys =
+                finalKeys.stream().filter(k -> !currentKeys.contains(k)).toList();
+        List<String> droppedKeys =
+                currentKeys.stream().filter(k -> !finalKeys.contains(k)).toList();
+        deleteImagesAfterTransaction(droppedKeys, addedKeys);
+        product.setImageKeys(new ArrayList<>(finalKeys));
+    }
+
+    private void validateImageKeys(List<String> requestedKeys, List<String> currentKeys) {
+        if (new HashSet<>(requestedKeys).size() != requestedKeys.size()) {
+            throw new CustomException("Danh sách ảnh bị trùng");
+        }
+        for (String key : requestedKeys) {
+            if (!currentKeys.contains(key) && !objectStorage.isTempKey(key)) {
+                // a key of another product, or made up: never let one Shop attach another's image
+                throw new CustomException("Ảnh không hợp lệ: " + key);
+            }
+        }
+    }
+
+    /**
+     * Returns requestedKeys with every new upload replaced by its key in the public bucket. All or nothing: if one
+     * upload is rejected, the ones already moved are deleted again.
+     */
+    private List<String> moveNewUploads(List<String> requestedKeys, List<String> currentKeys) {
+        List<String> finalKeys = new ArrayList<>();
+        try {
+            for (String key : requestedKeys) {
+                finalKeys.add(
+                        currentKeys.contains(key)
+                                ? key
+                                : objectStorage.moveUploadedFile(
+                                        key,
+                                        productImageProperties.toFileLimit(),
+                                        BucketAccess.PUBLIC,
+                                        IMAGE_KEY_PREFIX));
+            }
+        } catch (RuntimeException e) {
+            finalKeys.stream()
+                    .filter(k -> !currentKeys.contains(k))
+                    .forEach(k -> objectStorage.deleteQuietly(BucketAccess.PUBLIC, k));
+            throw e;
+        }
+        return finalKeys;
+    }
+
+    /** Commit: delete images the product no longer has. Rollback: delete the ones just added. */
+    private void deleteImagesAfterTransaction(List<String> droppedKeys, List<String> addedKeys) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                List<String> keysToDelete = status == STATUS_COMMITTED ? droppedKeys : addedKeys;
+                keysToDelete.forEach(k -> objectStorage.deleteQuietly(BucketAccess.PUBLIC, k));
+            }
+        });
+    }
+
     private static void replaceTiers(Product product, List<PriceTierRequest> tiers) {
         product.getPriceTiers().clear();
         if (tiers == null) {
@@ -275,6 +362,10 @@ public class ProductServiceImpl implements ProductService {
                 String.valueOf(after),
                 null,
                 Instant.now()));
+    }
+
+    private ProductResponse toResponse(Product product) {
+        return ProductMapper.toResponse(product, objectStorage::toPublicUrl);
     }
 
     private static String trimToNull(String value) {

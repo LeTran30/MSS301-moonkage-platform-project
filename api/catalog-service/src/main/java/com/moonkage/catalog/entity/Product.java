@@ -94,10 +94,11 @@ public class Product {
     @OrderBy("fromQty ASC")
     private List<ProductPriceTier> priceTiers = new ArrayList<>();
 
+    /** MinIO object keys in the public bucket; the URL is built when reading, so the host can change. */
     @ElementCollection
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "file_url", nullable = false)
-    private List<String> imageUrls = new ArrayList<>();
+    @Column(name = "object_key", nullable = false)
+    private List<String> imageKeys = new ArrayList<>();
 
     /** Optimistic lock: two buyers racing for the last box must not both succeed (FR-09). */
     @Version

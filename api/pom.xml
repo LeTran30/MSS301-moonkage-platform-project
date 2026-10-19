@@ -18,13 +18,13 @@
     <description>Mooncake Platform — Microservices Architecture</description>
 
     <modules>
+        <module>common-storage</module>
         <module>discovery-server</module>
         <module>api-gateway</module>
         <module>identity-service</module>
         <module>catalog-service</module>
         <module>quotation-service</module>
         <module>order-service</module>
-        <module>file-service</module>
         <module>vendor-service</module>
         <module>payment-service</module>
         <module>orchestrator-service</module>

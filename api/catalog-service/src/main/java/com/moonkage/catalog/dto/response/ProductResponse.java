@@ -30,7 +30,11 @@ public class ProductResponse {
     private Integer quoteThreshold;
     private ProductStatus status;
     private String removedReason;
+    /** Send these back in imageKeys to keep the images when updating. */
+    private List<String> imageKeys;
+    /** Public URLs, same order as imageKeys. */
     private List<String> imageUrls;
+
     private List<PriceTierResponse> priceTiers;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
