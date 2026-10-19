@@ -8,7 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.dto.request.AddressRequest;
+import com.moonkage.identity.dto.request.SaveAddressRequest;
 import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.Address;
@@ -54,8 +54,8 @@ class AddressServiceImplTest {
         service = new AddressServiceImpl(addressRepository, accountRepository);
     }
 
-    private static AddressRequest request(Boolean isDefault) {
-        return AddressRequest.builder()
+    private static SaveAddressRequest request(Boolean isDefault) {
+        return SaveAddressRequest.builder()
                 .detail("  12 Le Loi  ")
                 .areaCode(" hcm ")
                 .isDefault(isDefault)
@@ -69,16 +69,16 @@ class AddressServiceImplTest {
     @Test
     void firstAddressBecomesDefaultAndIsNormalized() {
         AddressResponse first = service.create(ACCOUNT_ID, request(null));
-        assertTrue(first.getIsDefault());
-        assertEquals("12 Le Loi", first.getDetail());
-        assertEquals("HCM", first.getAreaCode());
+        assertTrue(first.isDefault());
+        assertEquals("12 Le Loi", first.detail());
+        assertEquals("HCM", first.areaCode());
     }
 
     @Test
     void newDefaultTakesOverFromOldOne() {
         service.create(ACCOUNT_ID, request(null));
         AddressResponse second = service.create(ACCOUNT_ID, request(false));
-        assertFalse(second.getIsDefault());
+        assertFalse(second.isDefault());
 
         service.create(ACCOUNT_ID, request(true));
         assertEquals(1, defaults());

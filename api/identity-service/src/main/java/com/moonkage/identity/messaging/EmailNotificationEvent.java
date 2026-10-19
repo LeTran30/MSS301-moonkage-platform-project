@@ -8,4 +8,11 @@ import java.util.Map;
  * <p>Mirrors the contract consumed by `notification-service`.
  */
 public record EmailNotificationEvent(
-        String eventId, String to, String subject, String templateCode, Map<String, Object> params) {}
+        String eventId, String to, String subject, String templateCode, Map<String, Object> params) {
+
+    /** Keys of {@code params}, the placeholders of the notification-service OTP templates. */
+    public static final String PARAM_NAME = "name";
+
+    public static final String PARAM_OTP = "otp";
+    public static final String PARAM_MINUTES = "minutes";
+}

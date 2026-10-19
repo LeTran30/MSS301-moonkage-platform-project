@@ -75,78 +75,78 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void forgotPasswordSendOtpThrottlesUnknownEmail() {
+    void sendResetPasswordOtpThrottlesUnknownEmail() {
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        authService.forgotPasswordSendOtp(" A@x.vn ");
+        authService.sendResetPasswordOtp(" A@x.vn ");
 
         verify(otpService).throttleSend(OtpPurpose.RESET_PASSWORD, EMAIL);
         verify(otpService, never()).issueOtp(any(), anyString());
-        verify(emailService, never()).sendOtpForForgotPassword(anyString(), anyString(), anyString());
+        verify(emailService, never()).sendResetPasswordOtp(anyString(), anyString(), anyString());
     }
 
     @Test
-    void forgotPasswordSendOtpThrottlesUnverifiedAccount() {
+    void sendResetPasswordOtpThrottlesUnverifiedAccount() {
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.of(account(false)));
 
-        authService.forgotPasswordSendOtp(EMAIL);
+        authService.sendResetPasswordOtp(EMAIL);
 
         verify(otpService).throttleSend(OtpPurpose.RESET_PASSWORD, EMAIL);
         verify(otpService, never()).issueOtp(any(), anyString());
     }
 
     @Test
-    void forgotPasswordSendOtpIssuesForVerifiedAccount() {
+    void sendResetPasswordOtpIssuesForVerifiedAccount() {
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.of(account(true)));
         when(userProfileRepository.findById(any())).thenReturn(Optional.empty());
         when(otpService.issueOtp(OtpPurpose.RESET_PASSWORD, EMAIL)).thenReturn("123456");
 
-        authService.forgotPasswordSendOtp(EMAIL);
+        authService.sendResetPasswordOtp(EMAIL);
 
-        verify(emailService).sendOtpForForgotPassword(EMAIL, EMAIL, "123456");
+        verify(emailService).sendResetPasswordOtp(EMAIL, EMAIL, "123456");
         verify(otpService, never()).throttleSend(any(), anyString());
     }
 
     @Test
-    void forgotPasswordSendOtpPassesCooldownThroughForUnknownEmail() {
+    void sendResetPasswordOtpPassesCooldownThroughForUnknownEmail() {
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
         doThrow(new AppException(ErrorCode.OTP_TOO_FREQUENT, 30L))
                 .when(otpService)
                 .throttleSend(OtpPurpose.RESET_PASSWORD, EMAIL);
 
-        AppException ex = assertThrows(AppException.class, () -> authService.forgotPasswordSendOtp(EMAIL));
+        AppException ex = assertThrows(AppException.class, () -> authService.sendResetPasswordOtp(EMAIL));
         assertEquals(ErrorCode.OTP_TOO_FREQUENT, ex.getErrorCode());
     }
 
     @Test
-    void resendOtpThrottlesUnknownEmail() {
+    void sendVerifyAccountOtpThrottlesUnknownEmail() {
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        authService.resendOtp(EMAIL);
+        authService.sendVerifyAccountOtp(EMAIL);
 
         verify(otpService).throttleSend(OtpPurpose.VERIFY_ACCOUNT, EMAIL);
         verify(otpService, never()).issueOtp(any(), anyString());
     }
 
     @Test
-    void resendOtpThrottlesAlreadyActiveAccount() {
+    void sendVerifyAccountOtpThrottlesAlreadyActiveAccount() {
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.of(account(true)));
 
-        authService.resendOtp(EMAIL);
+        authService.sendVerifyAccountOtp(EMAIL);
 
         verify(otpService).throttleSend(OtpPurpose.VERIFY_ACCOUNT, EMAIL);
         verify(otpService, never()).issueOtp(any(), anyString());
     }
 
     @Test
-    void resendOtpIssuesForInactiveAccount() {
+    void sendVerifyAccountOtpIssuesForInactiveAccount() {
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.of(account(false)));
         when(userProfileRepository.findById(any())).thenReturn(Optional.empty());
         when(otpService.issueOtp(OtpPurpose.VERIFY_ACCOUNT, EMAIL)).thenReturn("123456");
 
-        authService.resendOtp(EMAIL);
+        authService.sendVerifyAccountOtp(EMAIL);
 
-        verify(emailService).sendOtpForVerifyAccount(EMAIL, EMAIL, "123456");
+        verify(emailService).sendVerifyAccountOtp(EMAIL, EMAIL, "123456");
         verify(otpService, never()).throttleSend(any(), anyString());
     }
 
@@ -185,11 +185,10 @@ class AuthServiceImplTest {
     @Test
     void passwordResetAcceptsOnlyAResetCodeAndEndsOldSessions() {
         Account account = account(true);
-        when(otpService.verifyOtp(OtpPurpose.RESET_PASSWORD, EMAIL, "123456")).thenReturn(true);
         when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.of(account));
         when(passwordEncoder.encode("new-secret-1")).thenReturn("hash");
 
-        authService.forgotPasswordReset(EMAIL, "123456", "new-secret-1");
+        authService.resetPassword(EMAIL, "123456", "new-secret-1");
 
         verify(otpService, never()).verifyOtp(eq(OtpPurpose.VERIFY_ACCOUNT), anyString(), anyString());
         assertEquals("hash", account.getPasswordHash());

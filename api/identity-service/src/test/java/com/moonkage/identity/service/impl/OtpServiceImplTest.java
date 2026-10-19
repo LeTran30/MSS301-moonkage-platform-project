@@ -49,7 +49,7 @@ class OtpServiceImplTest {
         String otp = service.issueOtp(PURPOSE, TEST_EMAIL);
         assertNotNull(otp);
         assertEquals(6, otp.length());
-        assertTrue(service.verifyOtp(PURPOSE, TEST_EMAIL, otp));
+        assertTrue(accepts(PURPOSE, TEST_EMAIL, otp));
     }
 
     @Test
@@ -65,7 +65,7 @@ class OtpServiceImplTest {
         String firstOtp = service.issueOtp(PURPOSE, TEST_EMAIL);
 
         // Giả lập người dùng nhập sai 1 lần
-        assertFalse(service.verifyOtp(PURPOSE, TEST_EMAIL, "000000"));
+        assertFalse(accepts(PURPOSE, TEST_EMAIL, "000000"));
 
         // Giả lập thời gian đã trôi qua 61 giây (hết cooldown nhưng mã 5m vẫn còn hạn)
         OtpServiceImpl.OtpEntry entry = service.storageMap.get(KEY);
@@ -128,8 +128,8 @@ class OtpServiceImplTest {
         String otp = service.issueOtp(PURPOSE, TEST_EMAIL);
 
         // Nhập sai 2 lần đầu
-        assertFalse(service.verifyOtp(PURPOSE, TEST_EMAIL, "000000"));
-        assertFalse(service.verifyOtp(PURPOSE, TEST_EMAIL, "111111"));
+        assertFalse(accepts(PURPOSE, TEST_EMAIL, "000000"));
+        assertFalse(accepts(PURPOSE, TEST_EMAIL, "111111"));
 
         // Lần thứ 3 vi phạm maxAttempts -> ném OTP_MAX_ATTEMPTS_EXCEEDED
         AppException ex = assertThrows(AppException.class, () -> service.verifyOtp(PURPOSE, TEST_EMAIL, "222222"));
@@ -148,7 +148,7 @@ class OtpServiceImplTest {
     void clearOtpRemovesSession() {
         String otp = service.issueOtp(PURPOSE, TEST_EMAIL);
         service.clearOtp(PURPOSE, TEST_EMAIL);
-        assertFalse(service.verifyOtp(PURPOSE, TEST_EMAIL, otp));
+        assertFalse(accepts(PURPOSE, TEST_EMAIL, otp));
     }
 
     @Test
@@ -165,8 +165,8 @@ class OtpServiceImplTest {
     @Test
     void verifyOtpConsumesCodeOnSuccess() {
         String otp = service.issueOtp(PURPOSE, TEST_EMAIL);
-        assertTrue(service.verifyOtp(PURPOSE, TEST_EMAIL, otp));
-        assertFalse(service.verifyOtp(PURPOSE, TEST_EMAIL, otp));
+        assertTrue(accepts(PURPOSE, TEST_EMAIL, otp));
+        assertFalse(accepts(PURPOSE, TEST_EMAIL, otp));
     }
 
     @Test
@@ -185,7 +185,7 @@ class OtpServiceImplTest {
                         locked.sendWindowStart(),
                         Instant.now().minusSeconds(1)));
 
-        assertFalse(service.verifyOtp(PURPOSE, TEST_EMAIL, "000000"));
+        assertFalse(accepts(PURPOSE, TEST_EMAIL, "000000"));
         assertEquals(1, service.storageMap.get(KEY).attempts());
     }
 
@@ -195,7 +195,7 @@ class OtpServiceImplTest {
     void parallelWrongGuessesCannotExceedMaxAttempts() throws Exception {
         service.issueOtp(PURPOSE, TEST_EMAIL);
 
-        List<Object> results = runInParallel(64, () -> service.verifyOtp(PURPOSE, TEST_EMAIL, "000000"));
+        List<Object> results = runInParallel(64, () -> accepts(PURPOSE, TEST_EMAIL, "000000"));
 
         long plainFailures = results.stream().filter(Boolean.FALSE::equals).count();
         long lockouts = results.stream()
@@ -209,7 +209,7 @@ class OtpServiceImplTest {
     void parallelCorrectGuessesRedeemCodeOnce() throws Exception {
         String otp = service.issueOtp(PURPOSE, TEST_EMAIL);
 
-        List<Object> results = runInParallel(16, () -> service.verifyOtp(PURPOSE, TEST_EMAIL, otp));
+        List<Object> results = runInParallel(16, () -> accepts(PURPOSE, TEST_EMAIL, otp));
 
         assertEquals(1, results.stream().filter(Boolean.TRUE::equals).count());
     }
@@ -268,9 +268,9 @@ class OtpServiceImplTest {
     void registrationCodeCannotResetPassword() {
         String otp = service.issueOtp(OtpPurpose.VERIFY_ACCOUNT, TEST_EMAIL);
 
-        assertFalse(service.verifyOtp(OtpPurpose.RESET_PASSWORD, TEST_EMAIL, otp));
+        assertFalse(accepts(OtpPurpose.RESET_PASSWORD, TEST_EMAIL, otp));
         // still valid for what it was sent for
-        assertTrue(service.verifyOtp(OtpPurpose.VERIFY_ACCOUNT, TEST_EMAIL, otp));
+        assertTrue(accepts(OtpPurpose.VERIFY_ACCOUNT, TEST_EMAIL, otp));
     }
 
     @Test
@@ -280,9 +280,22 @@ class OtpServiceImplTest {
         assertNotNull(service.issueOtp(OtpPurpose.RESET_PASSWORD, TEST_EMAIL));
     }
 
+    /** True when the code is accepted, false for a plain "wrong or expired code"; a lockout still throws. */
+    private boolean accepts(OtpPurpose purpose, String email, String otp) {
+        try {
+            service.verifyOtp(purpose, email, otp);
+            return true;
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.OTP_INVALID_OR_EXPIRED) {
+                return false;
+            }
+            throw e;
+        }
+    }
+
     private void lockOut(String email) {
-        assertFalse(service.verifyOtp(PURPOSE, email, "000000"));
-        assertFalse(service.verifyOtp(PURPOSE, email, "000000"));
+        assertFalse(accepts(PURPOSE, email, "000000"));
+        assertFalse(accepts(PURPOSE, email, "000000"));
         assertThrows(AppException.class, () -> service.verifyOtp(PURPOSE, email, "000000"));
     }
 

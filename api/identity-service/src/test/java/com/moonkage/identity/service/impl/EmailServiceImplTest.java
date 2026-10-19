@@ -38,8 +38,8 @@ class EmailServiceImplTest {
     }
 
     @Test
-    void sendOtpForVerifyAccountPublishesRegistrationEvent() {
-        service.sendOtpForVerifyAccount("user@moonkage.vn", "Minh", "654321");
+    void sendVerifyAccountOtpPublishesRegistrationEvent() {
+        service.sendVerifyAccountOtp("user@moonkage.vn", "Minh", "654321");
 
         EmailNotificationEvent event = publishedEvent.get();
         assertNotNull(event);
@@ -47,14 +47,14 @@ class EmailServiceImplTest {
         assertEquals("user@moonkage.vn", event.to());
         assertEquals("MoonKage - Mã xác nhận tài khoản", event.subject());
         assertEquals("REGISTRATION", event.templateCode());
-        assertEquals("Minh", event.params().get("name"));
-        assertEquals("654321", event.params().get("otp"));
+        assertEquals("Minh", event.params().get(EmailNotificationEvent.PARAM_NAME));
+        assertEquals("654321", event.params().get(EmailNotificationEvent.PARAM_OTP));
         assertEquals(5L, event.params().get("minutes"));
     }
 
     @Test
-    void sendOtpForForgotPasswordPublishesForgotPasswordEvent() {
-        service.sendOtpForForgotPassword("user@moonkage.vn", "Minh", "654321");
+    void sendResetPasswordOtpPublishesForgotPasswordEvent() {
+        service.sendResetPasswordOtp("user@moonkage.vn", "Minh", "654321");
 
         EmailNotificationEvent event = publishedEvent.get();
         assertNotNull(event);
@@ -62,12 +62,12 @@ class EmailServiceImplTest {
         assertEquals("user@moonkage.vn", event.to());
         assertEquals("MoonKage - Đặt lại mật khẩu", event.subject());
         assertEquals("FORGOT_PASSWORD", event.templateCode());
-        assertEquals("Minh", event.params().get("name"));
-        assertEquals("654321", event.params().get("otp"));
+        assertEquals("Minh", event.params().get(EmailNotificationEvent.PARAM_NAME));
+        assertEquals("654321", event.params().get(EmailNotificationEvent.PARAM_OTP));
     }
 
     @Test
-    void sendOtpForVerifyAccountThrowsAppExceptionOnBrokerFailure() {
+    void sendVerifyAccountOtpThrowsAppExceptionOnBrokerFailure() {
         EmailNotificationPublisher failingPublisher = new EmailNotificationPublisher(null) {
             @Override
             public void publish(EmailNotificationEvent event) {
@@ -77,6 +77,6 @@ class EmailServiceImplTest {
         EmailServiceImpl failingService = new EmailServiceImpl(failingPublisher, otpProperties, messageSource);
 
         assertThrows(
-                AppException.class, () -> failingService.sendOtpForVerifyAccount("user@moonkage.vn", "Minh", "654321"));
+                AppException.class, () -> failingService.sendVerifyAccountOtp("user@moonkage.vn", "Minh", "654321"));
     }
 }

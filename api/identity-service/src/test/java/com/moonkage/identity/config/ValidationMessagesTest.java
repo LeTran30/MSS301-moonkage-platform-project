@@ -3,8 +3,8 @@ package com.moonkage.identity.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import com.moonkage.identity.dto.request.AccountCreateRequest;
-import com.moonkage.identity.dto.request.IdNumberCheckRequest;
+import com.moonkage.identity.dto.request.CheckIdNumberRequest;
+import com.moonkage.identity.dto.request.RegisterAccountRequest;
 import jakarta.validation.ConstraintViolation;
 import java.util.Locale;
 import java.util.Set;
@@ -35,7 +35,7 @@ class ValidationMessagesTest {
 
     @Test
     void ourKeysAreTranslatedAndFilled() {
-        AccountCreateRequest request = AccountCreateRequest.builder()
+        RegisterAccountRequest request = RegisterAccountRequest.builder()
                 .email("not-an-email")
                 .fullName("A".repeat(101))
                 .password("short")
@@ -52,8 +52,8 @@ class ValidationMessagesTest {
 
     @Test
     void constraintWithoutOurKeyKeepsTheDefaultText() {
-        Set<ConstraintViolation<IdNumberCheckRequest>> violations =
-                validator.validate(new IdNumberCheckRequest("acc-1", " "));
+        Set<ConstraintViolation<CheckIdNumberRequest>> violations =
+                validator.validate(new CheckIdNumberRequest("acc-1", " "));
 
         // not the raw key "{jakarta.validation.constraints.NotBlank.message}"
         assertEquals(1, violations.size());

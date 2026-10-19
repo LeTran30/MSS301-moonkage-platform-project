@@ -1,18 +1,18 @@
 package com.moonkage.identity.service;
 
-import com.moonkage.identity.dto.request.AccountCreateRequest;
 import com.moonkage.identity.dto.request.LoginRequest;
-import com.moonkage.identity.dto.request.VerifyRequest;
-import com.moonkage.identity.dto.response.AccountCreateResponse;
+import com.moonkage.identity.dto.request.RegisterAccountRequest;
+import com.moonkage.identity.dto.request.VerifyAccountRequest;
 import com.moonkage.identity.dto.response.LoginResponse;
+import com.moonkage.identity.dto.response.RegisterAccountResponse;
 
 public interface AuthService {
 
-    AccountCreateResponse register(AccountCreateRequest request);
+    RegisterAccountResponse register(RegisterAccountRequest request);
 
-    AccountCreateResponse verifyAccount(VerifyRequest request);
+    RegisterAccountResponse verifyAccount(VerifyAccountRequest request);
 
-    void resendOtp(String email);
+    void sendVerifyAccountOtp(String email);
 
     LoginResponse login(LoginRequest request);
 
@@ -20,7 +20,7 @@ public interface AuthService {
 
     LoginResponse getMyProfile(String accountId);
 
-    void forgotPasswordSendOtp(String email);
+    void sendResetPasswordOtp(String email);
 
-    void forgotPasswordReset(String email, String otp, String newPassword);
+    void resetPassword(String email, String otp, String newPassword);
 }

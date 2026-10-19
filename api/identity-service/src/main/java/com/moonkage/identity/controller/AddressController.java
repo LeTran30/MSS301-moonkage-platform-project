@@ -1,6 +1,6 @@
 package com.moonkage.identity.controller;
 
-import com.moonkage.identity.dto.request.AddressRequest;
+import com.moonkage.identity.dto.request.SaveAddressRequest;
 import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.dto.response.ApiResponse;
 import com.moonkage.identity.security.CurrentUser;
@@ -35,7 +35,7 @@ public class AddressController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<AddressResponse>> create(
-            @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid AddressRequest request) {
+            @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid SaveAddressRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(addressService.create(currentUser.accountId(), request)));
     }
@@ -44,7 +44,7 @@ public class AddressController {
     public ResponseEntity<ApiResponse<AddressResponse>> update(
             @CurrentUser CurrentUserInfo currentUser,
             @PathVariable String addressId,
-            @RequestBody @Valid AddressRequest request) {
+            @RequestBody @Valid SaveAddressRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(addressService.update(currentUser.accountId(), addressId, request)));
     }
 

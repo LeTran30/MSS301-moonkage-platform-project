@@ -1,6 +1,6 @@
 package com.moonkage.identity.mapper;
 
-import com.moonkage.identity.dto.response.IdNumberCheckResponse;
+import com.moonkage.identity.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.dto.response.NfcStatusResponse;
 import com.moonkage.identity.entity.LegalProfile;
 import com.moonkage.identity.enums.NfcStatus;
@@ -21,11 +21,11 @@ public final class LegalProfileMapper {
     }
 
     /** {@code owner} null when the account is not NFC-verified: the owner fields stay null. */
-    public static IdNumberCheckResponse toIdNumberCheck(
+    public static CheckIdNumberResponse toIdNumberCheck(
             String idHash, int idHashKeyVer, String idMasked, boolean matchesAccount, LegalProfile owner) {
         return owner == null
-                ? new IdNumberCheckResponse(idHash, idHashKeyVer, idMasked, false, null, null, null)
-                : new IdNumberCheckResponse(
+                ? new CheckIdNumberResponse(idHash, idHashKeyVer, idMasked, false, null, null, null)
+                : new CheckIdNumberResponse(
                         idHash,
                         idHashKeyVer,
                         idMasked,

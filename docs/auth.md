@@ -38,14 +38,14 @@ Cả hai đều là JWT HS256, ký bằng `jwt.secret` (dạng Base64). Mỗi l�
 
 | Method | Path | Auth | Body | Kết quả |
 |---|---|---|---|---|
-| POST | `/register` | – | `{email, phoneNumber?, fullName, password}` | 200 `AccountCreateResponse` (`verified: false`, `otpSent`), gửi OTP qua email |
-| POST | `/verify` | – | `{email, otp}` | 200 `AccountCreateResponse` với `verified: true` |
-| POST | `/resend-otp` | – | `{email}` | 200; 503 nếu gửi email thất bại |
+| POST | `/register` | – | `{email, phoneNumber?, fullName, password}` | 200 `RegisterAccountResponse` (`verified: false`, `otpSent`), gửi OTP qua email |
+| POST | `/verify-account` | – | `{email, otp}` | 200 `RegisterAccountResponse` với `verified: true` |
+| POST | `/send-verify-account-otp` | – | `{email}` | 200; 503 nếu gửi email thất bại |
 | POST | `/login` | – | `{username, password}` (`username` = email **hoặc** số điện thoại) | 200 `LoginResponse` |
 | POST | `/refresh-token` | – | `{refreshToken}` | 200 `LoginResponse` với cặp token mới |
 | GET | `/me` | Bearer | – | 200 `LoginResponse` (không kèm token) |
-| POST | `/forgot-password/send-otp` | – | `{email}` | 200 (luôn luôn). Chỉ gửi nếu email đã xác nhận (AC-02.1) |
-| POST | `/forgot-password/reset` | – | `{email, otp, newPassword}` | 200 |
+| POST | `/send-reset-password-otp` | – | `{email}` | 200 (luôn luôn). Chỉ gửi nếu email đã xác nhận (AC-02.1) |
+| POST | `/reset-password` | – | `{email, otp, newPassword}` | 200 |
 
 ```json
 // LoginResponse (nội dung của "data")
@@ -56,7 +56,7 @@ Cả hai đều là JWT HS256, ký bằng `jwt.secret` (dạng Base64). Mỗi l�
 
 **Số điện thoại** nhận `0912345678`, `84912345678` hoặc `+84912345678` (đầu số di động 3/5/7/8/9) và luôn được lưu dạng **9 số cuối** (`912345678`, `Account.storedPhoneNumber`). Vì vậy ba dạng trên là cùng một số khi kiểm trùng (AC-01.3) và khi đăng nhập. API trả `phoneNumber` dạng 9 số; frontend tự thêm `0` khi hiển thị.
 
-**Gửi email thất bại (FR-01):** `/register` vẫn tạo tài khoản nhưng trả `"otpSent": false`; frontend hiện thông báo và nút "Gửi lại mã" (gọi `/resend-otp`), không bắt đăng ký lại (sẽ bị 409). `/resend-otp` thất bại thì trả 503. Riêng `/forgot-password/send-otp` vẫn luôn trả 200 để không lộ email nào đã đăng ký.
+**Gửi email thất bại (FR-01):** `/register` vẫn tạo tài khoản nhưng trả `"otpSent": false`; frontend hiện thông báo và nút "Gửi lại mã" (gọi `/resend-otp`), không bắt đăng ký lại (sẽ bị 409). `/resend-otp` thất bại thì trả 503. Riêng `/send-reset-password-otp` vẫn luôn trả 200 để không lộ email nào đã đăng ký.
 
 Thông tin người bán **không** còn nằm trong `LoginResponse` (Vendor đã chuyển sang vendor-service). Frontend gọi `GET /vendor-service/api/seller/vendor` (Bearer): 200 trả `{id, ownerAccountId, legalName, status, supplySource, sellsShop, acceptsOrders}`, 404 nghĩa là tài khoản chưa có hồ sơ người bán (trước đây là `vendorStatus: "NONE"`).
 

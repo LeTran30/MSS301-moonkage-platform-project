@@ -1,7 +1,7 @@
 package com.moonkage.identity.entity;
 
 import com.moonkage.identity.constant.IdCardConstant;
-import com.moonkage.identity.enums.Sex;
+import com.moonkage.identity.enums.Gender;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -55,7 +55,7 @@ public class LegalProfile extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "sex", nullable = false, length = 10)
-    private Sex sex;
+    private Gender gender;
 
     @Column(name = "nationality", nullable = false, length = IdCardConstant.MAX_NATIONALITY_LENGTH)
     private String nationality;

@@ -79,12 +79,12 @@ security:
     - /swagger-ui/**
     - /swagger-ui.html
     - /api/auth/register
-    - /api/auth/verify
-    - /api/auth/resend-otp
+    - /api/auth/verify-account
+    - /api/auth/send-verify-account-otp
     - /api/auth/login
     - /api/auth/refresh-token
-    - /api/auth/forgot-password/send-otp
-    - /api/auth/forgot-password/reset
+    - /api/auth/send-reset-password-otp
+    - /api/auth/reset-password
 
 app:
   admin:

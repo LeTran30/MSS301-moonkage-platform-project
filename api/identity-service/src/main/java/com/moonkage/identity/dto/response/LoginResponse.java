@@ -1,24 +1,25 @@
 package com.moonkage.identity.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.moonkage.identity.constant.SecurityConstant;
 import com.moonkage.identity.enums.Role;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class LoginResponse {
+public record LoginResponse(
+        String token,
+        String refreshToken,
+        String accountId,
+        String email,
+        String phoneNumber,
+        String fullName,
+        Role role) {
 
-    private String token;
-    private String refreshToken;
-    private String accountId;
-    private String email;
-    private String phoneNumber;
-    private String fullName;
-    private Role role;
+    @Override
+    public String toString() {
+        return "LoginResponse[token=" + SecurityConstant.REDACTED + ", refreshToken=" + SecurityConstant.REDACTED
+                + ", accountId=" + accountId + ", email=" + email + ", phoneNumber=" + phoneNumber + ", fullName="
+                + fullName + ", role=" + role + "]";
+    }
 }
