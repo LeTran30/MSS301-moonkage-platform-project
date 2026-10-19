@@ -10,12 +10,12 @@ Mọi request đi qua gateway `http://localhost:8080`. Prefix của identity-ser
 |---|---|
 | `accounts` | Thông tin đăng nhập: email (bắt buộc), phone_number, password_hash (BCrypt), `account_verified` (đã xác nhận email bằng OTP), `role` (`MEMBER` / `ADMIN`, D-19; không có bảng role), `password_changed_at`, bộ đếm khóa xác minh NFC |
 
-**Trạng thái của một tài khoản** (Requirement 7.1) chỉ có hai chiều độc lập: **xác nhận email** (`account_verified`: chưa thì không đăng nhập được, nên cũng không mua, không gửi yêu cầu, không nhận mã đặt lại mật khẩu) và **xác minh NFC** (chưa / đã / tạm khóa 15 phút; suy ra từ `legal_profiles` và `nfc_locked_until`). Không có trạng thái "bị quản trị khóa": requirement không có chức năng này (FR-46 khóa *người bán* ở vendor-service, không khóa tài khoản). Database tạo trước 2026-10-19 phải chạy `api/docs/2026-10-19_drop_account_status.sql` để bỏ cột `status` cũ.
+**Trạng thái của một tài khoản** (Requirement 7.1) chỉ có hai chiều độc lập: **xác nhận email** (`account_verified`: chưa thì không đăng nhập được, nên cũng không mua, không gửi yêu cầu, không nhận mã đặt lại mật khẩu) và **xác minh NFC** (chưa / đã / tạm khóa 15 phút; suy ra từ `legal_profiles` và `nfc_locked_until`). Không có trạng thái "bị quản trị khóa": requirement không có chức năng này (FR-46 khóa *người bán* ở vendor-service, không khóa tài khoản). Database tạo trước 2026-10-19 phải chạy `../../api/docs/2026-10-19_drop_account_status.sql` để bỏ cột `status` cũ.
 | `user_profiles` | Thông tin hiển thị trong hệ thống (full_name do người dùng nhập, avatar). Khóa chính là `account_id`. Không chứa email/số điện thoại: hai trường này chỉ nằm ở `accounts` |
 
 Mỗi người chỉ có **một id là `accountId`** (= `sub` trong JWT). `addresses.account_id` và `vendors.owner_account_id` trỏ vào `accounts`. Thông tin pháp lý từ thẻ NFC sẽ nằm ở bảng `legal_profiles` (FR-04), cũng lấy `account_id` làm khóa chính (Software Design D-21).
 
-Database tạo trước ngày 2026-10-17 (còn bảng `users`) phải chạy `api/docs/2026-10-17_user_profiles.sql` một lần, khi identity-service đang dừng. Database còn bảng `roles` thì chạy thêm `api/docs/2026-10-19_roles_to_enum.sql`. Hướng dẫn nằm ở đầu mỗi file.
+Database tạo trước ngày 2026-10-17 (còn bảng `users`) phải chạy `../../api/docs/2026-10-17_user_profiles.sql` một lần, khi identity-service đang dừng. Database còn bảng `roles` thì chạy thêm `api/docs/2026-10-19_roles_to_enum.sql`. Hướng dẫn nằm ở đầu mỗi file.
 
 Không có bảng refresh token và không có bảng mã OTP.
 
@@ -124,9 +124,9 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
 - Không cần token: `/identity-service/api/auth/**`, và `GET` vào products, order-profiles, reviews của catalog-service (FR-04).
 - Tài khoản chưa xác nhận OTP thì không đăng nhập được, nên mọi token đều thuộc tài khoản đã xác nhận (AC-01.2).
 
-## Cấu hình (`.env`)
+## Cấu hình (`../../.env`)
 
-Mọi giá trị cấu hình nằm trong file **`.env` ở thư mục gốc repo**. File này đã có trong `.gitignore` nên không bị commit. `application.yml` chỉ tham chiếu `${VAR}` và không chứa giá trị nào. `DotEnvConfig.loadDotEnv()` trong `main()` của mọi service đi ngược từ thư mục đang chạy lên các thư mục cha để tìm `.env`. Vì vậy chạy từ thư mục module, từ `../api` hay từ gốc repo đều được. Biến môi trường thật của hệ điều hành được ưu tiên hơn giá trị trong `.env`.
+Mọi giá trị cấu hình nằm trong file **`../../.env` ở thư mục gốc repo**. File này đã có trong `../../.gitignore` nên không bị commit. `application.yml` chỉ tham chiếu `${VAR}` và không chứa giá trị nào. `DotEnvConfig.loadDotEnv()` trong `main()` của mọi service đi ngược từ thư mục đang chạy lên các thư mục cha để tìm `.env`. Vì vậy chạy từ thư mục module, từ `../api` hay từ gốc repo đều được. Biến môi trường thật của hệ điều hành được ưu tiên hơn giá trị trong `.env`.
 
 Cách thiết lập cho thành viên mới:
 
@@ -135,7 +135,7 @@ cp .env.example .env
 openssl rand -base64 48   # dán kết quả vào JWT_SECRET
 ```
 
-Thiếu `.env` hoặc thiếu một biến thì service dừng ngay khi khởi động với lỗi `Could not resolve placeholder 'TEN_BIEN'`.
+Thiếu `../../.env` hoặc thiếu một biến thì service dừng ngay khi khởi động với lỗi `Could not resolve placeholder 'TEN_BIEN'`.
 
 | Biến | Ghi chú |
 |---|---|

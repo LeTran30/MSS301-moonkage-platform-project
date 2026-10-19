@@ -9,7 +9,7 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-[📖 API Docs (Swagger, chạy local)](http://localhost:8080/swagger-ui.html) · [🔐 Tài liệu xác thực](docs/auth.md) · [🐛 Báo lỗi](https://github.com/LeTran30/MSS301-moonkage-platform-project/issues)
+[📖 API Docs (Swagger, chạy local)](http://localhost:8080/swagger-ui.html) · [🔐 Tài liệu xác thực](docs/iden-service/auth.md) · [🐛 Báo lỗi](https://github.com/LeTran30/MSS301-moonkage-platform-project/issues)
 
 ## Mục lục
 - [Tính năng](#tính-năng)
@@ -221,8 +221,8 @@ Gọi qua gateway `http://localhost:8080/<service>/...`. Một số endpoint ch�
 | GET | `/file-service/api/files/presigned` | Lấy presigned URL | ✅ |
 
 - Tài liệu đầy đủ: [Swagger UI](http://localhost:8080/swagger-ui.html). Đăng nhập qua `/api/auth/login`, dán `token` vào nút **Authorize**.
-- Chi tiết luồng xác thực, token, OTP và định dạng lỗi: [`docs/auth.md`](docs/auth.md).
-- Postman: [`docs/MoonKage-Auth.postman_collection.json`](docs/MoonKage-Auth.postman_collection.json).
+- Chi tiết luồng xác thực, token, OTP và định dạng lỗi: [`docs/iden-service/auth.md`](docs/iden-service/auth.md).
+- Postman: [`docs/postman-collections`](docs/postman-collections/mk-auth.json).
 
 ## Testing & chất lượng code
 ```bash

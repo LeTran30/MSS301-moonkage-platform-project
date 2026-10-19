@@ -1,7 +1,7 @@
 # Đánh giá chất lượng code — identity-service
 
 > Ngày: 2026-10-19 · Phạm vi: toàn bộ `src/main` (75 file, ~3.700 dòng) và `src/test` (14 file, 117 test) của nhánh `develop`, gồm cả phần chưa commit (NFC, `JwtTokenProvider`, role enum).
-> Tham chiếu: `docs/Software_Design_v0.6.md`, `docs/Moonkage Requirement Final.md`, `docs/auth.md`, nguyên tắc **không hardcode**.
+> Tham chiếu: `docs/Software_Design_v0.6.md`, `docs/Moonkage Requirement Final.md`, `../../../docs/iden-service/auth.md`, nguyên tắc **không hardcode**.
 
 **Thang đánh giá**
 
@@ -181,7 +181,7 @@ Sửa: chuyển dữ liệu demo sang profile `demo` hoặc script seed; bỏ m�
 `Address.java:48`, `AddressResponse.java:19` dùng `LocalDateTime`, trong khi mọi entity khác dùng `Instant` qua `BaseEntity`. Software Design 5.1 quy tắc 7 yêu cầu "thời điểm ISO 8601 có múi giờ".
 Sửa: cho `Address` kế thừa `BaseEntity`.
 
-**Q-21 — `docs/auth.md` còn mô tả cách lưu SĐT cũ**
+**Q-21 — `../../../docs/iden-service/auth.md` còn mô tả cách lưu SĐT cũ**
 `docs/auth.md:52` ghi "luôn được lưu dạng `0xxxxxxxxx`", trong khi code hiện lưu 9 số cuối, và API trả `phoneNumber` 9 số.
 Sửa: cập nhật tài liệu (kèm lưu ý cho client hiển thị lại số `0`).
 
@@ -249,7 +249,7 @@ Sau khi sửa: 154/154 test pass (thêm 37 test, trong đó 15 test tích hợp 
 | Q-18 | Đã sửa | Mapper là class tĩnh trong `mapper/` (bỏ interface + Impl viết tay); mọi response dựng từ entity đi qua đây, kể cả `LoginResponse` và response NFC nội bộ (`LegalProfileMapper`). Không đặt factory trên DTO vì ArchUnit cấm `dto → entity` |
 | Q-19 | Đã sửa | `register` không sửa DTO đầu vào; `ForgotPasswordRequest` → `EmailRequest` |
 | Q-20 | Đã sửa | Token chỉ còn `sub`, `type`, `role`, `iat`, `exp` (Software Design 8); có test kiểm tên claim. Gateway chỉ đọc `sub` / `type` / `role` nên không bị ảnh hưởng |
-| Q-21 | Đã sửa | `docs/auth.md` cập nhật: SĐT 9 số, role enum, định dạng lỗi, mã HTTP, OTP theo mục đích, cắt phiên khi đặt lại mật khẩu |
+| Q-21 | Đã sửa | `../../../docs/iden-service/auth.md` cập nhật: SĐT 9 số, role enum, định dạng lỗi, mã HTTP, OTP theo mục đích, cắt phiên khi đặt lại mật khẩu |
 | Q-22 | Đã sửa | Bảng `outbox_events` + `OutboxRelay` (publisher confirm, giữ thứ tự); 3 sự kiện NFC đi qua outbox |
 | Q-23 | Ghi nhận | Giới hạn 1 instance đã ghi trong `auth.md` và Javadoc `OutboxRelay` |
 | Q-24 | Đã sửa | Tạo phiên NFC đồng bộ; test 16 luồng song song |
