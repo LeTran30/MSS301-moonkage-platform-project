@@ -12,6 +12,13 @@ spring:
           lower-case-service-id: true
       server:
         webflux:
+          routes:
+            # STOMP over WebSocket of orchestrator-service (Software Design 5.1 rule 9). Open at the HTTP level:
+            # a browser cannot send a header on the handshake, so the access token is checked on STOMP CONNECT.
+            - id: orchestrator-websocket
+              uri: lb:ws://orchestrator-service
+              predicates:
+                - Path=/ws/**
           # Gateway 4.1+ adds X-Forwarded-* (Host, Port, Proto, Prefix) only for clients matching this regex.
           # Without them every service builds its URLs (e.g. the Swagger "servers" URL) from its container IP,
           # which the browser cannot reach. Default: loopback and private networks (Docker bridge, LAN).
@@ -54,5 +61,5 @@ springdoc:
         url: /vendor-service/v3/api-docs
       - name: payment-service
         url: /payment-service/v3/api-docs
-      - name: notification-service
-        url: /notification-service/v3/api-docs
+      - name: orchestrator-service
+        url: /orchestrator-service/v3/api-docs

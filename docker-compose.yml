@@ -1,7 +1,7 @@
 # =============================================
 # Moonkage - full stack
 #   Everything:          docker compose up -d --build
-#   Only the databases:  docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db notification-db minio rabbitmq
+#   Only the databases:  docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db orchestrator-db minio rabbitmq
 #                        (then run the services from the IDE / mvn)
 # Values come from .env in this folder (see .env.example).
 # =============================================
@@ -115,15 +115,15 @@ services:
       timeout: 5s
       retries: 5
 
-  notification-db:
+  orchestrator-db:
     <<: *postgres
-    container_name: moonkage-notification-db
+    container_name: moonkage-orchestrator-db
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: notification_db
-    ports: ["${NOTIFICATION_DB_PORT}:5432"]
-    volumes: [notification-db-data:/var/lib/postgresql/data]
+      POSTGRES_DB: orchestrator_db
+    ports: ["${ORCHESTRATOR_DB_PORT}:5432"]
+    volumes: [orchestrator-db-data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -274,16 +274,16 @@ services:
       payment-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
-  notification-service:
+  orchestrator-service:
     <<: *app
-    container_name: moonkage-notification-service
-    build: { context: ./api, dockerfile: notification-service/Dockerfile }
+    container_name: moonkage-orchestrator-service
+    build: { context: ./api, dockerfile: orchestrator-service/Dockerfile }
     environment:
       <<: *app-env
-      NOTIFICATION_DB_HOST: notification-db
-      NOTIFICATION_DB_PORT: 5432
+      ORCHESTRATOR_DB_HOST: orchestrator-db
+      ORCHESTRATOR_DB_PORT: 5432
     depends_on:
-      notification-db: { condition: service_healthy }
+      orchestrator-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
 volumes:
@@ -293,7 +293,7 @@ volumes:
   order-db-data:
   vendor-db-data:
   payment-db-data:
-  notification-db-data:
+  orchestrator-db-data:
   minio-data:
   rabbitmq-data:
 

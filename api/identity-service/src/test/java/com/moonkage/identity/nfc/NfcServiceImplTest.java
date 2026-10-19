@@ -135,7 +135,9 @@ class NfcServiceImplTest {
 
             assertRejected(response, NfcReasonCode.BAD_FORMAT, 4);
             assertEquals(1, account.getNfcFailedAttempts());
-            assertEquals(NfcVerificationEvent.Type.FAILED, publishedEvent().type());
+            NfcVerificationEvent event = publishedEvent();
+            assertEquals(NfcVerificationEvent.Type.FAILED, event.type());
+            assertEquals(4, event.attemptsLeft());
             verify(legalProfileRepository, never()).save(any());
         }
 

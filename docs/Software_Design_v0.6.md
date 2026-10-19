@@ -95,7 +95,7 @@ flowchart TB
         QT[quotation-service]
         OD[order-service]
         PM[payment-service]
-        NT[notification-service]
+        NT[orchestrator-service]
     end
 
     MQ[(RabbitMQ)]
@@ -141,7 +141,7 @@ flowchart TB
 | quotation-service | Request, Quote | FR-14, 15, 16, 17, 36, 38; phía báo giá của FR-19; hoãn: FR-18, 23, 37 | `quotation_db` |
 | order-service | Order, MockupVersion, ProgressUpdate, Review, Dispute; giỏ hàng | FR-08, 10, 11, 12, 20, 21, 24, 25, 32, 39, 40, 42, 44; quyết định khiếu nại (FR-49) | `order_db` |
 | payment-service | Payment, Escrow/Ledger, DisbursementRequest | FR-09 và FR-19 (phần thanh toán), 22, 41, 43, 47, 48, 51; thanh toán phí đăng ký mở bán (BR-31); thực hiện hoàn tiền (FR-49); hoãn: FR-13, 50 | `payment_db` |
-| notification-service | Notification, AuditLog | NFR-07, NFR-10 | `notification_db` |
+| orchestrator-service | Notification, AuditLog | NFR-07, NFR-10 | `orchestrator_db` |
 
 Hạ tầng: `api-gateway`, `discovery-server` (Eureka), `postgres`, `rabbitmq`, `minio`.
 
@@ -305,7 +305,7 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
 
 **Bất biến tiền (NFR-09):** kiểm trong cùng transaction với mỗi lần ghi sổ: `disbursed + refunded + paid_out ≤ tổng đã thu của đơn`. Tiền lưu `bigint` (VND, không số lẻ).
 
-### 4.8 notification-service (gồm audit)
+### 4.8 orchestrator-service (gồm audit)
 
 | Phần | Queue | Dữ liệu | Ai đọc |
 |---|---|---|---|
@@ -339,7 +339,7 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
 6. Service gọi nhau qua `/internal/<tài-nguyên>/...`, cùng quy tắc đặt tên. Gateway không định tuyến `/internal/**`.
 7. JSON: tên trường `camelCase`; giá trị enum viết `UPPER_SNAKE_CASE` (`VERIFIED`, `REGISTRATION_FEE`); ngày `yyyy-MM-dd`, thời điểm ISO 8601 có múi giờ; tiền là số nguyên VND. Tên cột database vẫn `snake_case`, không lộ ra API.
 8. Danh sách trả về có phân trang theo tham số `page`, `size`, `sort`. API công khai trả **một dạng body** cho cả thành công và lỗi (`ApiResponse<T>`, `iden-service/auth.md`): `{status, code, message, data, timestamp}`. Thành công: `code = SUCCESS`, dữ liệu trong `data`. Lỗi: `code` là mã lỗi nghiệp vụ, `data = null`, thêm `path`, và `errors` khi lỗi validation. Kết quả nghiệp vụ không phải lỗi (ví dụ `status`/`reasonCode` của xác minh NFC) nằm trong `data`. API nội bộ `/internal/**` trả thẳng dữ liệu; lỗi của nó cùng dạng trên. (Cập nhật 2026-10-19.)
-9. WebSocket thông báo đi qua gateway ở `/ws` (notification-service).
+9. WebSocket thông báo đi qua gateway ở `/ws` (orchestrator-service).
 
 **Bảng định tuyến ở gateway.** Mỗi tiền tố trỏ tới đúng một service (`lb://<service>`); đường dẫn giữ nguyên khi chuyển vào service. Tiền tố cụ thể của từng nhóm FR có thể bổ sung khi thiết kế chi tiết API, nhưng phải theo quy tắc trên và mỗi tiền tố chỉ thuộc một service.
 
@@ -629,19 +629,19 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 | quotation-service | 8084 | Không |
 | order-service | 8085 | Không |
 | payment-service | 8086 | Không |
-| notification-service | 8087 | Không (WebSocket đi qua gateway) |
+| orchestrator-service | 8087 | Không (WebSocket đi qua gateway) |
 | identity-db | ${IDENTITY_DB_PORT} (5432) | Chỉ khi phát triển |
 | catalog-db | ${CATALOG_DB_PORT} (5433) | Chỉ khi phát triển |
 | quotation-db | ${QUOTATION_DB_PORT} (5434) | Chỉ khi phát triển |
 | order-db | ${ORDER_DB_PORT} (5435) | Chỉ khi phát triển |
 | vendor-db | ${VENDOR_DB_PORT} (5436) | Chỉ khi phát triển |
 | payment-db | ${PAYMENT_DB_PORT} (5437) | Chỉ khi phát triển |
-| notification-db | ${NOTIFICATION_DB_PORT} (5438) | Chỉ khi phát triển |
+| orchestrator-db | ${ORCHESTRATOR_DB_PORT} (5438) | Chỉ khi phát triển |
 | rabbitmq | 5672, 15672 (giao diện quản lý) | Chỉ khi phát triển |
 | minio | 9000, 9001 (giao diện quản lý) | 9000 cho presigned URL |
 | React (dev server hoặc Nginx) | 3000 | Có |
 
-- **Postgres:** mỗi service sở hữu một container database PostgreSQL độc lập (`identity-db`, `catalog-db`, `quotation-db`, `order-db`, `vendor-db`, `payment-db`, `notification-db`), bảo đảm phân tách dữ liệu tuyệt đối theo kiến trúc microservices.
+- **Postgres:** mỗi service sở hữu một container database PostgreSQL độc lập (`identity-db`, `catalog-db`, `quotation-db`, `order-db`, `vendor-db`, `payment-db`, `orchestrator-db`), bảo đảm phân tách dữ liệu tuyệt đối theo kiến trúc microservices.
 - **VNPay IPN khi chạy ở máy cá nhân:** VNPay cần gọi được một URL công khai, nên dùng tunnel (ngrok hoặc Cloudflare Tunnel) trỏ vào gateway.
 - **App mobile khi demo:** điện thoại phải gọi được gateway; dùng IP mạng LAN của máy chạy Docker hoặc chính tunnel ở trên.
 - **Migration & Quản lý Schema:** mỗi service tự quản và đồng bộ schema qua Spring Data JPA/Hibernate (`ddl-auto: update`). Các thay đổi schema đột biến (drop cột, đổi kiểu dữ liệu) được lưu thành script SQL theo mốc ngày trong `api/docs/`.
@@ -670,7 +670,7 @@ moonkage/
 │   │   ├── quotation-service/   # Yêu cầu báo giá B2B (cổng 8084)
 │   │   ├── order-service/       # Đơn hàng, khiếu nại (cổng 8085)
 │   │   ├── payment-service/     # Giao dịch, VNPay, sổ tiền (cổng 8086)
-│   │   ├── notification-service/# WebSocket, thông báo (cổng 8087)
+│   │   ├── orchestrator-service/# WebSocket, thông báo (cổng 8087)
 │   │   ├── file-service/        # Quản lý tệp MinIO S3
 │   │   └── docs/                # Migration scripts SQL & seed SQL ban đầu
 │   ├── web/                     # React web frontend

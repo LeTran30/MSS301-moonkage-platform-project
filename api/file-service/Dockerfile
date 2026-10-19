@@ -17,7 +17,7 @@ COPY order-service/pom.xml order-service/
 COPY file-service/pom.xml file-service/
 COPY vendor-service/pom.xml vendor-service/
 COPY payment-service/pom.xml payment-service/
-COPY notification-service/pom.xml notification-service/
+COPY orchestrator-service/pom.xml orchestrator-service/
 COPY file-service/src file-service/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl file-service -am package -DskipTests -Dspotless.check.skip=true -Dcheckstyle.skip=true
 

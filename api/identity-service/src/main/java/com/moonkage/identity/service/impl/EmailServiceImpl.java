@@ -16,7 +16,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
- * Publishes email notification events to RabbitMQ for asynchronous delivery by notification-service. Subjects come
+ * Publishes email notification events to RabbitMQ for asynchronous delivery by orchestrator-service. Subjects come
  * from messages.properties, in the locale of the request.
  */
 @Slf4j

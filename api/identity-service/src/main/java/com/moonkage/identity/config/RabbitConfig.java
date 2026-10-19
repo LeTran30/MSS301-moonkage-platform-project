@@ -11,9 +11,9 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
 
     public static final String EVENTS_EXCHANGE = "moonkage.events";
-    public static final String EMAIL_ROUTING_KEY = "notification.email.identity";
+    public static final String EMAIL_ROUTING_KEY = "orchestrator.email.identity";
 
-    // FR-04 (Software Design 5.4): web push and audit, consumed by notification-service
+    // FR-04 (Software Design 5.4): web push and audit, consumed by orchestrator-service
     public static final String NFC_VERIFIED_ROUTING_KEY = "account.nfc_verified";
     public static final String NFC_FAILED_ROUTING_KEY = "account.nfc_failed";
     public static final String NFC_LOCKED_ROUTING_KEY = "account.nfc_locked";

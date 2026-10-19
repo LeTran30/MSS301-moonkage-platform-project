@@ -1,6 +1,6 @@
 # Xác thực (FR-01, FR-02)
 
-Cách làm theo project Capstone (E-commerce): `Account` có vai (`Role` enum), JWT không lưu DB (jjwt), OTP giữ trong bộ nhớ và gửi qua email (sự kiện RabbitMQ, notification-service gửi), `JwtFilter` + `@CurrentUser`.
+Cách làm theo project Capstone (E-commerce): `Account` có vai (`Role` enum), JWT không lưu DB (jjwt), OTP giữ trong bộ nhớ và gửi qua email (sự kiện RabbitMQ, orchestrator-service gửi), `JwtFilter` + `@CurrentUser`.
 
 Mọi request đi qua gateway `http://localhost:8080`. Prefix của identity-service: `/identity-service/api/auth`.
 
@@ -64,7 +64,7 @@ Thông tin người bán **không** còn nằm trong `LoginResponse` (Vendor đ�
 
 - 6 chữ số, có hiệu lực 5 phút (`otp.expiration`). Nhập sai 5 lần (`otp.max-attempts`) thì email bị khóa nhập mã 15 phút (`otp.lockout-duration`). Gửi lại mã cách nhau ít nhất 60 giây, tối đa 5 lần mỗi giờ.
 - Mã được giữ trong bộ nhớ của identity-service, theo **mục đích và email**: mã xác nhận đăng ký không dùng được để đặt lại mật khẩu, và ngược lại. Khởi động lại service thì mã đang chờ sẽ mất, người dùng chỉ cần gửi lại. Chỉ đúng khi chạy một instance identity-service.
-- identity-service chỉ phát sự kiện `notification.email.identity`; việc gửi mail (và chế độ in mã ra log khi để trống `MAIL_HOST`) do notification-service làm. Tiêu đề email nằm trong `messages.properties` (`email.subject.*`).
+- identity-service chỉ phát sự kiện `orchestrator.email.identity`; việc gửi mail (và chế độ in mã ra log khi để trống `MAIL_HOST`) do orchestrator-service làm. Tiêu đề email nằm trong `messages.properties` (`email.subject.*`).
 - **Gửi mail thật:** đặt các biến `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (ví dụ Gmail App Password).
 
 ## Lỗi
