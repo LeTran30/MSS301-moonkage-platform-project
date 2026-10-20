@@ -18,15 +18,19 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * Manages OTP lifecycle with security controls:
- * 1. Resend cooldown (prevent spamming sends).
- * 2. Active OTP reuse without resetting failed attempt counters (prevent infinite brute force).
- * 3. Hourly send quotas per email.
- * 4. Lockout on excessive failed verification attempts.
+ * One-time codes of register and password reset, kept in memory per (purpose, email). Flow and invariants:
+ * docs/services/identity/classes/OtpServiceImpl.md. Four limits protect them:
  *
- * <p>Every read-modify-write goes through {@link Map#compute}, so parallel requests cannot share one
- * counter value. The counters live apart from the code and are kept for emails without an account too,
- * so throttling answers the same whether the email exists or not (FR-02).
+ * <ol>
+ *   <li>a cooldown between two sends;
+ *   <li>at most {@code otp.max-resend-per-hour} sends per hour;
+ *   <li>a resend inside the code's lifetime reuses the code, so asking again never resets the wrong-guess counter;
+ *   <li>too many wrong guesses lock the email for {@code otp.lockout-duration}.
+ * </ol>
+ *
+ * <p>Every read-modify-write goes through {@link Map#compute}, so parallel requests cannot share one counter value.
+ * The counters are kept for emails without an account too, so the answer is the same whether the email exists or
+ * not (FR-02).
  */
 @Service
 @RequiredArgsConstructor
@@ -37,27 +41,24 @@ public class OtpServiceImpl implements OtpService {
 
     private final OtpProperties properties;
 
-    final Map<OtpKey, OtpEntry> storageMap = new ConcurrentHashMap<>();
+    final Map<OtpKey, OtpEntry> otpEntries = new ConcurrentHashMap<>();
 
     @Override
     public String issueOtp(OtpPurpose purpose, String email) {
-        requireEmail(email);
+        validateEmail(email);
         Instant now = Instant.now();
-        return storageMap
-                .compute(new OtpKey(purpose, email), (k, current) -> {
-                    OtpEntry entry = reserveSend(current, now);
-                    return entry.hasActiveOtp(now)
-                            ? entry
-                            : entry.withOtp(generateOtp(), now.plus(properties.getExpiration()));
-                })
-                .otp();
+        OtpEntry issued = otpEntries.compute(new OtpKey(purpose, email), (key, current) -> {
+            OtpEntry entry = reserveSend(current, now);
+            return entry.hasActiveOtp(now) ? entry : entry.withOtp(generateOtp(), now.plus(properties.getExpiration()));
+        });
+        return issued.otp();
     }
 
     @Override
     public void throttleSend(OtpPurpose purpose, String email) {
-        requireEmail(email);
+        validateEmail(email);
         Instant now = Instant.now();
-        storageMap.compute(new OtpKey(purpose, email), (k, current) -> reserveSend(current, now));
+        otpEntries.compute(new OtpKey(purpose, email), (key, current) -> reserveSend(current, now));
     }
 
     @Override
@@ -67,25 +68,11 @@ public class OtpServiceImpl implements OtpService {
         }
         Instant now = Instant.now();
         AtomicReference<Outcome> outcome = new AtomicReference<>();
-        OtpEntry result = storageMap.compute(new OtpKey(purpose, email), (k, current) -> {
-            OtpEntry entry = current == null ? OtpEntry.EMPTY : current.unlockIfExpired(now);
-            if (entry.isLocked(now)) {
-                outcome.set(Outcome.LOCKED);
-                return entry;
-            }
-            if (otp != null && entry.hasActiveOtp(now) && matches(entry.otp(), otp)) {
-                outcome.set(Outcome.MATCH);
-                // consumed here, so two parallel requests cannot both redeem the same code
-                return entry.withOtp(null, null).withFailure(0, null);
-            }
-            // unknown email, expired or wrong code all count, so a lockout cannot tell them apart
-            int attempts = entry.attempts() + 1;
-            boolean lock = attempts >= properties.getMaxAttempts();
-            outcome.set(lock ? Outcome.LOCKED : Outcome.MISMATCH);
-            return entry.withFailure(attempts, lock ? now.plus(properties.getLockoutDuration()) : null);
-        });
+        OtpEntry result = otpEntries.compute(
+                new OtpKey(purpose, email), (key, current) -> checkGuess(current, otp, now, outcome));
+
         if (outcome.get() == Outcome.LOCKED) {
-            throw lockedException(result, now);
+            throw toLockedException(result, now);
         }
         if (outcome.get() == Outcome.MISMATCH) {
             throw new AppException(ErrorCode.OTP_INVALID_OR_EXPIRED);
@@ -96,7 +83,7 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public void clearOtp(OtpPurpose purpose, String email) {
         if (email != null) {
-            storageMap.computeIfPresent(new OtpKey(purpose, email), (k, e) -> e.withOtp(null, null));
+            otpEntries.computeIfPresent(new OtpKey(purpose, email), (key, entry) -> entry.withOtp(null, null));
         }
     }
 
@@ -104,10 +91,10 @@ public class OtpServiceImpl implements OtpService {
     void purgeStaleEntries() {
         Instant now = Instant.now();
         // removeIf goes through the map's own conditional remove, so it never drops a concurrent update
-        storageMap.entrySet().removeIf(e -> e.getValue().isStale(now, properties.getResendCooldown()));
+        otpEntries.entrySet().removeIf(e -> e.getValue().isStale(now, properties.getResendCooldown()));
     }
 
-    private static void requireEmail(String email) {
+    private static void validateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new AppException(ErrorCode.INVALID_INPUT);
         }
@@ -117,18 +104,17 @@ public class OtpServiceImpl implements OtpService {
     private OtpEntry reserveSend(OtpEntry current, Instant now) {
         OtpEntry entry = current == null ? OtpEntry.EMPTY : current.unlockIfExpired(now);
         if (entry.isLocked(now)) {
-            throw lockedException(entry, now);
+            throw toLockedException(entry, now);
         }
-        boolean inWindow = entry.sendWindowStart() != null
-                && now.isBefore(entry.sendWindowStart().plus(SEND_WINDOW));
+        boolean inWindow = entry.isInSendWindow(now);
         if (inWindow && entry.sendCount() >= properties.getMaxResendPerHour()) {
             throw new AppException(ErrorCode.OTP_SEND_LIMIT_EXCEEDED);
         }
-        if (entry.lastSentAt() != null && now.isBefore(entry.lastSentAt().plus(properties.getResendCooldown()))) {
-            long remainingSeconds = Math.max(
-                    1,
-                    Duration.between(now, entry.lastSentAt().plus(properties.getResendCooldown()))
-                            .toSeconds());
+        Instant cooldownEnd =
+                entry.lastSentAt() == null ? null : entry.lastSentAt().plus(properties.getResendCooldown());
+        if (cooldownEnd != null && now.isBefore(cooldownEnd)) {
+            long remainingSeconds =
+                    Math.max(1, Duration.between(now, cooldownEnd).toSeconds());
             throw new AppException(ErrorCode.OTP_TOO_FREQUENT, remainingSeconds);
         }
         return inWindow
@@ -136,20 +122,41 @@ public class OtpServiceImpl implements OtpService {
                 : entry.withSend(now, 1, now);
     }
 
-    private AppException lockedException(OtpEntry entry, Instant now) {
-        long remainingMinutes =
-                Math.max(1, Duration.between(now, entry.lockedUntil()).toMinutes() + 1);
-        return new AppException(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, properties.getMaxAttempts(), remainingMinutes);
-    }
-
     private String generateOtp() {
         return String.valueOf(properties.getMin() + RANDOM.nextInt(properties.getRange()));
+    }
+
+    /**
+     * Runs inside {@link Map#compute}: compares the guess and returns the new entry; {@code outcome} tells the caller
+     * what happened. A right code is consumed at once, so two parallel requests cannot both redeem it.
+     */
+    private OtpEntry checkGuess(OtpEntry current, String otp, Instant now, AtomicReference<Outcome> outcome) {
+        OtpEntry entry = current == null ? OtpEntry.EMPTY : current.unlockIfExpired(now);
+        if (entry.isLocked(now)) {
+            outcome.set(Outcome.LOCKED);
+            return entry;
+        }
+        if (otp != null && entry.hasActiveOtp(now) && matches(entry.otp(), otp)) {
+            outcome.set(Outcome.MATCH);
+            return entry.withOtp(null, null).withFailure(0, null);
+        }
+        // unknown email, expired or wrong code all count, so a lockout cannot tell them apart
+        int attempts = entry.attempts() + 1;
+        boolean lock = attempts >= properties.getMaxAttempts();
+        outcome.set(lock ? Outcome.LOCKED : Outcome.MISMATCH);
+        return entry.withFailure(attempts, lock ? now.plus(properties.getLockoutDuration()) : null);
     }
 
     /** Constant time, so the comparison does not leak how many leading digits were right. */
     private static boolean matches(String expected, String actual) {
         return MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.UTF_8), actual.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private AppException toLockedException(OtpEntry entry, Instant now) {
+        long remainingMinutes =
+                Math.max(1, Duration.between(now, entry.lockedUntil()).toMinutes() + 1);
+        return new AppException(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, properties.getMaxAttempts(), remainingMinutes);
     }
 
     private enum Outcome {
@@ -181,6 +188,11 @@ public class OtpServiceImpl implements OtpService {
             return lockedUntil != null && now.isBefore(lockedUntil);
         }
 
+        /** The current hour of sends started at sendWindowStart and has not ended yet. */
+        boolean isInSendWindow(Instant now) {
+            return sendWindowStart != null && now.isBefore(sendWindowStart.plus(SEND_WINDOW));
+        }
+
         /** A finished lockout starts a fresh round of attempts. */
         OtpEntry unlockIfExpired(Instant now) {
             return lockedUntil != null && !isLocked(now)
@@ -205,7 +217,7 @@ public class OtpServiceImpl implements OtpService {
             return !hasActiveOtp(now)
                     && !isLocked(now)
                     && (lastSentAt == null || !now.isBefore(lastSentAt.plus(cooldown)))
-                    && (sendWindowStart == null || !now.isBefore(sendWindowStart.plus(SEND_WINDOW)));
+                    && !isInSendWindow(now);
         }
     }
 }

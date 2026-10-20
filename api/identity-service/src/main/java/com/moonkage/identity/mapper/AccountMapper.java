@@ -1,7 +1,9 @@
 package com.moonkage.identity.mapper;
 
+import com.moonkage.identity.dto.response.AccountResponse;
 import com.moonkage.identity.dto.response.LoginResponse;
 import com.moonkage.identity.dto.response.RegisterAccountResponse;
+import com.moonkage.identity.dto.response.VerifyAccountResponse;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.entity.UserProfile;
 
@@ -10,8 +12,7 @@ public final class AccountMapper {
 
     private AccountMapper() {}
 
-    /** {@code otpSent} null for /verify, which sends no email. */
-    public static RegisterAccountResponse toRegisterResponse(Account account, Boolean otpSent) {
+    public static RegisterAccountResponse toRegisterResponse(Account account, boolean otpSent) {
         return RegisterAccountResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
@@ -21,12 +22,30 @@ public final class AccountMapper {
                 .build();
     }
 
-    /** {@code token} / {@code refreshToken} null for GET /me, which returns no new tokens. */
+    public static VerifyAccountResponse toVerifyResponse(Account account) {
+        return VerifyAccountResponse.builder()
+                .id(account.getId())
+                .email(account.getEmail())
+                .phoneNumber(account.getPhoneNumber())
+                .verified(account.isAccountVerified())
+                .build();
+    }
+
     public static LoginResponse toLoginResponse(
             Account account, UserProfile profile, String token, String refreshToken) {
         return LoginResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
+                .accountId(account.getId())
+                .email(account.getEmail())
+                .phoneNumber(account.getPhoneNumber())
+                .fullName(profile.getFullName())
+                .role(account.getRole())
+                .build();
+    }
+
+    public static AccountResponse toAccountResponse(Account account, UserProfile profile) {
+        return AccountResponse.builder()
                 .accountId(account.getId())
                 .email(account.getEmail())
                 .phoneNumber(account.getPhoneNumber())

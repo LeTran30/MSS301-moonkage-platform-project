@@ -2,6 +2,7 @@ package com.moonkage.identity.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,8 +57,14 @@ class AddressServiceImplTest {
 
     private static SaveAddressRequest request(Boolean isDefault) {
         return SaveAddressRequest.builder()
-                .detail("  12 Le Loi  ")
-                .areaCode(" hcm ")
+                .recipientName("  Nguyễn Lan  ")
+                .recipientPhone("+84912345678")
+                .provinceCode("79")
+                .provinceName(" Thành phố Hồ Chí Minh ")
+                .wardCode("26734")
+                .wardName(" Phường Sài Gòn ")
+                .detail("  12 Lê Lợi  ")
+                .label("   ")
                 .isDefault(isDefault)
                 .build();
     }
@@ -70,8 +77,18 @@ class AddressServiceImplTest {
     void firstAddressBecomesDefaultAndIsNormalized() {
         AddressResponse first = service.create(ACCOUNT_ID, request(null));
         assertTrue(first.isDefault());
-        assertEquals("12 Le Loi", first.detail());
-        assertEquals("HCM", first.areaCode());
+        assertEquals("Nguyễn Lan", first.recipientName());
+        assertEquals("0912345678", first.recipientPhone());
+        assertEquals("Phường Sài Gòn", first.wardName());
+        assertEquals("12 Lê Lợi", first.detail());
+        assertNull(first.label());
+    }
+
+    @Test
+    void deliveryAreaIsTheProvinceAndFullAddressReadsBottomUp() {
+        AddressResponse address = service.create(ACCOUNT_ID, request(null));
+        assertEquals("79", address.areaCode());
+        assertEquals("12 Lê Lợi, Phường Sài Gòn, Thành phố Hồ Chí Minh", address.fullAddress());
     }
 
     @Test

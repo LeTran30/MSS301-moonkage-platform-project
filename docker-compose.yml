@@ -149,14 +149,14 @@ services:
       retries: 5
 
   # Runs once with the root account: buckets, lifecycle, and one MinIO user per service limited to its own
-  # key prefixes (minio/init.sh). Services get only their own user, never the root account.
+  # key prefixes (infra/minio/init.sh). Services get only their own user, never the root account.
   minio-init:
     image: chainguard/minio:latest
     container_name: moonkage-minio-init
     restart: "no"
     networks: [moonkage-network]
     entrypoint: ["sh", "/init/init.sh"]
-    volumes: ["./minio/init.sh:/init/init.sh:ro"]
+    volumes: ["./infra/minio/init.sh:/init/init.sh:ro"]
     environment:
       MINIO_INTERNAL_URL: http://minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -233,6 +233,10 @@ services:
       - DB_PASSWORD
       - IDENTITY_DB_HOST=identity-db
       - IDENTITY_DB_PORT=5432
+      # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
+      - SEED_PASSWORD
+      - APP_SEED_ENABLED=true
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME
@@ -269,11 +273,13 @@ services:
       - DB_PASSWORD
       - CATALOG_DB_HOST=catalog-db
       - CATALOG_DB_PORT=5432
+      # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME
       - RABBITMQ_PASSWORD
-      # catalog's own MinIO user only, never the root account (minio/init.sh)
+      # catalog's own MinIO user only, never the root account (infra/minio/init.sh)
       - MINIO_INTERNAL_URL=http://minio:9000
       - MINIO_API_PORT
       - MINIO_BROWSER_URL
@@ -302,6 +308,8 @@ services:
       - DB_PASSWORD
       - QUOTATION_DB_HOST=quotation-db
       - QUOTATION_DB_PORT=5432
+      # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
     depends_on:
       quotation-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -317,6 +325,8 @@ services:
       - DB_PASSWORD
       - ORDER_DB_HOST=order-db
       - ORDER_DB_PORT=5432
+      # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
     depends_on:
       order-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -332,6 +342,8 @@ services:
       - DB_PASSWORD
       - VENDOR_DB_HOST=vendor-db
       - VENDOR_DB_PORT=5432
+      # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
     depends_on:
       vendor-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -347,6 +359,8 @@ services:
       - DB_PASSWORD
       - PAYMENT_DB_HOST=payment-db
       - PAYMENT_DB_PORT=5432
+      # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
     depends_on:
       payment-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -362,6 +376,8 @@ services:
       - DB_PASSWORD
       - ORCHESTRATOR_DB_HOST=orchestrator-db
       - ORCHESTRATOR_DB_PORT=5432
+      # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
+      - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME

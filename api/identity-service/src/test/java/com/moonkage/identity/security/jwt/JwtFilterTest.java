@@ -98,15 +98,15 @@ class JwtFilterTest {
     }
 
     @Test
-    void missingAccountKeepsItsMessageArgument() throws Exception {
+    void tokenOfADeletedAccountIsInvalid() throws Exception {
         when(jwtTokenProvider.parseAccessToken(TOKEN)).thenReturn(new JwtClaims(ACCOUNT_ID, Instant.now()));
         when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.empty());
 
         filter.doFilter(request("/api/addresses", TOKEN), response, chain);
 
-        AppException error = resolvedError();
-        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, error.getErrorCode());
-        assertEquals(ACCOUNT_ID, error.getArgs()[0]);
+        // 401, not 404: the caller's credential is what is wrong
+        assertEquals(ErrorCode.TOKEN_INVALID, resolvedError().getErrorCode());
+        verify(chain, never()).doFilter(any(), any());
     }
 
     @Test

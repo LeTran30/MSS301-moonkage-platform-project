@@ -14,9 +14,12 @@ import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Turns every error into {@link ApiResponse} with {@code data = null}. Token errors arrive here already as
@@ -50,6 +53,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
         return build(ErrorCode.MALFORMED_JSON, request);
+    }
+
+    /**
+     * A path nothing serves. Without this the catch-all below would answer 500 and log an error. Spring Boot reports it
+     * as NoResourceFoundException (the static resource handler matches every path); without that handler it is
+     * NoHandlerFoundException.
+     */
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(Exception ex, HttpServletRequest request) {
+        return build(ErrorCode.RESOURCE_NOT_FOUND, request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        return build(ErrorCode.METHOD_NOT_ALLOWED, request);
     }
 
     @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})

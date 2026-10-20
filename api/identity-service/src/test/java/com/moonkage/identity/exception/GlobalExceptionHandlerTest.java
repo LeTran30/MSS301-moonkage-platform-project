@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.moonkage.identity.config.LocaleConfig;
 import com.moonkage.identity.dto.response.ApiResponse;
@@ -17,9 +21,13 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /** Errors use the one body of Software Design 5.1 rule 8: {status, code, message, data: null, path, timestamp}. */
 class GlobalExceptionHandlerTest {
@@ -98,6 +106,30 @@ class GlobalExceptionHandlerTest {
         assertEquals(
                 "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
                 response.getBody().message());
+    }
+
+    /** Through MVC dispatch: the catch-all handler must not turn these into 500. */
+    @Test
+    void unknownPathIs404AndWrongMethodIs405() throws Exception {
+        MockMvc mvc = MockMvcBuilders.standaloneSetup(new PingController())
+                .setControllerAdvice(handler)
+                .build();
+
+        mvc.perform(get("/unknown"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("COMMON_404"));
+        mvc.perform(delete("/ping"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value("COMMON_405"));
+    }
+
+    @RestController
+    static class PingController {
+
+        @GetMapping("/ping")
+        String ping() {
+            return "pong";
+        }
     }
 
     @Test

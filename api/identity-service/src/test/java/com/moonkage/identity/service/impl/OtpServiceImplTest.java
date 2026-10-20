@@ -68,8 +68,8 @@ class OtpServiceImplTest {
         assertFalse(accepts(PURPOSE, TEST_EMAIL, "000000"));
 
         // Giả lập thời gian đã trôi qua 61 giây (hết cooldown nhưng mã 5m vẫn còn hạn)
-        OtpServiceImpl.OtpEntry entry = service.storageMap.get(KEY);
-        service.storageMap.put(
+        OtpServiceImpl.OtpEntry entry = service.otpEntries.get(KEY);
+        service.otpEntries.put(
                 KEY,
                 new OtpServiceImpl.OtpEntry(
                         entry.otp(),
@@ -84,16 +84,16 @@ class OtpServiceImplTest {
         assertEquals(firstOtp, resentOtp, "Mã OTP phải được tái sử dụng nếu chưa hết hạn TTL");
 
         // Bộ đếm attempts không được reset về 0
-        OtpServiceImpl.OtpEntry updated = service.storageMap.get(KEY);
+        OtpServiceImpl.OtpEntry updated = service.otpEntries.get(KEY);
         assertEquals(1, updated.attempts(), "Số lần thử sai không được reset về 0 khi gửi lại mã");
     }
 
     @Test
     void issueOtpExceedingHourlyQuotaThrowsLimitExceeded() {
         for (int i = 0; i < 5; i++) {
-            OtpServiceImpl.OtpEntry current = service.storageMap.get(KEY);
+            OtpServiceImpl.OtpEntry current = service.otpEntries.get(KEY);
             Instant windowStart = current != null ? current.sendWindowStart() : Instant.now();
-            service.storageMap.put(
+            service.otpEntries.put(
                     KEY,
                     new OtpServiceImpl.OtpEntry(
                             "123456",
@@ -107,8 +107,8 @@ class OtpServiceImplTest {
         }
 
         // Lần thứ 6 trong vòng 1 giờ
-        OtpServiceImpl.OtpEntry current = service.storageMap.get(KEY);
-        service.storageMap.put(
+        OtpServiceImpl.OtpEntry current = service.otpEntries.get(KEY);
+        service.otpEntries.put(
                 KEY,
                 new OtpServiceImpl.OtpEntry(
                         current.otp(),
@@ -173,8 +173,8 @@ class OtpServiceImplTest {
     void lockoutExpiryStartsFreshRoundOfAttempts() {
         service.issueOtp(PURPOSE, TEST_EMAIL);
         lockOut(TEST_EMAIL);
-        OtpServiceImpl.OtpEntry locked = service.storageMap.get(KEY);
-        service.storageMap.put(
+        OtpServiceImpl.OtpEntry locked = service.otpEntries.get(KEY);
+        service.otpEntries.put(
                 KEY,
                 new OtpServiceImpl.OtpEntry(
                         locked.otp(),
@@ -186,7 +186,7 @@ class OtpServiceImplTest {
                         Instant.now().minusSeconds(1)));
 
         assertFalse(accepts(PURPOSE, TEST_EMAIL, "000000"));
-        assertEquals(1, service.storageMap.get(KEY).attempts());
+        assertEquals(1, service.otpEntries.get(KEY).attempts());
     }
 
     // ───────── parallel requests (A) ─────────
@@ -220,7 +220,7 @@ class OtpServiceImplTest {
 
         long sent = results.stream().filter(String.class::isInstance).count();
         assertEquals(1, sent, "cooldown must let exactly one of the parallel sends through");
-        assertEquals(1, service.storageMap.get(KEY).sendCount());
+        assertEquals(1, service.otpEntries.get(KEY).sendCount());
     }
 
     // ───────── unknown email answers like a known one (B) ─────────
@@ -229,7 +229,7 @@ class OtpServiceImplTest {
     void throttleSendAppliesCooldownWithoutIssuingCode() {
         service.throttleSend(PURPOSE, TEST_EMAIL);
 
-        assertNull(service.storageMap.get(KEY).otp());
+        assertNull(service.otpEntries.get(KEY).otp());
         AppException ex = assertThrows(AppException.class, () -> service.throttleSend(PURPOSE, TEST_EMAIL));
         assertEquals(ErrorCode.OTP_TOO_FREQUENT, ex.getErrorCode());
     }
@@ -245,7 +245,7 @@ class OtpServiceImplTest {
     @Test
     void purgeDropsOnlyStaleEntries() {
         service.issueOtp(PURPOSE, TEST_EMAIL);
-        service.storageMap.put(
+        service.otpEntries.put(
                 OLD_KEY,
                 new OtpServiceImpl.OtpEntry(
                         null,
@@ -258,8 +258,8 @@ class OtpServiceImplTest {
 
         service.purgeStaleEntries();
 
-        assertTrue(service.storageMap.containsKey(KEY));
-        assertFalse(service.storageMap.containsKey(OLD_KEY));
+        assertTrue(service.otpEntries.containsKey(KEY));
+        assertFalse(service.otpEntries.containsKey(OLD_KEY));
     }
 
     // ───────── one purpose cannot use another's code (Q-05) ─────────

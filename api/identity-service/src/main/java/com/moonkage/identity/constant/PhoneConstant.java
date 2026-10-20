@@ -10,5 +10,8 @@ public final class PhoneConstant {
 
     public static final int SUBSCRIBER_DIGITS = 9;
 
+    /** Prefix of the national form 0xxxxxxxxx, the form a person dials. */
+    public static final String NATIONAL_PREFIX = "0";
+
     private PhoneConstant() {}
 }

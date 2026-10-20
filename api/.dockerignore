@@ -1,0 +1,22 @@
+# Build context of every backend image is api/ (docker-compose: context ./api), so Docker reads this file, not one at
+# the repo root. The Dockerfiles only need the pom.xml files, .mvn/jvm.config and each module's src/.
+
+# build outputs: the image builds its own jar
+**/target/
+
+# IDE & editor
+.idea/
+**/*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# secrets, logs
+.env
+*.pem
+*.key
+*.log

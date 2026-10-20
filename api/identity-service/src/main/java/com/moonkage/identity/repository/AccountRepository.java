@@ -12,12 +12,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, String> {
 
-    String VALIDATION_EMAIL_EXISTS = "EMAIL_EXISTS";
-    String VALIDATION_PHONE_EXISTS = "PHONE_EXISTS";
-
     Optional<Account> findByEmail(String email);
 
     Optional<Account> findByPhoneNumber(String phoneNumber);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhoneNumber(String phoneNumber);
 
     /**
      * Row lock that serialises changes of one account: two requests cannot both set a default address (FR-03) or
@@ -26,10 +27,4 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.id = :id")
     Optional<Account> findByIdForUpdate(@Param("id") String id);
-
-    @Query("SELECT CASE " + "WHEN COUNT(CASE WHEN a.email = :email THEN 1 END) > 0 THEN 'EMAIL_EXISTS' "
-            + "WHEN COUNT(CASE WHEN a.phoneNumber = :phoneNumber THEN 1 END) > 0 THEN 'PHONE_EXISTS' "
-            + "ELSE 'VALID' END "
-            + "FROM Account a WHERE a.email = :email OR a.phoneNumber = :phoneNumber")
-    String validateAccountUniqueness(@Param("email") String email, @Param("phoneNumber") String phoneNumber);
 }

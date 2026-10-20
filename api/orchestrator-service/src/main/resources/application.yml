@@ -11,9 +11,15 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  # schema changes are Flyway migrations (docs/guides/database.md); Hibernate only checks the entities match
+  flyway:
+    locations: classpath:db/migration
+    # a database created before Flyway (by ddl-auto) counts as V1__baseline already applied
+    baseline-on-migrate: true
+    baseline-version: 1
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -53,6 +59,10 @@ moonkage:
   cors:
     # browsers allowed to open the WebSocket (Origin check of the handshake)
     allowed-origins: ${CORS_ORIGINS}
+  mail:
+    # never send real mail to these domains: the dev seed accounts are member#@mk.com, a real domain
+    # (docs/guides/database.md). The email is only logged, as when no mail host is set.
+    blocked-domains: mk.com
 
 eureka:
   client:

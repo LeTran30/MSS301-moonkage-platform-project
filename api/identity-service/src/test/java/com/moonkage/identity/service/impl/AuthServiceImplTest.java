@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.dto.request.LoginRequest;
+import com.moonkage.identity.dto.request.RegisterAccountRequest;
 import com.moonkage.identity.entity.Account;
 import com.moonkage.identity.enums.OtpPurpose;
 import com.moonkage.identity.exception.AppException;
@@ -22,13 +23,16 @@ import com.moonkage.identity.security.jwt.JwtClaims;
 import com.moonkage.identity.security.jwt.JwtTokenProvider;
 import com.moonkage.identity.service.EmailService;
 import com.moonkage.identity.service.OtpService;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -62,6 +66,41 @@ class AuthServiceImplTest {
 
     @InjectMocks
     private AuthServiceImpl authService;
+
+    @Test
+    void parallelRegistrationWithTheSameEmailAnswers409Not500() {
+        // both requests passed the pre-check; the unique key stops the second one at flush
+        when(accountRepository.saveAndFlush(any(Account.class))).thenThrow(duplicateKey(Account.EMAIL_UNIQUE_KEY));
+
+        AppException ex = assertThrows(AppException.class, () -> authService.register(registerRequest()));
+
+        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+    }
+
+    @Test
+    void parallelRegistrationWithTheSamePhoneAnswers409Not500() {
+        when(accountRepository.saveAndFlush(any(Account.class)))
+                .thenThrow(duplicateKey(Account.PHONE_NUMBER_UNIQUE_KEY));
+
+        AppException ex = assertThrows(AppException.class, () -> authService.register(registerRequest()));
+
+        assertEquals(ErrorCode.PHONE_ALREADY_EXISTS, ex.getErrorCode());
+    }
+
+    private static RegisterAccountRequest registerRequest() {
+        return RegisterAccountRequest.builder()
+                .email(EMAIL)
+                .phoneNumber("0912345678")
+                .fullName("Nguyen Lan")
+                .password("secret-123")
+                .build();
+    }
+
+    private static DataIntegrityViolationException duplicateKey(String constraintName) {
+        return new DataIntegrityViolationException(
+                "duplicate key",
+                new ConstraintViolationException("duplicate key", new SQLException("23505"), constraintName));
+    }
 
     @Test
     void unconfirmedEmailIsToldOnlyAfterThePasswordMatched() {
@@ -156,7 +195,7 @@ class AuthServiceImplTest {
         when(accountRepository.findById("acc-1")).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () -> authService.refreshToken("rt"));
-        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
+        assertEquals(ErrorCode.REFRESH_TOKEN_INVALID, ex.getErrorCode());
     }
 
     @Test
