@@ -34,7 +34,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Sessions live in a {@link ConcurrentHashMap} with a short TTL (Requirement 7.1 NfcSession): no database rows to
+ * FR-04: the web opens a short session shown as a QR, the Moonkage Verify app sends the card once, and the result is
+ * saved. Flow and invariants: docs/services/identity/classes/NfcServiceImpl.md.
+ *
+ * <p>Sessions live in a {@link ConcurrentHashMap} with a short TTL (Requirement 7.1 NfcSession): no database rows to
  * clean up, and a restart only means the user scans a new QR. One pending session per account bounds the memory.
  *
  * <p>A card first claims its session inside {@link Map#compute} ({@code inFlight}), so two parallel submits cannot
@@ -59,14 +62,14 @@ public class NfcServiceImpl implements NfcService {
 
     private final AccountRepository accountRepository;
     private final LegalProfileRepository legalProfileRepository;
-    private final NfcTransportDecryptor decryptor;
-    private final IdNumberHasher hasher;
+    private final NfcTransportDecryptor transportDecryptor;
+    private final IdNumberHasher idNumberHasher;
     private final PiiCipher piiCipher;
     private final OutboxService outboxService;
     private final NfcProperties nfcProperties;
     private final TransactionTemplate transactionTemplate;
 
-    final Map<String, NfcSessionEntry> storageMap = new ConcurrentHashMap<>();
+    final Map<String, NfcSessionEntry> sessions = new ConcurrentHashMap<>();
 
     @Override
     public CreateNfcSessionResponse createSession(String accountId) {
@@ -80,7 +83,7 @@ public class NfcServiceImpl implements NfcService {
 
     @Override
     public NfcSessionStatusResponse getSession(String sessionId, String accountId) {
-        NfcSessionEntry entry = sessionId == null ? null : storageMap.get(sessionId);
+        NfcSessionEntry entry = sessionId == null ? null : sessions.get(sessionId);
         if (entry == null || entry.isExpired(Instant.now())) {
             throw new AppException(ErrorCode.NFC_SESSION_EXPIRED);
         }
@@ -100,18 +103,19 @@ public class NfcServiceImpl implements NfcService {
             return SubmitCardResponse.rejected(rejection.get());
         }
 
-        SubmitCardResponse response = null;
+        boolean verified = false;
         try {
             // an explicit transaction: a call within this class would bypass @Transactional
-            response = transactionTemplate.execute(status -> saveCardResult(sessionId, accountId, request));
+            SubmitCardResponse response =
+                    transactionTemplate.execute(status -> saveCardResult(sessionId, accountId, request));
+            verified = response != null && response.status() == NfcResult.VERIFIED;
             return response;
         } catch (DataIntegrityViolationException e) {
             // another account saved the same ID number in the same instant: the unique key caught it (BR-23)
             log.warn("NFC verification of account {} hit the ID number unique key", accountId);
             return SubmitCardResponse.rejected(NfcReasonCode.ID_ALREADY_LINKED);
         } finally {
-            boolean verified = response != null && response.status() == NfcResult.VERIFIED;
-            storageMap.computeIfPresent(sessionId, (k, e) -> e.released(verified));
+            releaseSession(sessionId, verified);
         }
     }
 
@@ -119,7 +123,7 @@ public class NfcServiceImpl implements NfcService {
     void purgeExpiredSessions() {
         Instant now = Instant.now();
         // removeIf goes through the map's own conditional remove, so it never drops a concurrent update
-        storageMap.values().removeIf(e -> e.isExpired(now) && !e.inFlight());
+        sessions.values().removeIf(e -> e.isExpired(now) && !e.inFlight());
     }
 
     // ───────── session start ─────────
@@ -151,10 +155,9 @@ public class NfcServiceImpl implements NfcService {
      * and card submits do not take this lock.
      */
     private synchronized void replacePending(NfcSessionEntry entry) {
-        storageMap
-                .values()
+        sessions.values()
                 .removeIf(e -> e.accountId().equals(entry.accountId()) && e.status() == NfcSessionStatus.PENDING);
-        storageMap.put(entry.sessionId(), entry);
+        sessions.put(entry.sessionId(), entry);
     }
 
     // ───────── card submit ─────────
@@ -163,7 +166,7 @@ public class NfcServiceImpl implements NfcService {
     private Optional<NfcReasonCode> claimSession(String sessionId, String accountId) {
         Instant now = Instant.now();
         AtomicReference<NfcReasonCode> rejection = new AtomicReference<>(NfcReasonCode.SESSION_EXPIRED);
-        NfcSessionEntry claimed = storageMap.computeIfPresent(sessionId, (k, e) -> {
+        NfcSessionEntry claimed = sessions.computeIfPresent(sessionId, (k, e) -> {
             // Software Design 4.2 order: exists and not expired, owned by the caller, not used yet
             if (e.isExpired(now)) {
                 return e;
@@ -196,24 +199,17 @@ public class NfcServiceImpl implements NfcService {
             return SubmitCardResponse.rejected(NfcReasonCode.LOCKED, 0, account.getNfcLockedUntil());
         }
 
-        Optional<NfcCard> parsed = decryptor
-                .decrypt(request.encryptedFields())
-                .flatMap(fields -> NfcCardValidator.validate(request, fields));
-        if (parsed.isEmpty()) {
-            return fail(account, sessionId, NfcReasonCode.BAD_FORMAT, now);
-        }
-        NfcCard card = parsed.get();
-        if (card.dateOfExpiry().isBefore(LocalDate.now(TimeConstant.VIETNAM_ZONE))) {
-            return fail(account, sessionId, NfcReasonCode.CARD_EXPIRED, now);
-        }
-        if (isLinkedElsewhere(card.idNumber())) {
-            return fail(account, sessionId, NfcReasonCode.ID_ALREADY_LINKED, now);
+        Optional<NfcCard> card = parseCard(request);
+        Optional<NfcReasonCode> rejection =
+                card.isEmpty() ? Optional.of(NfcReasonCode.BAD_FORMAT) : findCardRejection(card.get());
+        if (rejection.isPresent()) {
+            return countFailedAttempt(account, sessionId, rejection.get(), now);
         }
 
-        LegalProfile profile = saveLegalProfile(account, card, now);
+        LegalProfile profile = saveLegalProfile(account, card.get(), now);
         account.setNfcFailedAttempts(0);
         account.setNfcLockedUntil(null);
-        record(NfcVerificationEvent.verified(accountId, sessionId, profile.getIdNumberMasked(), now));
+        enqueueEvent(NfcVerificationEvent.verified(accountId, sessionId, profile.getIdNumberMasked(), now));
         return SubmitCardResponse.verified();
     }
 
@@ -225,26 +221,45 @@ public class NfcServiceImpl implements NfcService {
         }
     }
 
+    /** Empty = BAD_FORMAT: not a JWE this key opens, or a field breaks the card format (A-08). */
+    private Optional<NfcCard> parseCard(SubmitCardRequest request) {
+        return transportDecryptor
+                .decrypt(request.encryptedFields())
+                .flatMap(fields -> NfcCardValidator.validate(request, fields));
+    }
+
+    /** The checks after the format, in Software Design 4.2 order; empty when the card passes them all. */
+    private Optional<NfcReasonCode> findCardRejection(NfcCard card) {
+        if (card.dateOfExpiry().isBefore(LocalDate.now(TimeConstant.VIETNAM_ZONE))) {
+            return Optional.of(NfcReasonCode.CARD_EXPIRED);
+        }
+        if (isLinkedElsewhere(card.idNumber())) {
+            return Optional.of(NfcReasonCode.ID_ALREADY_LINKED);
+        }
+        return Optional.empty();
+    }
+
     /** AC-04.9: counts the attempt; the last allowed one locks verification for nfc.lockout-duration. */
-    private SubmitCardResponse fail(Account account, String sessionId, NfcReasonCode reason, Instant now) {
+    private SubmitCardResponse countFailedAttempt(
+            Account account, String sessionId, NfcReasonCode reason, Instant now) {
         int attempts = account.getNfcFailedAttempts() + 1;
         if (attempts < nfcProperties.getMaxAttempts()) {
             int attemptsLeft = nfcProperties.getMaxAttempts() - attempts;
             account.setNfcFailedAttempts(attempts);
-            record(NfcVerificationEvent.failed(account.getId(), sessionId, reason, attemptsLeft, now));
+            enqueueEvent(NfcVerificationEvent.failed(account.getId(), sessionId, reason, attemptsLeft, now));
             return SubmitCardResponse.rejected(reason, attemptsLeft, null);
         }
         Instant lockedUntil = now.plus(nfcProperties.getLockoutDuration());
         account.setNfcFailedAttempts(0);
         account.setNfcLockedUntil(lockedUntil);
-        record(NfcVerificationEvent.locked(account.getId(), sessionId, reason, lockedUntil, now));
+        enqueueEvent(NfcVerificationEvent.locked(account.getId(), sessionId, reason, lockedUntil, now));
         return SubmitCardResponse.rejected(reason, 0, lockedUntil);
     }
 
     /** AC-04.6. This account has no LegalProfile (checked above), so any match belongs to another account. */
     private boolean isLinkedElsewhere(String idNumber) {
         return legalProfileRepository.existsByIdNumberHashAndIdHashKeyVer(
-                hasher.hash(idNumber), IdNumberHasher.KEY_VERSION);
+                idNumberHasher.hash(idNumber), IdNumberHasher.KEY_VERSION);
     }
 
     /** AC-04.11: the ID number and date of birth are stored only hashed / encrypted. */
@@ -254,7 +269,7 @@ public class NfcServiceImpl implements NfcService {
                 .legalName(card.legalName())
                 .gender(card.gender())
                 .nationality(card.nationality())
-                .idNumberHash(hasher.hash(card.idNumber()))
+                .idNumberHash(idNumberHasher.hash(card.idNumber()))
                 .idHashKeyVer(IdNumberHasher.KEY_VERSION)
                 .idNumberMasked(IdNumberHasher.mask(card.idNumber()))
                 .idNumberEnc(piiCipher.encrypt(card.idNumber()))
@@ -267,8 +282,13 @@ public class NfcServiceImpl implements NfcService {
     }
 
     /** Same transaction as the LegalProfile / counter change, so the event is never lost or sent for a rollback. */
-    private void record(NfcVerificationEvent event) {
+    private void enqueueEvent(NfcVerificationEvent event) {
         outboxService.enqueue(event.eventId(), event.type().routingKey(), event);
+    }
+
+    /** A rejected card frees the session for another try; a verified one marks it used. */
+    private void releaseSession(String sessionId, boolean verified) {
+        sessions.computeIfPresent(sessionId, (id, entry) -> entry.released(verified));
     }
 
     record NfcSessionEntry(

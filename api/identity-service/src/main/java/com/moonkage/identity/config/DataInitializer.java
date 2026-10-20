@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Seeds the platform admin on startup (idempotent): every environment needs one. Demo data (the demo seller and
- * its Shop) is not seeded by code; see api/docs/seed/README.md.
+ * Seeds the platform admin on startup (idempotent): every environment needs one. Dev sample data is Flyway's
+ * db/seed, not code (docs/guides/database.md).
  */
 @Slf4j
 @Component
@@ -38,16 +38,18 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (accountRepository.findByEmail(adminEmail).isEmpty()) {
+        // stored like every other email, or login (which lower-cases) would never find the admin
+        String email = Account.toStoredEmail(adminEmail);
+        if (accountRepository.findByEmail(email).isEmpty()) {
             Account admin = accountRepository.save(Account.builder()
-                    .email(adminEmail)
+                    .email(email)
                     .passwordHash(passwordEncoder.encode(adminPassword))
                     .accountVerified(true)
                     .role(Role.ADMIN)
                     .build());
             userProfileRepository.save(
                     UserProfile.builder().account(admin).fullName(adminFullName).build());
-            log.info("Seeded admin account {}", adminEmail);
+            log.info("Seeded admin account {}", email);
         }
     }
 }

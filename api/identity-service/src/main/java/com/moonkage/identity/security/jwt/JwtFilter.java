@@ -45,7 +45,7 @@ public class JwtFilter extends OncePerRequestFilter {
         this.securityProperties = securityProperties;
     }
 
-    private boolean isPublicAPI(String uri) {
+    private boolean isPublicApi(String uri) {
         return securityProperties.getPublicEndpoints().stream().anyMatch(p -> pathMatcher.match(p, uri));
     }
 
@@ -61,7 +61,7 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         // path within the application, not the raw URI: behind the gateway the URI carries the /identity-service
         // prefix (the context path, from X-Forwarded-Prefix). Unlike getServletPath() it is also set under MockMvc.
-        boolean isPublic = isPublicAPI(URL_PATH_HELPER.getPathWithinApplication(request));
+        boolean isPublic = isPublicApi(URL_PATH_HELPER.getPathWithinApplication(request));
         String token = extractJwtFromRequest(request);
         if (token == null) {
             if (isPublic) {
@@ -88,10 +88,10 @@ public class JwtFilter extends OncePerRequestFilter {
     private void authenticate(String token, HttpServletRequest request) {
         JwtClaims claims = jwtTokenProvider.parseAccessToken(token);
         String accountId = claims.accountId();
-        // loaded on every request: a still-valid token must not outlive a password reset or a deleted account
-        Account account = accountRepository
-                .findById(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId));
+        // loaded on every request: a still-valid token must not outlive a password reset or a deleted account.
+        // A deleted account makes the token invalid (401), not a missing resource (404)
+        Account account =
+                accountRepository.findById(accountId).orElseThrow(() -> new AppException(ErrorCode.TOKEN_INVALID));
         if (!account.isAccountVerified()) {
             throw new AppException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
         }

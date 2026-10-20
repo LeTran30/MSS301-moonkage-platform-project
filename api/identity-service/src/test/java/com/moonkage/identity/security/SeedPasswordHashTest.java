@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
- * api/docs/seed/01_demo_seller_identity.sql hashes the demo password in SQL with pgcrypto. Login must accept it:
+ * db/seed/R__seed.sql hashes the seed accounts' password in SQL with pgcrypto. Login must accept it:
  * this hash was made by {@code crypt('Demo@12345', gen_salt('bf', 10))} on postgres:17-alpine.
  */
 class SeedPasswordHashTest {

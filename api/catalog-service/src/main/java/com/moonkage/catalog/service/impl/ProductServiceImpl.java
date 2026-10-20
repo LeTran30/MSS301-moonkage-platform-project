@@ -44,7 +44,7 @@ import org.springframework.util.StringUtils;
 public class ProductServiceImpl implements ProductService {
 
     private static final int MAX_PAGE_SIZE = 100;
-    /** Key prefix of product images in the public bucket; minio/init.sh grants catalog's MinIO user only this one. */
+    /** Key prefix of product images in the public bucket; infra/minio/init.sh grants catalog's user only this one. */
     private static final String IMAGE_KEY_PREFIX = "products";
 
     private final ProductRepository productRepository;

@@ -9,6 +9,7 @@ import com.moonkage.identity.dto.request.VerifyAccountRequest;
 import com.moonkage.identity.dto.response.ApiResponse;
 import com.moonkage.identity.dto.response.LoginResponse;
 import com.moonkage.identity.dto.response.RegisterAccountResponse;
+import com.moonkage.identity.dto.response.VerifyAccountResponse;
 import com.moonkage.identity.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +43,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify-account")
-    public ResponseEntity<ApiResponse<RegisterAccountResponse>> verifyAccount(
+    public ResponseEntity<ApiResponse<VerifyAccountResponse>> verifyAccount(
             @RequestBody @Valid VerifyAccountRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(authService.verifyAccount(request)));
     }

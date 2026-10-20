@@ -20,13 +20,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Answers other services about the NFC result of an account, and hashes an ID number they hold so the pepper never
+ * leaves identity-service (D-07). Flow and invariants: docs/services/identity/classes/LegalProfileServiceImpl.md.
+ */
 @Service
 @RequiredArgsConstructor
 public class LegalProfileServiceImpl implements LegalProfileService {
 
     private final AccountRepository accountRepository;
     private final LegalProfileRepository legalProfileRepository;
-    private final IdNumberHasher hasher;
+    private final IdNumberHasher idNumberHasher;
 
     @Override
     @Transactional(readOnly = true)
@@ -49,7 +53,7 @@ public class LegalProfileServiceImpl implements LegalProfileService {
             throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND, request.accountId());
         }
 
-        String idHash = hasher.hash(idNumber);
+        String idHash = idNumberHasher.hash(idNumber);
         Optional<LegalProfile> owner = legalProfileRepository.findById(request.accountId());
         boolean matches = owner.isPresent() && hashEquals(idHash, owner.get().getIdNumberHash());
 

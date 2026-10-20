@@ -279,7 +279,7 @@ Không tự format Java thủ công. Trước khi commit, chạy `spotless:apply
 
 ### 6. Quy ước viết code
 
-Phần này là quy ước **máy không kiểm tra hết**. Reviewer dựa vào đây khi góp ý.
+Phần này là quy ước **máy không kiểm tra hết**. Reviewer dựa vào đây khi góp ý. Quy tắc đầy đủ về package, đặt tên class/method/field, thứ tự trong class, comment và tài liệu class nặng nằm ở [`docs/conventions/coding-rules.md`](../docs/conventions/coding-rules.md); dưới đây chỉ là các điểm bổ sung.
 
 **Chung**
 
@@ -527,6 +527,7 @@ git push -u origin feat/tao-bao-gia
 - **Mục đích:** làm gì, vì sao (link issue nếu có).
 - **Cách kiểm tra:** reviewer làm gì để thấy nó chạy.
 - **Ảnh chụp màn hình** nếu đổi giao diện.
+- **Tài liệu:** đổi hành vi của service thì sửa `docs/services/<service>/` trong cùng PR; đổi schema thì có file `db/migration/V…` và sửa `db/seed` nếu cần ([docs/guides/database.md](../docs/guides/database.md)).
 
 **Điều kiện merge:** CI xanh, có 1 approval, không còn góp ý chưa trả lời.
 

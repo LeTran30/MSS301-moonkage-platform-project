@@ -1,6 +1,7 @@
 package com.moonkage.identity.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +14,7 @@ import com.moonkage.identity.enums.Gender;
 import com.moonkage.identity.enums.Role;
 import java.time.Instant;
 import java.util.List;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -57,33 +59,37 @@ class RepositoryIntegrationTest {
     }
 
     @Test
-    void uniquenessQueryReportsEmailBeforePhone() {
+    void existsQueriesFindTakenEmailAndPhone() {
         accountRepository.saveAndFlush(account("lan@x.vn", "912345678"));
 
-        assertEquals(
-                AccountRepository.VALIDATION_EMAIL_EXISTS,
-                accountRepository.validateAccountUniqueness("lan@x.vn", "912345678"));
-        assertEquals(
-                AccountRepository.VALIDATION_PHONE_EXISTS,
-                accountRepository.validateAccountUniqueness("other@x.vn", "912345678"));
-        assertEquals("VALID", accountRepository.validateAccountUniqueness("other@x.vn", null));
+        assertTrue(accountRepository.existsByEmail("lan@x.vn"));
+        assertFalse(accountRepository.existsByEmail("other@x.vn"));
+        assertTrue(accountRepository.existsByPhoneNumber("912345678"));
+        assertFalse(accountRepository.existsByPhoneNumber("987654321"));
     }
 
     @Test
     void emailAndPhoneAreUniqueInTheDatabaseToo() {
         accountRepository.saveAndFlush(account("lan@x.vn", "912345678"));
 
-        assertThrows(
+        DataIntegrityViolationException error = assertThrows(
                 DataIntegrityViolationException.class, () -> accountRepository.saveAndFlush(account("lan@x.vn", null)));
+        // AuthServiceImpl tells email from phone by this name
+        assertEquals(Account.EMAIL_UNIQUE_KEY, violatedKey(error));
     }
 
     @Test
     void phoneOfAnotherAccountIsRefused() {
         accountRepository.saveAndFlush(account("lan@x.vn", "912345678"));
 
-        assertThrows(
+        DataIntegrityViolationException error = assertThrows(
                 DataIntegrityViolationException.class,
                 () -> accountRepository.saveAndFlush(account("mai@x.vn", "912345678")));
+        assertEquals(Account.PHONE_NUMBER_UNIQUE_KEY, violatedKey(error));
+    }
+
+    private static String violatedKey(DataIntegrityViolationException error) {
+        return ((ConstraintViolationException) error.getCause()).getConstraintName();
     }
 
     @Test
@@ -174,8 +180,13 @@ class RepositoryIntegrationTest {
     private static Address address(Account owner, String detail, boolean isDefault) {
         Address address = new Address();
         address.setAccount(owner);
+        address.setRecipientName("Nguyễn Lan");
+        address.setRecipientPhone("0912345678");
+        address.setProvinceCode("79");
+        address.setProvinceName("Thành phố Hồ Chí Minh");
+        address.setWardCode("26734");
+        address.setWardName("Phường Sài Gòn");
         address.setDetail(detail);
-        address.setAreaCode("HCM");
         address.setDefault(isDefault);
         return address;
     }

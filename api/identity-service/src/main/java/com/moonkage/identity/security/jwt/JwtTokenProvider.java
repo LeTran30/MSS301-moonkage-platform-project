@@ -37,7 +37,7 @@ public class JwtTokenProvider {
         return java.util.Date.from(instant);
     }
 
-    private SecretKey getSignInKey() {
+    private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
     }
 
@@ -50,7 +50,7 @@ public class JwtTokenProvider {
                 .claim(SecurityConstant.CLAIM_TYPE, SecurityConstant.TOKEN_TYPE_ACCESS)
                 .claim(SecurityConstant.CLAIM_ROLE, account.getRole().name())
                 .expiration(toDate(now.plusMillis(expirationMs)))
-                .signWith(getSignInKey(), Jwts.SIG.HS256)
+                .signWith(signingKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -61,7 +61,7 @@ public class JwtTokenProvider {
                 .claim(SecurityConstant.CLAIM_TYPE, SecurityConstant.TOKEN_TYPE_REFRESH)
                 .issuedAt(toDate(now))
                 .expiration(toDate(now.plusMillis(refreshExpirationMs)))
-                .signWith(getSignInKey(), Jwts.SIG.HS256)
+                .signWith(signingKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -84,7 +84,7 @@ public class JwtTokenProvider {
         Claims claims;
         try {
             claims = Jwts.parser()
-                    .verifyWith(getSignInKey())
+                    .verifyWith(signingKey())
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
