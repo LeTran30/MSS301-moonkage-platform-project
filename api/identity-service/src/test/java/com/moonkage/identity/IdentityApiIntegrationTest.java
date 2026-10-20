@@ -234,10 +234,14 @@ class IdentityApiIntegrationTest {
         mvc.perform(post("/api/addresses")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"detail\":\"12 Le Loi, Q1\",\"areaCode\":\"hcm\"}"))
+                        .content("""
+                                {"recipientName":"Nguyễn Lan","recipientPhone":"0912345678",
+                                 "provinceCode":"79","provinceName":"Thành phố Hồ Chí Minh",
+                                 "wardCode":"26734","wardName":"Phường Sài Gòn","detail":"12 Lê Lợi"}
+                                """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(201))
-                .andExpect(jsonPath("$.data.areaCode").value("HCM"))
+                .andExpect(jsonPath("$.data.areaCode").value("79"))
                 .andExpect(jsonPath("$.data.isDefault").value(true))
                 .andExpect(jsonPath("$.data.createdAt", endsWith("Z")));
     }

@@ -323,7 +323,7 @@ class NfcServiceImplTest {
             AppException ex = assertThrows(AppException.class, () -> service.createSession(OWNER));
 
             assertEquals(ErrorCode.NFC_ALREADY_VERIFIED, ex.getErrorCode());
-            assertTrue(service.storageMap.isEmpty());
+            assertTrue(service.sessions.isEmpty());
         }
 
         @Test
@@ -345,7 +345,7 @@ class NfcServiceImplTest {
             pool.shutdownNow();
 
             // Q-24: only the newest QR of an account works
-            assertEquals(1, service.storageMap.size());
+            assertEquals(1, service.sessions.size());
         }
 
         @Test
@@ -490,8 +490,8 @@ class NfcServiceImplTest {
 
             service.purgeExpiredSessions();
 
-            assertTrue(service.storageMap.containsKey(live));
-            assertTrue(!service.storageMap.containsKey(expired));
+            assertTrue(service.sessions.containsKey(live));
+            assertTrue(!service.sessions.containsKey(expired));
         }
 
         private ErrorCode getError(String sessionId, String accountId) {

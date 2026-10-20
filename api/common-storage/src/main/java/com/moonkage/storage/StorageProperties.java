@@ -16,9 +16,9 @@ import org.springframework.validation.annotation.Validated;
  *     container cannot reach, and the lookup (GetBucketLocation) is not granted to the service's user
  * @param publicBucketName anonymously readable bucket (product images)
  * @param privateBucketName bucket opened only through presigned links; also holds unconfirmed uploads
- * @param accessKey this service's own MinIO user, created by minio/init.sh; never the root account
+ * @param accessKey this service's own MinIO user, created by infra/minio/init.sh; never the root account
  * @param tempKeyPrefix key prefix of this service's unconfirmed uploads in the private bucket, e.g. tmp/catalog;
- *     must match the prefix minio/init.sh grants this service (a lifecycle rule there removes old uploads)
+ *     must match the prefix infra/minio/init.sh grants this service (a lifecycle rule there removes old uploads)
  * @param uploadLinkLifetime how long a presigned POST upload stays valid
  * @param downloadLinkLifetime how long a presigned GET stays valid
  */

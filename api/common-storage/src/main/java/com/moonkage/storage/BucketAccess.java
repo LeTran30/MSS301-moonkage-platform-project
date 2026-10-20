@@ -5,8 +5,6 @@ package com.moonkage.storage;
  * the temp prefix.
  */
 public enum BucketAccess {
-    /** Anyone can read it by URL, e.g. product images. */
     PUBLIC,
-    /** Read only through a presigned link the owning service hands out after its own permission check. */
     PRIVATE
 }

@@ -1,5 +1,6 @@
 package com.moonkage.identity.service.impl;
 
+import com.moonkage.identity.constant.PhoneConstant;
 import com.moonkage.identity.dto.request.SaveAddressRequest;
 import com.moonkage.identity.dto.response.AddressResponse;
 import com.moonkage.identity.entity.Account;
@@ -11,10 +12,10 @@ import com.moonkage.identity.repository.AccountRepository;
 import com.moonkage.identity.repository.AddressRepository;
 import com.moonkage.identity.service.AddressService;
 import java.util.List;
-import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * FR-03. Rules: at most one default per account (AC-03.1); the first address becomes the default;
@@ -88,8 +89,19 @@ public class AddressServiceImpl implements AddressService {
     }
 
     private static void apply(Address address, SaveAddressRequest request) {
+        address.setRecipientName(request.recipientName().trim());
+        address.setRecipientPhone(toNationalPhone(request.recipientPhone()));
+        address.setProvinceCode(request.provinceCode());
+        address.setProvinceName(request.provinceName().trim());
+        address.setWardCode(request.wardCode());
+        address.setWardName(request.wardName().trim());
         address.setDetail(request.detail().trim());
-        address.setAreaCode(request.areaCode().trim().toUpperCase(Locale.ROOT));
+        address.setLabel(StringUtils.hasText(request.label()) ? request.label().trim() : null);
+    }
+
+    /** 0912…, 84912… and +84912… all become 0912…, the form the shipper dials. */
+    private static String toNationalPhone(String phone) {
+        return PhoneConstant.NATIONAL_PREFIX + Account.toStoredPhoneNumber(phone);
     }
 
     private static void clearDefaults(List<Address> addresses) {

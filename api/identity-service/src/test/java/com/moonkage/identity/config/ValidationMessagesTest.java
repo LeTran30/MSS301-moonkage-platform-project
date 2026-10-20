@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.moonkage.identity.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.dto.request.RegisterAccountRequest;
+import com.moonkage.identity.dto.request.SaveAddressRequest;
 import jakarta.validation.ConstraintViolation;
 import java.util.Locale;
 import java.util.Set;
@@ -47,6 +48,30 @@ class ValidationMessagesTest {
 
         assertEquals(
                 Set.of("Email không đúng định dạng", "Họ tên tối đa 100 ký tự", "Mật khẩu từ 8 đến 72 ký tự"),
+                messages);
+    }
+
+    @Test
+    void addressNeedsNationalCodesOfProvinceAndWard() {
+        SaveAddressRequest request = SaveAddressRequest.builder()
+                .recipientName("Nguyễn Lan")
+                .recipientPhone("0212345678")
+                .provinceCode("HCM")
+                .provinceName("Thành phố Hồ Chí Minh")
+                .wardCode("760")
+                .wardName("Phường Sài Gòn")
+                .detail("12 Lê Lợi")
+                .build();
+
+        Set<String> messages = validator.validate(request).stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.toSet());
+
+        assertEquals(
+                Set.of(
+                        "Số điện thoại người nhận không hợp lệ",
+                        "Mã tỉnh/thành phố không hợp lệ",
+                        "Mã phường/xã không hợp lệ"),
                 messages);
     }
 

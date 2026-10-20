@@ -1,0 +1,4 @@
+-- Dev seed of payment_db (docs/guides/database.md). Runs only where SPRING_FLYWAY_LOCATIONS adds classpath:db/seed, i.e.
+-- docker-compose. Flyway runs it again whenever this file changes, so write every insert with ON CONFLICT DO NOTHING.
+-- Use the fixed IDs of the registry in docs/guides/database.md; register new ones there first.
+-- Empty for now: the owner of payment-service fills it in.

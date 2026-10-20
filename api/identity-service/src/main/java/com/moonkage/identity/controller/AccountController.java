@@ -1,7 +1,7 @@
 package com.moonkage.identity.controller;
 
+import com.moonkage.identity.dto.response.AccountResponse;
 import com.moonkage.identity.dto.response.ApiResponse;
-import com.moonkage.identity.dto.response.LoginResponse;
 import com.moonkage.identity.security.CurrentUser;
 import com.moonkage.identity.security.CurrentUserInfo;
 import com.moonkage.identity.service.AuthService;
@@ -19,7 +19,7 @@ public class AccountController {
     private final AuthService authService;
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<LoginResponse>> getMyProfile(@CurrentUser CurrentUserInfo currentUser) {
-        return ResponseEntity.ok(ApiResponse.ok(authService.getMyProfile(currentUser.accountId())));
+    public ResponseEntity<ApiResponse<AccountResponse>> getMyAccount(@CurrentUser CurrentUserInfo currentUser) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.getMyAccount(currentUser.accountId())));
     }
 }

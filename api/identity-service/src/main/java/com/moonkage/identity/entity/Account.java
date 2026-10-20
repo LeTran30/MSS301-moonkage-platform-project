@@ -11,10 +11,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,7 +34,12 @@ import org.springframework.security.core.userdetails.UserDetails;
  * FR-04, D-21). The requirement has no admin lock of an account; FR-46 locks a seller, in vendor-service.
  */
 @Entity
-@Table(name = "accounts")
+@Table(
+        name = "accounts",
+        uniqueConstraints = {
+            @UniqueConstraint(name = Account.EMAIL_UNIQUE_KEY, columnNames = "email"),
+            @UniqueConstraint(name = Account.PHONE_NUMBER_UNIQUE_KEY, columnNames = "phone_number")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -40,15 +47,20 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Builder
 public class Account extends BaseEntity implements UserDetails {
 
+    /** Named so a duplicate that slips past the pre-check can still be told apart (AC-01.3). */
+    public static final String EMAIL_UNIQUE_KEY = "uk_accounts_email";
+
+    public static final String PHONE_NUMBER_UNIQUE_KEY = "uk_accounts_phone_number";
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, updatable = false)
     private String id;
 
-    @Column(name = "email", unique = true, nullable = false)
+    @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "phone_number", unique = true, length = 20)
+    @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
     @Column(name = "password_hash", nullable = false)
@@ -94,12 +106,17 @@ public class Account extends BaseEntity implements UserDetails {
         return nfcLockedUntil != null && now.isBefore(nfcLockedUntil);
     }
 
+    /** The form {@code email} is stored and looked up in: trimmed, lower case. Null stays null. */
+    public static String toStoredEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
+
     /**
      * The form {@code phone_number} is stored and looked up in: the 9 subscriber digits, so 0912…, 84912… and
      * +84912… are one account (AC-01.3). Null / blank stays null. The input must already match
      * {@link PhoneConstant#PATTERN}.
      */
-    public static String storedPhoneNumber(String phone) {
+    public static String toStoredPhoneNumber(String phone) {
         if (phone == null || phone.isBlank()) {
             return null;
         }

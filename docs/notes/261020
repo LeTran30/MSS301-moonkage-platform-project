@@ -1,3 +1,0 @@
-Đánh đổi và chỗ còn hở:
-- Lúc xác nhận, mỗi ảnh (tối đa 5MB) được đọc vào bộ nhớ của service một lần. File lớn hơn nhiều, như video, thì phải chuyển sang xử lý dạng stream.
-- 7 database vẫn dùng chung một cặp DB_USERNAME/DB_PASSWORD, nên service nào cũng có mật khẩu đăng nhập được DB của service khác. Sửa thì cần mỗi DB một user riêng.

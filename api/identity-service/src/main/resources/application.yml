@@ -20,9 +20,18 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  # schema changes are Flyway migrations (docs/guides/database.md); Hibernate only checks the entities match
+  flyway:
+    locations: classpath:db/migration
+    # a database created before Flyway (by ddl-auto) counts as V1__baseline already applied
+    baseline-on-migrate: true
+    baseline-version: 1
+    # only db/seed uses it (dev): password of the seed accounts member#@mk.com; brackets keep the underscore
+    placeholders:
+      "[seed_password]": ${SEED_PASSWORD:}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     # off by default: every statement in the log is noise and may carry personal data in literals.
     # Local debugging: JPA_SHOW_SQL=true in .env. The dialect is detected from the connection.
     show-sql: ${JPA_SHOW_SQL:false}
@@ -91,4 +100,6 @@ app:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
     full-name: "Quản trị viên MoonKage"
-  # demo seller and its Shop: not seeded by code, see api/docs/seed/README.md
+  # dev seed data (db/seed, docs/guides/database.md); true only in docker-compose
+  seed:
+    enabled: ${APP_SEED_ENABLED:false}

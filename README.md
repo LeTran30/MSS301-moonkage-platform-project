@@ -9,17 +9,15 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-[📖 API Docs (Swagger, chạy local)](http://localhost:8080/swagger-ui.html) · [🔐 Tài liệu xác thực](docs/iden-service/auth.md) · [🐛 Báo lỗi](https://github.com/LeTran30/MSS301-moonkage-platform-project/issues)
+[📚 Tài liệu](docs/README.md) · [📖 API Docs (Swagger, chạy local)](http://localhost:8080/swagger-ui.html) · [🐛 Báo lỗi](https://github.com/LeTran30/MSS301-moonkage-platform-project/issues)
 
 ## Mục lục
 - [Tính năng](#tính-năng)
 - [Tech Stack](#tech-stack)
 - [Kiến trúc](#kiến-trúc)
-- [Bắt đầu](#bắt-đầu)
-- [Biến môi trường](#biến-môi-trường)
+- [Chạy nhanh](#chạy-nhanh)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-- [API](#api)
-- [Testing & chất lượng code](#testing--chất-lượng-code)
+- [Tài liệu](#tài-liệu)
 - [CI/CD](#cicd)
 - [Roadmap](#roadmap)
 - [Đóng góp](#đóng-góp)
@@ -27,7 +25,7 @@
 
 ## Tính năng
 - ✅ Đăng ký có xác nhận OTP qua email, đăng nhập bằng email hoặc số điện thoại, refresh token, quên mật khẩu (JWT HS256)
-- ✅ API Gateway kiểm tra JWT và phân quyền theo role (`CUSTOMER`, `SELLER`, `ADMIN`)
+- ✅ API Gateway kiểm tra JWT và phân quyền theo vai (`MEMBER`, `ADMIN`; làm chủ người bán không phải là một vai, D-19)
 - ✅ Khách chưa đăng nhập vẫn xem và tìm kiếm sản phẩm
 - ✅ Shop quản lý sản phẩm: tạo, sửa, ẩn/hiện, xóa, bảng giá theo số lượng
 - ✅ Ảnh sản phẩm upload thẳng lên MinIO qua presigned URL do catalog-service cấp (không có file-service)
@@ -77,111 +75,47 @@ flowchart LR
     EU["Eureka :8761"] -.-|service discovery| GW
 ```
 
-| Thành phần | Công nghệ | Port |
-|---|---|---|
-| **Discovery Server** | Spring Cloud Eureka | `8761` |
-| **API Gateway** | Spring Cloud Gateway | `8080` |
-| **Identity Service** | Tài khoản, hồ sơ người dùng, địa chỉ, xác minh NFC | `8081` |
-| **Catalog Service** | Sản phẩm, bậc giá, tồn kho | `8082` |
-| **Quotation Service** | Yêu cầu báo giá, lời mời, báo giá | `8083` |
-| **Order Service** | Giỏ hàng, đơn hàng, maket, tiến độ, khiếu nại, đánh giá, voucher | `8084` |
-| **common-storage** | Thư viện (không phải service): presigned upload/xem file MinIO cho service sở hữu file | – |
-| **Vendor Service** | Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký | `8086` |
-| **Payment Service** | Thanh toán VNPay, sổ giữ tiền, giải ngân cọc, hoàn tiền (chưa có nghiệp vụ) | `8087` |
-| **Orchestrator Service** | Audit log toàn nền tảng (nhận qua RabbitMQ), thông báo trong ứng dụng | `8088` |
-| **RabbitMQ** | Sự kiện giữa các service; UI quản trị http://localhost:15672 | `5672`, `15672` |
-| **Web Portal** | React SPA | `5173` |
-| **PostgreSQL ×7** | Mỗi service một DB | `5441`–`5447` |
-| **MinIO** | API / web console | `9000` / `9001` |
+**Service nghiệp vụ**: mỗi service một database riêng, gọi qua gateway với prefix là tên service.
+
+| Service | Phụ trách | Port | Database |
+|---|---|---|---|
+| **identity-service** | Tài khoản, hồ sơ người dùng, địa chỉ, xác minh NFC | `8081` | `identity_db` · `5441` |
+| **catalog-service** | Sản phẩm, bậc giá, tồn kho | `8082` | `catalog_db` · `5442` |
+| **quotation-service** | Yêu cầu báo giá, lời mời, báo giá | `8083` | `quotation_db` · `5443` |
+| **order-service** | Giỏ hàng, đơn hàng, maket, tiến độ, khiếu nại, đánh giá, voucher | `8084` | `order_db` · `5444` |
+| **vendor-service** | Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký | `8086` | `vendor_db` · `5445` |
+| **payment-service** | Thanh toán VNPay, sổ giữ tiền, giải ngân cọc, hoàn tiền (chưa có nghiệp vụ) | `8087` | `payment_db` · `5446` |
+| **orchestrator-service** | Audit log toàn nền tảng (nhận qua RabbitMQ), thông báo trong ứng dụng, gửi email | `8088` | `orchestrator_db` · `5447` |
+
+**Hạ tầng & thành phần dùng chung**: không chứa nghiệp vụ, mọi service đều dựa vào.
+
+| Thành phần | Công nghệ | Vai trò | Port |
+|---|---|---|---|
+| **API Gateway** | Spring Cloud Gateway | Cửa vào duy nhất: định tuyến, kiểm JWT, CORS, Swagger tổng | `8080` |
+| **Discovery Server** | Spring Cloud Eureka | Service đăng ký và tìm nhau | `8761` |
+| **RabbitMQ** | RabbitMQ 4 | Sự kiện giữa các service (outbox → orchestrator); UI quản trị | `5672`, `15672` |
+| **PostgreSQL ×7** | PostgreSQL 17 | Mỗi service một DB; schema do Flyway quản lý | `5441`–`5447` |
+| **MinIO** | S3-compatible | Lưu file: ảnh sản phẩm (public), file riêng tư; API / web console | `9000` / `9001` |
+| **common-storage** | Thư viện Java | Không phải service: presigned upload/xem file MinIO cho service sở hữu file | – |
+| **Web Portal** | React SPA | Giao diện cho người mua, người bán, quản trị | `5173` |
 
 Mọi request đi qua gateway với prefix là tên service, ví dụ `http://localhost:8080/identity-service/api/auth/login`. Khi chạy bằng Docker, các business service không mở port ra máy host. Đường dẫn `/internal/**` chỉ dùng cho các service gọi nhau, gateway luôn chặn.
 
-## Bắt đầu
-
-### Yêu cầu
-- JDK 21+ (không cần cài Maven, dùng wrapper `./mvnw`)
-- Node.js 18+
-- Docker & Docker Compose
-
-### Cài đặt
+## Chạy nhanh
 ```bash
-git clone https://github.com/LeTran30/MSS301-moonkage-platform-project.git
-cd MSS301-moonkage-platform-project
-cp .env.example .env
-openssl rand -base64 48               # dán vào JWT_SECRET, đặt thêm ADMIN_PASSWORD
-git config core.hooksPath .githooks   # bật pre-commit kiểm tra format/style (mỗi lần clone)
+cp .env.example .env          # điền JWT_SECRET, ADMIN_PASSWORD, SEED_PASSWORD
+docker compose up -d --build  # tạo bảng (Flyway) và nạp dữ liệu mẫu
+cd web && npm install && npm run dev   # http://localhost:5173
 ```
 
-Windows: nếu `git clone` báo `Filename too long`, chạy `git config --global core.longpaths true` rồi clone lại.
-
-### Cách A: chạy toàn bộ backend bằng Docker
-```bash
-docker compose up -d --build
-docker compose logs -f identity-service   # mã OTP được in ra đây khi MAIL_HOST để trống
-```
-
-- Gateway: http://localhost:8080
-- Eureka: http://localhost:8761
-- Swagger UI: http://localhost:8080/swagger-ui.html (chọn service ở góc trên bên phải)
-- MinIO console: http://localhost:9001
-
-### Cách B: database chạy Docker, service chạy từ IDE
-```bash
-docker compose up -d identity-db catalog-db quotation-db order-db vendor-db payment-db orchestrator-db minio minio-init rabbitmq
-
-cd api
-./mvnw -pl discovery-server spring-boot:run   # chạy Eureka trước
-./mvnw -pl api-gateway spring-boot:run        # các service còn lại, mỗi cái một terminal
-./mvnw -pl identity-service spring-boot:run
-./mvnw -pl catalog-service spring-boot:run
-./mvnw -pl quotation-service spring-boot:run
-./mvnw -pl order-service spring-boot:run
-./mvnw -pl vendor-service spring-boot:run
-./mvnw -pl payment-service spring-boot:run
-./mvnw -pl orchestrator-service spring-boot:run
-```
-
-Trên Windows `cmd`/PowerShell dùng `mvnw.cmd` thay cho `./mvnw`. Mỗi service tự đọc file `.env` ở thư mục gốc.
-
-### Frontend
-```bash
-cd web
-npm install
-npm run dev        # http://localhost:5173
-```
-
-### Tài khoản mặc định
-Khi identity-service khởi động lần đầu, một tài khoản admin được tạo từ `ADMIN_EMAIL` / `ADMIN_PASSWORD` trong `.env` (mặc định `admin@moonkage.vn`). Tài khoản khác đăng ký qua `/api/auth/register`. Khi `MAIL_HOST` để trống, mã OTP nằm trong log của identity-service.
-
-## Biến môi trường
-Danh sách đầy đủ và giá trị mẫu: [`.env.example`](.env.example).
-
-Trong Docker, mỗi container chỉ nhận các biến nó đọc (danh sách `environment` của service trong `docker-compose.yml`), không nạp cả `.env`. Khi một service đọc thêm biến mới trong `application.yml`, nhớ thêm biến đó vào danh sách của service trong `docker-compose.yml`. Chạy từ IDE thì service vẫn đọc cả `.env` ở thư mục gốc.
-
-| Biến | Mô tả | Ví dụ |
-|---|---|---|
-| `DB_USERNAME`, `DB_PASSWORD` | Tài khoản PostgreSQL dùng chung cho 4 DB | `bake2b` / `bake2b_secret` |
-| `*_DB_HOST`, `*_DB_PORT` | Địa chỉ DB của từng service (Docker tự ghi đè) | `localhost`, `5441` |
-| `EUREKA_URL` | Địa chỉ Eureka | `http://localhost:8761/eureka/` |
-| `JWT_SECRET` | Khóa HS256 dạng Base64, ≥ 32 byte. identity-service và gateway phải dùng **cùng** giá trị | `openssl rand -base64 48` |
-| `JWT_EXPIRATION`, `JWT_REFRESH_EXPIRATION` | Hạn token (ms) | `43200000` (12h), `604800000` (7 ngày) |
-| `OTP_EXPIRATION`, `OTP_MAX_ATTEMPTS` | Hạn và số lần nhập sai OTP | `5m`, `5` |
-| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP gửi OTP. Để trống `MAIL_HOST` khi dev | `smtp.gmail.com`, `587` |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Tài khoản admin tạo lúc khởi động | `admin@moonkage.vn` |
-| `CORS_ORIGINS` | Origin frontend được phép gọi gateway (phân cách bằng dấu phẩy) | `http://localhost:5173` |
-| `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Tài khoản root MinIO, chỉ container `minio` và `minio-init` dùng | `minioadmin` |
-| `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` | Port MinIO (API, console) | `9000`, `9001` |
-| `MINIO_BROWSER_URL` | Địa chỉ trình duyệt dùng để tới MinIO (URL ảnh, link upload); bắt buộc đặt khi deploy | `http://localhost:9000` |
-| `MINIO_PUBLIC_BUCKET`, `MINIO_PRIVATE_BUCKET`, `MINIO_VENDOR_DOCS_BUCKET` | Bucket đọc công khai (ảnh sản phẩm), riêng tư (file của order, upload tạm) và giấy tờ người bán (chỉ vendor-service) | `moonkage-public`, `moonkage-private`, `moonkage-vendor-docs` |
-| `MINIO_CATALOG_ACCESS_KEY` / `_SECRET_KEY`, `MINIO_ORDER_…`, `MINIO_VENDOR_…` | User MinIO riêng của từng service, do `minio-init` tạo; service không dùng tài khoản root | `catalog-service`, … |
+Đăng nhập thử bằng `member1@mk.com` / `SEED_PASSWORD`. Chi tiết (chạy từ IDE, biến môi trường, tài khoản): [docs/guides/getting-started.md](docs/guides/getting-started.md).
 
 ## Cấu trúc thư mục
 ```
 ├── api/
 │   ├── pom.xml                 # Parent POM (Java 21, Spotless, Checkstyle, Error Prone)
 │   ├── mvnw, mvnw.cmd          # Maven wrapper
-│   ├── config/checkstyle/      # Luật Checkstyle
-│   ├── docs/                   # Ghi chú kỹ thuật backend
+│   ├── config/                 # Luật Checkstyle, ArchUnit dùng chung
 │   ├── common-storage/         # Thư viện presigned upload/xem file MinIO (không phải service)
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # Gateway, JWT, CORS, Swagger tổng
@@ -192,55 +126,28 @@ Trong Docker, mỗi container chỉ nhận các biến nó đọc (danh sách `e
 │   ├── vendor-service/         # Hồ sơ người bán, duyệt, vùng giao, hồ sơ nhận đặt hàng, phí đăng ký
 │   ├── payment-service/        # VNPay, giữ tiền, giải ngân, hoàn tiền
 │   ├── orchestrator-service/   # Audit log (RabbitMQ), thông báo
-│   │   (mỗi service có Dockerfile riêng, build context = api/)
-│   └── db/                     # Script dọn dữ liệu dev khi đổi ranh giới service
+│       (mỗi service có Dockerfile riêng, build context = api/;
+│        schema ở src/main/resources/db/migration, dữ liệu mẫu ở db/seed)
 ├── web/                        # React SPA (web portal)
-├── docs/                       # auth.md, ERD (PlantUML), Postman collection
+├── docs/                       # Toàn bộ tài liệu, mục lục ở docs/README.md
+├── infra/minio/init.sh         # Tạo bucket, user, policy MinIO (container minio-init)
 ├── .githooks/pre-commit        # kiểm tra format/style trước mỗi commit
 ├── .github/workflows/          # CI: Code quality (backend), Web quality (web)
 ├── docker-compose.yml
 └── .env.example
 ```
 
-## API
-Gọi qua gateway `http://localhost:8080/<service>/...`. Một số endpoint chính:
+## Tài liệu
+Mục lục đầy đủ: [docs/README.md](docs/README.md).
 
-| Method | Endpoint | Mô tả | Auth |
-|---|---|---|---|
-| POST | `/identity-service/api/auth/register` | Đăng ký, gửi OTP | ❌ |
-| POST | `/identity-service/api/auth/verify-account` | Xác nhận OTP, kích hoạt tài khoản | ❌ |
-| POST | `/identity-service/api/auth/login` | Đăng nhập (email hoặc số điện thoại) | ❌ |
-| POST | `/identity-service/api/auth/refresh-token` | Lấy cặp token mới | ❌ |
-| GET | `/identity-service/api/auth/me` | Thông tin tài khoản hiện tại | ✅ |
-| POST | `/identity-service/api/auth/send-reset-password-otp` | Gửi OTP quên mật khẩu | ❌ |
-| POST | `/identity-service/api/auth/reset-password` | Đặt lại mật khẩu | ❌ |
-| GET | `/catalog-service/api/products` | Tìm kiếm sản phẩm | ❌ |
-| GET | `/catalog-service/api/products/{productId}` | Chi tiết sản phẩm | ❌ |
-| POST | `/catalog-service/api/seller/products` | Shop tạo sản phẩm | ✅ `SELLER` |
-| PUT | `/catalog-service/api/seller/products/{productId}` | Shop sửa sản phẩm | ✅ `SELLER` |
-| PATCH | `/catalog-service/api/seller/products/{productId}/visibility` | Ẩn/hiện sản phẩm | ✅ `SELLER` |
-| DELETE | `/catalog-service/api/seller/products/{productId}` | Xóa sản phẩm | ✅ `SELLER` |
-| POST | `/catalog-service/api/seller/products/images/uploads` | Xin link upload ảnh sản phẩm: POST multipart lên `uploadUrl` với mọi `formFields` rồi file ở trường `file`, sau đó gửi `tempKey` trong `imageKeys` | ✅ `SELLER` |
-
-- Tài liệu đầy đủ: [Swagger UI](http://localhost:8080/swagger-ui.html). Đăng nhập qua `/api/auth/login`, dán `token` vào nút **Authorize**.
-- Chi tiết luồng xác thực, token, OTP và định dạng lỗi: [`docs/iden-service/auth.md`](docs/iden-service/auth.md).
-- Postman: [`docs/postman-collections`](docs/postman-collections/mk-auth.json).
-
-## Testing & chất lượng code
-```bash
-cd api
-./mvnw spotless:apply   # tự format trước khi commit
-./mvnw test             # chỉ chạy test
-./mvnw clean verify     # format + Checkstyle + Error Prone + test, giống CI
-```
-
-```bash
-cd web
-npm run lint            # oxlint
-npm run build           # type-check + build
-```
-
-Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-commit` kiểm tra trước khi commit. Chi tiết: [`api`](api/docs/t0-t1-automation.md).
+| Cần | Ở đâu |
+|---|---|
+| Requirement (FR, AC, BR) | [docs/product/requirements.md](docs/product/requirements.md) |
+| Thiết kế hệ thống | [docs/architecture/software-design.md](docs/architecture/software-design.md) |
+| Quy ước viết code | [docs/conventions/coding-rules.md](docs/conventions/coding-rules.md) |
+| Schema, dữ liệu mẫu, tài khoản mẫu | [docs/guides/database.md](docs/guides/database.md) |
+| API | Swagger UI http://localhost:8080/swagger-ui.html (gọi qua gateway `http://localhost:8080/<service>/...`) · tổng quan từng service trong [docs/services/](docs/services/) |
+| Kiểm tra chất lượng code trước khi push | [CONTRIBUTING §4–5, §11](.github/CONTRIBUTING.md) |
 
 ## CI/CD
 - Workflow [`code-quality.yml`](.github/workflows/code-quality.yml) chạy `./mvnw clean verify` trên JDK 21 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `api`.
@@ -259,10 +166,7 @@ Spotless, Checkstyle và Error Prone chạy trong mỗi lần build. Hook `pre-c
 - [ ] Giao diện web portal
 
 ## Đóng góp
-1. Tạo nhánh từ `develop`: `git checkout -b feature/ten-tinh-nang`
-2. Chạy `./mvnw spotless:apply` và `./mvnw clean verify` trong `api` trước khi commit
-3. Commit theo [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`, `docs:`...)
-4. Mở Pull Request, CI phải pass trước khi merge
+Quy trình branch, commit, PR và review: [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md). Trước khi push: `cd api && ./mvnw clean verify` (giống CI).
 
 ## License
 Dự án học tập cho môn MSS301, Đại học FPT, Fall 2026. Phát hành theo giấy phép [MIT](LICENSE), © 2026 The Moonkage Team.

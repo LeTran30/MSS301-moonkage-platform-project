@@ -1,0 +1,22 @@
+# Every relative link in the Markdown docs must point to a file that exists (docs/README.md, rule 3).
+# Offline: only links inside the repo are checked, so the job is fast and never flaky.
+name: Docs links
+
+on:
+  pull_request:
+    paths: ['**/*.md', '.github/workflows/docs-links.yml']
+  push:
+    branches: [main, develop]
+    paths: ['**/*.md', '.github/workflows/docs-links.yml']
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check relative links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline --no-progress --exclude-path node_modules './**/*.md'
+          fail: true

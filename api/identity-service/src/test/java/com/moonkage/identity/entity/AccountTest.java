@@ -13,16 +13,23 @@ class AccountTest {
     @Test
     void allFormsOfOneNumberAreStoredTheSame() {
         // AC-01.3: register, login and the demo seed all go through this one method
-        assertEquals("912345678", Account.storedPhoneNumber("0912345678"));
-        assertEquals("912345678", Account.storedPhoneNumber("84912345678"));
-        assertEquals("912345678", Account.storedPhoneNumber("+84912345678"));
-        assertEquals("912345678", Account.storedPhoneNumber(" 0912345678 "));
+        assertEquals("912345678", Account.toStoredPhoneNumber("0912345678"));
+        assertEquals("912345678", Account.toStoredPhoneNumber("84912345678"));
+        assertEquals("912345678", Account.toStoredPhoneNumber("+84912345678"));
+        assertEquals("912345678", Account.toStoredPhoneNumber(" 0912345678 "));
+    }
+
+    @Test
+    void emailIsStoredTrimmedAndLowerCase() {
+        // login lower-cases the identifier, so the seeded admin must be stored the same way
+        assertEquals("admin@moonkage.vn", Account.toStoredEmail(" Admin@MoonKage.vn "));
+        assertNull(Account.toStoredEmail(null));
     }
 
     @Test
     void noPhoneStaysNull() {
-        assertNull(Account.storedPhoneNumber(null));
-        assertNull(Account.storedPhoneNumber(" "));
+        assertNull(Account.toStoredPhoneNumber(null));
+        assertNull(Account.toStoredPhoneNumber(" "));
     }
 
     @Test
