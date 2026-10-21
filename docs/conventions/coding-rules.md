@@ -44,7 +44,7 @@ Một class gồm 3 định danh cốt lõi: **Tên Class**, **Tên Method** và
 **Nguyên tắc gốc:**
 - Luôn là **Danh từ** hoặc **Cụm danh từ** viết theo `PascalCase`.
 - **Quy tắc từ viết tắt:** Từ viết tắt ghép vào tên luôn viết như một từ bình thường (chỉ hoa chữ cái đầu): `SendOtpRequest`, `NfcCardService`, `HttpUrl` — không viết `SendOTPRequest`, `NFCCardService`.
-  - *Phạm vi kiểm tra:* Checkstyle `AbbreviationAsWordInName` với `allowedAbbreviationLength = 3` chỉ chặn từ **5 chữ hoa liền nhau** trở lên (vd `HTTPURLClient` có `HTTPURLC` = 8 → bị chặn). `SendOTPRequest` (`OTPR` = 4) và `NFCCardService` (`NFCC` = 4) **vẫn lọt**, nên quy tắc viết `Otp` là quy ước nhóm, giữ bằng code review. Muốn máy bắt chặt thì đặt `allowedAbbreviationLength = 0`.
+  - *Phạm vi kiểm tra:* Checkstyle `AbbreviationAsWordInName` với `allowedAbbreviationLength = 1` chặn từ **3 chữ hoa liền nhau** trở lên: `SendOTPRequest` (`OTPR`), `NFCCardService` (`NFCC`), `sendOTP` (`OTP`) đều bị chặn. Không đặt `0` vì sẽ bắt nhầm tên test dạng câu có mạo từ "A" (`tokenOfADeletedAccountIsInvalid`).
 
 #### Bảng quy ước tên Class theo tình huống (Layer)
 
@@ -97,7 +97,7 @@ Một class gồm 3 định danh cốt lõi: **Tên Class**, **Tên Method** và
 | **Biến thường / Field** | `camelCase`, danh từ ngắn gọn | `email`, `areaCode`, `attemptsLeft` | `strEmail` (thừa kiểu dữ liệu), `ac` (viết tắt tối nghĩa) |
 | **Boolean field** | Tính từ hoặc có tiền tố `is/has/can` | `isDefault`, `verified`, `canOperate` | `status` (mơ hồ cho kiểu boolean), `flag` |
 | **Collection (List/Set/Map)** | Danh từ **số nhiều** hoặc nêu rõ mối quan hệ | `addresses`, `existingAddresses`, `errors` | `addressList`, `itemArray`, `data` |
-| **Tiền tệ (Money)** | Hậu tố rõ đơn vị/ý nghĩa (`...Price`, `...Fee`, `...Amount`) + kiểu `BigDecimal` hoặc `Long` | `BigDecimal totalPrice`, `Long shippingFee` | `double price` (bị Checkstyle chặn bằng luật `noFloatingMoney`) |
+| **Tiền tệ (Money)** | Hậu tố rõ đơn vị/ý nghĩa (`...Price`, `...Fee`, `...Amount`) + kiểu `long` (VND, không số lẻ; khớp cột `bigint`) | `long totalPrice`, `long shippingFee` | `double price` (bị Checkstyle chặn bằng luật `noFloatingMoney`) |
 | **Thời gian (Time)** | Thời điểm (`Instant`): hậu tố `...At` hoặc `...Until`<br>Ngày (`LocalDate`): `...Date` hoặc `dateOf...` | `createdAt`, `expiresAt`, `lockedUntil`, `dateOfBirth` | `createTime`, `expire`, `lockDate` (dùng cho `Instant`) |
 | **Hằng số (`static final`)** | `UPPER_SNAKE_CASE`, thay thế cho mọi Magic Number | `MAX_OTP_ATTEMPTS = 5`, `SUCCESS_CODE = "SUCCESS"` | Viết thẳng số `5` hoặc chuỗi `"SUCCESS"` rải rác trong code |
 | **Logger (SLF4J)** | Đặt đúng tên `log` | `private static final Logger log = ...` (hoặc `@Slf4j`) | `LOGGER`, `logger` (Checkstyle cấu hình chuẩn là `log`) |
