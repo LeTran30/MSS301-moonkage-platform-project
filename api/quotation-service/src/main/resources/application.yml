@@ -33,3 +33,14 @@ eureka:
   instance:
     # register the container IP, not its random hostname, so the gateway can reach it inside Docker
     prefer-ip-address: true
+
+# only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

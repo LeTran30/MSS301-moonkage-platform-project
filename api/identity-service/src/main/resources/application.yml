@@ -82,7 +82,7 @@ outbox:
 security:
   public-endpoints:
     - /error
-    - /actuator/health
+    - /actuator/health/**
     - /internal/**
     - /v3/api-docs/**
     - /swagger-ui/**
@@ -103,3 +103,14 @@ app:
   # dev seed data (db/seed, docs/guides/database.md); true only in docker-compose
   seed:
     enabled: ${APP_SEED_ENABLED:false}
+
+# only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
