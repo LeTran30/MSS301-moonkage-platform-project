@@ -39,21 +39,21 @@ FROM (VALUES ('00000000-0000-4000-8000-000100000001', 'Nguyễn Thị Lan'),
 JOIN accounts a ON a.id = p.account_id
 ON CONFLICT DO NOTHING;
 
--- two administrative levels (province, ward), national codes
-INSERT INTO addresses (id, account_id, recipient_name, recipient_phone, province_code, province_name, ward_code,
-                       ward_name, detail, label, is_default, created_at, updated_at)
-SELECT d.id, a.id, d.recipient_name, d.recipient_phone, d.province_code, d.province_name, d.ward_code, d.ward_name,
+-- two administrative levels; the province is coded (delivery areas, Q-12), the ward is display text (L-15)
+INSERT INTO addresses (id, account_id, recipient_name, recipient_phone, province_code, province_name, ward_name,
+                       detail, label, is_default, created_at, updated_at)
+SELECT d.id, a.id, d.recipient_name, d.recipient_phone, d.province_code, d.province_name, d.ward_name,
        d.detail, d.label, d.is_default, now(), now()
 FROM (VALUES ('00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000100000001',
-              'Nguyễn Thị Lan', '0901000001', '79', 'Thành phố Hồ Chí Minh', '26734', 'Phường Sài Gòn',
+              'Nguyễn Thị Lan', '0901000001', '79', 'Thành phố Hồ Chí Minh', 'Phường Sài Gòn',
               '12 Lê Lợi', 'Nhà riêng', true),
              ('00000000-0000-4000-8000-000600000002', '00000000-0000-4000-8000-000100000001',
-              'Nguyễn Văn Hùng', '0901000011', '01', 'Thành phố Hà Nội', '00004', 'Phường Ba Đình',
+              'Nguyễn Văn Hùng', '0901000011', '01', 'Thành phố Hà Nội', 'Phường Ba Đình',
               '25 Điện Biên Phủ', 'Văn phòng', false),
              ('00000000-0000-4000-8000-000600000003', '00000000-0000-4000-8000-000100000002',
-              'Trần Văn Minh', '0901000002', '01', 'Thành phố Hà Nội', '00004', 'Phường Ba Đình',
+              'Trần Văn Minh', '0901000002', '01', 'Thành phố Hà Nội', 'Phường Ba Đình',
               '8 Hoàng Diệu', NULL, true))
-         AS d (id, account_id, recipient_name, recipient_phone, province_code, province_name, ward_code, ward_name,
-               detail, label, is_default)
+         AS d (id, account_id, recipient_name, recipient_phone, province_code, province_name, ward_name, detail,
+               label, is_default)
 JOIN accounts a ON a.id = d.account_id
 ON CONFLICT DO NOTHING;

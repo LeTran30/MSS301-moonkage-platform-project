@@ -97,6 +97,7 @@ flowchart LR
 | **PostgreSQL ×7** | PostgreSQL 17 | Mỗi service một DB; schema do Flyway quản lý | `5441`–`5447` |
 | **MinIO** | S3-compatible | Lưu file: ảnh sản phẩm (public), file riêng tư; API / web console | `9000` / `9001` |
 | **common-storage** | Thư viện Java | Không phải service: presigned upload/xem file MinIO cho service sở hữu file | – |
+| **common-reference** | Thư viện Java | Không phải service: danh mục dùng chung, hiện có 34 tỉnh/thành (Quyết định 19/2025/QĐ-TTg) | – |
 | **Web Portal** | React SPA | Giao diện cho người mua, người bán, quản trị | `5173` |
 
 Mọi request đi qua gateway với prefix là tên service, ví dụ `http://localhost:8080/identity-service/api/auth/login`. Khi chạy bằng Docker, các business service không mở port ra máy host. Đường dẫn `/internal/**` chỉ dùng cho các service gọi nhau, gateway luôn chặn.
@@ -117,6 +118,7 @@ cd web && npm install && npm run dev   # http://localhost:5173
 │   ├── mvnw, mvnw.cmd          # Maven wrapper
 │   ├── config/                 # Luật Checkstyle, ArchUnit dùng chung
 │   ├── common-storage/         # Thư viện presigned upload/xem file MinIO (không phải service)
+│   ├── common-reference/       # Thư viện danh mục dùng chung: tỉnh/thành (không phải service)
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # Gateway, JWT, CORS, Swagger tổng
 │   ├── identity-service/       # Tài khoản, hồ sơ người dùng, địa chỉ, xác minh NFC

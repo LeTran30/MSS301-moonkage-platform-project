@@ -50,7 +50,7 @@ Mật khẩu chung: `SEED_PASSWORD` trong `.env` (bắt buộc, không dùng d�
 | `member1@mk.com` | Nguyễn Thị Lan | 0901000001 | đã xác nhận email, **đã NFC**, 2 địa chỉ | mua ngay, gửi yêu cầu đặt hàng |
 | `member2@mk.com` | Trần Văn Minh | 0901000002 | đã xác nhận, **chưa NFC**, 1 địa chỉ | luồng bị BR-23 chặn |
 | `member3@mk.com` | Lê Thị Hoa | 0901000003 | **chưa xác nhận email** | đăng nhập bị từ chối |
-| `member4@mk.com` | Phạm Văn Bánh | 0901000004 | NFC, chủ "Công ty TNHH Bánh Trung Thu Trăng Vàng", **đã duyệt** | luồng người bán đầy đủ |
+| `member4@mk.com` | Phạm Văn Bánh | 0901000004 | NFC, chủ "Doanh nghiệp tư nhân Bánh Trung Thu Trăng Vàng", **đã duyệt, đã đóng phí** | luồng người bán đầy đủ |
 | `member5@mk.com` | Võ Thị Quê | 0901000005 | NFC, chủ "Hộ kinh doanh Bánh Quê", **chờ duyệt** | màn duyệt của admin |
 
 `mk.com` là domain có thật, nên orchestrator **không gửi email** tới `@mk.com` (`moonkage.mail.blocked-domains`), chỉ ghi một dòng log (không kèm mã). Persona không cần OTP để đăng nhập; muốn test luồng OTP (đăng ký, quên mật khẩu) thì dùng email thật của bạn.
@@ -66,12 +66,13 @@ Seed không bao giờ đụng tới tài khoản người dùng tự tạo: emai
 | account | `0001` | `…-000100000001` → `…-000100000005` | member1 → member5 | identity |
 | vendor | `0002` | `…-000200000001` | Trăng Vàng (của member4) | vendor |
 | | | `…-000200000002` | Bánh Quê (của member5) | vendor |
-| product | `0003` | | *chờ người phụ trách catalog* | catalog |
+| product | `0003` | | *chờ người phụ trách vendor* (sản phẩm ghi ở vendor-service, L-18) | vendor |
 | tender request | `0004` | | *chờ người phụ trách quotation* | quotation |
 | order | `0005` | | *chờ người phụ trách order* | order |
 | address | `0006` | `…-000600000001`, `…02` | 2 địa chỉ của member1 (TP.HCM, Hà Nội) | identity |
 | | | `…-000600000003` | địa chỉ của member2 | identity |
 | delivery area | `0007` | `…-000700000001`, `…02` | vùng giao của 2 shop (79, 01) | vendor |
+| registration fee config | `0008` | `…-000800000001` | mức phí đăng ký mặc định 200.000đ (nằm trong migration, mọi môi trường) | vendor |
 
 Loại mới thì lấy mã tiếp theo (`0008`…) và thêm một dòng vào bảng.
 

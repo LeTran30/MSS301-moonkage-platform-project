@@ -1,0 +1,40 @@
+-- Provincial units of Viet Nam, Quyết định 19/2025/QĐ-TTg (effective 01/07/2025): 34 units.
+-- Reference data, not dev data: it runs on every environment. Keep it equal to com.moonkage.reference.Province
+-- (api/common-reference). A code in use by interprovince_fees cannot be removed (foreign key); rename in place.
+INSERT INTO provinces (code, name)
+VALUES
+       ('01', 'Thành phố Hà Nội'),
+       ('04', 'Tỉnh Cao Bằng'),
+       ('08', 'Tỉnh Tuyên Quang'),
+       ('11', 'Tỉnh Điện Biên'),
+       ('12', 'Tỉnh Lai Châu'),
+       ('14', 'Tỉnh Sơn La'),
+       ('15', 'Tỉnh Lào Cai'),
+       ('19', 'Tỉnh Thái Nguyên'),
+       ('20', 'Tỉnh Lạng Sơn'),
+       ('22', 'Tỉnh Quảng Ninh'),
+       ('24', 'Tỉnh Bắc Ninh'),
+       ('25', 'Tỉnh Phú Thọ'),
+       ('31', 'Thành phố Hải Phòng'),
+       ('33', 'Tỉnh Hưng Yên'),
+       ('37', 'Tỉnh Ninh Bình'),
+       ('38', 'Tỉnh Thanh Hóa'),
+       ('40', 'Tỉnh Nghệ An'),
+       ('42', 'Tỉnh Hà Tĩnh'),
+       ('44', 'Tỉnh Quảng Trị'),
+       ('46', 'Thành phố Huế'),
+       ('48', 'Thành phố Đà Nẵng'),
+       ('51', 'Tỉnh Quảng Ngãi'),
+       ('52', 'Tỉnh Gia Lai'),
+       ('56', 'Tỉnh Khánh Hòa'),
+       ('66', 'Tỉnh Đắk Lắk'),
+       ('68', 'Tỉnh Lâm Đồng'),
+       ('75', 'Tỉnh Đồng Nai'),
+       ('79', 'Thành phố Hồ Chí Minh'),
+       ('80', 'Tỉnh Tây Ninh'),
+       ('82', 'Tỉnh Đồng Tháp'),
+       ('86', 'Tỉnh Vĩnh Long'),
+       ('91', 'Tỉnh An Giang'),
+       ('92', 'Thành phố Cần Thơ'),
+       ('96', 'Tỉnh Cà Mau')
+ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name;
