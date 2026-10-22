@@ -237,7 +237,7 @@ class IdentityApiIntegrationTest {
                         .content("""
                                 {"recipientName":"Nguyễn Lan","recipientPhone":"0912345678",
                                  "provinceCode":"79","provinceName":"Thành phố Hồ Chí Minh",
-                                 "wardCode":"26734","wardName":"Phường Sài Gòn","detail":"12 Lê Lợi"}
+                                 "wardName":"Phường Sài Gòn","detail":"12 Lê Lợi"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(201))

@@ -93,7 +93,6 @@ public class AddressServiceImpl implements AddressService {
         address.setRecipientPhone(toNationalPhone(request.recipientPhone()));
         address.setProvinceCode(request.provinceCode());
         address.setProvinceName(request.provinceName().trim());
-        address.setWardCode(request.wardCode());
         address.setWardName(request.wardName().trim());
         address.setDetail(request.detail().trim());
         address.setLabel(StringUtils.hasText(request.label()) ? request.label().trim() : null);

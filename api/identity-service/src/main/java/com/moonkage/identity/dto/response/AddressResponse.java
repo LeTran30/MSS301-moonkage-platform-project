@@ -16,7 +16,6 @@ public record AddressResponse(
         String recipientPhone,
         String provinceCode,
         String provinceName,
-        String wardCode,
         String wardName,
         String detail,
         String fullAddress,

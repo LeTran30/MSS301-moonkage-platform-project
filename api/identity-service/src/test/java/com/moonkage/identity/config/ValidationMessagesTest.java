@@ -52,13 +52,12 @@ class ValidationMessagesTest {
     }
 
     @Test
-    void addressNeedsNationalCodesOfProvinceAndWard() {
+    void addressNeedsNationalCodeOfProvince() {
         SaveAddressRequest request = SaveAddressRequest.builder()
                 .recipientName("Nguyễn Lan")
                 .recipientPhone("0212345678")
                 .provinceCode("HCM")
                 .provinceName("Thành phố Hồ Chí Minh")
-                .wardCode("760")
                 .wardName("Phường Sài Gòn")
                 .detail("12 Lê Lợi")
                 .build();
@@ -67,12 +66,25 @@ class ValidationMessagesTest {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.toSet());
 
-        assertEquals(
-                Set.of(
-                        "Số điện thoại người nhận không hợp lệ",
-                        "Mã tỉnh/thành phố không hợp lệ",
-                        "Mã phường/xã không hợp lệ"),
-                messages);
+        assertEquals(Set.of("Số điện thoại người nhận không hợp lệ", "Mã tỉnh/thành phố không hợp lệ"), messages);
+    }
+
+    @Test
+    void unknownProvinceCodeIsRejected() {
+        SaveAddressRequest request = SaveAddressRequest.builder()
+                .recipientName("Nguyễn Lan")
+                .recipientPhone("0912345678")
+                .provinceCode("74")
+                .provinceName("Thành phố Hồ Chí Minh")
+                .wardName("Phường Sài Gòn")
+                .detail("12 Lê Lợi")
+                .build();
+
+        Set<String> messages = validator.validate(request).stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.toSet());
+
+        assertEquals(Set.of("Mã tỉnh/thành phố không hợp lệ"), messages);
     }
 
     @Test

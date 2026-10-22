@@ -16,7 +16,6 @@ public final class AddressMapper {
                 .recipientPhone(address.getRecipientPhone())
                 .provinceCode(address.getProvinceCode())
                 .provinceName(address.getProvinceName())
-                .wardCode(address.getWardCode())
                 .wardName(address.getWardName())
                 .detail(address.getDetail())
                 .fullAddress(toFullAddress(address))
