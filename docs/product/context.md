@@ -2,7 +2,7 @@
 
 ## 0. Về tài liệu này
 
-> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `docs/product/context.md`, `docs/product/user-stories.md`, `docs/product/requirements.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
+> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `docs/product/context.md`, `docs/product/user-stories.md`, `docs/product/requirements.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Cập nhật 22/10/2026: vỏ bánh, nhân bánh và thương hiệu của sản phẩm. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
 
 ### Mục đích
 
@@ -176,7 +176,9 @@ Kiểu giao dịch do số lượng và yêu cầu của lần mua quyết đị
 
 Người bán (vendor) là một đơn vị kinh doanh đã được nền tảng duyệt: hộ kinh doanh, doanh nghiệp tư nhân hoặc công ty (xem mục 5). Cá nhân không có đăng ký kinh doanh không bán được trên nền tảng, vì bán thực phẩm đòi hỏi đăng ký kinh doanh, điều kiện an toàn thực phẩm và lập hóa đơn.
 
-Mỗi người bán khai **nguồn hàng** của mình: tự sản xuất (xưởng), mua đi bán lại, hoặc cả hai. Sản phẩm bán lại phải ghi rõ thương hiệu và nơi sản xuất.
+Mỗi người bán khai **nguồn hàng** của mình: tự sản xuất (xưởng), mua đi bán lại, hoặc cả hai. Sản phẩm bán lại phải ghi rõ thương hiệu và nơi sản xuất. Hàng tự sản xuất mang thương hiệu của chính người bán: bánh của tiệm Hoa Sen là bánh thương hiệu Hoa Sen.
+
+Bánh Trung thu được phân loại theo hai cách độc lập: theo **vỏ** (bánh nướng, bánh dẻo, bánh lạnh…) và theo **nhân** (thập cẩm, đậu xanh, hạt sen, trứng muối…). Người mua chọn theo cả hai, ví dụ "bánh nướng nhân đậu xanh". Một hộp quà thường gồm nhiều bánh khác vỏ và khác nhân. Danh sách vỏ và nhân thay đổi theo thị trường: mỗi mùa có vị mới. Vì vậy mỗi sản phẩm ghi các vỏ và các nhân nó có, theo một danh mục chung do nền tảng giữ và cập nhật, để người mua lọc và so sánh giữa các tiệm.
 
 Mỗi người bán chọn một hoặc cả hai **cách bán**:
 
@@ -357,7 +359,7 @@ Các vai dưới đây là vai trong giao dịch. Một người có thể đón
 | **Người mua thay doanh nghiệp** | HR, admin, thư ký công ty; chủ hộ kinh doanh, chủ tiệm. Dùng cùng loại tài khoản như mọi người mua | Mua ngay hoặc đặt hàng cho doanh nghiệp, so sánh báo giá, duyệt maket, theo dõi đơn, nhận hóa đơn ghi thông tin doanh nghiệp |
 | **Người bán có Shop** | Tiệm bánh, thương hiệu, đại lý, xưởng có hàng sẵn | Đăng, sửa, ẩn sản phẩm và tồn kho, khai vùng giao hàng và phí giao nội thành, xử lý đơn mua ngay, nhận đánh giá |
 | **Người bán nhận đặt hàng** | Xưởng bánh; đại lý và người bán lại có nguồn hàng lớn | Khai năng lực, số lượng tối thiểu, bậc giá tham khảo và ưu đãi; nhận yêu cầu, báo giá, gửi maket, cập nhật tiến độ, xin giải ngân cọc |
-| **Quản trị nền tảng** | Đội vận hành Moonkage | Duyệt người bán (gồm làm việc trực tiếp và nhận thỏa thuận hợp tác với người bán là công ty), khóa người bán hoặc gỡ sản phẩm vi phạm, duyệt giải ngân cọc, duyệt chuyển tiền cho người bán, đặt bảng phí giao liên tỉnh, đặt mức phí đăng ký mở bán, đối soát, xử lý tranh chấp, quản lý voucher hệ thống |
+| **Quản trị nền tảng** | Đội vận hành Moonkage | Duyệt người bán (gồm làm việc trực tiếp và nhận thỏa thuận hợp tác với người bán là công ty), khóa người bán hoặc gỡ sản phẩm vi phạm, duyệt giải ngân cọc, duyệt chuyển tiền cho người bán, đặt bảng phí giao liên tỉnh, đặt mức phí đăng ký mở bán, quản lý danh mục vỏ và nhân bánh, đối soát, xử lý tranh chấp, quản lý voucher hệ thống |
 
 Lưu ý: thương hiệu lớn như Kinh Đô có kênh doanh nghiệp riêng, nhưng nếu muốn bán trên nền tảng thì vẫn tham gia như mọi người bán khác: là công ty nên phải làm việc trực tiếp với nền tảng và ký thỏa thuận hợp tác trước khi được duyệt. Họ (hoặc đại lý chính thức của họ) có thể mở Shop, nhận đặt hàng, hoặc cả hai.
 
