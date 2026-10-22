@@ -61,7 +61,6 @@ class AddressServiceImplTest {
                 .recipientPhone("+84912345678")
                 .provinceCode("79")
                 .provinceName(" Thành phố Hồ Chí Minh ")
-                .wardCode("26734")
                 .wardName(" Phường Sài Gòn ")
                 .detail("  12 Lê Lợi  ")
                 .label("   ")

@@ -42,6 +42,6 @@ public class UserProfile extends BaseEntity {
     @Column(name = "full_name", nullable = false, length = AccountConstant.MAX_FULL_NAME_LENGTH)
     private String fullName;
 
-    @Column(name = "avatar_url")
-    private String avatarUrl;
+    @Column(name = "avatar_key")
+    private String avatarKey;
 }

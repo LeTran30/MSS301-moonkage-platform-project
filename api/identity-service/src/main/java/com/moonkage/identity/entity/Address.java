@@ -18,8 +18,8 @@ import lombok.Setter;
  * Saved delivery address of an account (FR-03). At most one default per account. Timestamps come from BaseEntity
  * (Instant, so the API returns them with a time zone, Software Design 5.1 rule 7).
  *
- * <p>Two administrative levels (province, ward), as in Vietnam since 2025-07-01. Each level keeps its code, used for
- * matching, and its name as the user picked it, so the address still reads the same after a later rename.
+ * <p>Two administrative levels (province, ward), as in Vietnam since 2025-07-01. The province keeps its code,
+ * used for matching (delivery areas, Q-12); the ward is display text (L-15).
  */
 @Entity
 @Table(name = "addresses")
@@ -48,9 +48,6 @@ public class Address extends BaseEntity {
 
     @Column(nullable = false, length = AddressConstant.MAX_ADMINISTRATIVE_UNIT_NAME_LENGTH)
     private String provinceName;
-
-    @Column(nullable = false, length = AddressConstant.WARD_CODE_DIGITS)
-    private String wardCode;
 
     @Column(nullable = false, length = AddressConstant.MAX_ADMINISTRATIVE_UNIT_NAME_LENGTH)
     private String wardName;

@@ -184,7 +184,6 @@ class RepositoryIntegrationTest {
         address.setRecipientPhone("0912345678");
         address.setProvinceCode("79");
         address.setProvinceName("Thành phố Hồ Chí Minh");
-        address.setWardCode("26734");
         address.setWardName("Phường Sài Gòn");
         address.setDetail(detail);
         address.setDefault(isDefault);
