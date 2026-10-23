@@ -2,7 +2,7 @@
 
 ## 0. Về tài liệu này
 
-> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `docs/product/context.md`, `docs/product/user-stories.md`, `docs/product/requirements.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Cập nhật 22/10/2026: vỏ bánh, nhân bánh và thương hiệu của sản phẩm. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
+> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `docs/product/context.md`, `docs/product/user-stories.md`, `docs/product/requirements.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Cập nhật 22/10/2026: vỏ bánh, nhân bánh và thương hiệu của sản phẩm. Cập nhật 23/10/2026: tìm đơn vị cung cấp theo tên; đăng nhập xong quay về việc đang làm. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
 
 User Stories diễn đạt nhu cầu của từng bên bằng lời của người dùng: ai, muốn gì, để làm gì. Tài liệu đứng giữa Context và Requirement trong chuỗi:
 
@@ -61,6 +61,7 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 - Đặt lại mật khẩu qua email hoặc số điện thoại đã xác nhận.
 - Sau khi đăng nhập, tôi thấy toàn bộ đơn hàng, yêu cầu và báo giá của tài khoản, kể cả đơn mua thay doanh nghiệp.
 - Đăng nhập sai thì thông báo chung, không tiết lộ email hoặc số điện thoại có tồn tại hay không.
+- Khi tôi đang xem mà bấm một việc cần tài khoản (thêm vào giỏ, gửi yêu cầu, khai hồ sơ người bán), đăng nhập xong tôi quay về đúng trang đó với dữ liệu đã nhập, không phải tìm lại từ đầu. Chưa đăng nhập thì tôi chưa có giỏ hàng, vì mua hàng cần tài khoản (Context mục 5).
 
 ### US-03 · Quản lý địa chỉ giao hàng · Should
 **Là** người mua, **tôi muốn** lưu nhiều địa chỉ giao hàng và chọn một địa chỉ mặc định, **để** nền tảng chỉ hiện những thứ giao được tới tôi.
@@ -98,7 +99,7 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 - Tôi chọn được nhiều vỏ hoặc nhiều nhân cùng lúc: chọn "đậu xanh" và "hạt sen" thì thấy sản phẩm có ít nhất một trong hai (Context mục 4).
 - Kết quả gộp sản phẩm của mọi Shop giao được tới tôi.
 - Mỗi sản phẩm trong kết quả hiện ảnh, giá, thương hiệu và tên Shop, để tôi so sánh ngay trong danh sách mà không phải mở từng trang.
-- Kết quả chỉ gồm hàng có sẵn của người bán có Shop. Người bán chỉ nhận đặt hàng không có sản phẩm ở đây; tôi tìm họ ở US-14.
+- Kết quả chỉ gồm hàng có sẵn của người bán có Shop. Người bán chỉ nhận đặt hàng không có sản phẩm trong danh sách này; nếu tôi gõ tên họ, họ hiện ở một khối riêng (US-14).
 - Sắp xếp được theo giá và theo đánh giá.
 - Không có kết quả thì hệ thống gợi ý bỏ bớt bộ lọc, và gợi ý gửi yêu cầu mở nếu tôi cần số lượng lớn.
 
@@ -160,6 +161,8 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 ### US-14 · Xem hồ sơ người bán nhận đặt hàng · Must
 **Là** người mua, **tôi muốn** tìm và xem năng lực của các người bán nhận đặt hàng trước khi gửi yêu cầu, **để** không hỏi nhầm nơi.
 - Tôi xem được danh sách người bán nhận đặt hàng, kể cả người bán không mở Shop như xưởng của cô Hoa (Context mục 7). Người bán chỉ nhận đặt hàng được ghi rõ là không bán lẻ.
+- Tôi tìm được người bán theo tên trong danh sách đó.
+- Tôi gõ tên một xưởng ở ô tìm kiếm chung và thấy xưởng đó trong một khối riêng, tách khỏi danh sách sản phẩm, kể cả khi xưởng không bán lẻ. Tôi thường đã biết tên xưởng từ người quen, như chị Thảo biết xưởng cô Hoa (Context mục 2, 7).
 - Hồ sơ hiện số lượng tối thiểu, bậc giá tham khảo theo số lượng, thời gian chuẩn bị hoặc sản xuất, khả năng custom, ưu đãi đặt sớm.
 - Hồ sơ hiện nguồn hàng: tự sản xuất, bán lại, hoặc cả hai.
 - Bậc giá được ghi rõ là tham khảo; giá ràng buộc là giá trong báo giá.

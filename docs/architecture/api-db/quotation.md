@@ -56,7 +56,7 @@ Yêu cầu trực tiếp cũng sinh một lời mời cho Shop đích, để t�
 
 | Method, đường dẫn | Ai | Mục đích | FR |
 | --- | --- | --- | --- |
-| `GET /api/suppliers?provinceCode=&customType=&minQty=` | K, M | Đơn vị cung cấp nhận đặt hàng, nhãn "Chỉ nhận đặt hàng" | FR-14, AC-14.3 |
+| `GET /api/suppliers?q=&provinceCode=&customType=&minQty=` | K, M | Đơn vị cung cấp nhận đặt hàng, đang hoạt động (`canOperate`, không bị khóa), nhãn "Chỉ nhận đặt hàng". `q` khớp `business_name` không phân biệt dấu và hoa thường; trang kết quả tìm kiếm sản phẩm gọi thêm `?q=` để dựng khối đơn vị cung cấp, không truyền `provinceCode` | FR-14, AC-14.3, AC-14.5, AC-14.6 |
 | `GET /api/suppliers/{vendorId}` | K, M | Hồ sơ nhận đặt hàng, cờ `isOwn` | FR-14 |
 
 Hoãn: xuất báo giá ra file (FR-18), đặt lại từ đơn cũ (FR-23, dùng `source_order_id`), lịch công suất (FR-37).
