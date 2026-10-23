@@ -10,7 +10,7 @@ catalog là **phía đọc** của sản phẩm (CQRS): không nhận lệnh ghi
 
 | Bảng | Cột chính | Ràng buộc | Nguồn |
 | --- | --- | --- | --- |
-| `product_views` **Mới** (thay `products`) | `product_id`, `vendor_id`, `name`, `description`, `cake_type`, `brand`, `origin`, `pieces_per_box`, `list_price`, `stock`, `expiry_date`, `delivery_label`, `quote_threshold`, `status`, `image_keys` (text[]), `price_tiers` (jsonb), `rating_avg`, `rating_count`, `source_version` | Chỉ trường sản phẩm, không chép trường vendor (P-05); chỉ ghi khi `source_version` mới hơn; index tìm kiếm trên `name`, `brand` | FR-05 → FR-07, BR-21 |
+| `product_views` **Mới** (thay `products`) | `product_id`, `vendor_id`, `name`, `description`, `crust_codes` (text[]), `filling_codes` (text[]), `brand`, `origin`, `pieces_per_box`, `list_price`, `stock`, `expiry_date`, `delivery_label`, `quote_threshold`, `status`, `image_keys` (text[]), `price_tiers` (jsonb), `rating_avg`, `rating_count`, `source_version` | Chỉ trường sản phẩm, không chép trường vendor (P-05); chỉ ghi khi `source_version` mới hơn; index tìm kiếm trên `name`, `brand`; GIN trên `crust_codes`, `filling_codes` (L-19) | FR-05 → FR-07, BR-21 |
 | `product_reviews` **Mới** (bản sao) | `review_id`, `product_id`, `vendor_id`, `rating`, `content`, `created_at` | Từ `review.created`; tính `rating_avg` | AC-11.3, AC-06.3 |
 | `vendor_snapshots` **Mới** (kỹ thuật) | `vendor_id`, `owner_account_id`, `business_name`, `status`, `can_operate`, `sells_shop`, `delivery_areas`, `local_delivery_fee`, `source_version` | Từ `vendor.updated`, chỉ ghi khi `source_version` mới hơn; nơi duy nhất giữ trường vendor; GIN trên `delivery_areas` | BR-20, BR-30, BR-31 |
 | `product_listings` **Mới** (view) | `product_views` JOIN `vendor_snapshots`: thêm `vendor_name`, `owner_account_id`, `delivery_areas`, `local_delivery_fee`, `can_operate`, `sells_shop` | API công khai đọc view này (entity `@Immutable`); khóa Shop chỉ sửa một dòng | P-05 |
@@ -26,7 +26,7 @@ Bản đọc có thể trễ vài giây so với vendor. Tồn kho hiển thị 
 
 | Method, đường dẫn | Ai | Mục đích | FR |
 | --- | --- | --- | --- |
-| `GET /api/products?provinceCode=&q=&brand=&cakeType=&vendorId=&minPrice=&maxPrice=&sort=` | K, M | Sản phẩm đang bán của Shop giao được, `canOperate`; `data.facets` cho bộ lọc | FR-05, FR-06 |
+| `GET /api/products?provinceCode=&q=&brand=&crust=&filling=&vendorId=&minPrice=&maxPrice=&sort=` | K, M | Sản phẩm đang bán của Shop giao được, `canOperate`; `data.facets` cho bộ lọc (đếm theo mã). `crust`, `filling` lặp được, nhận mã của danh mục vỏ và nhân ở vendor; trong một tham số là HOẶC (`&&`), giữa các tham số là VÀ (AC-06.2). Nhãn và thứ tự lấy từ `GET /api/cake-attributes`. `brand` luôn có giá trị (BR-12) | FR-05, FR-06 |
 | `GET /api/products?vendorId=&status=` | S, A | Mọi trạng thái (đang bán, ẩn, bị gỡ) của Shop mình; A xem mọi Shop | FR-29, FR-46 |
 | `GET /api/products/{productId}?provinceCode=` | K, M, S | Chi tiết, bậc giá, `shippingFee`, cờ `isOwn` | FR-07 |
 | `GET /api/products/{productId}/reviews` | K, M | Đánh giá của sản phẩm | AC-11.3 |
