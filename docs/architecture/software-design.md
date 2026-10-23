@@ -263,7 +263,7 @@ Hai mức theo A-15 (v1.6): form hồ sơ người bán bắt nhập họ tên k
 **Bản sao người bán:** `vendor_snapshot` dùng cho:
 - Lọc người bán bán lẻ (BR-21: `sells_shop = true`) và người bán được hoạt động (`can_operate = true`, BR-20, BR-31).
 - Vùng giao (FR-05), tên Shop trên kết quả và bộ lọc Shop (FR-06), nhãn "Sản phẩm của bạn" (AC-07.4).
-- Bắt buộc thương hiệu và nơi sản xuất khi `supply_source` có bán lại (AC-29.2).
+- Bắt buộc thương hiệu và nơi sản xuất khi `supply_source` có bán lại (AC-29.2); người bán còn lại để trống thương hiệu thì ghi `business_name` (AC-29.4). Sản phẩm gắn ít nhất một vỏ và một nhân, kiểm theo danh mục `cake_attributes` của vendor-service do quản trị quản lý (BR-34, FR-54, L-19).
 - Chặn đăng sản phẩm khi người bán chưa `can_operate` (AC-27.4).
 
 **Giữ tồn kho (BR-28, D-01 đã chốt):** giữ hàng bằng một câu lệnh có điều kiện, không đọc rồi ghi:

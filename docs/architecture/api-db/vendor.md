@@ -2,7 +2,7 @@
 
 > **Trạng thái:** Đề xuất (2026-10-22). Một phần của [phác thảo API và database](README.md); quyết định ở [decisions.md](decisions.md).
 >
-> **Migration:** [`V2026_10_22_1000__align_with_api_db_outline.sql`](../../../api/vendor-service/src/main/resources/db/migration/V2026_10_22_1000__align_with_api_db_outline.sql)
+> **Migration:** [`V2026_10_22_1000__align_with_api_db_outline.sql`](../../../api/vendor-service/src/main/resources/db/migration/V2026_10_22_1000__align_with_api_db_outline.sql), [`V2026_10_22_1500__cake_attributes_and_product_brand.sql`](../../../api/vendor-service/src/main/resources/db/migration/V2026_10_22_1500__cake_attributes_and_product_brand.sql) (L-19)
 
 Bảng `vendors` thiếu phần lớn trường xác minh theo tư cách pháp nhân (BR-26, BR-27) và phí đăng ký (BR-31). Code mới có `GET /api/seller/vendor` và một endpoint nội bộ.
 
@@ -18,6 +18,7 @@ Bảng `vendors` thiếu phần lớn trường xác minh theo tư cách pháp n
 | `order_profiles` | `id`, `vendor_id`, `min_qty`, `lead_time_days`, `early_bird_offer`, `weekly_capacity`, `cake_types`, `packaging_types`, `logo_printing`, `distributed_brands`, `gatherable_qty` | Một vendor tối đa một; `min_qty > 0` | FR-35 |
 | `ref_price_tiers` | `id`, `order_profile_id`, `from_qty`, `unit_price` | `(order_profile_id, from_qty)` duy nhất **Mới** | FR-35 |
 | `order_profile_custom_types` | `order_profile_id`, `custom_type` (BAG, CARD, STICKER, TEMPLATE_BOX) |  | BR-14 |
+| `cake_attributes` **Mới** | `id`, `attribute_group` (CRUST, FILLING), `code`, `label`, `label_key`, `sort_order`, `active`, `version` | `(attribute_group, code)` và `(attribute_group, label_key)` duy nhất; `code` dạng `banh-nuong`, không đổi; không xóa, chỉ `active = false`; danh mục ban đầu A-19 nằm trong migration | FR-54, BR-34 |
 | `registration_fee_configs` **Mới** | `id`, `amount`, `effective_from`, `created_by` | `amount > 0`; mặc định 200.000 | FR-53 |
 | `outbox_events` **Mới** | như identity |  | `vendor.updated`, `vendor.locked`, ... |
 
@@ -25,7 +26,8 @@ Bảng `vendors` thiếu phần lớn trường xác minh theo tư cách pháp n
 
 | Bảng | Cột chính | Ràng buộc | Nguồn |
 | --- | --- | --- | --- |
-| `products` **Chuyển** | `id`, `vendor_id` (FK), `name`, `description`, `cake_type`, `brand`, `origin`, `pieces_per_box`, `list_price`, `stock`, `expiry_date`, `delivery_label` (LOCAL, NATIONWIDE), `quote_threshold`, `status` (ON_SALE, HIDDEN, REMOVED), `removed_reason`, `removed_by`, `version` | `stock >= 0`; `list_price > 0`; chỉ tạo khi vendor `sells_shop` và `can_operate`; bán lại thì bắt buộc `brand`, `origin` | FR-29 → FR-34, FR-46, BR-12, BR-21, BR-24 |
+| `products` **Chuyển** | `id`, `vendor_id` (FK), `name`, `description`, `brand`, `origin`, `pieces_per_box`, `list_price`, `stock`, `expiry_date`, `delivery_label` (LOCAL, NATIONWIDE), `quote_threshold`, `status` (ON_SALE, HIDDEN, REMOVED), `removed_reason`, `removed_by`, `version` | `stock >= 0`; `list_price > 0`; `brand` NOT NULL (L-19); ít nhất một vỏ và một nhân trong `product_cake_attributes` (kiểm ở service); chỉ tạo khi vendor `sells_shop` và `can_operate`; bán lại thì bắt buộc `brand`, `origin`; còn lại `brand` trống thì ghi `business_name` | FR-29 → FR-34, FR-46, BR-12, BR-21, BR-24, BR-34 |
+| `product_cake_attributes` **Mới** | `product_id`, `attribute_id` | PK `(product_id, attribute_id)`; FK tới `products`, `cake_attributes` | BR-34, AC-29.1 |
 | `product_images` **Chuyển** | `product_id`, `position`, `object_key` | PK `(product_id, position)` | FR-29 |
 | `product_price_tiers` **Chuyển** | `id`, `product_id`, `from_qty`, `unit_price` | `(product_id, from_qty)` duy nhất | FR-31 |
 | `stock_reservations` **Mới** | `id`, `product_id`, `qty`, `checkout_id`, `status` (HELD, COMMITTED, RELEASED), `expires_at` | Giữ theo checkout; `expires_at` do order gửi (một đồng hồ, P-01); RELEASED giữ lại được khi IPN đến trễ; index `(expires_at) WHERE HELD` cho tác vụ quét | BR-28, D-01 |
@@ -65,6 +67,17 @@ Giữ hàng bằng một câu lệnh có điều kiện: `UPDATE products SET st
 | --- | --- | --- | --- |
 | `GET /api/registration-fee-config` | K, M | Mức phí hiện hành cho form khai hồ sơ | AC-26.9 |
 | `PUT /api/registration-fee-config` | A | Đổi mức phí | FR-53 |
+
+**Root CakeAttribute** (`/api/cake-attributes`, danh mục vỏ và nhân)
+
+| Method, đường dẫn | Ai | Mục đích | FR |
+| --- | --- | --- | --- |
+| `GET /api/cake-attributes?group=CRUST\|FILLING` | K, M, S | Giá trị đang hiện, theo `sortOrder`: danh sách chọn của người bán, nhãn và thứ tự bộ lọc của người mua | AC-06.6, AC-29.1 |
+| `GET /api/cake-attributes?group=&includeHidden=true` | A | Cả giá trị đã ẩn | FR-54 |
+| `POST /api/cake-attributes` | A | `{group, label}`; service sinh `code`, `labelKey`, đặt cuối thứ tự; trùng tên → 409 | AC-54.1, AC-54.2 |
+| `PATCH /api/cake-attributes/{attributeId}` | A | `{label?, sortOrder?, active?}`; ẩn giá trị đang hiện cuối cùng của nhóm → 409 | AC-54.3 → AC-54.6 |
+
+Sản phẩm gửi vỏ và nhân bằng mã: `crustCodes[]`, `fillingCodes[]` trong body của `POST`/`PUT` sản phẩm. Thêm mới chỉ nhận mã đang hiện; mã đã ẩn mà sản phẩm đang có thì được giữ (AC-33.6). `product.upserted` mang hai mảng mã này; đổi tên một giá trị không phát sự kiện sản phẩm vì catalog chỉ giữ mã.
 
 `POST /<root>/uploads` là quy ước chung cho file: xin chỗ tải trước, rồi gửi `objectKey` trong body khi tạo hoặc sửa tài nguyên. File chỉ thuộc tài nguyên sau khi được gắn vào.
 
