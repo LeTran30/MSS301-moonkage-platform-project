@@ -92,6 +92,17 @@
             <id>jvnet-nexus-releases</id>
             <url>https://maven.java.net/content/repositories/releases/</url>
         </repository>
+        <!-- Vô hiệu hóa repo GitHub Packages do flyway-parent khai báo (đòi token → 401); artifact Flyway đã có trên Central -->
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>flyway-community-db-support</id>
+            <url>https://maven.pkg.github.com/flyway/flyway-community-db-support</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
