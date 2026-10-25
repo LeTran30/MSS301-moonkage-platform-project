@@ -1,0 +1,87 @@
+/* Moonkage v2 tokens: generated from tokens.json of "DS: Moonkage v2"
+   (https://claude.ai/artifact/GGUiHf9RjvveUzR3geFsCN). Do not edit values by hand; update from the design system. */
+:root, [data-theme="light"] {
+  --surface: #ffffff; /* Nền trang. Sáng: trắng tinh như Shopcart; tối: xanh than gần đen. */
+  --surface-muted: #f5f6f6; /* Nền khung ảnh sản phẩm, ô danh mục chưa có màu, nền section xen kẽ. Đây là màu quan trọng nhất của hệ: mọi ảnh sản phẩm nằm trên đúng nền này. */
+  --surface-sunk: #eceeef; /* Vùng lõm: hàng tiêu đề bảng, ô nhập khoá, khung ảnh khi chưa tải. */
+  --surface-hover: #f0f2f3; /* Nền khi rê chuột lên nút viền, chip đang tắt, hàng trong menu. */
+  --ink: #1d2433; /* Chữ chính và tiêu đề trên mọi nền surface, brand-soft và tint. ≥12:1. */
+  --ink-muted: #5c6370; /* Chữ phụ: tên Shop, quy cách, hạn dùng, ghi chú. ≥4.9:1 trên mọi nền surface và tint ở cả hai theme. */
+  --line: #e4e7ea; /* Vách ngăn giữa các hàng và viền thẻ thông tin. Không dùng làm viền control (dưới 3:1). */
+  --line-strong: #868e99; /* Viền nút viền (outline), ô nhập, chip. ≥3:1 trên surface và surface-muted. */
+  --brand: #1c2b4b; /* Màu thương hiệu duy nhất: thanh tiện ích trên cùng, nút chính, chip đang chọn, tiêu đề hero, khối banner. Dùng ít: khoảng 5% bề mặt. */
+  --brand-hover: #2d4170; /* Nền nút chính khi rê chuột hoặc nhấn. */
+  --on-brand: #ffffff; /* Chữ và icon trên brand và brand-hover. */
+  --brand-soft: #e6ecf6; /* Nền nhạt của brand: hàng đang chọn trong PriceTiers, thông báo nhẹ. */
+  --gold: #c9a14a; /* Vàng của logo: nền huy hiệu nhỏ (Đặt sớm, Custom nổi bật), sao đánh giá. Không làm chữ trên nền sáng. */
+  --on-gold: #1d2433; /* Chữ trên gold. */
+  --gold-ink: #7a560c; /* Khi cần chữ màu vàng: phần trăm giảm, con số tốt nhất trong QuoteCompare. */
+  --danger: #b3261e; /* Lỗi, cảnh báo, giá gạch khi hết hàng. Không còn là màu nút mua: nút mua dùng brand. */
+  --on-danger: #ffffff; /* Chữ trên nền danger. */
+  --success: #2f6a49; /* Đã duyệt, đã giao. Luôn đi kèm chữ. */
+  --tint-gold: #f8edd6; /* Nền ô danh mục và khối khuyến mãi (1/4 màu tint). Chữ ink. */
+  --tint-rose: #f9e2dc; /* Nền ô danh mục và khối khuyến mãi (2/4). Chữ ink. */
+  --tint-jade: #dcefe4; /* Nền ô danh mục và khối khuyến mãi (3/4). Chữ ink. */
+  --tint-sky: #e3eaf6; /* Nền ô danh mục và khối khuyến mãi (4/4). Chữ ink. */
+  --focus: #1c2b4b; /* Vòng focus bàn phím trên nền sáng: viền liền border-thick, cách border-thick. */
+  --focus-on-brand: #e4c47e; /* Vòng focus cho control đặt trên nền brand (thanh tiện ích, banner). Bật bằng class mk-on-brand. */
+  --shadow-pop: 0 12px 32px -8px rgba(16, 24, 40, 0.18); /* Bóng duy nhất, chỉ cho menu thả xuống và hộp thoại. Thẻ, nút, bảng phẳng hoàn toàn. */
+}
+[data-theme="dark"] {
+  --surface: #10141c;
+  --surface-muted: #181e29;
+  --surface-sunk: #0b0e14;
+  --surface-hover: #222a38;
+  --ink: #f1f3f6;
+  --ink-muted: #a7afbb;
+  --line: #283142;
+  --line-strong: #6f7a8c;
+  --brand: #a9bfe8;
+  --brand-hover: #c3d3f1;
+  --on-brand: #0f1a30;
+  --brand-soft: #22314f;
+  --gold: #d8b45e;
+  --on-gold: #10141c;
+  --gold-ink: #e4c47e;
+  --danger: #f08a80;
+  --on-danger: #1a0806;
+  --success: #8fcaa2;
+  --tint-gold: #3a3020;
+  --tint-rose: #3d2a2a;
+  --tint-jade: #1f3529;
+  --tint-sky: #212d43;
+  --focus: #e4c47e;
+  --focus-on-brand: #0f1a30;
+  --shadow-pop: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+}
+:root {
+  --space-1: 4px; /* Icon với chữ, giá với ghi chú. */
+  --space-2: 8px; /* Giữa các huy hiệu, giữa nhãn và ô nhập. */
+  --space-3: 12px; /* Giữa dòng trong thẻ, padding dọc nút nhỏ. */
+  --space-4: 16px; /* Lề màn hình 360px, khoảng giữa thẻ trên mobile. */
+  --space-5: 20px; /* Giữa các trường trong form. */
+  --space-6: 24px; /* Khoảng giữa thẻ trong lưới desktop, padding khối. */
+  --space-8: 32px; /* Giữa tiêu đề section và nội dung. */
+  --space-12: 48px; /* Padding trong banner, khoảng cách section trên mobile. */
+  --space-20: 80px; /* Khoảng cách giữa các section trên desktop. Khoảng thở lớn là một nửa vẻ đẹp kiểu Shopcart. */
+  --radius-sm: 6px; /* Ô trong bảng, checkbox. */
+  --radius-md: 10px; /* Thẻ, khung ảnh, ô danh mục, banner, bảng. Ngôn ngữ hình khối thứ nhất. */
+  --radius-full: 999px; /* Nút, chip, ô tìm kiếm, ô nhập, huy hiệu, nút tim. Ngôn ngữ hình khối thứ hai. */
+  --control-h: 48px; /* Chiều cao nút lớn, ô tìm kiếm, ô nhập. */
+  --control-h-sm: 40px; /* Nút trên thẻ, chip lọc. */
+  --border-thin: 1px; /* Viền nút viền, ô nhập, vách ngăn. */
+  --border-thick: 2px; /* Viền focus, viền lỗi, đường nối timeline, gạch chân tab đang chọn. */
+  --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --text-display: 700 56px/64px var(--font-sans); /* Tiêu đề hero trang chủ. Mỗi trang một lần. Viết hoa chữ đầu câu. */
+  --text-title: 700 40px/48px var(--font-sans); /* Tiêu đề banner (PromoBanner) và tiêu đề trang chi tiết. */
+  --text-heading: 700 26px/32px var(--font-sans); /* Tiêu đề mỗi section trên trang chủ và trang danh sách. */
+  --text-card-title: 600 16px/24px var(--font-sans); /* Tên bánh trên ProductCard, tên lò trên VendorTile, tên cột QuoteCompare. */
+  --text-body: 400 16px/26px var(--font-sans); /* Đoạn văn, mô tả. */
+  --text-body-strong: 600 16px/24px var(--font-sans); /* Tiêu đề mốc timeline, hàng tổng trong bảng. */
+  --text-body-sm: 400 14px/20px var(--font-sans); /* Thông tin phụ trên thẻ, hàng trong bảng, gợi ý dưới ô nhập. */
+  --text-label: 600 14px/20px var(--font-sans); /* Chữ trên nút, chip, nhãn ô nhập, link điều hướng. */
+  --text-price: 700 18px/24px var(--font-sans); /* Giá trên thẻ và trang chi tiết; đặt cùng hàng với tên bánh, căn phải. Dùng chữ số tabular. */
+  --text-caption: 500 12px/16px var(--font-sans); /* Ghi chú dưới giá, chữ trong huy hiệu, thanh tiện ích trên cùng. */
+}
+:root { --tracking-display: -0.02em; }
+:root { --tracking-title: -0.01em; }
