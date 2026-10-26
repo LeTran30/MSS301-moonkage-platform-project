@@ -1,11 +1,14 @@
 package com.moonkage.payment.controller;
 
+import com.moonkage.payment.dto.response.PageResponse;
 import com.moonkage.payment.dto.response.PaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
+import com.moonkage.payment.enums.PaymentPurpose;
 import com.moonkage.payment.exception.ApiResponse;
 import com.moonkage.payment.security.CurrentUser;
 import com.moonkage.payment.security.CurrentUserInfo;
 import com.moonkage.payment.service.PaymentService;
+import java.time.Instant;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +28,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
     private final PaymentService paymentService;
+
+    /** AC-51.3, admin: e.g. {@code purpose=REGISTRATION_FEE} for the registration fees collected. */
+    @GetMapping
+    public ApiResponse<PageResponse<PaymentResponse>> list(
+            @CurrentUser CurrentUserInfo caller,
+            @RequestParam(required = false) PaymentPurpose purpose,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(paymentService.list(caller, purpose, from, to, page, size));
+    }
 
     /** FR-09: the state of the caller's payment; the result page polls it until the IPN arrived. */
     @GetMapping("/{paymentId}")

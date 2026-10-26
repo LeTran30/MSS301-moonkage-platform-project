@@ -179,6 +179,7 @@ class PaymentServiceImplTest {
         when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(call -> {
             Payment saved = call.getArgument(0);
             saved.setId(PAYMENT_ID);
+            saved.setCreatedAt(Instant.now());
             return saved;
         });
         CreatePaymentRequest deposit = new CreatePaymentRequest(

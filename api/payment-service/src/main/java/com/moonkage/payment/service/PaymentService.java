@@ -2,9 +2,12 @@ package com.moonkage.payment.service;
 
 import com.moonkage.payment.dto.request.CreatePaymentRequest;
 import com.moonkage.payment.dto.response.CreatePaymentResponse;
+import com.moonkage.payment.dto.response.PageResponse;
 import com.moonkage.payment.dto.response.PaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
+import com.moonkage.payment.enums.PaymentPurpose;
 import com.moonkage.payment.security.CurrentUserInfo;
+import java.time.Instant;
 import java.util.Map;
 
 /** Root Payment (payment.md): one VNPay transaction for what a purpose and a reference name. */
@@ -29,6 +32,15 @@ public interface PaymentService {
      * the IPN only (BR-25).
      */
     PaymentResponse readReturn(Map<String, String> callback);
+
+    /**
+     * Admin: payments of one purpose (e.g. REGISTRATION_FEE, AC-51.3) or all, created in [from, to).
+     *
+     * @param from null = from the beginning
+     * @param to null = up to now
+     */
+    PageResponse<PaymentResponse> list(
+            CurrentUserInfo caller, PaymentPurpose purpose, Instant from, Instant to, int page, int size);
 
     /** The caller's own payment; an admin sees any. */
     PaymentResponse get(String paymentId, CurrentUserInfo caller);

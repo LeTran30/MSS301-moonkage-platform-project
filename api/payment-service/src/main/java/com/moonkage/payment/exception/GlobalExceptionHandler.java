@@ -1,5 +1,6 @@
 package com.moonkage.payment.exception;
 
+import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
         return build(ErrorCode.METHOD_NOT_ALLOWED, request);
+    }
+
+    /** A Feign call that the service did not turn into an AppException: the other service is down or failed. */
+    @ExceptionHandler(FeignException.class)
+    public ResponseEntity<ApiResponse<Void>> handleFeign(FeignException ex, HttpServletRequest request) {
+        log.error("Call to another service failed: status={}, {}", ex.status(), ex.getMessage());
+        return build(ErrorCode.DEPENDENCY_UNAVAILABLE, request);
     }
 
     @ExceptionHandler(Exception.class)
