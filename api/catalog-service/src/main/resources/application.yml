@@ -57,6 +57,11 @@ storage:
   download-link-lifetime: ${MINIO_DOWNLOAD_LINK_LIFETIME:10m}
 
 catalog:
+  projections:
+    capture-enabled: true
+  public-images:
+    base-url: "${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT:9000}}"
+    bucket: "${MINIO_PUBLIC_BUCKET:moonkage-public}"
   outbox:
     enabled: true
     relay-interval: 2s

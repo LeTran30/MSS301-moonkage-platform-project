@@ -13,7 +13,9 @@ public enum CatalogErrorCode {
     INCOMPLETE_FEE_TABLE(HttpStatus.BAD_REQUEST, "CAT_004", "Bảng phí phải có đúng một dòng cho mỗi tỉnh"),
     PROVINCE_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT_005", "Mã tỉnh không tồn tại"),
     FEE_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "CAT_006", "Phí giao tỉnh này chưa được cấu hình"),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CAT_008", "Đã xảy ra lỗi, vui lòng thử lại");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "CAT_008", "Đã xảy ra lỗi, vui lòng thử lại"),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT_009", "Sản phẩm không tồn tại hoặc không còn khả dụng"),
+    PROJECTION_CONFLICT(HttpStatus.CONFLICT, "CAT_010", "Dữ liệu sự kiện xung đột với bản chiếu đã có");
 
     private final HttpStatus status;
     private final String code;

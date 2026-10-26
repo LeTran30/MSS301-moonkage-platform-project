@@ -97,7 +97,6 @@
             <groupId>com.moonkage</groupId>
             <artifactId>common-reference</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

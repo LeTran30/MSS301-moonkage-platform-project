@@ -93,7 +93,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleUnhandled(Exception ex, HttpServletRequest request) {
-        if (isFeeRequest(request) && ex instanceof org.springframework.web.ErrorResponse error) {
+        if (usesEnvelope(request) && ex instanceof org.springframework.web.ErrorResponse error) {
             return ResponseEntity.status(error.getStatusCode())
                     .body(ApiResponse.error(
                             error.getStatusCode().value(), CatalogErrorCode.INVALID_REQUEST.getCode(),
@@ -104,7 +104,7 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<Object> build(HttpStatus status, String message, HttpServletRequest request) {
-        if (isFeeRequest(request)) {
+        if (usesEnvelope(request)) {
             CatalogErrorCode code = switch (status) {
                 case BAD_REQUEST -> CatalogErrorCode.INVALID_REQUEST;
                 case UNAUTHORIZED -> CatalogErrorCode.UNAUTHENTICATED;
@@ -120,9 +120,12 @@ public class GlobalExceptionHandler {
                         status.value(), status.getReasonPhrase(), message, request.getRequestURI(), Instant.now()));
     }
 
-    private boolean isFeeRequest(HttpServletRequest request) {
+    private boolean usesEnvelope(HttpServletRequest request) {
         String path = request.getServletPath().isEmpty() ? request.getRequestURI() : request.getServletPath();
-        return path.equals("/api/interprovince-fees") || path.startsWith("/api/interprovince-fees/");
+        return path.equals("/api/interprovince-fees")
+                || path.startsWith("/api/interprovince-fees/")
+                || path.equals("/api/products")
+                || path.startsWith("/api/products/");
     }
 
     private String localize(StorageErrorCode errorCode, Object... args) {
