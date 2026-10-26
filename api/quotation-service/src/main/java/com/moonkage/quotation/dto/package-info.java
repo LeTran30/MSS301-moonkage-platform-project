@@ -1,2 +1,2 @@
-/** Request/response DTOs for the tender service. Entities must never be exposed directly by controllers. */
+/** Request/response DTOs of quotation-service. Entities must never be exposed directly by controllers. */
 package com.moonkage.quotation.dto;
