@@ -122,6 +122,16 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 
 ### 2. Phí đăng ký (FR-53; BR-31; AC-27.4 → AC-27.6, AC-53.x)
 
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. payment-service chưa có `POST /internal/payments` và chưa phát `payment.succeeded`, nên `PaymentClient` được mock trong test và sự kiện được đưa thẳng vào listener. Chưa chạy được với VNPay sandbox. Khác với bản đề xuất bên dưới:
+
+- `POST /internal/payments` gửi thêm `payerAccountId`, vì `payments.payer_account_id` cần nó. Đã ghi vào `payment.md`.
+- Payload `payment.succeeded` mà vendor đọc: `{eventId, paymentId, purpose, referenceId, amount, paidAt}`; đã ghi vào `payment.md`. `purpose` khác `REGISTRATION_FEE` thì bỏ qua.
+- Queue `vendor-service.payment-events` (durable) nghe `payment.succeeded`. Chỉ lần thanh toán đầu được ghi; lần sau payment tự hoàn tiền (P-03), vendor chỉ log.
+- Response tách theo bản chất: `POST` trả `{paymentId, amount, paymentUrl}`, `GET` trả các khoản đã đóng `{paymentId, amount, paidAt}`.
+- Admin được xin chỗ tải (`POST /api/vendors/uploads`) để gắn hóa đơn. Chỉ gắn được `FEE_INVOICE`, và chỉ khi vendor đã đóng phí (`VENDOR_014`).
+- `vendor.updated` vẫn để giai đoạn 3 như đã dời. `vendor.registration_fee_paid` mang `canOperate`.
+- Gateway mở `GET /vendor-service/api/registration-fee-config` cho khách (AC-26.9).
+
 - Entity `RegistrationFeeConfig`; mức hiện hành = dòng `effective_from` mới nhất ≤ now; seed 200.000.
 - `GET /api/registration-fee-config` (K, M), `PUT` (A, `amount` là `Price`, thêm dòng mới, không sửa dòng cũ); outbox `registration_fee.changed`.
 - `POST /api/vendors/{id}/registration-fee-payments` (S): chỉ khi `APPROVED` và chưa đóng, ngược lại 409; số tiền là mức hiện hành lúc tạo (AC-53.3); gọi `PaymentClient` (`purpose = REGISTRATION_FEE`, `referenceId = vendorId`) → `{paymentId, paymentUrl}`.

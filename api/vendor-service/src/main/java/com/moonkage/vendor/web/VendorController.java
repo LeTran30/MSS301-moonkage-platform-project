@@ -17,6 +17,7 @@ import com.moonkage.vendor.vendor.dto.request.SubmitVendorRequest;
 import com.moonkage.vendor.vendor.dto.request.UpdateVendorRequest;
 import com.moonkage.vendor.vendor.dto.response.OwnerCheckResponse;
 import com.moonkage.vendor.vendor.dto.response.PresignedUploadLinkResponse;
+import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDetailResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
@@ -112,7 +113,7 @@ public class VendorController {
     public ResponseEntity<ApiResponse<VendorDocumentResponse>> createDocument(
             @CurrentUser CurrentUserInfo caller,
             @PathVariable String vendorId,
-            @RequestBody CreateVendorDocumentRequest request) {
+            @Valid @RequestBody CreateVendorDocumentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(vendorService.createDocument(caller, vendorId, request)));
     }
@@ -175,7 +176,7 @@ public class VendorController {
 
     /** Charges the fee in effect now (AC-53.3). */
     @PostMapping("/api/vendors/{vendorId}/registration-fee-payments")
-    public ResponseEntity<ApiResponse<RegistrationFeePaymentResponse>> createRegistrationFeePayment(
+    public ResponseEntity<ApiResponse<RegistrationFeePaymentLinkResponse>> createRegistrationFeePayment(
             @CurrentUser CurrentUserInfo caller, @PathVariable String vendorId) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(vendorService.createRegistrationFeePayment(caller, vendorId)));

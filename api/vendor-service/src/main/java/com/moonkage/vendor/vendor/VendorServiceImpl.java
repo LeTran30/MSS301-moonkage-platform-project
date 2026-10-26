@@ -5,13 +5,19 @@ import com.moonkage.storage.ObjectStorage;
 import com.moonkage.storage.PresignedUploadLink;
 import com.moonkage.storage.StorageProperties;
 import com.moonkage.vendor.client.IdentityClient;
+import com.moonkage.vendor.client.PaymentClient;
 import com.moonkage.vendor.client.dto.CheckIdNumberRequest;
 import com.moonkage.vendor.client.dto.CheckIdNumberResponse;
+import com.moonkage.vendor.client.dto.CreatePaymentRequest;
+import com.moonkage.vendor.client.dto.CreatePaymentResponse;
+import com.moonkage.vendor.client.dto.PaymentPurpose;
 import com.moonkage.vendor.common.config.RabbitConfig;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
+import com.moonkage.vendor.common.vo.Price;
 import com.moonkage.vendor.common.vo.ProvinceCode;
 import com.moonkage.vendor.outbox.OutboxService;
+import com.moonkage.vendor.registrationfee.RegistrationFeeService;
 import com.moonkage.vendor.security.CurrentUserInfo;
 import com.moonkage.vendor.security.Role;
 import com.moonkage.vendor.vendor.dto.request.CreateVendorDocumentRequest;
@@ -21,6 +27,7 @@ import com.moonkage.vendor.vendor.dto.request.SubmitVendorRequest;
 import com.moonkage.vendor.vendor.dto.request.UpdateVendorRequest;
 import com.moonkage.vendor.vendor.dto.response.OwnerCheckResponse;
 import com.moonkage.vendor.vendor.dto.response.PresignedUploadLinkResponse;
+import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDetailResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
@@ -47,8 +54,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Vendor profile, submission and review (phase 1 of docs/services/vendor/completion-plan.md). Operations still
- * answering NOT_IMPLEMENTED come in phases 2 and 3.
+ * Vendor profile, submission, review and registration fee (phases 1 and 2 of docs/services/vendor/completion-plan.md).
+ * {@link #update} still answers NOT_IMPLEMENTED until phase 3.
  */
 @Service
 @RequiredArgsConstructor
@@ -63,6 +70,8 @@ class VendorServiceImpl implements VendorService {
     private static final String FIELD_BANK_ACCOUNT_NUMBER = "bankAccountNumber";
     private static final String FIELD_DOCUMENTS = "documents";
     private static final String FIELD_REASON = "reason";
+    private static final String FIELD_KIND = "kind";
+    private static final String FIELD_OBJECT_KEY = "objectKey";
     private static final String FIELD_LICENSE_CHECKED = "licenseChecked";
     private static final String FIELD_REGISTRY_CHECKED = "registryChecked";
 
@@ -71,6 +80,8 @@ class VendorServiceImpl implements VendorService {
     private final VendorOwnerCheckRepository ownerCheckRepository;
     private final VendorReviewRepository reviewRepository;
     private final IdentityClient identityClient;
+    private final PaymentClient paymentClient;
+    private final RegistrationFeeService registrationFeeService;
     private final ObjectStorage objectStorage;
     private final StorageProperties storageProperties;
     private final VendorDocumentProperties documentProperties;
@@ -79,7 +90,6 @@ class VendorServiceImpl implements VendorService {
 
     @Override
     public PresignedUploadLinkResponse createDocumentUploadLink(CurrentUserInfo caller, DocumentUploadRequest request) {
-        requireMember(caller);
         PresignedUploadLink link = objectStorage.createPresignedUploadLink(
                 request.contentType(), request.sizeBytes(), documentProperties.toFileLimit());
         return new PresignedUploadLinkResponse(link.tempKey(), link.uploadUrl(), link.formFields(), link.expiresAt());
@@ -88,7 +98,9 @@ class VendorServiceImpl implements VendorService {
     @Override
     @Transactional
     public VendorDetailResponse submit(CurrentUserInfo caller, SubmitVendorRequest request) {
-        requireMember(caller);
+        if (caller.role() != Role.MEMBER) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
         CheckedSubmission submission = check(request);
         OwnerCard ownerCard = getOwnerCard(caller.accountId(), submission.idNumber());
         if (vendorRepository.existsByOwnerAccountId(caller.accountId())) {
@@ -167,9 +179,23 @@ class VendorServiceImpl implements VendorService {
     }
 
     @Override
+    @Transactional
     public VendorDocumentResponse createDocument(
             CurrentUserInfo caller, String vendorId, CreateVendorDocumentRequest request) {
-        throw new AppException(ErrorCode.NOT_IMPLEMENTED);
+        requireAdmin(caller);
+        Vendor vendor = getVendor(vendorId);
+        if (request.kind() != DocumentKind.FEE_INVOICE) {
+            throw new AppException(ErrorCode.DOCUMENT_NOT_ACCEPTED).atField(FIELD_KIND);
+        }
+        if (!vendor.isRegistrationFeePaid()) {
+            throw new AppException(ErrorCode.REGISTRATION_FEE_NOT_PAID);
+        }
+        if (!objectStorage.isTempKey(request.objectKey())) {
+            throw new AppException(ErrorCode.DOCUMENT_NOT_ACCEPTED).atField(FIELD_OBJECT_KEY);
+        }
+        VendorDocument document = documentRepository.save(
+                VendorDocument.of(vendorId, request.kind(), moveDocument(vendorId, request.objectKey())));
+        return VendorMapper.toDocumentResponse(document);
     }
 
     @Override
@@ -215,13 +241,30 @@ class VendorServiceImpl implements VendorService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<RegistrationFeePaymentResponse> getRegistrationFeePayments(CurrentUserInfo caller, String vendorId) {
-        throw new AppException(ErrorCode.NOT_IMPLEMENTED);
+        Vendor vendor = getVendorFor(caller, vendorId);
+        if (!vendor.isRegistrationFeePaid()) {
+            return List.of();
+        }
+        return List.of(new RegistrationFeePaymentResponse(
+                vendor.getRegistrationFeePaymentId(),
+                vendor.getRegistrationFeeAmount().value(),
+                vendor.getRegistrationFeePaidAt()));
     }
 
+    /** No transaction: nothing is written here, and none should stay open across the call to payment-service. */
     @Override
-    public RegistrationFeePaymentResponse createRegistrationFeePayment(CurrentUserInfo caller, String vendorId) {
-        throw new AppException(ErrorCode.NOT_IMPLEMENTED);
+    public RegistrationFeePaymentLinkResponse createRegistrationFeePayment(CurrentUserInfo caller, String vendorId) {
+        Vendor vendor = getVendor(vendorId);
+        if (!vendor.isOwnedBy(caller.accountId())) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+        vendor.checkRegistrationFeePayable();
+        Price fee = registrationFeeService.getCurrentFee();
+        CreatePaymentResponse payment = paymentClient.createPayment(
+                new CreatePaymentRequest(PaymentPurpose.REGISTRATION_FEE, vendorId, caller.accountId(), fee.value()));
+        return new RegistrationFeePaymentLinkResponse(payment.paymentId(), fee.value(), payment.paymentUrl());
     }
 
     /** Every format and completeness rule of a submission, before anything is called or stored (AC-26.1, AC-26.2). */
@@ -336,13 +379,18 @@ class VendorServiceImpl implements VendorService {
             }
         }
         for (SubmitVendorRequest.Document upload : uploads) {
-            String objectKey = objectStorage.moveUploadedFile(
-                    upload.objectKey(),
-                    documentProperties.toFileLimit(),
-                    BucketAccess.PRIVATE,
-                    documentProperties.keyPrefixOf(vendorId));
-            documentRepository.save(VendorDocument.of(vendorId, upload.kind(), objectKey));
+            documentRepository.save(
+                    VendorDocument.of(vendorId, upload.kind(), moveDocument(vendorId, upload.objectKey())));
         }
+    }
+
+    /** Checks the uploaded file and moves it under the vendor's prefix; returns its key there. */
+    private String moveDocument(String vendorId, String tempKey) {
+        return objectStorage.moveUploadedFile(
+                tempKey,
+                documentProperties.toFileLimit(),
+                BucketAccess.PRIVATE,
+                documentProperties.keyPrefixOf(vendorId));
     }
 
     private static boolean isCurrent(
@@ -417,12 +465,6 @@ class VendorServiceImpl implements VendorService {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
         return vendor;
-    }
-
-    private static void requireMember(CurrentUserInfo caller) {
-        if (caller.role() != Role.MEMBER) {
-            throw new AppException(ErrorCode.ACCESS_DENIED);
-        }
     }
 
     private static void requireAdmin(CurrentUserInfo caller) {

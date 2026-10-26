@@ -13,6 +13,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -122,11 +123,12 @@ class VendorApiIntegrationTest {
     }
 
     @Test
-    void anAdminDoesNotUploadVendorDocuments() throws Exception {
-        mvc.perform(asAdmin(post("/api/vendors/uploads"))
+    void anUploadLinkNeedsAContentTypeAndAPositiveSize() throws Exception {
+        mvc.perform(asMember(post("/api/vendors/uploads"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"contentType\":\"application/pdf\",\"sizeBytes\":1000}"))
-                .andExpect(status().isForbidden());
+                        .content("{\"contentType\":\"application/pdf\",\"sizeBytes\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("sizeBytes"));
     }
 
     // ─── submit ───
@@ -392,7 +394,9 @@ class VendorApiIntegrationTest {
 
     @Test
     void anOperationNotWrittenYetAnswersNotImplementedInTheApiResponseShape() throws Exception {
-        mvc.perform(asMember(get("/api/vendors/{id}/registration-fee-payments", "any")))
+        mvc.perform(asMember(patch("/api/vendors/{id}", "any"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
                 .andExpect(status().isNotImplemented())
                 .andExpect(jsonPath("$.status").value(501))
                 .andExpect(jsonPath("$.code").value("COMMON_501"))

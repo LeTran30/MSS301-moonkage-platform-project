@@ -2,6 +2,7 @@ package com.moonkage.vendor.vendor;
 
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
+import com.moonkage.vendor.common.vo.Price;
 import com.moonkage.vendor.common.vo.ProvinceCode;
 import com.moonkage.vendor.vendor.vo.RepresentativeName;
 import com.moonkage.vendor.vendor.vo.TaxCode;
@@ -99,7 +100,7 @@ class Vendor {
     @Column(length = 36)
     private String registrationFeePaymentId;
 
-    private Long registrationFeeAmount;
+    private Price registrationFeeAmount;
 
     private Instant registrationFeePaidAt;
 
@@ -138,7 +139,37 @@ class Vendor {
 
     /** May sell and receive requests: approved and registration fee paid (BR-20, BR-31, AC-27.3, AC-27.4). */
     boolean canOperate() {
-        return status == VendorStatus.APPROVED && registrationFeePaidAt != null;
+        return status == VendorStatus.APPROVED && isRegistrationFeePaid();
+    }
+
+    /** AC-27.4: only an approved vendor pays, and only once (BR-31). */
+    void checkRegistrationFeePayable() {
+        if (status != VendorStatus.APPROVED) {
+            throw new AppException(ErrorCode.VENDOR_NOT_APPROVED);
+        }
+        if (isRegistrationFeePaid()) {
+            throw new AppException(ErrorCode.REGISTRATION_FEE_ALREADY_PAID);
+        }
+    }
+
+    /**
+     * Records the payment that settled the fee, at the amount charged (AC-53.2). Only the first one counts: payment
+     * allows one success per vendor and refunds any later one (P-03), so a repeat changes nothing (AC-27.5).
+     *
+     * @return whether this call recorded it
+     */
+    boolean recordRegistrationFee(String paymentId, Price amount, Instant paidAt) {
+        if (isRegistrationFeePaid()) {
+            return false;
+        }
+        registrationFeePaymentId = paymentId;
+        registrationFeeAmount = amount;
+        registrationFeePaidAt = paidAt;
+        return true;
+    }
+
+    boolean isRegistrationFeePaid() {
+        return registrationFeePaidAt != null;
     }
 
     private void moveTo(VendorStatus target, String reason) {

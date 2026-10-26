@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_INPUT("COMMON_400", HttpStatus.BAD_REQUEST, "error.common.invalid_input"),
     MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "error.common.malformed_json"),
     PROVINCE_CODE_INVALID("COMMON_400_PROVINCE", HttpStatus.BAD_REQUEST, "error.common.province_code_invalid"),
+    PRICE_INVALID("COMMON_400_PRICE", HttpStatus.BAD_REQUEST, "error.common.price_invalid"),
     /** No X-Account-Id / X-User-Role: the call did not come through the gateway with a token. */
     UNAUTHENTICATED("COMMON_401", HttpStatus.UNAUTHORIZED, "error.common.unauthenticated"),
     ACCESS_DENIED("COMMON_403", HttpStatus.FORBIDDEN, "error.common.access_denied"),
@@ -49,6 +50,9 @@ public enum ErrorCode {
     REVIEW_REASON_REQUIRED("VENDOR_010", HttpStatus.BAD_REQUEST, "error.vendor.review_reason_required"),
     /** AC-45.5: arg {0} the confirmations still missing. */
     REVIEW_CONFIRMATION_REQUIRED("VENDOR_011", HttpStatus.BAD_REQUEST, "error.vendor.review_confirmation_required"),
+    VENDOR_NOT_APPROVED("VENDOR_012", HttpStatus.CONFLICT, "error.vendor.not_approved"),
+    REGISTRATION_FEE_ALREADY_PAID("VENDOR_013", HttpStatus.CONFLICT, "error.vendor.registration_fee_already_paid"),
+    REGISTRATION_FEE_NOT_PAID("VENDOR_014", HttpStatus.CONFLICT, "error.vendor.registration_fee_not_paid"),
 
     // Value objects of a vendor profile
     TAX_CODE_INVALID("VENDOR_101", HttpStatus.BAD_REQUEST, "error.vendor.tax_code_invalid"),

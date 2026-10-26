@@ -8,6 +8,7 @@ import com.moonkage.vendor.vendor.dto.request.SubmitVendorRequest;
 import com.moonkage.vendor.vendor.dto.request.UpdateVendorRequest;
 import com.moonkage.vendor.vendor.dto.response.OwnerCheckResponse;
 import com.moonkage.vendor.vendor.dto.response.PresignedUploadLinkResponse;
+import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDetailResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
@@ -23,7 +24,10 @@ import java.util.Optional;
  */
 public interface VendorService {
 
-    /** Presigned upload of a legal document to the private bucket (AC-26.1); members only. */
+    /**
+     * Presigned upload to the private bucket: an owner's legal document (AC-26.1) or the admin's fee invoice (Q-36).
+     * The file belongs to nothing until it is attached.
+     */
     PresignedUploadLinkResponse createDocumentUploadLink(CurrentUserInfo caller, DocumentUploadRequest request);
 
     /** FR-26: the caller becomes the owner of a new pending vendor (BR-23, BR-27, BR-33). */
@@ -49,6 +53,7 @@ public interface VendorService {
     /** Short-lived link to one document of the vendor, for its owner or an admin (AC-27.6, NFR-03). */
     VendorDocumentLinkResponse getDocumentLink(CurrentUserInfo caller, String vendorId, String documentId);
 
+    /** Admin only: attaches the registration fee invoice of a vendor that paid (Q-36); its owner can open it. */
     VendorDocumentResponse createDocument(CurrentUserInfo caller, String vendorId, CreateVendorDocumentRequest request);
 
     /** Admin only, every submission in order (AC-45.4). */
@@ -60,7 +65,12 @@ public interface VendorService {
     /** Admin only: decides a pending profile and moves the vendor to the decided status (AC-45.2 → AC-45.5). */
     VendorReviewResponse createReview(CurrentUserInfo caller, String vendorId, CreateVendorReviewRequest request);
 
+    /** The owner or an admin; empty until paid, then the one payment that settled it (BR-31). */
     List<RegistrationFeePaymentResponse> getRegistrationFeePayments(CurrentUserInfo caller, String vendorId);
 
-    RegistrationFeePaymentResponse createRegistrationFeePayment(CurrentUserInfo caller, String vendorId);
+    /**
+     * The owner, once approved and not yet paid (AC-27.4): a payment at the level in effect now (AC-53.3). The fee is
+     * recorded when payment.succeeded arrives, not here.
+     */
+    RegistrationFeePaymentLinkResponse createRegistrationFeePayment(CurrentUserInfo caller, String vendorId);
 }

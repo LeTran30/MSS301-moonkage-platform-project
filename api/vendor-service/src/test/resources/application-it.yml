@@ -26,6 +26,11 @@ eureka:
 spring:
   jpa:
     show-sql: false
+  # no broker in most tests; a test that needs the listener calls it or starts it itself
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
 
 # the relay runs only when a test calls it
 outbox:

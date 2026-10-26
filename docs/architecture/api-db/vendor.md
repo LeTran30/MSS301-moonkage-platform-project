@@ -54,7 +54,7 @@ Giữ hàng bằng một câu lệnh có điều kiện: `UPDATE products SET st
 | `GET\|PUT /api/vendors/{vendorId}/order-profile` | S | Hồ sơ nhận đặt hàng, bậc giá, custom | FR-35 |
 | `GET /api/vendors/{vendorId}/owner-checks` | A | Kết quả so chủ từng lần nộp | AC-45.4 |
 | `GET\|POST /api/vendors/{vendorId}/reviews` | A | Quyết định `APPROVE / NEEDS_INFO / REJECT` + lý do + xác nhận đối chiếu; tạo review thì Vendor đổi trạng thái | AC-45.2 → AC-45.5 |
-| `GET\|POST /api/vendors/{vendorId}/registration-fee-payments` | S | Tạo giao dịch phí theo mức hiện hành → `{paymentId, paymentUrl}` | AC-27.4, AC-53.3 |
+| `GET\|POST /api/vendors/{vendorId}/registration-fee-payments` | S | `POST` (chủ, đã duyệt, chưa đóng): tạo giao dịch theo mức hiện hành → `{paymentId, amount, paymentUrl}`. `GET` (chủ, A): khoản đã đóng `[{paymentId, amount, paidAt}]` | AC-27.4, AC-53.3 |
 | `POST /api/vendors/{vendorId}/products/uploads` | S | Xin chỗ tải ảnh sản phẩm (bucket công khai) | FR-29 |
 | `POST /api/vendors/{vendorId}/products` | S | Đăng sản phẩm kèm images[], priceTiers[]; trả về sản phẩm vừa ghi | FR-29, FR-31 |
 | `PUT /api/vendors/{vendorId}/products/{productId}` | S | Sửa thông tin, tồn kho, giá, ngưỡng báo giá, ảnh, bậc giá | FR-30, FR-31, FR-33 |
