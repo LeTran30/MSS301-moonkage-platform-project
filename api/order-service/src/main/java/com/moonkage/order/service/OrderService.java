@@ -17,6 +17,7 @@ public interface OrderService {
     /**
      * {@code vendorId} set: the orders of that Shop, for its owner or an admin (FR-32, AC-44.3). Otherwise an admin
      * sees every order and a member their own purchases (FR-10, FR-21), grouped by {@code paymentGroupId} (BR-29).
+     * {@code openDispute}: only orders with an open dispute (FR-49).
      */
     PageResponse<OrderResponse> list(
             CurrentUserInfo caller,
@@ -25,6 +26,7 @@ public interface OrderService {
             OrderKind kind,
             OrderStatus status,
             boolean missingInvoice,
+            boolean openDispute,
             int page,
             int size);
 

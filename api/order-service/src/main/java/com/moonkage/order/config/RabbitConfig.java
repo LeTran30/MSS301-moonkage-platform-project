@@ -24,6 +24,14 @@ public class RabbitConfig {
     public static final String ORDER_STATUS_CHANGED_ROUTING_KEY = "order.status_changed";
     public static final String ORDER_DELIVERED_ROUTING_KEY = "order.delivered";
     public static final String ORDER_RECEIVED_CONFIRMED_ROUTING_KEY = "order.received_confirmed";
+    public static final String DISPUTE_OPENED_ROUTING_KEY = "dispute.opened";
+    public static final String DISPUTE_RESOLVED_ROUTING_KEY = "dispute.resolved";
+    // read by orchestrator (notifications)
+    public static final String MOCKUP_UPLOADED_ROUTING_KEY = "mockup.uploaded";
+    public static final String MOCKUP_REVIEWED_ROUTING_KEY = "mockup.reviewed";
+    public static final String INVOICE_ATTACHED_ROUTING_KEY = "invoice.attached";
+    // read by catalog (product reviews and rating)
+    public static final String REVIEW_CREATED_ROUTING_KEY = "review.created";
 
     // read by order-service
     public static final String PAYMENT_SUCCEEDED_ROUTING_KEY = "payment.succeeded";

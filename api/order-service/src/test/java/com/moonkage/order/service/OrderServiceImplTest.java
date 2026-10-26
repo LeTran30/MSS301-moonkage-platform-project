@@ -71,7 +71,8 @@ class OrderServiceImplTest {
                 vendorDirectory,
                 mock(PaymentClient.class),
                 new OrderProperties(),
-                entityManager);
+                entityManager,
+                mock(OrderFileService.class));
         order = new Order();
         order.setId(ORDER_ID);
         order.setKind(OrderKind.BUY_NOW);
@@ -160,7 +161,7 @@ class OrderServiceImplTest {
     void theBuyerConfirmsReceiptAndTheBuyNowOrderIsCompleted() {
         order.setStatus(OrderStatus.DELIVERED);
 
-        service.update(BUYER, ORDER_ID, new UpdateOrderRequest(null, null, null, true));
+        service.update(BUYER, ORDER_ID, new UpdateOrderRequest(null, null, null, true, null));
 
         assertNotNull(order.getReceivedConfirmedAt());
         assertEquals(OrderStatus.COMPLETED, order.getStatus());
@@ -199,7 +200,7 @@ class OrderServiceImplTest {
     }
 
     private static UpdateOrderRequest step(OrderStatus status, String trackingCode) {
-        return new UpdateOrderRequest(status, trackingCode, null, null);
+        return new UpdateOrderRequest(status, trackingCode, null, null, null);
     }
 
     private static QuoteAcceptedEvent quoteAccepted() {

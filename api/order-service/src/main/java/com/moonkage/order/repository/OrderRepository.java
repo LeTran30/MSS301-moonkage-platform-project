@@ -20,7 +20,7 @@ public interface OrderRepository extends JpaRepository<Order, String> {
 
     /**
      * Every filter is optional (null = any). {@code missingInvoice} keeps only orders without the vendor's invoice
-     * file (AC-44.3).
+     * file (AC-44.3); {@code openDispute} only orders with an open dispute (FR-49).
      */
     @Query("""
             select o from Order o
@@ -30,6 +30,9 @@ public interface OrderRepository extends JpaRepository<Order, String> {
               and (:kind is null or o.kind = :kind)
               and (:status is null or o.status = :status)
               and (:missingInvoice = false or o.invoiceObjectKey is null)
+              and (:openDispute = false or exists (
+                    select d.id from Dispute d
+                    where d.order = o and d.status = com.moonkage.order.enums.DisputeStatus.OPEN))
             order by o.createdAt desc, o.id
             """)
     Page<Order> search(
@@ -39,5 +42,6 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             OrderKind kind,
             OrderStatus status,
             boolean missingInvoice,
+            boolean openDispute,
             Pageable page);
 }

@@ -5,6 +5,7 @@ import com.moonkage.order.dto.response.OrderResponse;
 import com.moonkage.order.dto.response.PageResponse;
 import com.moonkage.order.dto.response.PaymentLinkResponse;
 import com.moonkage.order.dto.response.ProgressUpdateResponse;
+import com.moonkage.order.enums.DisputeStatus;
 import com.moonkage.order.enums.OrderKind;
 import com.moonkage.order.enums.OrderStatus;
 import com.moonkage.order.exception.ApiResponse;
@@ -35,7 +36,8 @@ public class OrderController {
 
     /**
      * Member: own purchases, grouped by {@code paymentGroupId} (FR-10, BR-29). {@code vendorId}: the orders of the
-     * caller's Shop, {@code missingInvoice=true} for those still without an invoice (FR-32, AC-44.3). Admin: all.
+     * caller's Shop, {@code missingInvoice=true} for those still without an invoice (FR-32, AC-44.3). Admin: all;
+     * {@code disputeStatus=OPEN} for the orders waiting for a dispute decision (FR-49).
      */
     @GetMapping
     public ApiResponse<PageResponse<OrderResponse>> list(
@@ -45,10 +47,19 @@ public class OrderController {
             @RequestParam(required = false) OrderKind kind,
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(defaultValue = "false") boolean missingInvoice,
+            @RequestParam(required = false) DisputeStatus disputeStatus,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(
-                orderService.list(caller, vendorId, paymentGroupId, kind, status, missingInvoice, page, size));
+        return ApiResponse.ok(orderService.list(
+                caller,
+                vendorId,
+                paymentGroupId,
+                kind,
+                status,
+                missingInvoice,
+                disputeStatus == DisputeStatus.OPEN,
+                page,
+                size));
     }
 
     @GetMapping("/{orderId}")

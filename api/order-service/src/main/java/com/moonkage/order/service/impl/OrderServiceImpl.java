@@ -27,6 +27,7 @@ import com.moonkage.order.repository.ProgressUpdateRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.InboxService;
 import com.moonkage.order.service.OrderEventPublisher;
+import com.moonkage.order.service.OrderFileService;
 import com.moonkage.order.service.OrderService;
 import com.moonkage.order.service.VendorDirectory;
 import feign.FeignException;
@@ -57,6 +58,7 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentClient paymentClient;
     private final OrderProperties properties;
     private final EntityManager entityManager;
+    private final OrderFileService fileService;
 
     @Override
     @Transactional(readOnly = true)
@@ -67,6 +69,7 @@ public class OrderServiceImpl implements OrderService {
             OrderKind kind,
             OrderStatus status,
             boolean missingInvoice,
+            boolean openDispute,
             int page,
             int size) {
         String buyerAccountId = null;
@@ -83,7 +86,7 @@ public class OrderServiceImpl implements OrderService {
         }
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
         return PageResponse.from(orderRepository
-                .search(buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, pageable)
+                .search(buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable)
                 .map(order -> toResponse(order, List.of())));
     }
 
@@ -209,7 +212,7 @@ public class OrderServiceImpl implements OrderService {
         if (order == null || order.getKind() != OrderKind.CUSTOM_ORDER || order.getStatus() != OrderStatus.DELIVERED) {
             return;
         }
-        moveTo(order, OrderStatus.COMPLETED, null);
+        moveTo(order, OrderStatus.COMPLETED, null, List.of());
         orderEvents.announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
     }
 
@@ -223,7 +226,7 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setReceivedConfirmedAt(Instant.now());
         if (order.getKind() == OrderKind.BUY_NOW) {
-            moveTo(order, OrderStatus.COMPLETED, null);
+            moveTo(order, OrderStatus.COMPLETED, null, List.of());
         } else {
             entityManager.flush();
         }
@@ -260,7 +263,12 @@ public class OrderServiceImpl implements OrderService {
             order.setDeliveredAt(now);
             order.setComplaintDeadline(now.plus(complaintWindow(order)));
         }
-        moveTo(order, request.status(), request.note());
+        List<String> photoKeys = request.photoTempKeys() == null
+                ? List.of()
+                : request.photoTempKeys().stream()
+                        .map(tempKey -> fileService.attach(order.getId(), tempKey))
+                        .toList();
+        moveTo(order, request.status(), request.note(), photoKeys);
         orderEvents.announce(
                 request.status() == OrderStatus.DELIVERED
                         ? RabbitConfig.ORDER_DELIVERED_ROUTING_KEY
@@ -295,12 +303,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /** Changes the status and records it in the order's progress history (FR-21, FR-40). */
-    private void moveTo(Order order, OrderStatus status, String note) {
+    private void moveTo(Order order, OrderStatus status, String note, List<String> photoKeys) {
         order.setStatus(status);
         ProgressUpdate update = new ProgressUpdate();
         update.setOrder(order);
         update.setMilestone(status);
         update.setNote(StringUtils.hasText(note) ? note.trim() : null);
+        update.getPhotoKeys().addAll(photoKeys);
         progressUpdateRepository.save(update);
         entityManager.flush();
     }

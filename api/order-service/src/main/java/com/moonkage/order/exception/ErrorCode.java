@@ -47,7 +47,33 @@ public enum ErrorCode {
     /** AC-32.3: an interprovince buy-now order ships only with a tracking code. */
     TRACKING_CODE_REQUIRED("ORDER_002", HttpStatus.BAD_REQUEST, "error.order.tracking_code_required"),
     /** BR-15: production starts only after the buyer approved a mockup version. */
-    MOCKUP_NOT_APPROVED("ORDER_003", HttpStatus.CONFLICT, "error.order.mockup_not_approved");
+    MOCKUP_NOT_APPROVED("ORDER_003", HttpStatus.CONFLICT, "error.order.mockup_not_approved"),
+    MOCKUP_NOT_FOUND("ORDER_004", HttpStatus.NOT_FOUND, "error.order.mockup_not_found"),
+    /** Mockups belong to custom orders with custom work only (BR-14). */
+    NO_CUSTOM_WORK("ORDER_005", HttpStatus.CONFLICT, "error.order.no_custom_work"),
+    /** FR-20: asking for changes says which. */
+    REVIEW_NOTE_REQUIRED("ORDER_006", HttpStatus.BAD_REQUEST, "error.order.review_note_required"),
+    /** AC-25.1: the vendor has not attached its invoice yet. */
+    INVOICE_NOT_ATTACHED("ORDER_007", HttpStatus.NOT_FOUND, "error.order.invoice_not_attached"),
+    /** An upload that is missing, of another type, too large or not the declared format (common-storage). */
+    FILE_INVALID("ORDER_008", HttpStatus.BAD_REQUEST, "error.order.file_invalid"),
+
+    // Disputes (FR-12, FR-49, BR-18, P-02)
+    DISPUTE_NOT_FOUND("DISPUTE_001", HttpStatus.NOT_FOUND, "error.dispute.not_found"),
+    /** AC-12.2: not delivered yet, or past the complaint deadline. */
+    COMPLAINT_WINDOW_CLOSED("DISPUTE_002", HttpStatus.CONFLICT, "error.dispute.complaint_window_closed"),
+    DISPUTE_ALREADY_OPEN("DISPUTE_003", HttpStatus.CONFLICT, "error.dispute.already_open"),
+    /** P-02: payment-service already locked the order to pay the vendor. */
+    PAYOUT_LOCKED("DISPUTE_004", HttpStatus.CONFLICT, "error.dispute.payout_locked"),
+    /** A partial refund is more than 0 and less than the order total. */
+    REFUND_AMOUNT_INVALID("DISPUTE_005", HttpStatus.BAD_REQUEST, "error.dispute.refund_amount_invalid"),
+    /** P-02: not received nor past the complaint deadline, or a dispute is open. */
+    PAYOUT_NOT_ELIGIBLE("DISPUTE_006", HttpStatus.CONFLICT, "error.dispute.payout_not_eligible"),
+
+    // Reviews (FR-11, BR-32)
+    /** Only a product of a delivered buy-now order of the caller. */
+    REVIEW_NOT_ALLOWED("REVIEW_001", HttpStatus.CONFLICT, "error.review.not_allowed"),
+    REVIEW_ALREADY_EXISTS("REVIEW_002", HttpStatus.CONFLICT, "error.review.already_exists");
 
     private final String code;
     private final HttpStatus httpStatus;

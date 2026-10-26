@@ -61,6 +61,12 @@ outbox:
   confirm-timeout: 5s
 
 order:
+  # NFR-08: mockups, progress photos, invoices, evidence
+  file:
+    allowed-content-types: ${ORDER_FILE_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,application/pdf}
+    max-size: ${ORDER_FILE_MAX_SIZE:20MB}
+    # fixed: it must match the prefix infra/minio/init.sh grants this service in the private bucket
+    key-prefix: order
   # P-01: the VNPay deadline of a checkout payment; checkout and stock hold last checkout-grace longer
   payment-lifetime: 15m
   checkout-grace: 5m
@@ -68,3 +74,19 @@ order:
   # D-13, Q-10 (demo values): complaint window after delivery
   complaint-window-local: 3d
   complaint-window-other: 7d
+
+storage:
+  internal-url: "${MINIO_INTERNAL_URL:http://localhost:${MINIO_API_PORT}}"
+  browser-url: "${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT}}"
+  # order's own MinIO user (infra/minio/init.sh): may only touch <private>/order/ and <private>/tmp/order/
+  access-key: ${MINIO_ORDER_ACCESS_KEY}
+  secret-key: ${MINIO_ORDER_SECRET_KEY}
+  # required by common-storage; order-service never writes there
+  public-bucket-name: ${MINIO_PUBLIC_BUCKET}
+  # mockups, progress photos, invoices, dispute evidence: read through presigned links only (NFR-03)
+  private-bucket-name: ${MINIO_PRIVATE_BUCKET}
+  region: ${MINIO_REGION:us-east-1}
+  # fixed: it must match the prefix infra/minio/init.sh grants this service
+  temp-key-prefix: tmp/order
+  upload-link-lifetime: ${MINIO_UPLOAD_LINK_LIFETIME:10m}
+  download-link-lifetime: ${MINIO_DOWNLOAD_LINK_LIFETIME:10m}
