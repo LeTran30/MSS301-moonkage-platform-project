@@ -87,13 +87,13 @@ Dispute nằm trong Order vì nó chặn chuyển trạng thái tiền của đ�
 - `vendor.updated`, `vendor.locked` → `vendor_snapshots`
 - `product.removed` → loại khỏi giỏ
 - `quote.accepted` → tạo đơn đặt hàng từ snapshot
-- `payment.succeeded`, `payment.failed` (`CHECKOUT`, `REMAINDER`) → tạo đơn từ checkout hoặc đóng checkout; ghi đã trả phần còn lại. Thành công đến trễ (checkout `FAILED`, `EXPIRED`): giữ hàng lại, không được thì `REFUND_REQUESTED` và gọi `POST /internal/refunds` (`LATE_PAYMENT`)
+- `payment.succeeded`, `payment.failed` (`CHECKOUT`, `REMAINDER`) → tạo đơn từ checkout hoặc đóng checkout; ghi đã trả phần còn lại. Thành công: gọi vendor chốt hàng (`POST /internal/stock/reservations/{checkoutId}/commit`); đến trễ (checkout `FAILED`, `EXPIRED`) thì lệnh chốt đó tự lấy hàng lại, 409 thì `REFUND_REQUESTED` và gọi `POST /internal/refunds` (`LATE_PAYMENT`)
 - `refund.completed`, `refund.manual_required`, `payout.completed`
 
 **API nội bộ**
 
 - Gọi catalog: `POST /internal/products/snapshot` (phí giao)
-- Gọi vendor: `POST /internal/stock/reservations`, `DELETE /internal/stock/reservations/{checkoutId}`
+- Gọi vendor: `POST /internal/stock/reservations`, `POST /internal/stock/reservations/{checkoutId}/commit`, `DELETE /internal/stock/reservations/{checkoutId}` (xem vendor.md)
 - Gọi payment: `POST /internal/payments` (`CHECKOUT` kèm `allocations[]` theo `order_id` có sẵn, `REMAINDER`), `POST /internal/refunds` (`LATE_PAYMENT`)
 - Cung cấp `POST /internal/orders/{orderId}/payout-lock` cho payment (P-02)
 

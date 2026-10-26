@@ -1,10 +1,23 @@
 # Integration tests (@ActiveProfiles("it")): values for the ${...} placeholders of application.yml, which read the
-# repo-root .env at runtime. The datasource comes from the Testcontainers PostgreSQL (@ServiceConnection).
+# repo-root .env at runtime. The datasource (and RabbitMQ, where a test starts one) come from Testcontainers
+# (@ServiceConnection).
 VENDOR_DB_HOST: localhost
 VENDOR_DB_PORT: 5432
 DB_USERNAME: test
 DB_PASSWORD: test
 EUREKA_URL: http://localhost:8761/eureka/
+RABBITMQ_HOST: localhost
+RABBITMQ_PORT: 5672
+RABBITMQ_USERNAME: test
+RABBITMQ_PASSWORD: test
+# tests mock ObjectStorage; these only satisfy StorageProperties validation
+MINIO_API_PORT: 9000
+MINIO_VENDOR_ACCESS_KEY: test
+MINIO_VENDOR_SECRET_KEY: test
+MINIO_PUBLIC_BUCKET: test-public
+MINIO_VENDOR_DOCS_BUCKET: test-vendor-docs
+# throw-away test key (Base64, 32 bytes)
+BANK_ACCOUNT_ENC_KEY_V1: P6okNI247898yAz4Z1v9TkjXxoCgasBTQeJ8VsJTboY=
 
 eureka:
   client:
@@ -13,3 +26,17 @@ eureka:
 spring:
   jpa:
     show-sql: false
+  # no broker in most tests; a test that needs the listener calls it or starts it itself
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+# the relay runs only when a test calls it
+outbox:
+  relay-interval: 1h
+
+# the sweep of expired holds runs only when a test calls it
+vendor:
+  stock:
+    sweep-interval: 1h

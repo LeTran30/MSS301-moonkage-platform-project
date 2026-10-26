@@ -4,7 +4,8 @@
 # (Software Design section 8). Every step is idempotent, so running it again only re-applies the same settings.
 #
 # Key layout (the services' application.yml must match the prefixes below):
-#   MINIO_PUBLIC_BUCKET       products/        catalog: product images, anonymously readable
+#   MINIO_PUBLIC_BUCKET       products/        vendor (writer since L-18) and catalog (legacy writer): product
+#                                              images, anonymously readable
 #   MINIO_PRIVATE_BUCKET      order/           order: mockups, dispute evidence, invoices
 #   MINIO_VENDOR_DOCS_BUCKET  vendor/          vendor: legal documents, agreements, fee invoices
 #   private buckets           tmp/<service>/   unconfirmed uploads, removed after MINIO_TEMP_RETENTION_DAYS
@@ -60,4 +61,5 @@ create_service_user order "$MINIO_ORDER_ACCESS_KEY" "$MINIO_ORDER_SECRET_KEY" \
     "$MINIO_PRIVATE_BUCKET/$TEMP_PREFIX/order"
 create_service_user vendor "$MINIO_VENDOR_ACCESS_KEY" "$MINIO_VENDOR_SECRET_KEY" \
     "$MINIO_VENDOR_DOCS_BUCKET/vendor" \
-    "$MINIO_VENDOR_DOCS_BUCKET/$TEMP_PREFIX/vendor"
+    "$MINIO_VENDOR_DOCS_BUCKET/$TEMP_PREFIX/vendor" \
+    "$MINIO_PUBLIC_BUCKET/products"

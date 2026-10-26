@@ -15,7 +15,8 @@ Bảng `vendors` thiếu phần lớn trường xác minh theo tư cách pháp n
 | `vendor_owner_checks` **Mới** | `id`, `vendor_id`, `submission_no`, `owner_legal_name`, `owner_id_masked`, `nfc_verified_at`, `id_match`, `name_match` (MATCH, MISMATCH), `checked_at` | Bất biến, một dòng mỗi lần nộp | AC-26.8, A-15 |
 | `vendor_reviews` **Mới** | `id`, `vendor_id`, `admin_account_id`, `decision` (APPROVE, NEEDS_INFO, REJECT), `reason`, `license_checked`, `registry_checked`, `decided_at` | `reason` bắt buộc khi không duyệt | AC-45.2, AC-45.5 |
 | `vendor_delivery_areas` | `id`, `vendor_id`, `province_code` | `(vendor_id, province_code)` duy nhất | FR-28 |
-| `order_profiles` | `id`, `vendor_id`, `min_qty`, `lead_time_days`, `early_bird_offer`, `weekly_capacity`, `cake_types`, `packaging_types`, `logo_printing`, `distributed_brands`, `gatherable_qty` | Một vendor tối đa một; `min_qty > 0` | FR-35 |
+| `order_profiles` | `id`, `vendor_id`, `min_qty`, `lead_time_days`, `early_bird_offer`, `weekly_capacity`, `packaging_types`, `logo_printing`, `distributed_brands`, `gatherable_qty` | Một vendor tối đa một; `min_qty > 0` | FR-35 |
+| `order_profile_cake_attributes` **Mới** | `order_profile_id`, `attribute_id` | PK `(order_profile_id, attribute_id)`; FK tới `order_profiles`, `cake_attributes`; thay cột `cake_types` (L-19); tự sản xuất phải có ít nhất một vỏ và một nhân (kiểm ở service) | AC-35.2, FR-54 |
 | `ref_price_tiers` | `id`, `order_profile_id`, `from_qty`, `unit_price` | `(order_profile_id, from_qty)` duy nhất **Mới** | FR-35 |
 | `order_profile_custom_types` | `order_profile_id`, `custom_type` (BAG, CARD, STICKER, TEMPLATE_BOX) |  | BR-14 |
 | `cake_attributes` **Mới** | `id`, `attribute_group` (CRUST, FILLING), `code`, `label`, `label_key`, `sort_order`, `active`, `version` | `(attribute_group, code)` và `(attribute_group, label_key)` duy nhất; `code` dạng `banh-nuong`, không đổi; không xóa, chỉ `active = false`; danh mục ban đầu A-19 nằm trong migration | FR-54, BR-34 |
@@ -26,13 +27,13 @@ Bảng `vendors` thiếu phần lớn trường xác minh theo tư cách pháp n
 
 | Bảng | Cột chính | Ràng buộc | Nguồn |
 | --- | --- | --- | --- |
-| `products` **Chuyển** | `id`, `vendor_id` (FK), `name`, `description`, `brand`, `origin`, `pieces_per_box`, `list_price`, `stock`, `expiry_date`, `delivery_label` (LOCAL, NATIONWIDE), `quote_threshold`, `status` (ON_SALE, HIDDEN, REMOVED), `removed_reason`, `removed_by`, `version` | `stock >= 0`; `list_price > 0`; `brand` NOT NULL (L-19); ít nhất một vỏ và một nhân trong `product_cake_attributes` (kiểm ở service); chỉ tạo khi vendor `sells_shop` và `can_operate`; bán lại thì bắt buộc `brand`, `origin`; còn lại `brand` trống thì ghi `business_name` | FR-29 → FR-34, FR-46, BR-12, BR-21, BR-24, BR-34 |
+| `products` **Chuyển** | `id`, `vendor_id` (FK), `name`, `description`, `brand`, `origin`, `pieces_per_box`, `list_price`, `stock`, `expiry_date`, `delivery_label` (LOCAL, NATIONWIDE), `quote_threshold`, `resold` **Mới**, `status` (ON_SALE, HIDDEN, REMOVED), `removed_reason`, `removed_by`, `version` | `stock >= 0`; `list_price > 0`; `brand` NOT NULL (L-19); ít nhất một vỏ và một nhân trong `product_cake_attributes` (kiểm ở service); chỉ tạo khi vendor `sells_shop` và `can_operate`; `resold`: RESELL luôn true, SELF_PRODUCED luôn false, BOTH chọn theo sản phẩm (AC-29.2); bán lại thì bắt buộc `brand`, `origin`; còn lại `brand` trống thì ghi `business_name` | FR-29 → FR-34, FR-46, BR-12, BR-21, BR-24, BR-34 |
 | `product_cake_attributes` **Mới** | `product_id`, `attribute_id` | PK `(product_id, attribute_id)`; FK tới `products`, `cake_attributes` | BR-34, AC-29.1 |
 | `product_images` **Chuyển** | `product_id`, `position`, `object_key` | PK `(product_id, position)` | FR-29 |
 | `product_price_tiers` **Chuyển** | `id`, `product_id`, `from_qty`, `unit_price` | `(product_id, from_qty)` duy nhất | FR-31 |
-| `stock_reservations` **Mới** | `id`, `product_id`, `qty`, `checkout_id`, `status` (HELD, COMMITTED, RELEASED), `expires_at` | Giữ theo checkout; `expires_at` do order gửi (một đồng hồ, P-01); RELEASED giữ lại được khi IPN đến trễ; index `(expires_at) WHERE HELD` cho tác vụ quét | BR-28, D-01 |
+| `stock_reservations` **Mới** | `id`, `product_id`, `qty`, `unit_price` **Mới**, `checkout_id`, `status` (HELD, COMMITTED, RELEASED), `expires_at` | Giữ theo checkout; `expires_at` do order gửi (một đồng hồ, P-01); RELEASED giữ lại được khi IPN đến trễ; index `(expires_at) WHERE HELD` cho tác vụ quét | BR-28, D-01 |
 
-Giữ hàng bằng một câu lệnh có điều kiện: `UPDATE products SET stock = stock - :qty WHERE id = :id AND status = 'ON_SALE' AND stock >= :qty`, cùng transaction với dòng `stock_reservations`. Mỗi lần sản phẩm đổi (kể cả tồn kho), vendor ghi `product.upserted` vào outbox cùng transaction để catalog cập nhật bản đọc.
+Giữ hàng khóa các dòng `products` của checkout theo thứ tự id (`SELECT … FOR UPDATE`), kiểm `status = 'ON_SALE' AND stock >= qty` và Shop còn bán được, rồi trừ `stock` cùng transaction với dòng `stock_reservations`; thiếu một dòng thì không giữ dòng nào. `unit_price` chốt giá lúc giữ (bậc giá, không thì giá niêm yết). Mỗi lần sản phẩm đổi (kể cả tồn kho), vendor ghi `product.upserted` vào outbox cùng transaction để catalog cập nhật bản đọc.
 
 **API công khai**
 
@@ -40,7 +41,7 @@ Giữ hàng bằng một câu lệnh có điều kiện: `UPDATE products SET st
 
 | Method, đường dẫn | Ai | Mục đích | FR |
 | --- | --- | --- | --- |
-| `POST /api/vendors/uploads` | M | Xin chỗ tải giấy tờ (presigned) → `{objectKey, url}` | AC-26.1 |
+| `POST /api/vendors/uploads` | M | Xin chỗ tải giấy tờ (presigned POST): `{contentType, sizeBytes}` → `{tempKey, uploadUrl, formFields, expiresAt}`; gửi `tempKey` làm `objectKey` khi nộp | AC-26.1 |
 | `POST /api/vendors` | M (đã NFC) | Nộp hồ sơ, kèm `documents[{kind, objectKey}]`; kiểm BR-23, BR-27, BR-33 | FR-26 |
 | `GET /api/vendors?ownerAccountId=me` | M | Hồ sơ của mình | FR-27 |
 | `GET /api/vendors?status=` | A | Danh sách hồ sơ chờ duyệt | FR-45 |
@@ -54,12 +55,13 @@ Giữ hàng bằng một câu lệnh có điều kiện: `UPDATE products SET st
 | `GET\|PUT /api/vendors/{vendorId}/order-profile` | S | Hồ sơ nhận đặt hàng, bậc giá, custom | FR-35 |
 | `GET /api/vendors/{vendorId}/owner-checks` | A | Kết quả so chủ từng lần nộp | AC-45.4 |
 | `GET\|POST /api/vendors/{vendorId}/reviews` | A | Quyết định `APPROVE / NEEDS_INFO / REJECT` + lý do + xác nhận đối chiếu; tạo review thì Vendor đổi trạng thái | AC-45.2 → AC-45.5 |
-| `GET\|POST /api/vendors/{vendorId}/registration-fee-payments` | S | Tạo giao dịch phí theo mức hiện hành → `{paymentId, paymentUrl}` | AC-27.4, AC-53.3 |
+| `GET\|POST /api/vendors/{vendorId}/registration-fee-payments` | S | `POST` (chủ, đã duyệt, chưa đóng): tạo giao dịch theo mức hiện hành → `{paymentId, amount, paymentUrl}`. `GET` (chủ, A): khoản đã đóng `[{paymentId, amount, paidAt}]` | AC-27.4, AC-53.3 |
 | `POST /api/vendors/{vendorId}/products/uploads` | S | Xin chỗ tải ảnh sản phẩm (bucket công khai) | FR-29 |
 | `POST /api/vendors/{vendorId}/products` | S | Đăng sản phẩm kèm images[], priceTiers[]; trả về sản phẩm vừa ghi | FR-29, FR-31 |
 | `PUT /api/vendors/{vendorId}/products/{productId}` | S | Sửa thông tin, tồn kho, giá, ngưỡng báo giá, ảnh, bậc giá | FR-30, FR-31, FR-33 |
 | `PATCH /api/vendors/{vendorId}/products/{productId}` | S | {status: ON_SALE \| HIDDEN} | FR-34 |
 | `PATCH /api/vendors/{vendorId}/products/{productId}` | A | {status: REMOVED, removedReason} | FR-46, BR-24 |
+| `GET /api/vendors/{vendorId}/products`, `GET .../{productId}` | S, A | Sản phẩm của Shop, mọi trạng thái, mới nhất trước; màn hình quản lý của Shop | FR-30, FR-34 |
 
 **Root RegistrationFeeConfig** (`/api/registration-fee-config`)
 
@@ -74,6 +76,7 @@ Giữ hàng bằng một câu lệnh có điều kiện: `UPDATE products SET st
 | --- | --- | --- | --- |
 | `GET /api/cake-attributes?group=CRUST\|FILLING` | K, M, S | Giá trị đang hiện, theo `sortOrder`: danh sách chọn của người bán, nhãn và thứ tự bộ lọc của người mua | AC-06.6, AC-29.1 |
 | `GET /api/cake-attributes?group=&includeHidden=true` | A | Cả giá trị đã ẩn | FR-54 |
+| `GET /api/cake-attributes?codes=a,b&group=` | K, M, S | Nhãn của đúng các mã đó, kể cả mã đã ẩn, để trang sản phẩm hiện tên giá trị nó đang gắn; mã không có bị bỏ qua; `group` thu hẹp khi mã có ở cả hai nhóm (`khac`) | AC-54.4 |
 | `POST /api/cake-attributes` | A | `{group, label}`; service sinh `code`, `labelKey`, đặt cuối thứ tự; trùng tên → 409 | AC-54.1, AC-54.2 |
 | `PATCH /api/cake-attributes/{attributeId}` | A | `{label?, sortOrder?, active?}`; ẩn giá trị đang hiện cuối cùng của nhóm → 409 | AC-54.3 → AC-54.6 |
 
@@ -81,7 +84,7 @@ Sản phẩm gửi vỏ và nhân bằng mã: `crustCodes[]`, `fillingCodes[]` t
 
 `POST /<root>/uploads` là quy ước chung cho file: xin chỗ tải trước, rồi gửi `objectKey` trong body khi tạo hoặc sửa tài nguyên. File chỉ thuộc tài nguyên sau khi được gắn vào.
 
-Sản phẩm là tài nguyên con của Vendor vì các bất biến của nó nằm ở Vendor: chỉ Shop đã duyệt và đã đóng phí được đăng (BR-21, BR-31), sản phẩm bán lại phải có thương hiệu (BR-12), Shop bị khóa thì ngừng bán (BR-20). Phía ghi không có `GET` cho khách; mọi màn hình đọc dùng `/api/products` của catalog. Lệnh ghi trả về sản phẩm vừa ghi, nên màn hình quản lý của Shop không phải chờ bản đọc cập nhật.
+Sản phẩm là tài nguyên con của Vendor vì các bất biến của nó nằm ở Vendor: chỉ Shop đã duyệt và đã đóng phí được đăng (BR-21, BR-31), sản phẩm bán lại phải có thương hiệu (BR-12), Shop bị khóa thì ngừng bán (BR-20). Phía ghi không có `GET` cho khách (chỉ chủ Shop và admin đọc); mọi màn hình của người mua dùng `/api/products` của catalog. Lệnh ghi trả về sản phẩm vừa ghi, nên màn hình quản lý của Shop không phải chờ bản đọc cập nhật.
 
 `owner_account_id` đang có ràng buộc duy nhất (mỗi tài khoản một người bán). BR-22 có nói tới trường hợp một tài khoản làm chủ nhiều người bán; giữ ràng buộc cho demo là đơn giản hơn (mục 11).
 
@@ -91,8 +94,9 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 
 **Phát**
 
-- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator
-- `product.upserted`, `product.removed` → catalog, order, orchestrator
+- Sự kiện trạng thái (`vendor.*` dưới đây và `product.*`) đi trong envelope `{eventId, schemaVersion: 1, eventType, sourceService, aggregateType (VENDOR, PRODUCT), aggregateId, sourceVersion, occurredAt, data}` theo [contract-proposal.md](https://github.com/LeTran30/MSS301-moonkage-platform-project/blob/feat/catalog-service/docs/services/catalog/contract-proposal.md) (nhánh `feat/catalog-service`) mục 2; `data` là bản chụp đầy đủ, trường null vẫn có mặt.
+- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator. Cùng một `data` là bản chụp đầy đủ của vendor (`sourceVersion` = `vendors.version`, vùng giao, phí giao, hồ sơ nhận đặt hàng kèm mã vỏ và nhân `crustCodes`, `fillingCodes`); bên nghe bỏ bản có `sourceVersion` không lớn hơn bản đang giữ. Khóa chỉ phát `vendor.locked`.
+- `product.upserted`, `product.removed` → catalog, order, orchestrator. `product.upserted` mỗi lần sản phẩm đổi, kể cả ẩn và hiện lại: `data` là bản chụp đầy đủ (`imageKeys` là key trong bucket công khai, `priceTiers[{fromQty, unitPrice}]`, `crustCodes`, `fillingCodes`, `resold`, `status`); `sourceVersion` = `products.version`, tăng ở mọi lần ghi kể cả chỉ đổi một bậc giá. Admin gỡ thì chỉ phát `product.removed` với `data` `{productId, vendorId, status: REMOVED}`; bên nghe không cho bản upserted nào sau nó hồi sinh sản phẩm.
 - `vendor.submitted`, `vendor.onboarding_recorded`, `vendor.reviewed`, `vendor.registration_fee_paid`, `registration_fee.changed`, `vendor.bank_account_changed` → orchestrator
 
 **Nghe**
@@ -104,7 +108,11 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 - Gọi identity: `GET /internal/nfc/status/{accountId}`, `POST /internal/accounts/check`
 - Gọi payment: `POST /internal/payments` (`purpose = REGISTRATION_FEE`)
 - Cung cấp `GET /internal/vendors/by-owner/{accountId}` cho catalog, quotation, order
-- Cung cấp `POST /internal/stock/reservations`, `DELETE /internal/stock/reservations/{checkoutId}` cho order: giữ (kèm `expiresAt`), giữ lại khi IPN đến trễ, trả hàng, trả giá hiện hành
+- Cung cấp cho order (order điều khiển, vendor không nghe sự kiện thanh toán):
+  - `POST /internal/stock/reservations` `{checkoutId, expiresAt, items[{productId, qty}]}` → `{checkoutId, status, expiresAt, items[{productId, vendorId, qty, unitPrice}]}`. Giữ đủ hoặc không giữ gì; thiếu → 409 `VENDOR_032`, mỗi sản phẩm thiếu là một `errors[].field` mang `productId`. Gọi lại cùng `checkoutId` trả kết quả cũ; khác dòng → 409 `VENDOR_033`.
+  - `POST /internal/stock/reservations/{checkoutId}/commit` khi `payment.succeeded`: `HELD → COMMITTED`; đã `RELEASED` (IPN trễ) thì lấy hàng lại, không đủ → 409 `VENDOR_032` để order hoàn tiền `LATE_PAYMENT`. Gọi lại trả 200.
+  - `DELETE /internal/stock/reservations/{checkoutId}` khi `payment.failed` hoặc checkout hết hạn: trả hàng; không có hoặc đã trả → 204; đã chốt → 409 `VENDOR_034`.
+  - Tác vụ quét của vendor tự trả các dòng `HELD` quá `expires_at` (`vendor.stock.sweep-interval`).
 
 ## Quyết định liên quan
 

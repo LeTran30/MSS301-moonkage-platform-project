@@ -19,6 +19,12 @@ spring:
               uri: lb:ws://orchestrator-service
               predicates:
                 - Path=/ws/**
+            # vendor-service by aggregate root (L-17, api-db-alignment-plan.md phase 3). /vendor-service/** keeps
+            # working through the discovery locator until every service has moved and the locator is turned off.
+            - id: vendor-service
+              uri: lb://vendor-service
+              predicates:
+                - Path=/api/vendors/**,/api/registration-fee-config/**,/api/cake-attributes/**
           # Gateway 4.1+ adds X-Forwarded-* (Host, Port, Proto, Prefix) only for clients matching this regex.
           # Without them every service builds its URLs (e.g. the Swagger "servers" URL) from its container IP,
           # which the browser cannot reach. Default: loopback and private networks (Docker bridge, LAN).

@@ -1,0 +1,266 @@
+# Kế hoạch hoàn thành vendor-service
+
+> **Trạng thái:** Đề xuất (2026-10-26). Đích là [api-db/vendor.md](../../architecture/api-db/vendor.md); kế hoạch này chỉ chia việc và thứ tự. Khi hai bên lệch, `vendor.md` là bản đúng. Là phần vendor của giai đoạn 2 và 4.1 trong [api-db-alignment-plan.md](../../architecture/api-db-alignment-plan.md).
+
+## Hiện trạng (nhánh `fix/vendor-entities-schema`)
+
+| Phần | Có | Thiếu |
+| --- | --- | --- |
+| Migration | V1, `V2026_10_22_1000` (mọi bảng của `vendor.md`), `V2026_10_22_1500` (`cake_attributes`, `product_cake_attributes`, `brand`) | Không cần migration mới cho tới khi nghiệp vụ đòi |
+| Entity | `Vendor`, `BankAccount` (embedded), `DeliveryArea`, `OrderProfile`, `RefPriceTier` | `VendorDocument`, `VendorOwnerCheck`, `VendorReview`, `RegistrationFeeConfig`, `CakeAttribute`, `Product`, `ProductImage`, `ProductPriceTier`, `StockReservation`, `OutboxEvent` |
+| Controller | `VendorController`: đủ đường dẫn Root Vendor trừ sản phẩm | `/api/registration-fee-config`, `/api/cake-attributes`, `/api/vendors/{id}/products/**`, `/internal/stock/reservations` |
+| Service | Chỉ `findByOwnerAccountId` chạy thật | Mọi hàm còn lại trả `null` / `List.of()` |
+| Hạ tầng | Flyway, Feign (`IdentityClient` rỗng), Testcontainers (`VendorRepositoryIntegrationTest`) | `ApiResponse`, `AppException` / `ErrorCode` / handler, `messages.properties`, outbox + RabbitMQ, common-storage, mã hóa số tài khoản, kiểm vai |
+| Bên ngoài | identity có `GET /internal/nfc/status/{accountId}` (`legalName`, `idNumberMasked`, `nfcVerifiedAt`), `POST /internal/accounts/check`; gateway gắn `X-Account-Id`, `X-User-Role` | payment chưa có `POST /internal/payments`; catalog vẫn giữ `SellerProductController` (ghi sản phẩm) |
+
+## Nguyên tắc
+
+- Cấu trúc **package-by-component** như identity ([README identity](../identity/README.md)): entity, repository, `*ServiceImpl`, mapper package-private; controller chỉ ở `web`; có `ComponentArchitectureTest`.
+- **Tên phản ánh đúng bản chất** của thứ nó nói tới ([coding-rules.md](../../conventions/coding-rules.md) phần 2): đọc tên class, method, field là biết nó *là gì* và *làm gì*, không phải nó được dùng ở đâu hay nằm ở tầng nào. Cụ thể:
+  - Tên theo ngôn ngữ nghiệp vụ của requirement và `vendor.md`: `businessName` (tên đơn vị), không `name`; `registrationFeePaidAt`, không `paidDate`; `ownerCheck`, không `nfcCompare`.
+  - Tiền tố method cam kết kiểu trả về: `get…` ném lỗi khi không có, `find…` trả `Optional`, `is/has/can…` trả `boolean` (`canOperate()`, `isOwnedBy(accountId)`).
+  - Package đặt theo đúng thứ nó sở hữu (`registrationfee`, `deliveryarea`, không `fee`, `delivery`); class phụ trợ đặt theo vai trò thật (`BankAccountNumberCipher` chỉ mã hóa số tài khoản, không `PiiCipher` chung chung).
+  - Đổi bản chất thì đổi tên cùng PR; không để tên cũ "vì đang dùng".
+- **Dữ liệu có luật dùng value object** (coding-rules mục 1.3): VO tự chuẩn hóa và tự kiểm trong constructor, nên trong service không tồn tại giá trị sai; entity giữ VO qua JPA converter (chỉ ghi `value()`), DTO request nhận kiểu thô rồi đổi sang VO ngay ở biên service. Không kiểm lại cùng một luật ở nhiều nơi. Danh sách ở mục [Value object](#value-object).
+- Không hardcode: hằng số ở `*Constant`, cấu hình ở `application.yml` / `.env`, thông báo lỗi ở `messages.properties`.
+- Không sửa file `V…` đã merge; cần đổi schema thì thêm file mới, migration + entity + seed đi cùng PR (`docs/guides/database.md`).
+- Kiểm nghiệp vụ ở service, không tin giao diện (BR-22, BR-23, BR-27, BR-31, BR-33).
+- Mỗi giai đoạn một PR, xong khi `./mvnw -pl vendor-service clean verify` qua (gồm checkstyle, spotless), không dùng `-Dcheckstyle.skip`.
+
+## Cấu trúc package đích
+
+| Package | Sở hữu | Public |
+| --- | --- | --- |
+| `web` | — | `VendorController`, `RegistrationFeeConfigController`, `CakeAttributeController`, `ProductController`, `StockReservationController` (nội bộ) |
+| `vendor` | `vendors`, `vendor_documents`, `vendor_owner_checks`, `vendor_reviews`, `vendor_delivery_areas`, `order_profiles`, `ref_price_tiers`, `order_profile_custom_types` | `VendorService`, `DeliveryAreaService`, `OrderProfileService`, `VendorView` (bản chụp chỉ đọc: `ownerAccountId`, `status`, `sellsShop`, `acceptsOrders`, `isOwnedBy()`, `canOperate()`), DTO, enum trạng thái, `vendor.vo` |
+| `registrationfee` | `registration_fee_configs` | `RegistrationFeeService` |
+| `cakeattribute` | `cake_attributes` | `CakeAttributeService`, `CakeAttributeGroup`, `CakeAttributeCode`, `CakeAttributeLabel`, `CakeAttributeRef`, DTO |
+| `product` | `products`, `product_images`, `product_price_tiers`, `product_cake_attributes` | `ProductService` |
+| `stock` | `stock_reservations` | `StockReservationService` |
+| `outbox` | `outbox_events` | `OutboxService` |
+| `client` | — | `IdentityClient`, `PaymentClient` |
+| `security` | — | `CurrentUser(Info)` đọc `X-Account-Id`, `X-User-Role` |
+| `common` | — | `ApiResponse`, `AppException`, `ErrorCode`, `GlobalExceptionHandler`, VO dùng chung (`ProvinceCode`, `Price`, `Quantity`, `ObjectKey`), cấu hình |
+
+`vendor` là aggregate root: component khác hỏi quyền và trạng thái qua `VendorService.getView(vendorId)` → `VendorView`, không đọc `VendorRepository` hay entity `Vendor` (coding-rules mục 1.1: dữ liệu qua biên bằng bản chụp chỉ đọc).
+
+`canOperate()` là hành vi của `Vendor` và `VendorView`: `status == APPROVED && registrationFeePaidAt != null`. `LOCKED` và các trạng thái khác đều `false` (BR-20, BR-31, AC-27.3, AC-27.4).
+
+## Value object
+
+Mỗi VO là `record` bất biến, constructor chuẩn hóa rồi kiểm, sai thì `AppException` với mã lỗi riêng (trong `messages.properties`); hằng số của luật nằm trong chính VO. Có JPA converter khi entity giữ nó. Mẫu: `PhoneNumber` của identity.
+
+| VO | Bản chất và bất biến | Dùng ở | Nguồn |
+| --- | --- | --- | --- |
+| `TaxCode` | Mã số doanh nghiệp / hộ kinh doanh: bỏ khoảng trắng; đúng định dạng (câu hỏi 6) | `Vendor.taxCode` | AC-26.1 |
+| `ProvinceCode` | Mã tỉnh 2 ký tự, `Province.isKnown` | `Vendor.provinceCode`, `DeliveryArea` | L-15, A-18 |
+| `DeliveryAreas` | Tập `ProvinceCode` không trùng, không rỗng | `PUT …/delivery-areas` | FR-28 |
+| `RepresentativeName` | Họ tên viết không dấu, chữ hoa, gộp khoảng trắng; có dấu → lỗi tại trường; `matches(legalName)` so với họ tên theo thẻ sau khi bỏ dấu | `Vendor.representativeName`, owner check | AC-26.1, A-15 |
+| `IdNumber` | Số định danh 12 chữ số; chỉ sống trong request, không lưu, không có trong log (`toString()` trả bản che) | Gửi `checkIdNumber` | BR-27, NFR-03 |
+| `BankAccountNumber` | Chuỗi chữ số, độ dài trong giới hạn cấu hình; `masked()`; `toString()` trả bản che | Trước khi mã hóa vào `BankAccount` | P-09, NFR-03 |
+| `Price` | `long` VND > 0 | `listPrice`, `unitPrice` của bậc giá, `registrationFeeAmount`, mức phí cấu hình | NFR-09, AC-53.1 |
+| `DeliveryFee` | `long` VND ≥ 0 | `localDeliveryFee` | FR-28 |
+| `Quantity` | `int` > 0 | `minQty`, `fromQty`, số lượng giữ hàng | FR-35, BR-28 |
+| `PriceTiers` | Danh sách bậc giá: `fromQty` tăng dần, không trùng; `unitPriceFor(qty)` | Sản phẩm, hồ sơ nhận đặt hàng | FR-31, FR-35 |
+| `CakeAttributeCode` | Slug `banh-nuong`: sinh từ nhãn (bỏ dấu, kebab), không đổi sau khi tạo | `CakeAttribute.code`, `crustCodes[]`, `fillingCodes[]` | FR-54, BR-34 |
+| `ObjectKey` | Khóa MinIO có tiền tố của chủ (vendor hoặc tài khoản) và bucket; không nhận khóa của người khác | `ProductImage` | FR-29 |
+
+Không làm VO cho trường không có luật riêng (`address`, `description`): VO chỉ đáng khi nó giữ một bất biến.
+
+## Giai đoạn
+
+### 0. Nền
+
+- Chuyển code hiện có sang cấu trúc package ở trên; thêm `ComponentArchitectureTest`.
+- `common`: `ApiResponse<T>`, `ErrorCode` (gồm `INVALID_STATE_TRANSITION` 409, `VENDOR_NOT_FOUND` 404, `NOT_VENDOR_OWNER` 403, `ROLE_FORBIDDEN` 403, `NFC_NOT_VERIFIED` 403, `VENDOR_ALREADY_EXISTS` 409), `AppException`, handler, `messages.properties`. Chép cách làm của identity cho đến khi có `common-web` (giai đoạn 0 của alignment plan).
+- `security`: `@CurrentUser` thay cho `@RequestHeader("X-Account-Id")` lặp lại ở mọi hàm; kiểm vai `MEMBER` / `ADMIN` trong service.
+- `outbox`: `OutboxEvent`, `OutboxRelay` gửi RabbitMQ có publisher confirm, như identity. Thêm `spring-boot-starter-amqp`.
+- `client`: `IdentityClient.getNfcStatus(accountId)`, `IdentityClient.checkIdNumber(request)`; Feign error decoder đổi 404 của identity thành `AppException`.
+- Thêm `common-storage` vào pom; cấu hình bucket riêng tư `vendor-docs`, bucket công khai cho ảnh sản phẩm.
+- Test: khung `@SpringBootTest` + Testcontainers PostgreSQL và RabbitMQ dùng chung cho các giai đoạn sau.
+
+**Xong khi:** service khởi động, mọi endpoint chưa viết trả `ApiResponse` 501 `COMMON_501` (không trả `null` giả thành công), architecture test và `VendorRepositoryIntegrationTest` qua.
+
+**Trạng thái (2026-10-26):** xong trên nhánh `feat/vendor-foundation`. `DeliveryArea`, `OrderProfile` giữ `vendorId` thay cho quan hệ JPA tới `Vendor`. Chưa có VO; mỗi VO vào cùng giai đoạn đầu tiên dùng nó.
+
+### 1. Khai và duyệt hồ sơ (FR-26, FR-27, FR-45; BR-23, BR-27, BR-33)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+
+- AC-26.6: số định danh không phải CCCD của chủ tài khoản thì **chặn** nộp (`VENDOR_004`, 422). Chỉ tên lệch mới cho nộp kèm cảnh báo `nameMatch = MISMATCH`.
+- `POST /api/vendors/uploads` nhận `{contentType, sizeBytes}`, trả `{tempKey, uploadUrl, formFields, expiresAt}` như catalog. Khi nộp, file được chuyển sang `vendor/<vendorId>/…`.
+- Bỏ VO `ObjectKey` cho giấy tờ: `ObjectStorage` đã kiểm temp key, loại và kích thước khi chuyển file. Khi nộp lại, khóa không phải temp key phải là giấy tờ hiện hành cùng loại.
+- `registryChecked` chỉ bắt buộc với SOLE_PROPRIETORSHIP: hộ kinh doanh không có trên cổng đăng ký quốc gia (A-14).
+- NFC và CCCD lấy trong một lần gọi `checkIdNumber`, không gọi `getNfcStatus` riêng. Bản owner check lúc nộp đã đủ dữ liệu AC-45.1, nên admin không gọi identity lúc xem.
+- `vendor.updated` dời sang giai đoạn 3: component `vendor` muốn đọc `deliveryarea` thì sinh vòng phụ thuộc.
+- Chưa làm: phân trang `GET /api/vendors?status=`, seed mỗi trạng thái, chạy kịch bản qua gateway. Test tích hợp hiện chạy MockMvc, với identity và MinIO được mock.
+- Cấu hình mới: `BANK_ACCOUNT_ENC_KEY_V1` (bắt buộc để nộp), `VENDOR_DOCUMENT_ALLOWED_CONTENT_TYPES`, `VENDOR_DOCUMENT_MAX_SIZE`.
+
+- Entity `VendorDocument` (`kind` BUSINESS_LICENSE, FOOD_SAFETY, FEE_INVOICE), `VendorOwnerCheck` (bất biến), `VendorReview`.
+- `POST /api/vendors/uploads`: presigned upload vào `vendor-docs` → `{objectKey, url}`.
+- `POST /api/vendors`:
+  - chặn khi NFC chưa xác minh (`IdentityClient.getNfcStatus`, AC-26.5);
+  - chặn khi tài khoản đã có vendor (`owner_account_id` duy nhất);
+  - chỉ nhận `entityType` HOUSEHOLD_BUSINESS, SOLE_PROPRIETORSHIP (BR-33);
+  - `sellsShop || acceptsOrders`; đổi request sang VO ở đầu hàm (`TaxCode`, `ProvinceCode`, `RepresentativeName`, `IdNumber`, `BankAccountNumber`, `ObjectKey`), sai là dừng tại trường đó;
+  - gửi `IdNumber` sang `IdentityClient.checkIdNumber` lấy hash, masked, key version; không lưu, không log số đầy đủ;
+  - ghi `VendorOwnerCheck` lần nộp thứ `submission_no` với `id_match`, `name_match` (`RepresentativeName.matches(legalName)`, AC-26.8, A-15); không trùng thì vẫn cho nộp, admin thấy cảnh báo;
+  - `BankAccountNumberCipher` mã hóa `BankAccountNumber` (AES-GCM, khóa riêng của vendor, `pii_key_ver`), lưu `masked()` (P-09);
+  - gắn `documents[{kind, objectKey}]` (bắt buộc BUSINESS_LICENSE; FOOD_SAFETY theo AC-26.1);
+  - outbox `vendor.submitted`.
+- `PUT /api/vendors/{id}`: chỉ khi `NEEDS_INFO` / `REJECTED`, ngược lại 409; chạy lại toàn bộ kiểm trên, thêm một `VendorOwnerCheck` mới, về `PENDING` (AC-27.2).
+- `GET /api/vendors?ownerAccountId=me` (M), `GET /api/vendors?status=` (A, phân trang), `GET /api/vendors/{id}` (S, A): A thấy thêm kết quả NFC và owner check mới nhất (AC-45.1, AC-45.4).
+- `GET /api/vendors/{id}/documents/{documentId}`: presigned GET ngắn hạn, chỉ chủ hoặc A (NFR-03).
+- `GET /api/vendors/{id}/owner-checks` (A).
+- `GET|POST /api/vendors/{id}/reviews` (A): `PENDING` → `APPROVED | NEEDS_INFO | REJECTED`; `reason` bắt buộc khi không duyệt (AC-45.2); duyệt bắt buộc `licenseChecked`, `registryChecked` (AC-45.5); review và đổi trạng thái cùng transaction; outbox `vendor.reviewed`, `vendor.updated` (AC-45.3, orchestrator gửi thông báo).
+- Chuyển trạng thái là hành vi của entity: `Vendor.resubmit(...)`, `Vendor.decide(review)`, `Vendor.lock(reason)` tự kiểm trạng thái nguồn (sai → `INVALID_STATE_TRANSITION`); bảng nguồn → đích nằm ở `VendorStatus.canTransitionTo`, không viết `setStatus` rải rác trong service. Test bảng chuyển trạng thái.
+- Seed: một vendor mỗi trạng thái, có owner check và document.
+
+**Xong khi:** kịch bản nộp → yêu cầu bổ sung → nộp lại → duyệt chạy qua gateway; test tích hợp phủ AC-26.5, AC-26.6, AC-26.8, AC-27.2, AC-45.2, AC-45.5.
+
+### 2. Phí đăng ký (FR-53; BR-31; AC-27.4 → AC-27.6, AC-53.x)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. payment-service chưa có `POST /internal/payments` và chưa phát `payment.succeeded`, nên `PaymentClient` được mock trong test và sự kiện được đưa thẳng vào listener. Chưa chạy được với VNPay sandbox. Khác với bản đề xuất bên dưới:
+
+- `POST /internal/payments` gửi thêm `payerAccountId`, vì `payments.payer_account_id` cần nó. Đã ghi vào `payment.md`.
+- Payload `payment.succeeded` mà vendor đọc: `{eventId, paymentId, purpose, referenceId, amount, paidAt}`; đã ghi vào `payment.md`. `purpose` khác `REGISTRATION_FEE` thì bỏ qua.
+- Queue `vendor-service.payment-events` (durable) nghe `payment.succeeded`. Chỉ lần thanh toán đầu được ghi; lần sau payment tự hoàn tiền (P-03), vendor chỉ log.
+- Response tách theo bản chất: `POST` trả `{paymentId, amount, paymentUrl}`, `GET` trả các khoản đã đóng `{paymentId, amount, paidAt}`.
+- Admin được xin chỗ tải (`POST /api/vendors/uploads`) để gắn hóa đơn. Chỉ gắn được `FEE_INVOICE`, và chỉ khi vendor đã đóng phí (`VENDOR_014`).
+- `vendor.updated` vẫn để giai đoạn 3 như đã dời. `vendor.registration_fee_paid` mang `canOperate`.
+- Gateway mở `GET /vendor-service/api/registration-fee-config` cho khách (AC-26.9).
+
+- Entity `RegistrationFeeConfig`; mức hiện hành = dòng `effective_from` mới nhất ≤ now; seed 200.000.
+- `GET /api/registration-fee-config` (K, M), `PUT` (A, `amount` là `Price`, thêm dòng mới, không sửa dòng cũ); outbox `registration_fee.changed`.
+- `POST /api/vendors/{id}/registration-fee-payments` (S): chỉ khi `APPROVED` và chưa đóng, ngược lại 409; số tiền là mức hiện hành lúc tạo (AC-53.3); gọi `PaymentClient` (`purpose = REGISTRATION_FEE`, `referenceId = vendorId`) → `{paymentId, paymentUrl}`.
+- `GET /api/vendors/{id}/registration-fee-payments` (S): đọc từ các cột `registration_fee_*` của vendor (một lần đóng duy nhất).
+- Nghe `payment.succeeded` (`purpose = REGISTRATION_FEE`): ghi `registration_fee_payment_id`, `amount`, `paid_at`; idempotent theo `paymentId`, lần hai bỏ qua (AC-27.5); outbox `vendor.registration_fee_paid`, `vendor.updated` (`canOperate` đổi). Bảng `processed_events` nếu chưa có thì thêm migration.
+- `POST /api/vendors/{id}/documents` (A, `kind = FEE_INVOICE`), chủ tải được qua link ở giai đoạn 1 (AC-27.6).
+
+**Phụ thuộc:** payment-service `POST /internal/payments` và sự kiện `payment.succeeded`. Nếu payment chưa xong, làm phần vendor trước với `PaymentClient` giả trong test, ghép thật khi payment merge.
+
+**Xong khi:** vendor đã duyệt đóng phí qua VNPay sandbox, `canOperate = true`; IPN lặp không ghi hai lần.
+
+### 3. Cài đặt bán và khóa người bán (FR-28, FR-35, FR-46)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, đã commit (`9d59708`). Khác với bản đề xuất bên dưới:
+
+- Vùng giao và hồ sơ nhận đặt hàng gộp vào component `vendor` (bỏ `deliveryarea`, `orderprofile`): chúng là một phần aggregate `Vendor`, và bản chụp `vendor.updated` phải đọc cả ba mà không sinh vòng phụ thuộc. `DeliveryAreaService`, `OrderProfileService` vẫn là interface public riêng.
+- Mọi thay đổi aggregate nạp vendor qua `VendorFinder.getForChange`: khóa dòng và tăng `version` ngay (`PESSIMISTIC_FORCE_INCREMENT` trên entity đang quản lý), nên đổi vùng giao hay hồ sơ đặt hàng cũng có `sourceVersion` mới, và hai thay đổi của một vendor không phát lệch thứ tự.
+- Một sự kiện `VendorSnapshotEvent` mang toàn bộ trạng thái: `sourceVersion`, `ownerAccountId`, `businessName`, `status`, `statusReason`, `canOperate`, `sellsShop`, `acceptsOrders`, `deliveryAreas`, `localDeliveryFee`, `orderProfile` (cho `vendor_snapshots` của quotation), `changedBy`, `occurredAt`. Phát trên `vendor.updated` sau nộp, nộp lại, duyệt, đóng phí, đổi phí giao, đổi vùng giao, đổi hồ sơ đặt hàng.
+- Khóa chỉ phát `vendor.locked` (cùng payload), không phát thêm `vendor.updated`; bên nghe coi hai khóa như nhau. Ai khóa và lúc nào nằm ở `changedBy`, `occurredAt` của sự kiện cho audit (AC-46.2); bảng `vendors` không thêm cột `locked_by`.
+- Admin gửi trạng thái khác `LOCKED` → 400 tại `status`; gửi `localDeliveryFee` → 403. Thiếu lý do → `VENDOR_018` tại `statusReason`.
+- Cài đặt bán chỉ sửa được khi vendor `APPROVED` (`VENDOR_012`); khóa rồi thì giữ nguyên cài đặt cũ.
+- Hồ sơ đặt hàng: AC-35.2 (tự sản xuất) bắt buộc `weeklyCapacity`, `packagingTypes`, `logoPrinting`; AC-35.3 (bán lại) bắt buộc `distributedBrands`, `gatherableQty`; `BOTH` bắt buộc cả hai nhóm (`VENDOR_017` tại trường thiếu). Vỏ và nhân của hồ sơ (cột `cake_types`) dời sang giai đoạn 4, khi có `cake_attributes`.
+- Bậc giá thay theo `fromQty`: bậc giữ lại chỉ đổi giá, không xóa rồi chèn, để không vướng ràng buộc duy nhất.
+- Đổi tài khoản ngân hàng ngoài nộp lại chưa làm (chưa có yêu cầu); `vendor.bank_account_changed` để sau.
+
+- `PATCH /api/vendors/{id}` (S): `{localDeliveryFee}` → `DeliveryFee`; trường khác → 403.
+- `PATCH /api/vendors/{id}` (A): `{status: LOCKED, statusReason}` bắt buộc lý do; outbox `vendor.locked`, `vendor.updated` (BR-20).
+- `GET|PUT /api/vendors/{id}/delivery-areas` (S): thay toàn bộ danh sách bằng `DeliveryAreas`; outbox `vendor.updated`.
+- `GET|PUT /api/vendors/{id}/order-profile` (S): chỉ khi `acceptsOrders`; `minQty` là `Quantity`, bậc giá là `PriceTiers`, `customTypes` ⊂ enum; outbox `vendor.updated`.
+- Payload `vendor.updated` khớp `vendor_snapshots` của catalog (`ownerAccountId`, `businessName`, `status`, `canOperate`, `sellsShop`, `deliveryAreas`, `localDeliveryFee`, `sourceVersion = version`).
+- Đổi tài khoản ngân hàng (nếu cho phép ngoài nộp lại): outbox `vendor.bank_account_changed`; không đưa số đầy đủ vào sự kiện.
+
+**Xong khi:** catalog nhận `vendor.updated` và cập nhật `vendor_snapshots`; khóa Shop làm sản phẩm biến mất khỏi `GET /api/products`.
+
+### 4. Danh mục vỏ và nhân (FR-54; BR-34)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, đã commit (`edb7879`). Khác với bản đề xuất bên dưới:
+
+- `GET /api/cake-attributes`: `group` không bắt buộc (bỏ trống trả cả hai nhóm, nhóm này rồi nhóm kia). Khách không cần đăng nhập; gateway mở `GET /vendor-service/api/cake-attributes`. `includeHidden=true` không có header gateway → 401, thành viên → 403. `@CurrentUser(required = false)` cho phép endpoint mở trả `null` khi không có cả hai header.
+- Luật giữa các giá trị một nhóm nằm trong `CakeAttributeCatalog` (không ở service): trùng khóa tên hoặc trùng mã → `VENDOR_020` nêu tên giá trị đã có; giá trị mới đứng sau mọi giá trị (kể cả đã ẩn); ẩn giá trị đang hiện cuối cùng → `VENDOR_021`. Service khóa các dòng của nhóm (`PESSIMISTIC_WRITE`) khi đổi; hai admin thêm cùng lúc thì ràng buộc duy nhất của bảng bắt, trả cùng lỗi trùng.
+- `CakeAttributeLabel` (VO) chuẩn hóa NFC, gộp khoảng trắng, tối đa 60 ký tự để mã sinh ra vừa `code varchar(60)`; phải có chữ hoặc số sau khi bỏ dấu. `key()` và `toCode()` dùng chung `Diacritics.strip`.
+- Thứ tự bằng nhau xếp theo khóa tên, để mọi lần đọc cùng thứ tự. `sortOrder` âm → `VENDOR_109`.
+- Không phát sự kiện khi đổi danh mục: catalog chỉ giữ mã, nhãn và thứ tự lấy từ endpoint này (L-19).
+- Làm luôn phần vỏ và nhân của hồ sơ nhận đặt hàng dời từ giai đoạn 3 (AC-35.2): bảng `order_profile_cake_attributes`, bỏ cột `cake_types` (migration `V2026_10_26_1100`). `PUT order-profile` nhận `crustCodes`, `fillingCodes`; tự sản xuất bắt buộc ít nhất một vỏ và một nhân. Mã không có hoặc đã ẩn → `VENDOR_022` tại trường; mã đã ẩn mà hồ sơ đang có thì giữ được (giống AC-33.6). Response và `VendorSnapshotEvent.orderProfile` mang `crustCodes`, `fillingCodes` theo thứ tự của danh mục.
+- Theo [correctness-review.md](correctness-review.md): luật đủ điều khoản theo nguồn hàng chuyển từ service vào `OrderTerms` (constructor gọn, nhận `SupplySource`; `SupplySource.produces()`/`resells()`), kèm `leadTimeDays ≥ 0` (`VENDOR_110`). `packagingTypes`, `distributedBrands` có `@Size` (trước đây dài quá 255 ký tự ra 500).
+- `CakeAttributeService.select(group, codes, linkedIds)` là chỗ dùng chung cho giai đoạn 5 (sản phẩm): cùng luật "mã đang hiện, hoặc đã ẩn nhưng đang gắn".
+
+- Entity `CakeAttribute`; danh mục ban đầu đã có trong migration `V2026_10_22_1500`.
+- `GET /api/cake-attributes?group=` (công khai, chỉ `active`, theo `sortOrder`); `includeHidden=true` chỉ A.
+- `POST` (A): `CakeAttributeCode.fromLabel(label)` sinh `code`, `labelKey` chuẩn hóa; trùng → 409 (AC-54.2); đặt cuối thứ tự.
+- `PATCH /{id}` (A): `label`, `sortOrder`, `active`; không đổi `code`; ẩn giá trị đang hiện cuối cùng của nhóm → 409 (AC-54.6).
+- `CakeAttributeCode` và `labelKey` dùng chung một hàm bỏ dấu; unit test cho chữ tiếng Việt (`đ`, dấu kép).
+
+**Xong khi:** web người bán và bộ lọc người mua đọc danh mục từ endpoint này.
+
+### 5. Ghi sản phẩm (L-18; FR-29 → FR-34, FR-46; BR-12, BR-21, BR-24, BR-34)
+
+**Trạng thái (2026-10-26):** phía vendor xong trên nhánh `feat/vendor-foundation`, đã commit (`cf4c2db`). Phần catalog (bỏ writer cũ, adapter dựng `product_views` từ sự kiện) là PR riêng của catalog. Khác với bản đề xuất bên dưới:
+
+- Sự kiện dùng envelope của [contract-proposal.md](https://github.com/LeTran30/MSS301-moonkage-platform-project/blob/feat/catalog-service/docs/services/catalog/contract-proposal.md) (nhánh `feat/catalog-service`) (mục 2): `OutboxService.enqueueState` bọc `data` trong `EventEnvelope` (`eventId`, `schemaVersion` 1, `eventType`, `sourceService`, `aggregateType`, `aggregateId`, `sourceVersion`, `occurredAt`). `vendor.updated`, `vendor.locked` chuyển luôn sang envelope (`VendorSnapshotEvent` → `VendorSnapshot` là `data`), vì chưa bên nào đọc chúng. Đề xuất đó còn ghi "chưa duyệt": nếu nhóm đổi hợp đồng thì sửa một chỗ là `EventEnvelope`.
+- Thêm cột `products.resold` (migration `V2026_10_26_1200`): RESELL luôn true, SELF_PRODUCED luôn false, BOTH bắt buộc chọn (`VENDOR_113` khi chọn trái nguồn hàng). Bán lại thiếu `brand` hoặc `origin` → `VENDOR_028` tại trường.
+- Luật của sản phẩm nằm trong `ProductDetails` (record, như `OrderTerms`): đủ trường bắt buộc, độ dài, `stock ≥ 0` (`VENDOR_111`), 1 → 10 ảnh không trùng (`VENDOR_112`), ít nhất một vỏ và một nhân. `Product` chỉ đổi qua một `ProductDetails` đầy đủ, nên hiện lại sản phẩm đã ẩn luôn bán được (AC-34.4). `ProductStatus.canTransitionTo`: `ON_SALE ⇄ HIDDEN`, cả hai → `REMOVED`, không gì ra khỏi `REMOVED`; sản phẩm đã gỡ không sửa được (`VENDOR_026`); gỡ thiếu lý do → `VENDOR_029`.
+- `VendorService.getView` trả `VendorView` (bản chụp chỉ đọc) cho component `product`. Ghi cần chủ (`ACCESS_DENIED`), `canOperate` (`VENDOR_024`), `sellsShop` (`VENDOR_025`); admin chỉ gỡ.
+- `PUT` bắt buộc `version` đã đọc; khác bản hiện tại → `VENDOR_027`. Mọi lần ghi tăng version ngay bằng `PESSIMISTIC_FORCE_INCREMENT`, nên chỉ đổi một bậc giá (bảng con) vẫn cho `sourceVersion` mới, và hai lần ghi cùng lúc không cùng qua.
+- Ảnh: `imageKeys` theo thứ tự hiển thị, mỗi key là temp key vừa tải hoặc key sản phẩm đang có; key khác → `VENDOR_030` (không gắn được file của người khác). `ProductImages` chuyển ảnh mới vào `<public>/products/<vendorId>/`, xóa lại nếu transaction rollback, và xóa ảnh bị bỏ sau khi commit. `infra/minio/init.sh` cấp cho user vendor `<public>/products`; cấu hình ở `vendor.product-image.*`.
+- Thêm `GET /api/vendors/{id}/products` và `GET .../{productId}` (chủ, admin) cho màn hình quản lý của Shop.
+- Resolver nhãn cho trang sản phẩm (đề xuất §8 của catalog): `GET /api/cake-attributes?codes=` trả nhãn của đúng các mã đó, kể cả mã đã ẩn (AC-54.4).
+- `CakeAttributeCodes` chuyển sang `cakeattribute` để `vendor` và `product` dùng chung. Mã lỗi chung mới `COMMON_400_REQUIRED`, `COMMON_400_TOO_LONG`.
+- Chưa làm: seed sản phẩm ở `R__seed.sql` (cần file ảnh thật trong MinIO, làm cùng PR catalog).
+
+- Entity `Product`, `ProductImage`, `ProductPriceTier`, liên kết `product_cake_attributes`.
+- `POST /api/vendors/{id}/products/uploads`: presigned upload bucket công khai, kiểm loại và kích thước bằng `common-storage`.
+- `POST /api/vendors/{id}/products` (S): `VendorView` kiểm `isOwnedBy`, `canOperate()`, `sellsShop`; `listPrice` là `Price`, bậc giá là `PriceTiers`, ảnh là `ObjectKey`, `stock ≥ 0`; ít nhất một vỏ và một nhân, chỉ nhận mã đang hiện; bán lại (`supplySource` RESELL / BOTH theo lựa chọn sản phẩm) bắt buộc `brand`, `origin`, còn lại `brand` trống ghi `businessName` (BR-12, L-19); trả sản phẩm vừa ghi.
+- `PUT /api/vendors/{id}/products/{productId}` (S): thay thông tin, tồn kho, giá, ngưỡng báo giá, ảnh, bậc giá; mã vỏ / nhân đã ẩn mà sản phẩm đang có thì giữ được (AC-33.6); `@Version` chống ghi đè.
+- `PATCH` (S): `ON_SALE ⇄ HIDDEN`; (A): `REMOVED` + `removedReason`, `removedBy`; `REMOVED` không quay lại (BR-24).
+- Mọi lần ghi (kể cả tồn kho) phát `product.upserted` cùng transaction; `REMOVED` phát `product.removed`. Payload mang `crustCodes[]`, `fillingCodes[]`, `sourceVersion`.
+- Phối hợp catalog: catalog bỏ `SellerProductController`, `Product`, `ProductPriceTier` và dựng `product_views` từ sự kiện. Merge hai PR cùng ngày; seed sản phẩm tạo lại ở vendor (`R__seed.sql`).
+
+**Xong khi:** Shop đăng sản phẩm qua vendor và thấy nó ở `GET /api/products` của catalog sau vài giây; catalog không còn endpoint ghi.
+
+### 6. Giữ hàng (BR-28; D-01, D-14; P-01)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, đã commit (`e92b5e3`). order-service chưa gọi các endpoint này. Khác với bản đề xuất bên dưới:
+
+- **Order điều khiển, vendor không nghe `payment.succeeded`/`payment.failed`.** Nếu cả vendor (nghe sự kiện) và order (giữ lại khi IPN trễ) cùng đổi một checkout thì giẫm chân nhau: hàng giữ lại sau khi vendor đã xử lý sự kiện nằm ở HELD rồi bị quét trả về kho dù đơn đã tạo. Thay vào đó order gọi `POST /internal/stock/reservations/{checkoutId}/commit` khi tiền về và nhận trả lời ngay: 200 chốt được; 409 `VENDOR_032` (IPN trễ, hàng đã bán cho người khác) thì order hoàn tiền. `order.md` sửa theo.
+- Giữ hàng khóa dòng `products` (`PESSIMISTIC_WRITE`, theo thứ tự id để hai checkout không deadlock) và trừ tồn kho qua `Product.takeStock`, thay cho câu `UPDATE … WHERE stock >= :qty`: luật "đang bán và đủ hàng" nằm trong `Product.canSupply`, và `@Version` tăng nên `product.upserted` có `sourceVersion` mới. Mọi đường (giữ, chốt, trả, quét) khóa sản phẩm trước rồi mới tới dòng giữ hàng.
+- Thêm cột `stock_reservations.unit_price` (migration `V2026_10_26_1300`): giá chốt lúc giữ, nên gọi lại trả cùng giá và Shop đổi giá giữa chừng không đổi số tiền checkout.
+- Shop bị khóa, chưa đóng phí hoặc tắt Shop thì sản phẩm của nó không giữ được (BR-20, BR-21, BR-31). Thiếu hàng trả 409 với mỗi sản phẩm thiếu là một `errors[].field` (`AppException.atFields`).
+- `DELETE` của checkout đã chốt → 409 `VENDOR_034`; không có hoặc đã trả → 204. Tác vụ quét chỉ trả checkout còn `HELD` và đã quá hạn, mỗi checkout một transaction; lệnh chốt đến trước thì thắng.
+- Hệ quả: mỗi lần bán, version sản phẩm tăng, nên Shop đang mở form sửa sẽ nhận `VENDOR_027` và phải tải lại.
+
+- Entity `StockReservation` (`HELD`, `COMMITTED`, `RELEASED`).
+- `POST /internal/stock/reservations` cho order: nhận `checkoutId`, `expiresAt`, danh sách `{productId, qty}`; mỗi dòng giữ bằng `UPDATE products SET stock = stock - :qty WHERE id = :id AND status = 'ON_SALE' AND stock >= :qty` cùng transaction với dòng reservation; thiếu một dòng thì rollback cả checkout, trả dòng nào thiếu; trả giá hiện hành theo bậc giá. Lặp cùng `checkoutId` trả kết quả cũ.
+- `DELETE /internal/stock/reservations/{checkoutId}`: trả hàng, `RELEASED`.
+- Nghe `payment.succeeded` (`purpose = ORDER`): `HELD → COMMITTED`; nếu đã `RELEASED` (IPN đến trễ) thì giữ lại nếu còn hàng, không còn thì báo order để hoàn tiền (theo `order.md`, P-01). `payment.failed`: `RELEASED`.
+- Tác vụ `@Scheduled` quét `HELD` quá `expires_at` (index `ix_stock_reservations_held`), trả hàng theo lô; khoảng chạy để trong `application.yml`.
+- Mỗi lần tồn kho đổi phát `product.upserted`.
+- Test đồng thời: nhiều checkout tranh một sản phẩm tồn kho thấp, tổng giữ không vượt tồn.
+
+**Xong khi:** luồng mua ngay của order giữ, chốt, trả hàng đúng; test tranh chấp qua.
+
+### 7. Hoàn thiện
+
+**Trạng thái (2026-10-26):** xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+
+- `GET /internal/vendors/by-owner` trả `VendorView` (bản chụp chỉ đọc đã dùng giữa các component, thêm `canOperate`), không có tài khoản ngân hàng, số định danh, giấy tờ; test khẳng định điều đó. `VendorResponse` chỉ còn cho chủ và admin. Chỉ catalog có `VendorClient`: `VendorInfo` thêm `canOperate`. quotation, order chưa gọi endpoint này.
+- Gateway thêm route theo tên root cho vendor (`/api/vendors/**`, `/api/registration-fee-config/**`, `/api/cake-attributes/**`) và mở `GET` công khai ở cả hai dạng đường dẫn; chặn thêm `/internal/**` ở gốc. **Chưa** tắt discovery locator: việc đó làm cho mọi service cùng lúc (giai đoạn 3 của alignment plan), nên `/vendor-service/api/**` vẫn chạy và web hiện tại không vỡ.
+- [README.md](README.md) theo mẫu identity; Postman [`docs/api/mk-vendor.json`](../../api/mk-vendor.json) dùng tài khoản seed `member4@mk.com` (chủ vendor seed) và admin.
+- Swagger lấy mô tả từ Javadoc của controller và DTO (`therapi-runtime-javadoc`, chỉ thêm ở vendor-service), mọi endpoint có Javadoc. Chưa có ví dụ body riêng trong Swagger; ví dụ nằm ở Postman.
+- NFR-03 không phải sửa: `IdNumber`, `BankAccountNumber`, `SubmitVendorRequest`, `CheckIdNumberRequest` che số trong `toString()`; Feign không log body; handler không log body request; link giấy tờ hết hạn sau 10 phút.
+
+- `GET /internal/vendors/by-owner/{accountId}` dùng DTO nội bộ riêng (không lộ số tài khoản), cập nhật `VendorClient` của catalog, quotation, order.
+- Gateway: route `/api/vendors/**`, `/api/registration-fee-config/**`, `/api/cake-attributes/**` → vendor-service (giai đoạn 3 của alignment plan); chặn `/internal/**`.
+- `docs/services/vendor/README.md` theo mẫu identity: bảng dữ liệu, cấu trúc package, trạng thái, sự kiện phát / nghe.
+- Postman `docs/api/` cho vendor; Swagger có mô tả và ví dụ.
+- Rà NFR-03: log không chứa số định danh, số tài khoản; link giấy tờ hết hạn ngắn.
+
+## Kiểm thử
+
+| Loại | Phạm vi |
+| --- | --- |
+| Unit | Mỗi VO: giá trị đúng, giá trị sai ném đúng mã lỗi, chuẩn hóa (vd `RepresentativeName`, `CakeAttributeCode` với chữ tiếng Việt), `toString()` của `IdNumber`, `BankAccountNumber` không lộ số; chuyển trạng thái `VendorStatus`; `canOperate()`; mã hóa / giải mã số tài khoản |
+| Tích hợp (Testcontainers PostgreSQL + RabbitMQ) | Mỗi endpoint: đúng vai, sai vai 403, sai trạng thái 409; outbox ghi cùng transaction; listener idempotent; giữ hàng đồng thời |
+| Hợp đồng | Feign tới identity, payment bằng WireMock; payload sự kiện so với DTO của catalog |
+| Kiến trúc | `ComponentArchitectureTest`, không vòng phụ thuộc package; entity không giữ `String` cho trường đã có VO |
+
+## Câu hỏi cần chốt
+
+1. Sự kiện `vendor.onboarding_recorded` (buổi làm việc với công ty, BR-26) còn cần không khi công ty tạm bỏ (BR-33)? Đề xuất: bỏ khỏi danh sách phát.
+2. Chủ đổi tài khoản ngân hàng ngoài lần nộp lại: cho phép không, có cần duyệt lại không? Ảnh hưởng `vendor.bank_account_changed`.
+3. `supplySource` của vendor là `BOTH` thì sản phẩm nào là bán lại: cần cờ trên sản phẩm hay suy từ `brand ≠ businessName`?
+4. Khóa mã hóa số tài khoản (`pii_key_ver`): lấy từ `.env` như identity hay một nguồn khác; ai được giải mã khi chuyển tiền (payment gọi vendor, hay vendor gửi số trong lệnh payout)?
+5. Payment-service làm `POST /internal/payments` khi nào: quyết định giai đoạn 2 làm thật hay dùng client giả trước.
+6. Định dạng `TaxCode`: chỉ 10 chữ số, hay nhận cả 10-3 (chi nhánh) và mã hộ kinh doanh là số định danh 12 chữ số? `TaxCode` của order (hóa đơn doanh nghiệp, AC-24.3) có nên chung một VO ở `common-reference` không?
