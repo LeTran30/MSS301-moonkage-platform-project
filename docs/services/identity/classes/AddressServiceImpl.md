@@ -1,12 +1,12 @@
 # Class Log: `AddressServiceImpl`
 
-- **Package:** `com.moonkage.identity.service.impl`
+- **Package:** `com.moonkage.identity.address` (component `address`: chỉ `AddressService` và `dto/` là public)
 - **Tham chiếu:** `FR-03` (Quản lý sổ địa chỉ), `AC-03.1`, `AC-03.2`, `Q-12` (vùng giao = tỉnh/thành)
-- **Dependencies:** `AddressRepository`, `AccountRepository`, `AddressMapper`
+- **Dependencies:** `AddressRepository`, `AccountService` (`lockForUpdate`), `AddressMapper`
 - **Mô hình địa chỉ:** hai cấp hành chính áp dụng từ 01/07/2025 — **tỉnh/thành → phường/xã/đặc khu**, không còn cấp huyện. Mỗi cấp lưu **mã quốc gia** (tỉnh 2 số, xã 5 số) để so khớp và **tên** người dùng đã chọn để địa chỉ vẫn đọc đúng nếu sau này đơn vị đổi tên. Kèm người nhận (`recipientName`, `recipientPhone`), `detail` (số nhà, đường) và `label` tùy chọn.
 - **Luật bất biến (Invariants):**
   1. Mỗi tài khoản có **tối đa 1** địa chỉ mặc định tại mọi thời điểm.
-  2. Mọi thao tác thêm/sửa đổi cờ mặc định phải khóa dòng `Account` (`FOR UPDATE`) để chống race condition.
+  2. Mọi thao tác thêm/sửa đổi cờ mặc định phải khóa dòng tài khoản qua `AccountService.lockForUpdate` (`FOR UPDATE` trên `accounts`) để chống race condition. `address` không đụng vào entity `Account`: `Address` chỉ giữ `accountId`.
   3. Địa chỉ của tài khoản khác trả về `ADDRESS_NOT_FOUND` (như không tồn tại) để không lộ thông tin.
   4. `areaCode` không do client gửi: luôn bằng `provinceCode` (`Address.getAreaCode()`), nên không thể lệch với tỉnh.
 
@@ -23,10 +23,10 @@
 
 ### Method: `create(accountId, request)` -> `AddressResponse`
 1. **[Guard & Lock]**
-   - Khóa dòng tài khoản `accountId` -> NẾU không có `THROW ACCOUNT_NOT_FOUND`.
+   - `AccountService.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
    - Lấy danh sách địa chỉ hiện có `existing`.
-   - Tạo `Address` mới, gán qua `apply` (xem dưới).
+   - Tạo `Address` mới với `accountId`, gán qua `apply` (xem dưới).
    - `makeDefault = existing rỗng HOẶC request.isDefault == true`.
    - NẾU `makeDefault`: hạ cờ mặc định của mọi địa chỉ trong `existing`.
 3. **[Lưu trữ]** `saveAndFlush` để response có `createdAt`, `updatedAt`.
@@ -34,7 +34,7 @@
 
 ### Method: `update(accountId, addressId, request)` -> `AddressResponse`
 1. **[Guard & Lock]**
-   - Khóa dòng tài khoản -> NẾU không có `THROW ACCOUNT_NOT_FOUND`.
+   - `AccountService.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
    - Tìm địa chỉ theo `(addressId, accountId)` -> NẾU không có `THROW ADDRESS_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
    - `apply(address, request)`.
@@ -45,7 +45,7 @@
 
 ### Helper: `apply(address, request)`
 - `recipientName`, `provinceName`, `wardName`, `detail`: `trim`.
-- `recipientPhone`: mọi dạng hợp lệ (`0912…`, `84912…`, `+84912…`) -> dạng quốc gia `0912…`.
+- `recipientPhone`: mọi dạng hợp lệ (`0912…`, `84912…`, `+84912…`) -> `PhoneNumber` 9 số `912…` (cùng dạng với số của tài khoản; `toNational()` cho số để gọi).
 - `provinceCode`, `wardCode`: giữ nguyên (đã qua regex 2 số / 5 số ở DTO).
 - `label`: rỗng hoặc toàn khoảng trắng -> `null`.
 

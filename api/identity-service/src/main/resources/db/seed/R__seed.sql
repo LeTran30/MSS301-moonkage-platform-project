@@ -13,7 +13,7 @@ END $$;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- phone numbers are stored as the 9 subscriber digits (Account.toStoredPhoneNumber)
+-- phone numbers (accounts and addresses) are stored as the 9 subscriber digits (PhoneNumber.value)
 INSERT INTO accounts (id, email, phone_number, password_hash, role, account_verified, nfc_failed_attempts,
                       created_at, updated_at)
 VALUES ('00000000-0000-4000-8000-000100000001', 'member1@mk.com', '901000001',
@@ -45,13 +45,13 @@ INSERT INTO addresses (id, account_id, recipient_name, recipient_phone, province
 SELECT d.id, a.id, d.recipient_name, d.recipient_phone, d.province_code, d.province_name, d.ward_name,
        d.detail, d.label, d.is_default, now(), now()
 FROM (VALUES ('00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000100000001',
-              'Nguyễn Thị Lan', '0901000001', '79', 'Thành phố Hồ Chí Minh', 'Phường Sài Gòn',
+              'Nguyễn Thị Lan', '901000001', '79', 'Thành phố Hồ Chí Minh', 'Phường Sài Gòn',
               '12 Lê Lợi', 'Nhà riêng', true),
              ('00000000-0000-4000-8000-000600000002', '00000000-0000-4000-8000-000100000001',
-              'Nguyễn Văn Hùng', '0901000011', '01', 'Thành phố Hà Nội', 'Phường Ba Đình',
+              'Nguyễn Văn Hùng', '901000011', '01', 'Thành phố Hà Nội', 'Phường Ba Đình',
               '25 Điện Biên Phủ', 'Văn phòng', false),
              ('00000000-0000-4000-8000-000600000003', '00000000-0000-4000-8000-000100000002',
-              'Trần Văn Minh', '0901000002', '01', 'Thành phố Hà Nội', 'Phường Ba Đình',
+              'Trần Văn Minh', '901000002', '01', 'Thành phố Hà Nội', 'Phường Ba Đình',
               '8 Hoàng Diệu', NULL, true))
          AS d (id, account_id, recipient_name, recipient_phone, province_code, province_name, ward_name, detail,
                label, is_default)
