@@ -19,6 +19,9 @@ COPY common-reference/pom.xml common-reference/
 COPY vendor-service/pom.xml vendor-service/
 COPY payment-service/pom.xml payment-service/
 COPY orchestrator-service/pom.xml orchestrator-service/
+# every service gets the shared libraries, so depending on one later never breaks the image
+COPY common-storage/src common-storage/src
+COPY common-reference/src common-reference/src
 COPY discovery-server/src discovery-server/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl discovery-server -am package -DskipTests -Dspotless.check.skip=true -Dcheckstyle.skip=true
 
