@@ -4,7 +4,7 @@ package com.moonkage.catalog.dto.client;
 public record VendorInfo(
         String id,
         String ownerAccountId,
-        String legalName,
+        String businessName,
         String status,
         String supplySource,
         boolean sellsShop,

@@ -12,7 +12,7 @@ public final class VendorMapper {
         return new VendorResponse(
                 v.getId(),
                 v.getOwnerAccountId(),
-                v.getLegalName(),
+                v.getBusinessName(),
                 v.getStatus().name(),
                 v.getSupplySource().name(),
                 v.isSellsShop(),

@@ -5,7 +5,7 @@
 - **Package:** `com.moonkage.identity.kyc`
 - **Tham chiếu:** `BR-23`, `BR-27`, `AC-26.6`, `AC-26.8`, `AC-45.1`, `D-07`, `NFR-03`
 - **Dependencies:** `AccountService` (`getNfcLockout`, `requireAccountExists`), `LegalProfileRepository`, `IdNumberHasher`, `LegalProfileMapper`
-- **Người gọi:** `NfcController` (`GET /api/nfc/status`, `GET /internal/nfc/status/{accountId}`), `AccountController` (`POST /internal/accounts/check`)
+- **Người gọi:** `KycController` (`GET /api/nfc/status`, `GET /internal/nfc/status/{accountId}`), `AccountController` (`POST /internal/accounts/check`)
 
 ## 0. Luật bất biến
 

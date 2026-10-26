@@ -6,7 +6,7 @@ Ngày khảo sát: 2026-10-19. Dựa trên code hiện có, không dựa trên t
 
 | Phía | Vị trí | Commit tham chiếu |
 | --- | --- | --- |
-| API | `platform/api/identity-service` (package `nfc`, `NfcController`, `IntNfcController`, `IntAccountController`) | `64ec9bc` (develop) + thay đổi chưa commit |
+| API | `platform/api/identity-service` (package `nfc`, `KycController`, `IntNfcController`, `IntAccountController`) | `64ec9bc` (develop) + thay đổi chưa commit |
 | Web | `platform/web/src/components/NfcVerification.tsx` | `af3235e` |
 | Mobile | repo riêng `moonkage/mobile` (Flutter, app Moonkage Verify) | `2c78835` |
 

@@ -1,0 +1,15 @@
+# Integration tests (@ActiveProfiles("it")): values for the ${...} placeholders of application.yml, which read the
+# repo-root .env at runtime. The datasource comes from the Testcontainers PostgreSQL (@ServiceConnection).
+VENDOR_DB_HOST: localhost
+VENDOR_DB_PORT: 5432
+DB_USERNAME: test
+DB_PASSWORD: test
+EUREKA_URL: http://localhost:8761/eureka/
+
+eureka:
+  client:
+    enabled: false
+
+spring:
+  jpa:
+    show-sql: false

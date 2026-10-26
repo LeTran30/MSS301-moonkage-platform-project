@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
-public class NfcController {
+public class KycController {
 
     private final NfcService nfcService;
     private final LegalProfileService legalProfileService;

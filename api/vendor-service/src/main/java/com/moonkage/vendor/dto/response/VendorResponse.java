@@ -4,7 +4,7 @@ package com.moonkage.vendor.dto.response;
 public record VendorResponse(
         String id,
         String ownerAccountId,
-        String legalName,
+        String businessName,
         String status,
         String supplySource,
         boolean sellsShop,

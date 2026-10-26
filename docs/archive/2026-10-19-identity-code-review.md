@@ -49,7 +49,7 @@ Mã `Q-xx` trỏ tới danh sách phát hiện ở mục 3.
 |---|---|---|---|
 | `AuthController` | 🟢 | 🟢 | Mỏng, chỉ chuyển tiếp. `resend-otp` dùng lại `ForgotPasswordRequest` (tên DTO không khớp mục đích, Q-19) |
 | `AddressController` | 🟢 | 🟢 | FR-03; lấy `accountId` từ JWT, không nhận từ body |
-| `NfcController` | 🟢 | 🟢 | Đúng bảng API 5.1; `/card` luôn 200 theo contract app |
+| `KycController` | 🟢 | 🟢 | Đúng bảng API 5.1; `/card` luôn 200 theo contract app |
 | `InternalAccountController` | 🟢 | 🟡 | `nfc-status` đúng 5.3; `by-email` chỉ phục vụ seed seller demo (Q-14) |
 | `InternalIdNumberController` | 🟢 | 🟢 | D-07: pepper không rời identity |
 
