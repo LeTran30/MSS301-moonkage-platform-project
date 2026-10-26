@@ -6,6 +6,15 @@ server:
 spring:
   application:
     name: order-service
+  # all values come from the repo-root .env (see .env.example)
+  # RabbitMQ (domain events, Software Design 5.4)
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    # OutboxRelay waits for the broker's confirm before marking an event sent
+    publisher-confirm-type: simple
   datasource:
     url: "jdbc:postgresql://${ORDER_DB_HOST}:${ORDER_DB_PORT}/order_db"
     username: ${DB_USERNAME}
@@ -20,11 +29,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    # off by default: every statement in the log is noise. Local debugging: JPA_SHOW_SQL=true in .env.
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: ${JPA_SHOW_SQL:false}
 
 eureka:
   client:
@@ -44,3 +53,18 @@ management:
     health:
       probes:
         enabled: true
+
+# domain events go through the outbox_events table (Software Design 6)
+outbox:
+  relay-interval: 2s
+  batch-size: 100
+  confirm-timeout: 5s
+
+order:
+  # P-01: the VNPay deadline of a checkout payment; checkout and stock hold last checkout-grace longer
+  payment-lifetime: 15m
+  checkout-grace: 5m
+  checkout-expiry-sweep-interval: 60s
+  # D-13, Q-10 (demo values): complaint window after delivery
+  complaint-window-local: 3d
+  complaint-window-other: 7d

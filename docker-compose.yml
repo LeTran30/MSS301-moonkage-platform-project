@@ -348,6 +348,10 @@ services:
       - ORDER_DB_PORT=5432
       # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
       - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
     # readiness only (no DB/mail checks), so a slow SMTP does not mark the service unhealthy (RT-05)
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8084/actuator/health/readiness || exit 1"]
@@ -357,6 +361,7 @@ services:
       start_period: 30s
     depends_on:
       order-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
   vendor-service:

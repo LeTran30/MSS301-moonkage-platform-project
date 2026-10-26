@@ -1,5 +1,6 @@
 package com.moonkage.payment.service;
 
+import com.moonkage.payment.dto.request.RefundRequest;
 import com.moonkage.payment.enums.RefundReason;
 
 /** Money back to a payer (AC-49.3, P-01, P-03). */
@@ -11,4 +12,10 @@ public interface RefundService {
      * @param reason LATE_PAYMENT, DUPLICATE_PAYMENT or QUOTE_EXPIRED
      */
     void requestAutomatic(String paymentId, RefundReason reason, long amount);
+
+    /**
+     * POST /internal/refunds from order (LATE_PAYMENT) or quotation (QUOTE_EXPIRED): the payment must have taken
+     * money, and at most all of it goes back. Once per payment and reason.
+     */
+    void requestForPayment(RefundRequest request);
 }
