@@ -2,7 +2,7 @@
 
 > **Một câu:** phát và kiểm mã 6 số gửi qua email, kèm các giới hạn chống spam và chống đoán mò.
 
-- **Package:** `com.moonkage.identity.service.impl`
+- **Package:** `com.moonkage.identity.otp`
 - **Tham chiếu:** `FR-01`, `FR-02`, `Q-05` (mã tách theo mục đích)
 - **Dependencies:** `OtpProperties` (khóa `otp.*` trong application.yml). Không có DB: mọi thứ nằm trong RAM.
 

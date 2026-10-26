@@ -55,13 +55,15 @@ public class JdbcCatalogProjectionRepository implements CatalogProjectionReposit
             throw new CatalogException(CatalogErrorCode.PROJECTION_CONFLICT);
         }
         namedJdbc.update("""
-                INSERT INTO product_views(product_id, vendor_id, name, description, cake_type, brand, origin,
-                    pieces_per_box, list_price, stock, expiry_date, delivery_label, quote_threshold, status,
+                INSERT INTO product_views(product_id, vendor_id, name, description, crust_codes, filling_codes,
+                    brand, origin, pieces_per_box, list_price, stock, expiry_date,
+                    delivery_label, quote_threshold, status,
                     image_keys, price_tiers, source_version)
-                VALUES (:id, :vendor, :name, :description, :cake, :brand, :origin, :pieces, :price, :stock,
+                VALUES (:id, :vendor, :name, :description, :crusts, :fillings, :brand, :origin, :pieces, :price, :stock,
                     :expiry, :delivery, :threshold, :status, :images, CAST(:tiers AS jsonb), :version)
                 ON CONFLICT (product_id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description,
-                    cake_type=EXCLUDED.cake_type, brand=EXCLUDED.brand, origin=EXCLUDED.origin,
+                    crust_codes=EXCLUDED.crust_codes, filling_codes=EXCLUDED.filling_codes,
+                    brand=EXCLUDED.brand, origin=EXCLUDED.origin,
                     pieces_per_box=EXCLUDED.pieces_per_box, list_price=EXCLUDED.list_price, stock=EXCLUDED.stock,
                     expiry_date=EXCLUDED.expiry_date, delivery_label=EXCLUDED.delivery_label,
                     quote_threshold=EXCLUDED.quote_threshold, status=EXCLUDED.status, image_keys=EXCLUDED.image_keys,
@@ -210,7 +212,8 @@ public class JdbcCatalogProjectionRepository implements CatalogProjectionReposit
                 .addValue("vendor", row.vendorId())
                 .addValue("name", row.name())
                 .addValue("description", row.description())
-                .addValue("cake", row.cakeType())
+                .addValue("crusts", sqlArray(row.crustCodes()))
+                .addValue("fillings", sqlArray(row.fillingCodes()))
                 .addValue("brand", row.brand())
                 .addValue("origin", row.origin())
                 .addValue("pieces", row.piecesPerBox())

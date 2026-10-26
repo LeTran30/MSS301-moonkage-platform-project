@@ -1,0 +1,21 @@
+# Báo cáo Phase A–C — catalog
+
+Ngày: 26/10/2026. Nhánh `feat/catalog-service`. Không push, merge vào develop/main hoặc deploy. Phase D cần xác nhận riêng của Lê Trần rằng contract đã được nhóm duyệt.
+
+## Phase A — khóa C2, nhận develop
+
+- A1 commit **local** `1e160ae`: C2 kỹ thuật đã kiểm chứng 371 tests ở phiên trước. Không đưa tài liệu audit cũ ngoài scope vào commit.
+- Fetch thực tế: develop mới nhất là `6523d00`, mới hơn `d211767` trong prompt; bao gồm L-19 và migration catalog `V2026_10_22_1510__product_views_crust_filling.sql`.
+- Lê Trần đã xác nhận ngoại lệ: **cho phép nhận migration đã merge từ develop; chỉ sửa tương thích catalog, không triển khai C3**. Giữ nguyên migration, không sửa/xóa checksum, không phục hồi cake_type hoặc tạo từ điển ở catalog.
+- Merge `--no-ff`, không rebase. **Không có conflict Git**; Dockerfile/catalog API-DB docs tự merge. Giữ copy src/pom common-reference của C2, nhận VendorInfo.businessName từ develop.
+- Sửa tương thích catalog: ProductListing/ProductProjectionRow/DTO/mapper/SQL/test fixture dùng crustCodes/fillingCodes (text[]) thay cakeType; chưa thêm search facets/filter, taxonomy writer hay business event adapter.
+- Nội dung vendor/order/orchestrator/frontend và refactor identity đến từ develop nguyên trạng, không có sửa bổ sung của task catalog.
+- Hai lần verify đầu dừng ở Checkstyle LineLength của SQL sau đổi cột; đã sửa, validate riêng catalog qua. Full `-o -B -ntp clean verify` kết thúc **BUILD SUCCESS 17:55:58, 393 pass / 0 fail / 0 error / 0 skip**, PostgreSQL/RabbitMQ thật. Catalog 99, identity mới 190, vendor mới 8; phần tăng so với 371 đến từ base develop. Đếm Surefire XML chỉ 11 module trong parent POM sau clean, không cộng target cũ. `git diff --check` sạch.
+
+## Phase B — phạm vi recovery được phép
+
+Chỉ dùng dữ liệu catalog đã lưu và contract tối thiểu đã xác nhận. Không tạo feed/snapshot giả, không suy diễn payload nghiệp vụ, không reset processed_events/tombstone. Checkpoint tạm để quét inbox không được coi là checkpoint nguồn producer.
+
+## Phase C — đề xuất cần duyệt
+
+Sẽ soạn contract-proposal.md sau Phase B, đánh dấu **ĐỀ XUẤT, CHƯA ĐƯỢC NHÓM DUYỆT**. Không nối consumer nghiệp vụ theo tài liệu này. Dừng trước Phase D.

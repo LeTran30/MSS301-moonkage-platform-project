@@ -2,9 +2,9 @@
 
 > **Một câu:** web mở một phiên xác minh hiện thành mã QR, app Moonkage Verify đọc thẻ CCCD qua NFC rồi gửi lên một lần; máy chủ kiểm thẻ và lưu kết quả.
 
-- **Package:** `com.moonkage.identity.nfc`
+- **Package:** `com.moonkage.identity.kyc`
 - **Tham chiếu:** `FR-04` (`AC-04.1` → `AC-04.12`), `BR-23`, `D-21`, Software Design 4.2 (thứ tự kiểm)
-- **Dependencies:** `AccountRepository`, `LegalProfileRepository`, `NfcTransportDecryptor` (mở JWE), `NfcCardValidator` (kiểm định dạng), `IdNumberHasher` (băm có khóa), `PiiCipher` (mã hóa AES), `OutboxService` (sự kiện), `NfcProperties`, `TransactionTemplate`
+- **Dependencies:** `AccountService` (`lockForUpdate`, `getNfcLockout`, `saveNfcLockout`), `LegalProfileRepository`, `NfcTransportDecryptor` (mở JWE), `NfcCardValidator` (kiểm định dạng), `IdNumberHasher` (băm có khóa), `PiiCipher` (mã hóa AES), `OutboxService` (sự kiện), `NfcProperties`, `TransactionTemplate`
 
 ## 0. Hình dung
 
@@ -16,7 +16,7 @@ Web ◀── WebSocket (qua outbox → orchestrator) hoặc GET /sessions/{id}
 ```
 
 - **Phiên** nằm trong RAM (`sessions`), không có bảng DB: khởi động lại chỉ có nghĩa là quét QR mới.
-- **Bộ đếm sai và thời điểm khóa** nằm trên dòng `accounts` (`nfcFailedAttempts`, `nfcLockedUntil`).
+- **Bộ đếm sai và thời điểm khóa** nằm trên dòng `accounts` (`nfc_failed_attempts`, `nfc_locked_until`); `kyc` đọc/ghi chúng qua `AccountService` dưới dạng value object `NfcLockout`. Chính sách (số lần, thời gian khóa) là của `kyc` (`NfcProperties`).
 - **Đã xác minh** = tài khoản có một dòng `legal_profiles`.
 
 ## 1. Luật bất biến
@@ -42,7 +42,7 @@ Thẻ bị từ chối **không phải lỗi HTTP**: luôn trả 200, lý do n�
 ## 3. Luồng chi tiết
 
 ### `createSession(accountId)`
-1. Tài khoản không tồn tại → `ACCOUNT_NOT_FOUND`. Đã xác minh → `NFC_ALREADY_VERIFIED`. Đang khóa → `NFC_LOCKED` (kèm số phút).
+1. `AccountService.getNfcLockout`: tài khoản không tồn tại → `ACCOUNT_NOT_FOUND`. Đã xác minh → `NFC_ALREADY_VERIFIED`. Đang khóa → `NFC_LOCKED` (kèm số phút).
 2. Tạo mã phiên ngẫu nhiên 192 bit (32 ký tự base64url), hạn `nfc.session-ttl`.
 3. Xóa phiên PENDING cũ của tài khoản, thêm phiên mới (khóa `synchronized` để hai lần tạo song song không cùng sống sót).
 
@@ -53,13 +53,13 @@ Thẻ bị từ chối **không phải lỗi HTTP**: luôn trả 200, lý do n�
    - đã dùng hoặc đang có thẻ khác xử lý → `SESSION_USED`;
    - hợp lệ → đặt `inFlight = true`.
 2. **[Kiểm thẻ, trong một transaction]** `saveCardResult`:
-   1. Khóa dòng tài khoản (`FOR UPDATE`).
+   1. Khóa dòng tài khoản: `AccountService.lockForUpdate` (`FOR UPDATE`).
    2. Đã xác minh rồi → `SESSION_USED`.
-   3. Khóa cũ đã hết hạn → đếm sai về 0. Còn đang khóa → `LOCKED`.
+   3. `getNfcLockout(...).clearFinished(now)`: khóa cũ đã hết hạn → đếm sai về 0. Còn đang khóa → `LOCKED`.
    4. `parseCard`: mở JWE và kiểm định dạng 9 trường. Không đạt → `BAD_FORMAT`.
    5. `findCardRejection`: CCCD hết hạn (theo giờ Việt Nam) → `CARD_EXPIRED`; số CCCD đã gắn tài khoản khác → `ID_ALREADY_LINKED`.
-   6. Có lý do từ chối ở bước 4–5 → `countFailedAttempt`: đếm + 1; chạm `nfc.max-attempts` thì khóa `nfc.lockout-duration` và đếm về 0. Ghi sự kiện `nfc_failed` hoặc `nfc_locked`.
-   7. Qua hết → lưu `LegalProfile` (băm, che, mã hóa), đếm sai về 0, ghi sự kiện `nfc_verified`.
+   6. Có lý do từ chối ở bước 4–5 → `countFailedAttempt`: `NfcLockout.recordFailure` đếm + 1; chạm `nfc.max-attempts` thì khóa `nfc.lockout-duration` và đếm về 0; `saveNfcLockout`. Ghi sự kiện `nfc_failed` hoặc `nfc_locked`.
+   7. Qua hết → lưu `LegalProfile` (băm, che, mã hóa; chỉ giữ `accountId`), `saveNfcLockout(NONE)`, ghi sự kiện `nfc_verified`.
 3. **[Va chạm DB]** Hai tài khoản lưu cùng một CCCD đúng cùng lúc → khóa duy nhất bắt được → `ID_ALREADY_LINKED`.
 4. **[Nhả phiên]** `releaseSession`: xác minh thành công → phiên thành VERIFIED (giữ tới hết hạn để web còn đọc được qua GET). Bị từ chối → phiên trở lại PENDING để thử lại.
 

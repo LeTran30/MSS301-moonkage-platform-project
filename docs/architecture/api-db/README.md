@@ -59,6 +59,7 @@ Trừ `/api/auth/...`, mọi API quản lý tài nguyên qua **aggregate root**:
 | identity | Account | `profile`, `addresses`, `nfc-sessions` (→ `card`), `legal-profile` (chỉ đọc) | `/api/accounts` |
 | vendor | Vendor | `documents`, `delivery-areas`, `order-profile`, `reviews`, `registration-fee-payments`, `owner-checks` (chỉ đọc), products (→ images, price-tiers) — phía ghi duy nhất của sản phẩm | `/api/vendors` |
 | vendor | RegistrationFeeConfig (một bản) | — | `/api/registration-fee-config` |
+| vendor | CakeAttribute (danh mục vỏ và nhân, FR-54) | — | `/api/cake-attributes` |
 | catalog | Product (chỉ đọc, bản đọc dựng từ vendor) | `reviews (chỉ đọc)` | `/api/products` |
 | catalog | InterprovinceFeeTable (một bản) | `provinces/{provinceCode}` | `/api/interprovince-fees` |
 | quotation | QuoteRequest | `logos`, `invitations`, `quotes` (→ `acceptance`) | `/api/quote-requests` |

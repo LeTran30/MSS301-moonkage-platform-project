@@ -2,7 +2,7 @@
 
 ## 0. Về tài liệu này
 
-> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `docs/product/context.md`, `docs/product/user-stories.md`, `docs/product/requirements.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
+> **Trạng thái: Đã xác nhận** (17/10/2026). Bộ tài liệu đã xác nhận cùng nhau: `docs/product/context.md`, `docs/product/user-stories.md`, `docs/product/requirements.md`. Cập nhật cùng ngày: luồng xác minh NFC theo app mobile. Cập nhật 22/10/2026: vỏ bánh, nhân bánh và thương hiệu của sản phẩm. Cập nhật 23/10/2026: tìm đơn vị cung cấp theo tên; đăng nhập xong quay về việc đang làm. Mọi thay đổi sau ngày này phải sửa từ trên xuống (Context → User Stories → Requirement) và ghi lại.
 
 User Stories diễn đạt nhu cầu của từng bên bằng lời của người dùng: ai, muốn gì, để làm gì. Tài liệu đứng giữa Context và Requirement trong chuỗi:
 
@@ -40,7 +40,7 @@ User Stories diễn đạt nhu cầu của từng bên bằng lời của ngư�
 | 6. Shop | US-29 đến US-34 | 6 |
 | 7. Nhận đặt hàng | US-35 đến US-42 | 8 |
 | 8. Tiền và hóa đơn phía người bán | US-43, US-44 | 2 |
-| 9. Quản trị nền tảng | US-45 đến US-53 | 9 |
+| 9. Quản trị nền tảng | US-45 đến US-54 | 10 |
 
 Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng đổi số giữa mã cũ và mã mới, cùng các story đã bỏ, ở cuối tài liệu.
 
@@ -61,6 +61,7 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 - Đặt lại mật khẩu qua email hoặc số điện thoại đã xác nhận.
 - Sau khi đăng nhập, tôi thấy toàn bộ đơn hàng, yêu cầu và báo giá của tài khoản, kể cả đơn mua thay doanh nghiệp.
 - Đăng nhập sai thì thông báo chung, không tiết lộ email hoặc số điện thoại có tồn tại hay không.
+- Khi tôi đang xem mà bấm một việc cần tài khoản (thêm vào giỏ, gửi yêu cầu, khai hồ sơ người bán), đăng nhập xong tôi quay về đúng trang đó với dữ liệu đã nhập, không phải tìm lại từ đầu. Chưa đăng nhập thì tôi chưa có giỏ hàng, vì mua hàng cần tài khoản (Context mục 5).
 
 ### US-03 · Quản lý địa chỉ giao hàng · Should
 **Là** người mua, **tôi muốn** lưu nhiều địa chỉ giao hàng và chọn một địa chỉ mặc định, **để** nền tảng chỉ hiện những thứ giao được tới tôi.
@@ -94,16 +95,17 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 - Người bán thu hẹp vùng giao sau khi sản phẩm đã vào giỏ thì tôi được báo ở bước thanh toán.
 
 ### US-06 · Tìm, lọc, sắp xếp · Must
-**Là** người mua, **tôi muốn** tìm theo từ khóa và lọc theo giá, thương hiệu, loại bánh, Shop, **để** thu hẹp lựa chọn nhanh.
+**Là** người mua, **tôi muốn** tìm theo từ khóa và lọc theo giá, thương hiệu, vỏ bánh, nhân bánh, Shop, **để** thu hẹp lựa chọn nhanh.
+- Tôi chọn được nhiều vỏ hoặc nhiều nhân cùng lúc: chọn "đậu xanh" và "hạt sen" thì thấy sản phẩm có ít nhất một trong hai (Context mục 4).
 - Kết quả gộp sản phẩm của mọi Shop giao được tới tôi.
 - Mỗi sản phẩm trong kết quả hiện ảnh, giá, thương hiệu và tên Shop, để tôi so sánh ngay trong danh sách mà không phải mở từng trang.
-- Kết quả chỉ gồm hàng có sẵn của người bán có Shop. Người bán chỉ nhận đặt hàng không có sản phẩm ở đây; tôi tìm họ ở US-14.
+- Kết quả chỉ gồm hàng có sẵn của người bán có Shop. Người bán chỉ nhận đặt hàng không có sản phẩm trong danh sách này; nếu tôi gõ tên họ, họ hiện ở một khối riêng (US-14).
 - Sắp xếp được theo giá và theo đánh giá.
 - Không có kết quả thì hệ thống gợi ý bỏ bớt bộ lọc, và gợi ý gửi yêu cầu mở nếu tôi cần số lượng lớn.
 
 ### US-07 · Xem chi tiết sản phẩm · Must
 **Là** người mua, **tôi muốn** xem đầy đủ thông tin một sản phẩm, **để** quyết định mua.
-- Hiện giá đã gồm thuế giá trị gia tăng, tồn kho, hạn dùng, thương hiệu và nơi sản xuất.
+- Hiện giá đã gồm thuế giá trị gia tăng, tồn kho, hạn dùng, thương hiệu, nơi sản xuất, các vỏ và các nhân của sản phẩm.
 - Hiện giá theo số lượng nếu người bán có đặt.
 - Hiện vùng giao hàng và phí giao tới địa chỉ của tôi.
 - Người bán có bật nhận đặt hàng thì trang có lối vào gửi yêu cầu trực tiếp.
@@ -159,6 +161,8 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 ### US-14 · Xem hồ sơ người bán nhận đặt hàng · Must
 **Là** người mua, **tôi muốn** tìm và xem năng lực của các người bán nhận đặt hàng trước khi gửi yêu cầu, **để** không hỏi nhầm nơi.
 - Tôi xem được danh sách người bán nhận đặt hàng, kể cả người bán không mở Shop như xưởng của cô Hoa (Context mục 7). Người bán chỉ nhận đặt hàng được ghi rõ là không bán lẻ.
+- Tôi tìm được người bán theo tên trong danh sách đó.
+- Tôi gõ tên một xưởng ở ô tìm kiếm chung và thấy xưởng đó trong một khối riêng, tách khỏi danh sách sản phẩm, kể cả khi xưởng không bán lẻ. Tôi thường đã biết tên xưởng từ người quen, như chị Thảo biết xưởng cô Hoa (Context mục 2, 7).
 - Hồ sơ hiện số lượng tối thiểu, bậc giá tham khảo theo số lượng, thời gian chuẩn bị hoặc sản xuất, khả năng custom, ưu đãi đặt sớm.
 - Hồ sơ hiện nguồn hàng: tự sản xuất, bán lại, hoặc cả hai.
 - Bậc giá được ghi rõ là tham khảo; giá ràng buộc là giá trong báo giá.
@@ -282,8 +286,9 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 
 ### US-29 · Đăng sản phẩm có sẵn · Must
 **Là** người bán có Shop, **tôi muốn** đăng sản phẩm, **để** người mua mua ngay được.
-- Mỗi sản phẩm có tên, ảnh, mô tả, giá niêm yết đã gồm thuế, tồn kho, hạn dùng.
+- Mỗi sản phẩm có tên, ảnh, mô tả, giá niêm yết đã gồm thuế, tồn kho, hạn dùng, và ít nhất một vỏ, một nhân. Tôi chọn vỏ và nhân trong danh mục của nền tảng (US-54), chọn được nhiều giá trị: hộp 4 bánh gồm hai bánh nướng thập cẩm và hai bánh dẻo đậu xanh thì gắn cả hai vỏ và hai nhân (Context mục 4).
 - Sản phẩm bán lại bắt buộc ghi thương hiệu và nơi sản xuất.
+- Sản phẩm tôi tự làm mang thương hiệu của tôi: để trống thương hiệu thì nền tảng ghi tên đơn vị của tôi, và tôi sửa được (Context mục 4).
 - Tôi đánh dấu sản phẩm là "giao nội thành" hoặc "giao toàn quốc"; nhãn "giao toàn quốc" chỉ chọn được khi sản phẩm đạt tiêu chuẩn đóng gói của nền tảng. Tiêu chuẩn cụ thể: chưa quyết (Context mục 11).
 - Sản phẩm hiển thị ngay khi đăng, không chờ quản trị duyệt; quản trị gỡ nếu vi phạm.
 
@@ -308,8 +313,8 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 
 ### US-33 · Sửa thông tin sản phẩm · Should
 **Là** người bán có Shop, **tôi muốn** sửa tên, ảnh, mô tả, hạn dùng và các thông tin khác của sản phẩm, **để** thông tin luôn đúng mà không phải đăng lại.
-- Tôi sửa được tên, ảnh, mô tả, hạn dùng, thương hiệu, nơi sản xuất, nhãn giao; thay đổi hiển thị ngay, không qua duyệt.
-- Sản phẩm bán lại vẫn bắt buộc có thương hiệu và nơi sản xuất; nhãn "giao toàn quốc" vẫn chỉ chọn được khi đạt tiêu chuẩn đóng gói.
+- Tôi sửa được tên, ảnh, mô tả, vỏ, nhân, hạn dùng, thương hiệu, nơi sản xuất, nhãn giao; thay đổi hiển thị ngay, không qua duyệt.
+- Sản phẩm bán lại vẫn bắt buộc có thương hiệu và nơi sản xuất; sản phẩm tự làm mà tôi xóa trống thương hiệu thì trở về tên đơn vị của tôi; nhãn "giao toàn quốc" vẫn chỉ chọn được khi đạt tiêu chuẩn đóng gói.
 - Đơn đã tạo giữ nguyên thông tin cũ.
 - Sản phẩm đã bị quản trị gỡ thì tôi không sửa được.
 
@@ -328,7 +333,7 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 ### US-35 · Khai hồ sơ nhận đặt hàng · Must
 **Là** người bán, **tôi muốn** khai điều kiện nhận đặt hàng, **để** chỉ nhận những yêu cầu mình làm được.
 - Tôi khai số lượng tối thiểu, bậc giá tham khảo, thời gian chuẩn bị hoặc sản xuất, khả năng custom, ưu đãi đặt sớm.
-- Nếu tự sản xuất, tôi khai thêm công suất theo tuần, loại bánh, loại bao bì, khả năng in logo.
+- Nếu tự sản xuất, tôi khai thêm công suất theo tuần, các vỏ và nhân làm được (theo danh mục ở US-54), loại bao bì, khả năng in logo.
 - Nếu bán lại, tôi khai thương hiệu đang phân phối và số lượng gom được.
 - Custom chỉ khai được trong phạm vi in logo lên túi, thiệp, sticker, hộp mẫu có sẵn.
 - Tôi nhận đặt hàng mà không cần mở Shop.
@@ -457,6 +462,15 @@ Story được đánh số liên tục theo thứ tự trong tài liệu. Bảng
 - Mức phí mặc định là 200.000đ; tôi đổi được mức này.
 - Người bán đóng theo mức hiện hành tại thời điểm đóng.
 - Đổi mức phí không ảnh hưởng người bán đã đóng: không thu thêm và không hoàn phần chênh.
+
+### US-54 · Quản lý danh mục vỏ và nhân bánh · Must
+**Là** quản trị, **tôi muốn** thêm, đổi tên, sắp xếp và ẩn các giá trị vỏ bánh và nhân bánh, **để** danh mục theo kịp thị trường mà không phải sửa phần mềm (Context mục 4).
+- Danh mục có hai nhóm: vỏ và nhân. Mỗi giá trị có tên hiển thị và thứ tự.
+- Tên trùng trong cùng một nhóm thì bị từ chối.
+- Đổi tên thì mọi sản phẩm đã gắn giá trị đó hiện tên mới, người bán không phải sửa gì.
+- Không xóa giá trị, chỉ ẩn: giá trị bị ẩn không còn trong danh sách chọn của người bán và bộ lọc của người mua, nhưng sản phẩm đã gắn vẫn giữ và vẫn hiện nó.
+- Mỗi nhóm luôn còn ít nhất một giá trị đang hiện.
+- Nền tảng có sẵn một danh mục ban đầu để người bán dùng ngay.
 
 ---
 

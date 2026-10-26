@@ -12,7 +12,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import jakarta.persistence.Version;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -37,11 +38,12 @@ public class Vendor {
     @Column(name = "owner_account_id", nullable = false, unique = true)
     private String ownerAccountId;
 
+    /** Name of the business unit (L-02, D-09); a person's legal name lives in identity-service. */
     @Column(nullable = false)
-    private String legalName;
+    private String businessName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private VendorEntityType entityType;
 
     @Column(nullable = false)
@@ -50,9 +52,22 @@ public class Vendor {
     @Column(nullable = false)
     private String address;
 
-    /** Vendor's home area; an order outside it is inter-province (glossary). */
-    @Column(nullable = false)
-    private String areaCode;
+    /** Head-office province (L-15); an order outside it is inter-province (glossary). */
+    @Column(nullable = false, length = 2)
+    private String provinceCode;
+
+    /** Owner / representative as written on the business licence (BR-27, AC-26.1). */
+    @Column(length = 100)
+    private String representativeName;
+
+    /** Keyed hash made by identity-service (NFR-03, D-07); the full id number is never stored. */
+    @Column(length = 64)
+    private String representativeIdHash;
+
+    private Integer representativeIdKeyVer;
+
+    @Column(length = 12)
+    private String representativeIdMasked;
 
     @Embedded
     private BankAccount bankAccount;
@@ -75,9 +90,23 @@ public class Vendor {
     @Column(columnDefinition = "TEXT")
     private String statusReason;
 
+    /** Flat fee per order delivered inside the vendor's areas (FR-28, BR-30). */
+    private Long localDeliveryFee;
+
+    /** Registration fee paid once after approval (BR-31); the amount is the level at payment time (AC-53.2). */
+    @Column(length = 36)
+    private String registrationFeePaymentId;
+
+    private Long registrationFeeAmount;
+
+    private Instant registrationFeePaidAt;
+
+    @Version
+    private long version;
+
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

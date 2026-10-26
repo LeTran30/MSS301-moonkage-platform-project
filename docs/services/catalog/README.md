@@ -37,7 +37,7 @@ Migration mới `V2026_10_26_1500__catalog_projection_recovery.sql` chỉ thêm 
 
 Qua discovery route gateway `/catalog-service/api/products`; endpoint service giữ `/api/products` (root gateway/facets đầy đủ thuộc C3). GET list yêu cầu `provinceCode` hợp lệ trong 34 mã, hỗ trợ q theo name/brand, vendorId, page/size (1–100), sort cố định updatedAt rồi id. Chỉ ON_SALE + canOperate + sellsShop + giao được; LOCAL ngoài vùng không lọt ra. GET detail/reviews chặn hàng không công khai, detail chưa chọn tỉnh không trả shippingFee giả bằng 0. Phí/snapshot đầy đủ thuộc C4.
 
-Response mới có envelope và record ProductListingResponse: giữ id, thêm vendorName/rating/isOwn, ảnh có imageKeys/imageUrls. priceTiers là JSON nguyên trạng từ read model, chưa suy diễn schema item tier của event. Không cam kết tương thích hoàn toàn frontend cũ; chưa làm nhiều bộ lọc/facets hoặc quyền quản lý mọi trạng thái của C3. Không có lệnh ghi sản phẩm trong runtime mặc định; legacy controller vẫn còn trong source/profile.
+Response mới có envelope và record ProductListingResponse: giữ id, thêm vendorName/rating/isOwn, ảnh có imageKeys/imageUrls. Sau merge develop Phase A, read row/DTO dùng `crustCodes[]`, `fillingCodes[]` thay cakeType theo migration L-19 đã merge; chỉ tương thích schema, chưa làm bộ lọc C3. priceTiers là JSON nguyên trạng từ read model, chưa suy diễn schema item tier của event. Không cam kết tương thích hoàn toàn frontend cũ; chưa làm nhiều bộ lọc/facets hoặc quyền quản lý mọi trạng thái của C3. Không có lệnh ghi sản phẩm trong runtime mặc định; legacy controller vẫn còn trong source/profile.
 
 ## API C1
 

@@ -12,9 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
-import com.moonkage.identity.config.RabbitConfig;
-import com.moonkage.identity.constant.TimeConstant;
-import com.moonkage.identity.messaging.EmailNotificationEvent;
+import com.moonkage.identity.common.TimeConstant;
+import com.moonkage.identity.common.config.RabbitConfig;
+import com.moonkage.identity.email.EmailNotificationEvent;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWEHeader;
@@ -241,6 +241,7 @@ class IdentityApiIntegrationTest {
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(201))
+                .andExpect(jsonPath("$.data.recipientPhone").value("912345678"))
                 .andExpect(jsonPath("$.data.areaCode").value("79"))
                 .andExpect(jsonPath("$.data.isDefault").value(true))
                 .andExpect(jsonPath("$.data.createdAt", endsWith("Z")));

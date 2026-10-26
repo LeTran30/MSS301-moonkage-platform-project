@@ -19,6 +19,28 @@ Schema do Flyway quản lý (`db/migration`), dữ liệu mẫu ở `db/seed`; x
 
 Không có bảng refresh token và không có bảng mã OTP.
 
+## Cấu trúc mã (package-by-component)
+
+Mỗi package cấp một dưới `com.moonkage.identity` là một **component**: bên ngoài chỉ thấy interface `*Service` và DTO / value object của nó; entity, repository, `*ServiceImpl`, mapper đều package-private. `web` là tầng HTTP nằm ngoài mọi component.
+
+| Package | Sở hữu (bảng / dữ liệu) | Public | Phụ thuộc |
+|---|---|---|---|
+| `web` | — | Controller: `AuthController`, `AccountController`, `AddressController`, `KycController` | mọi service public |
+| `auth` | — (luồng đăng ký, OTP, đăng nhập) | `AuthService`, `auth.dto` | `account`, `profile`, `otp`, `email`, `security` |
+| `account` | `accounts` | `AccountService`, `AccountView`, `AccountCredentials`, `AccountResponse`, `NfcLockout`, `Role`, `account.vo` (`Email`, `PhoneNumber`, `PasswordHash`) | `profile` |
+| `profile` | `user_profiles` | `UserProfileService`, `ProfileConstant` | — |
+| `address` | `addresses` | `AddressService`, `address.dto` | `account` |
+| `kyc` | `legal_profiles`, phiên NFC (RAM) | `NfcService`, `LegalProfileService`, `kyc.dto`, enum NFC | `account`, `outbox` |
+| `otp` | mã OTP (RAM) | `OtpService`, `OtpPurpose` | — |
+| `email` | — (sự kiện RabbitMQ) | `EmailService` | — |
+| `outbox` | `outbox_events` | `OutboxService` | — |
+| `security` | — | `JwtTokenProvider`, `AccountPrincipal`, `CurrentUser(Info)` | `account` |
+| `common` | — | `BaseEntity`, `AppException`, `ErrorCode`, `ApiResponse`, cấu hình | — |
+
+Mọi component đều dùng `common` và value object của `account.vo`. Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ComponentArchitectureTest` (entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
+
+Endpoint nội bộ `/internal/**` nằm trong controller của chính tài nguyên đó (vd `POST /internal/accounts/check` ở `AccountController`), đánh `@Hidden`; không tách controller riêng cho đường nội bộ.
+
 ## Token
 
 | Token | Claim | Hạn |
@@ -54,7 +76,7 @@ Cả hai đều là JWT HS256, ký bằng `jwt.secret` (dạng Base64). Mỗi l�
   "role": "MEMBER" }
 ```
 
-**Số điện thoại** nhận `0912345678`, `84912345678` hoặc `+84912345678` (đầu số di động 3/5/7/8/9) và luôn được lưu dạng **9 số cuối** (`912345678`, `Account.toStoredPhoneNumber`). Vì vậy ba dạng trên là cùng một số khi kiểm trùng (AC-01.3) và khi đăng nhập. API trả `phoneNumber` dạng 9 số; frontend tự thêm `0` khi hiển thị.
+**Số điện thoại** nhận `0912345678`, `84912345678` hoặc `+84912345678` (đầu số di động 3/5/7/8/9) và luôn được chuẩn hoá về **9 số cuối** (`912345678`) bởi value object `PhoneNumber` — dạng duy nhất được lưu (cả `accounts.phone_number` lẫn `addresses.recipient_phone`), so sánh và trả về. Vì vậy ba dạng trên là cùng một số khi kiểm trùng (AC-01.3) và khi đăng nhập. API trả `phoneNumber` / `recipientPhone` dạng 9 số; frontend tự thêm `0` khi hiển thị.
 
 **Gửi email thất bại (FR-01):** `/register` vẫn tạo tài khoản nhưng trả `"otpSent": false`; frontend hiện thông báo và nút "Gửi lại mã" (gọi `/resend-otp`), không bắt đăng ký lại (sẽ bị 409). `/resend-otp` thất bại thì trả 503. Riêng `/send-reset-password-otp` vẫn luôn trả 200 để không lộ email nào đã đăng ký.
 
@@ -115,7 +137,7 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
   "detail": "12 Lê Lợi", "label": "Văn phòng", "isDefault": true }
 
 // AddressResponse (nội dung của "data")
-{ "id": "...", "recipientName": "Nguyễn Lan", "recipientPhone": "0912345678",
+{ "id": "...", "recipientName": "Nguyễn Lan", "recipientPhone": "912345678",
   "provinceCode": "79", "provinceName": "Thành phố Hồ Chí Minh",
   "wardCode": "26734", "wardName": "Phường Sài Gòn", "detail": "12 Lê Lợi",
   "fullAddress": "12 Lê Lợi, Phường Sài Gòn, Thành phố Hồ Chí Minh",
@@ -124,7 +146,7 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
 ```
 
 - **Hai cấp hành chính** (từ 01/07/2025): tỉnh/thành → phường/xã/đặc khu, không có quận/huyện. Client chọn từ danh mục quốc gia và gửi cả mã lẫn tên: `provinceCode` 2 chữ số, `wardCode` 5 chữ số. Server mới kiểm định dạng mã, chưa kiểm mã có thật hay xã có thuộc tỉnh không.
-- `recipientPhone`: nhận `0912…`, `84912…`, `+84912…`; luôn trả về dạng `0912…`. `label` tùy chọn, tối đa 30 ký tự.
+- `recipientPhone`: nhận `0912…`, `84912…`, `+84912…`; luôn lưu và trả về dạng 9 số `912…` như `phoneNumber` của tài khoản. `label` tùy chọn, tối đa 30 ký tự.
 - `areaCode`: chỉ có trong response, luôn bằng `provinceCode` (vùng giao là tỉnh/thành, Q-12). Cùng bộ mã với vùng giao của người bán.
 - **Mặc định (AC-03.1):** luôn có tối đa một. Địa chỉ đầu tiên tự thành mặc định. Gửi `isDefault: true` thì địa chỉ đó thành mặc định, địa chỉ mặc định cũ bị bỏ cờ. Khi PUT, bỏ trống `isDefault` thì giữ nguyên cờ hiện tại. Xóa địa chỉ mặc định thì tài khoản không còn địa chỉ mặc định.
 - **Địa chỉ "đang chọn" (AC-03.2)** do frontend giữ (mặc định là địa chỉ `isDefault`), không lưu ở server. Frontend truyền `areaCode` của địa chỉ đang chọn khi gọi danh sách sản phẩm / người bán.

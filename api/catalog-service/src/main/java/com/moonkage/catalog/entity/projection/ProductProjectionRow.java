@@ -13,7 +13,8 @@ public record ProductProjectionRow(
         String vendorId,
         String name,
         String description,
-        String cakeType,
+        List<String> crustCodes,
+        List<String> fillingCodes,
         String brand,
         String origin,
         Integer piecesPerBox,
@@ -35,6 +36,8 @@ public record ProductProjectionRow(
         Objects.requireNonNull(deliveryLabel);
         Objects.requireNonNull(status);
         imageKeys = List.copyOf(imageKeys);
+        crustCodes = List.copyOf(crustCodes);
+        fillingCodes = List.copyOf(fillingCodes);
         priceTiers = Objects.requireNonNull(priceTiers).deepCopy();
         if (name.isBlank() || listPrice <= 0 || stock < 0 || sourceVersion < 0 || !priceTiers.isArray()) {
             throw new IllegalArgumentException("Invalid normalized product projection row");

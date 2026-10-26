@@ -35,7 +35,15 @@ public class ProductListing {
 
     private String name;
     private String description;
-    private String cakeType;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(columnDefinition = "text[]")
+    private String[] crustCodes;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(columnDefinition = "text[]")
+    private String[] fillingCodes;
+
     private String brand;
     private String origin;
     private Integer piecesPerBox;

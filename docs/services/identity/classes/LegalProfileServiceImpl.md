@@ -2,10 +2,10 @@
 
 > **Một câu:** trả lời các service khác "tài khoản này đã xác minh NFC chưa", và băm giúp họ một số định danh để so với CCCD của chủ tài khoản.
 
-- **Package:** `com.moonkage.identity.nfc`
+- **Package:** `com.moonkage.identity.kyc`
 - **Tham chiếu:** `BR-23`, `BR-27`, `AC-26.6`, `AC-26.8`, `AC-45.1`, `D-07`, `NFR-03`
-- **Dependencies:** `AccountRepository`, `LegalProfileRepository`, `IdNumberHasher`, `LegalProfileMapper`
-- **Người gọi:** `IntNfcController` (`GET /internal/nfc/status/{accountId}`), `IntAccountController` (`POST /internal/accounts/check`), `NfcController` (`GET /api/nfc/status`)
+- **Dependencies:** `AccountService` (`getNfcLockout`, `requireAccountExists`), `LegalProfileRepository`, `IdNumberHasher`, `LegalProfileMapper`
+- **Người gọi:** `KycController` (`GET /api/nfc/status`, `GET /internal/nfc/status/{accountId}`), `AccountController` (`POST /internal/accounts/check`)
 
 ## 0. Luật bất biến
 
@@ -23,13 +23,13 @@
 ## 2. Luồng chi tiết
 
 ### `getNfcStatus(accountId)`
-1. Tài khoản không tồn tại → `ACCOUNT_NOT_FOUND`.
+1. `AccountService.getNfcLockout(accountId)`: tài khoản không tồn tại → `ACCOUNT_NOT_FOUND`.
 2. Có `LegalProfile` → `VERIFIED` kèm họ tên trên thẻ, số đã che, thời điểm xác minh.
-3. Không có → đang trong thời gian khóa thì `LOCKED`, không thì `NOT_VERIFIED`. Không có dữ liệu thẻ nào.
+3. Không có → `NfcLockout.isLocked(now)` thì `LOCKED`, không thì `NOT_VERIFIED`. Không có dữ liệu thẻ nào.
 
 ### `checkIdNumber(request)`
 1. Bỏ mọi ký tự không phải số (`"079 123-456 789"` cũng hợp lệ). Không đúng 12 chữ số → `ID_NUMBER_INVALID`.
-2. Tài khoản không tồn tại → `ACCOUNT_NOT_FOUND`.
+2. `AccountService.requireAccountExists`: tài khoản không tồn tại → `ACCOUNT_NOT_FOUND`.
 3. Băm số định danh bằng HMAC-SHA256 với pepper phiên bản hiện tại.
 4. Tài khoản đã xác minh NFC → so mã băm vừa tạo với mã băm CCCD đã lưu → `matchesAccount`.
 5. Trả mã băm, phiên bản khóa, dạng đã che, `matchesAccount`. Kèm thông tin chủ tài khoản (tên, số đã che, thời điểm xác minh) nếu đã xác minh; không thì các trường đó là `null` và `matchesAccount = false`.

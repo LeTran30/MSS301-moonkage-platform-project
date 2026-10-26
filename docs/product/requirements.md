@@ -15,8 +15,8 @@
 
 | Mục | Giá trị |
 |---|---|
-| Phiên bản | v1.6 |
-| Ngày cập nhật | 2026-10-17 |
+| Phiên bản | v1.8 |
+| Ngày cập nhật | 2026-10-23 |
 | Người viết | |
 | Người phê duyệt (quyết định cuối) | |
 | Trạng thái | Draft |
@@ -67,7 +67,7 @@ Nền tảng chỉ có một loại tài khoản phía mua, đại diện cho m�
 | Người mua – thay doanh nghiệp | HR, admin, thư ký; chủ hộ kinh doanh, chủ tiệm. Cùng loại tài khoản | Yêu cầu mở, so sánh và xuất báo giá, duyệt maket, theo dõi tiến độ, hóa đơn ghi thông tin doanh nghiệp |
 | Người bán – Shop | Tiệm bánh, thương hiệu, đại lý, xưởng có hàng sẵn | Đăng sản phẩm, tồn kho, vùng giao; xử lý đơn mua ngay |
 | Người bán – Nhận đặt hàng | Xưởng; đại lý và người bán lại có nguồn hàng lớn. Một số chỉ nhận đặt hàng, không bán lẻ (BR-21) | Khai năng lực, nhận yêu cầu, báo giá, maket, cập nhật tiến độ, giải ngân cọc |
-| Quản trị | Đội vận hành Moonkage | Duyệt người bán (gồm làm việc trực tiếp với người bán là pháp nhân, BR-26), giải ngân, chuyển tiền, đối soát toàn nền tảng (FR-51), tranh chấp, voucher, bảng phí giao liên tỉnh (FR-52), mức phí đăng ký mở bán (FR-53) |
+| Quản trị | Đội vận hành Moonkage | Duyệt người bán (gồm làm việc trực tiếp với người bán là pháp nhân, BR-26), giải ngân, chuyển tiền, đối soát toàn nền tảng (FR-51), tranh chấp, voucher, bảng phí giao liên tỉnh (FR-52), mức phí đăng ký mở bán (FR-53), danh mục vỏ và nhân bánh (FR-54) |
 
 Stakeholder ngoài hệ thống: người duyệt ngân sách trong doanh nghiệp (dùng file báo giá xuất ra, không có tài khoản riêng); người đại diện theo pháp luật của người bán là pháp nhân (ký thỏa thuận hợp tác ngoài hệ thống, BR-26); hãng vận chuyển liên tỉnh; cổng thanh toán.
 
@@ -84,7 +84,7 @@ Stakeholder ngoài hệ thống: người duyệt ngân sách trong doanh nghi�
 - Shop: sản phẩm, tồn kho, giá theo số lượng, ngưỡng báo giá, xử lý đơn (FR-29 → FR-32); sửa, ẩn / hiện sản phẩm (FR-33, FR-34).
 - Nhận đặt hàng: hồ sơ năng lực, nhận yêu cầu, lịch công suất, báo giá, maket, tiến độ, giải ngân cọc, giao (FR-35 → FR-42).
 - Đối soát và hóa đơn đơn hàng phía người bán (FR-43, FR-44).
-- Quản trị: duyệt người bán, khóa/gỡ, giải ngân, chuyển tiền, tranh chấp, voucher, đối soát toàn nền tảng, bảng phí giao liên tỉnh, mức phí đăng ký mở bán (FR-45 → FR-53).
+- Quản trị: duyệt người bán, khóa/gỡ, giải ngân, chuyển tiền, tranh chấp, voucher, đối soát toàn nền tảng, bảng phí giao liên tỉnh, mức phí đăng ký mở bán, danh mục vỏ và nhân bánh (FR-45 → FR-54).
 
 ### 4.2 Out of scope (KHÔNG làm)
 - Nền tảng **không** tự sản xuất, tự bán, tự nhập hàng hay giữ kho bánh.
@@ -129,7 +129,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 | Shop, quản lý sản phẩm | FR-29 → FR-34 |
 | Nhận đặt hàng | FR-35, FR-36, FR-38 → FR-42 |
 | Hóa đơn phía người bán | FR-44 |
-| Quản trị | FR-45, FR-46, FR-47 và FR-48 (ghi sổ theo A-12), FR-49, FR-51, FR-52, FR-53 |
+| Quản trị | FR-45, FR-46, FR-47 và FR-48 (ghi sổ theo A-12), FR-49, FR-51, FR-52, FR-53, FR-54 |
 
 **Làm đơn giản** (đạt AC chính, phần nêu dưới đây chưa làm):
 
@@ -192,6 +192,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 - **Acceptance Criteria:**
   - **AC-02.1** — *Given* người dùng quên mật khẩu, *When* yêu cầu đặt lại, *Then* liên kết/mã đặt lại chỉ được gửi tới email hoặc số điện thoại đã xác nhận.
   - **AC-02.2** — *Given* người dùng đăng nhập thành công, *When* mở khu vực tài khoản, *Then* thấy toàn bộ đơn hàng, yêu cầu và báo giá của tài khoản (kể cả đơn có xuất hóa đơn doanh nghiệp).
+  - **AC-02.3** — *Given* khách đang ở một trang công khai, *When* bấm một thao tác cần tài khoản (thêm vào giỏ, gửi yêu cầu trực tiếp, tạo yêu cầu mở, khai hồ sơ người bán) rồi đăng nhập thành công, *Then* hệ thống đưa người dùng về đúng trang đó: thêm vào giỏ được thực hiện ngay với số lượng đã chọn (vẫn kiểm AC-08.1 → AC-08.4); form được mở lại với dữ liệu đã nhập để người dùng tự gửi. Nếu thao tác cần thêm điều kiện (xác nhận tài khoản AC-01.2, xác minh NFC BR-23) thì đi qua bước đó trước rồi mới quay về, như AC-15.5.
 - **Trường hợp đặc biệt / lỗi:** Sai thông tin đăng nhập → thông báo chung, không tiết lộ định danh có tồn tại hay không.
 - **Phụ thuộc:** FR-01.
 
@@ -240,14 +241,15 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 
 ### FR-06: Tìm, lọc, sắp xếp
 - **Ưu tiên:** Must
-- **User story:** Là người mua, tôi muốn tìm theo từ khóa và lọc theo giá, thương hiệu, loại bánh, Shop, để thu hẹp lựa chọn nhanh.
-- **Mô tả chi tiết:** Kết quả gộp sản phẩm của mọi Shop giao được tới địa chỉ đang chọn. Trang tìm kiếm sản phẩm là kênh bán lẻ: chỉ có sản phẩm của người bán có bật Shop; người bán chỉ nhận đặt hàng không xuất hiện ở đây (BR-21).
+- **User story:** Là người mua, tôi muốn tìm theo từ khóa và lọc theo giá, thương hiệu, vỏ bánh, nhân bánh, Shop, để thu hẹp lựa chọn nhanh.
+- **Mô tả chi tiết:** Kết quả gộp sản phẩm của mọi Shop giao được tới địa chỉ đang chọn. Danh sách sản phẩm là kênh bán lẻ: chỉ có sản phẩm của người bán có bật Shop; người bán chỉ nhận đặt hàng không có sản phẩm ở đây (BR-21). Khi từ khóa khớp tên một người bán nhận đặt hàng, trang kết quả hiện người bán đó ở một khối riêng (AC-14.5); khối này không thuộc danh sách sản phẩm.
 - **Acceptance Criteria:**
   - **AC-06.1** — *Given* có sản phẩm từ nhiều Shop giao được, *When* người mua tìm theo từ khóa, *Then* kết quả gộp từ mọi Shop đó và không có sản phẩm ngoài vùng giao.
-  - **AC-06.2** — *Given* danh sách kết quả, *When* áp bộ lọc giá, thương hiệu, loại bánh hoặc Shop, *Then* chỉ còn sản phẩm thỏa mọi bộ lọc đang bật.
+  - **AC-06.2** — *Given* danh sách kết quả, *When* áp bộ lọc giá, thương hiệu, vỏ bánh, nhân bánh hoặc Shop, *Then* chỉ còn sản phẩm thỏa mọi bộ lọc đang bật. Trong một bộ lọc chọn nhiều giá trị thì sản phẩm khớp ít nhất một giá trị là đạt (ví dụ nhân "đậu xanh" hoặc "hạt sen"); giữa các bộ lọc khác nhau thì phải thỏa tất cả.
   - **AC-06.3** — *Given* danh sách kết quả, *When* chọn sắp xếp theo giá hoặc theo đánh giá, *Then* thứ tự thay đổi tương ứng.
-  - **AC-06.4** — *Given* một người bán chỉ bật nhận đặt hàng, không bật Shop, *When* người mua tìm sản phẩm theo bất kỳ từ khóa hay bộ lọc nào, *Then* không có kết quả nào của người bán đó; bộ lọc "Shop" cũng không liệt kê người bán đó.
+  - **AC-06.4** — *Given* một người bán chỉ bật nhận đặt hàng, không bật Shop, *When* người mua tìm sản phẩm theo bất kỳ từ khóa hay bộ lọc nào, *Then* danh sách sản phẩm không có kết quả nào của người bán đó; bộ lọc "Shop" cũng không liệt kê người bán đó. Khối đơn vị cung cấp (AC-14.5) nằm ngoài danh sách sản phẩm và không thuộc phạm vi AC này.
   - **AC-06.5** — *Given* danh sách kết quả, *When* hiển thị, *Then* mỗi sản phẩm hiện ảnh, giá, thương hiệu và tên Shop, để người mua so sánh ngay trong danh sách.
+  - **AC-06.6** — *Given* bộ lọc vỏ bánh và nhân bánh, *When* hiển thị, *Then* chỉ liệt kê các giá trị đang hiện của danh mục (FR-54), theo thứ tự quản trị đặt.
 - **Trường hợp đặc biệt / lỗi:** Không có kết quả → thông báo và gợi ý bỏ bớt bộ lọc, kèm lối gửi yêu cầu mở (FR-16) cho người mua cần số lượng lớn.
 - **Phụ thuộc:** FR-05, FR-11 (dữ liệu đánh giá), BR-21.
 
@@ -256,7 +258,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 - **User story:** Là người mua, tôi muốn xem đầy đủ thông tin một sản phẩm, để quyết định mua.
 - **Mô tả chi tiết:** Trang chi tiết hiển thị dữ liệu người bán khai ở FR-29, FR-31.
 - **Acceptance Criteria:**
-  - **AC-07.1** — *Given* người mua mở trang sản phẩm, *When* trang tải, *Then* hiện giá đã gồm thuế GTGT, tồn kho, hạn dùng, thương hiệu, nơi sản xuất.
+  - **AC-07.1** — *Given* người mua mở trang sản phẩm, *When* trang tải, *Then* hiện giá đã gồm thuế GTGT, tồn kho, hạn dùng, thương hiệu, nơi sản xuất, các vỏ và các nhân của sản phẩm (kể cả giá trị đã bị ẩn khỏi danh mục, AC-54.4).
   - **AC-07.2** — *Given* người bán có đặt giá theo số lượng, *When* trang tải, *Then* hiện các bậc giá.
   - **AC-07.3** — *Given* người mua có địa chỉ đang chọn, *When* trang tải, *Then* hiện vùng giao và phí giao tới địa chỉ đó.
   - **AC-07.4** — *Given* tài khoản đang đăng nhập là chủ của người bán sở hữu sản phẩm, *When* trang tải, *Then* sản phẩm vẫn hiển thị kèm nhãn "Sản phẩm của bạn"; không có nút mua ngay, thêm vào giỏ hay gửi yêu cầu (BR-22).
@@ -272,7 +274,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
   - **AC-08.2** — *Given* số lượng nhập vượt tồn kho hoặc đạt ngưỡng báo giá của người bán, *When* người mua xác nhận, *Then* không thêm vào giỏ; hệ thống đề nghị gửi yêu cầu đặt hàng tới người bán đó (nếu người bán có bật nhận đặt hàng).
   - **AC-08.3** — *Given* giỏ có sản phẩm từ nhiều Shop, *When* người mua xem giỏ, *Then* giỏ tách theo Shop và hiện phí giao của từng Shop.
   - **AC-08.4** — *Given* sản phẩm thuộc người bán do tài khoản đang đăng nhập làm chủ, *When* người dùng thêm vào giỏ (kể cả gọi trực tiếp API), *Then* hệ thống từ chối và báo không thể mua sản phẩm của chính mình (BR-22).
-- **Trường hợp đặc biệt / lỗi:** Vượt tồn kho nhưng người bán không nhận đặt hàng → chỉ báo số lượng tối đa mua được. Tồn kho giảm sau khi đã vào giỏ → kiểm tra lại ở FR-09. Người mua chưa xác minh NFC → vẫn được đề nghị gửi yêu cầu, nhưng phải xác minh NFC trước khi gửi (FR-04, BR-23).
+- **Trường hợp đặc biệt / lỗi:** Khách (chưa đăng nhập) bấm thêm vào giỏ → đăng nhập trước rồi quay về (AC-02.3); không có giỏ hàng của khách, vì giỏ thuộc tài khoản và BR-22 kiểm ngay lúc thêm (AC-08.4). Vượt tồn kho nhưng người bán không nhận đặt hàng → chỉ báo số lượng tối đa mua được. Tồn kho giảm sau khi đã vào giỏ → kiểm tra lại ở FR-09. Người mua chưa xác minh NFC → vẫn được đề nghị gửi yêu cầu, nhưng phải xác minh NFC trước khi gửi (FR-04, BR-23).
 - **Phụ thuộc:** FR-30, FR-31, FR-15, BR-22, BR-29, BR-30.
 
 ### FR-09: Thanh toán đơn mua ngay
@@ -344,6 +346,8 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
   - **AC-14.2** — *Given* hồ sơ có bậc giá, *When* hiển thị, *Then* có ghi chú bậc giá là tham khảo, giá ràng buộc là giá trong báo giá.
   - **AC-14.3** — *Given* người bán chỉ nhận đặt hàng, *When* người mua xem danh sách đơn vị cung cấp, *Then* người bán đó hiện với nhãn "Chỉ nhận đặt hàng", số lượng tối thiểu, lối vào hồ sơ và lối gửi yêu cầu trực tiếp (FR-15); không có danh sách sản phẩm mua ngay.
   - **AC-14.4** — *Given* tài khoản đang đăng nhập là chủ của người bán, *When* mở hồ sơ hoặc dòng của người bán đó trong danh sách đơn vị cung cấp, *Then* hồ sơ vẫn hiển thị nhưng không có lối gửi yêu cầu trực tiếp (BR-22).
+  - **AC-14.5** — *Given* người mua tìm theo từ khóa ở trang tìm kiếm (FR-06), *When* từ khóa khớp tên một người bán có bật nhận đặt hàng và đang hoạt động (không bị khóa, đã đóng phí đăng ký mở bán; BR-20, BR-31), *Then* trang kết quả hiện người bán đó trong một khối "Đơn vị cung cấp" tách khỏi danh sách sản phẩm, kèm nhãn "Chỉ nhận đặt hàng" nếu không có Shop, số lượng tối thiểu và lối vào hồ sơ. Khối không lọc theo vùng giao, vì đơn đặt hàng không giới hạn địa lý và cách giao được thỏa thuận trong báo giá (Context mục 4).
+  - **AC-14.6** — *Given* danh sách đơn vị cung cấp, *When* người mua nhập tên, *Then* danh sách chỉ còn các đơn vị có tên khớp.
 - **Trường hợp đặc biệt / lỗi:** Loại hóa đơn người bán xuất được: chưa quyết (Q-04).
 - **Phụ thuộc:** FR-35, BR-21, BR-22.
 
@@ -482,7 +486,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
   - **AC-26.1** — *Given* tài khoản đã xác nhận và đã xác minh NFC, *When* khai hồ sơ, *Then* bắt buộc có tên đơn vị, loại hình (hộ kinh doanh / doanh nghiệp tư nhân / công ty), mã số thuế (mã số doanh nghiệp hoặc mã số hộ kinh doanh), địa chỉ trụ sở, họ tên (viết không dấu, A-15) và số định danh cá nhân của chủ hộ / chủ doanh nghiệp tư nhân / người đại diện theo pháp luật của công ty như ghi trên giấy chứng nhận đăng ký, file giấy chứng nhận đăng ký, giấy tờ an toàn thực phẩm, tài khoản ngân hàng đứng tên đơn vị.
   - **AC-26.2** — *Given* đang khai hồ sơ, *When* chọn nguồn hàng và cách bán, *Then* chọn được tự sản xuất/bán lại/cả hai và Shop/nhận đặt hàng/cả hai.
   - **AC-26.3** — *Given* hồ sơ được nộp, *When* lưu, *Then* tài khoản nộp được ghi là chủ của người bán; tài khoản vẫn mua được như trước, trừ mua của chính người bán đó (BR-22).
-  - **AC-26.4** — *Given* người bán chọn cách bán "chỉ nhận đặt hàng", *When* xác nhận lựa chọn, *Then* hệ thống báo rõ: sản phẩm sẽ không hiện ở trang tìm kiếm sản phẩm; người mua tìm thấy người bán qua danh sách đơn vị cung cấp, hồ sơ nhận đặt hàng và lời mời từ yêu cầu mở (BR-21).
+  - **AC-26.4** — *Given* người bán chọn cách bán "chỉ nhận đặt hàng", *When* xác nhận lựa chọn, *Then* hệ thống báo rõ: sản phẩm sẽ không hiện ở trang tìm kiếm sản phẩm; người mua tìm thấy người bán qua danh sách đơn vị cung cấp, khối đơn vị cung cấp trên trang kết quả tìm kiếm khi gõ đúng tên (AC-14.5), hồ sơ nhận đặt hàng và lời mời từ yêu cầu mở (BR-21).
   - **AC-26.5** — *Given* tài khoản chưa xác minh NFC, *When* mở form khai hồ sơ người bán hoặc nộp hồ sơ (kể cả gọi trực tiếp API), *Then* hệ thống chặn và đưa người dùng sang xác minh NFC (FR-04, BR-23).
   - **AC-26.6** — *Given* loại hình hộ kinh doanh hoặc doanh nghiệp tư nhân, *When* nộp hồ sơ (kể cả gọi trực tiếp API), *Then* máy chủ so số định danh khai báo với số CCCD đã xác minh NFC của tài khoản nộp; nếu không trùng, hệ thống chặn và báo tài khoản làm chủ phải là chính chủ hộ / chủ doanh nghiệp tư nhân (BR-27).
   - **AC-26.7** — *Given* loại hình công ty, *When* nộp hồ sơ thành công, *Then* hệ thống báo rõ nền tảng sẽ liên hệ để làm việc trực tiếp và ký thỏa thuận hợp tác trước khi duyệt (BR-26); số định danh người đại diện không bắt buộc trùng với chủ tài khoản.
@@ -523,9 +527,10 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 - **User story:** Là người bán có Shop, tôi muốn đăng sản phẩm, để người mua mua ngay được.
 - **Mô tả chi tiết:** Áp dụng BR-06, BR-12, BR-13. Chỉ người bán có bật Shop mới đăng được sản phẩm mua ngay (BR-21).
 - **Acceptance Criteria:**
-  - **AC-29.1** — *Given* người bán có Shop, *When* đăng sản phẩm, *Then* bắt buộc có tên, ảnh, mô tả, giá niêm yết đã gồm thuế, tồn kho, hạn dùng.
+  - **AC-29.1** — *Given* người bán có Shop, *When* đăng sản phẩm, *Then* bắt buộc có tên, ảnh, mô tả, giá niêm yết đã gồm thuế, tồn kho, hạn dùng, ít nhất một vỏ và ít nhất một nhân chọn trong các giá trị đang hiện của danh mục (BR-34); chọn được nhiều vỏ, nhiều nhân.
   - **AC-29.2** — *Given* người bán có nguồn hàng là bán lại, *When* đăng sản phẩm bán lại, *Then* bắt buộc nhập thương hiệu và nơi sản xuất.
   - **AC-29.3** — *Given* sản phẩm chưa đạt tiêu chuẩn đóng gói, *When* người bán chọn nhãn giao, *Then* chỉ chọn được "giao nội thành".
+  - **AC-29.4** — *Given* người bán có nguồn hàng tự sản xuất hoặc cả hai, *When* đăng sản phẩm mà để trống thương hiệu, *Then* hệ thống lấy tên đơn vị của người bán làm thương hiệu (BR-12); người bán sửa được giá trị này.
 - **Trường hợp đặc biệt / lỗi:** Cách xác nhận đạt tiêu chuẩn đóng gói: chưa quyết (Q-11). Sản phẩm hiển thị ngay sau khi đăng, không qua duyệt (BR-24).
 - **Phụ thuộc:** FR-27, Q-11.
 
@@ -568,10 +573,12 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 - **User story:** Là người bán có Shop, tôi muốn sửa tên, ảnh, mô tả, hạn dùng và các thông tin khác của sản phẩm, để thông tin luôn đúng mà không phải đăng lại.
 - **Mô tả chi tiết:** Bổ sung cho FR-30 (chỉ gồm tồn kho và giá). Áp dụng BR-12, BR-13, BR-19, BR-24.
 - **Acceptance Criteria:**
-  - **AC-33.1** — *Given* sản phẩm đang bán hoặc đang ẩn, *When* người bán sửa tên, ảnh, mô tả, hạn dùng, thương hiệu, nơi sản xuất hoặc nhãn giao, *Then* thay đổi được lưu và hiển thị ngay cho người mua, không qua duyệt (BR-24).
+  - **AC-33.1** — *Given* sản phẩm đang bán hoặc đang ẩn, *When* người bán sửa tên, ảnh, mô tả, vỏ, nhân, hạn dùng, thương hiệu, nơi sản xuất hoặc nhãn giao, *Then* thay đổi được lưu và hiển thị ngay cho người mua, không qua duyệt (BR-24).
   - **AC-33.2** — *Given* sản phẩm có nguồn hàng bán lại, *When* người bán xóa trống thương hiệu hoặc nơi sản xuất, *Then* hệ thống chặn (AC-29.2).
   - **AC-33.3** — *Given* sản phẩm chưa đạt tiêu chuẩn đóng gói, *When* người bán đổi nhãn giao, *Then* chỉ chọn được "giao nội thành" (AC-29.3).
   - **AC-33.4** — *Given* đơn đã tạo có sản phẩm này, *When* người bán sửa thông tin, *Then* thông tin chép trong đơn không đổi (BR-19).
+  - **AC-33.5** — *Given* người bán có nguồn hàng tự sản xuất hoặc cả hai, *When* người bán xóa trống thương hiệu, *Then* thương hiệu trở về tên đơn vị của người bán (AC-29.4).
+  - **AC-33.6** — *Given* sản phẩm đang gắn một giá trị vỏ hoặc nhân đã bị ẩn, *When* người bán sửa sản phẩm, *Then* giá trị đó được giữ nếu người bán không bỏ; người bán không thêm lại được giá trị đã ẩn; sau khi sửa, sản phẩm vẫn phải có ít nhất một vỏ và một nhân (BR-34).
 - **Trường hợp đặc biệt / lỗi:** Sản phẩm "bị gỡ" → người bán không sửa được (BR-24).
 - **Phụ thuộc:** FR-29, FR-30.
 
@@ -597,7 +604,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 - **Mô tả chi tiết:** Trường bổ sung theo nguồn hàng.
 - **Acceptance Criteria:**
   - **AC-35.1** — *Given* người bán đã duyệt, *When* khai hồ sơ, *Then* nhập số lượng tối thiểu, bậc giá tham khảo, thời gian chuẩn bị/sản xuất, khả năng custom, ưu đãi đặt sớm.
-  - **AC-35.2** — *Given* nguồn hàng có tự sản xuất, *When* khai, *Then* bắt buộc thêm công suất theo tuần, loại bánh, loại bao bì, khả năng in logo.
+  - **AC-35.2** — *Given* nguồn hàng có tự sản xuất, *When* khai, *Then* bắt buộc thêm công suất theo tuần, các vỏ và nhân làm được (chọn trong danh mục, FR-54), loại bao bì, khả năng in logo.
   - **AC-35.3** — *Given* nguồn hàng có bán lại, *When* khai, *Then* bắt buộc thêm thương hiệu đang phân phối và số lượng gom được.
   - **AC-35.4** — *Given* người bán không mở Shop, *When* bật nhận đặt hàng, *Then* hệ thống cho phép; người bán này không có sản phẩm ở trang tìm kiếm sản phẩm (BR-21).
 - **Trường hợp đặc biệt / lỗi:** Custom khai được chỉ trong phạm vi BR-14.
@@ -805,6 +812,20 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 - **Trường hợp đặc biệt / lỗi:** Mức phí đổi trong lúc người bán đang ở trang thanh toán → giao dịch đã tạo giữ mức cũ.
 - **Phụ thuộc:** FR-27, BR-31, NFR-07.
 
+### FR-54: Quản lý danh mục vỏ và nhân bánh
+- **Ưu tiên:** Must
+- **User story:** Là quản trị, tôi muốn thêm, đổi tên, sắp xếp và ẩn các giá trị vỏ bánh và nhân bánh, để danh mục theo kịp thị trường mà không phải sửa phần mềm.
+- **Mô tả chi tiết:** Áp dụng BR-34. Danh mục có hai nhóm cố định: vỏ và nhân. Danh mục ban đầu (A-19) có sẵn khi triển khai.
+- **Acceptance Criteria:**
+  - **AC-54.1** — *Given* trang cấu hình, *When* quản trị thêm một giá trị, *Then* chọn nhóm (vỏ / nhân) và nhập tên hiển thị; hệ thống sinh mã từ tên (chữ thường, không dấu, nối bằng gạch ngang), mã duy nhất trong nhóm và không đổi về sau; giá trị mới ở trạng thái đang hiện và đứng cuối thứ tự.
+  - **AC-54.2** — *Given* nhóm đã có một giá trị, *When* quản trị thêm hoặc đổi tên thành một tên trùng với giá trị khác trong cùng nhóm (so sau khi bỏ dấu, viết thường, gộp khoảng trắng), *Then* hệ thống từ chối và chỉ ra giá trị bị trùng.
+  - **AC-54.3** — *Given* một giá trị đang được sản phẩm gắn, *When* quản trị đổi tên, *Then* mọi sản phẩm hiện tên mới; mã và liên kết với sản phẩm không đổi; người bán không phải sửa gì.
+  - **AC-54.4** — *Given* một giá trị, *When* quản trị ẩn, *Then* giá trị không còn trong danh sách chọn của người bán (AC-29.1) và bộ lọc của người mua (AC-06.6); sản phẩm đã gắn giữ nguyên giá trị và vẫn hiện nó ở trang chi tiết; quản trị hiện lại được. Không có thao tác xóa.
+  - **AC-54.5** — *Given* một nhóm chỉ còn một giá trị đang hiện, *When* quản trị ẩn giá trị đó, *Then* hệ thống chặn.
+  - **AC-54.6** — *Given* danh sách giá trị của một nhóm, *When* quản trị đổi thứ tự, *Then* danh sách chọn của người bán và bộ lọc của người mua theo thứ tự mới.
+- **Trường hợp đặc biệt / lỗi:** Ẩn một giá trị khi sản phẩm chỉ gắn đúng giá trị đó ở một nhóm → sản phẩm vẫn hợp lệ cho tới lần sửa kế tiếp (AC-33.6).
+- **Phụ thuộc:** BR-34, NFR-07.
+
 ---
 
 ## 6. Yêu cầu phi chức năng (Non-functional Requirements)
@@ -819,7 +840,7 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 | NFR-04 | Tương thích | Đề xuất: Chrome, Edge, Safari, Firefox 2 phiên bản mới nhất; responsive từ 360px (đa số người mua phổ thông và chủ tiệm dùng điện thoại). App mobile xác minh NFC viết bằng Flutter: Android và iOS trên máy có NFC (phiên bản tối thiểu: Q-07). iOS cần capability đọc thẻ NFC, thường đòi tài khoản Apple Developer trả phí; demo ưu tiên Android. |
 | NFR-05 | Khả dụng | Đề xuất: uptime 99,5%; thanh toán và báo giá không mất dữ liệu khi lỗi giữa chừng. |
 | NFR-06 | Ngôn ngữ / i18n | Tiếng Việt; tiền VND, không có số lẻ; ngày DD/MM/YYYY; giờ Việt Nam (UTC+7). Mọi giá hiển thị đã gồm thuế GTGT. |
-| NFR-07 | Logging / audit | Ghi log bất biến (ai, lúc nào, giá trị trước/sau) cho: khóa/gỡ, duyệt hồ sơ (kèm kết quả so số định danh, họ tên và các xác nhận đối chiếu của quản trị), ghi nhận buổi làm việc trực tiếp và file thỏa thuận hợp tác (BR-26), duyệt giải ngân, duyệt chuyển tiền cho người bán, mọi lệnh hoàn tiền gửi VNPay và kết quả, quyết định tranh chấp, đổi bảng phí giao liên tỉnh, đổi mức phí đăng ký mở bán, thanh toán phí đăng ký mở bán, gửi/thu hồi báo giá, phiên bản maket, cập nhật tiến độ, sửa tài khoản ngân hàng người bán, mọi lần xác minh NFC (thành công, thất bại, tạm khóa). Thao tác trên người bán luôn được ghi là của chủ (không có tài khoản nhân viên). |
+| NFR-07 | Logging / audit | Ghi log bất biến (ai, lúc nào, giá trị trước/sau) cho: khóa/gỡ, duyệt hồ sơ (kèm kết quả so số định danh, họ tên và các xác nhận đối chiếu của quản trị), ghi nhận buổi làm việc trực tiếp và file thỏa thuận hợp tác (BR-26), duyệt giải ngân, duyệt chuyển tiền cho người bán, mọi lệnh hoàn tiền gửi VNPay và kết quả, quyết định tranh chấp, đổi bảng phí giao liên tỉnh, đổi mức phí đăng ký mở bán, thêm, đổi tên, đổi thứ tự, ẩn và hiện giá trị trong danh mục vỏ và nhân bánh, thanh toán phí đăng ký mở bán, gửi/thu hồi báo giá, phiên bản maket, cập nhật tiến độ, sửa tài khoản ngân hàng người bán, mọi lần xác minh NFC (thành công, thất bại, tạm khóa). Thao tác trên người bán luôn được ghi là của chủ (không có tài khoản nhân viên). |
 | NFR-08 | Lưu trữ file | Đề xuất: ảnh sản phẩm, logo, maket, bằng chứng khiếu nại, hóa đơn, giấy tờ người bán, thỏa thuận hợp tác chấp nhận JPG/PNG/PDF (logo thêm SVG/AI), tối đa 20 MB/file. Phiên bản maket không bị ghi đè. |
 | NFR-09 | Toàn vẹn tiền | Mọi số tiền lưu dưới dạng số nguyên VND. Tổng giải ngân + hoàn tiền + chuyển cho người bán của một đơn không vượt số người mua đã trả. |
 | NFR-10 | Thông báo | Thông báo trạng thái (FR-10, FR-21, FR-20, FR-27...) đến người nhận trong vòng 1 phút. Kênh: Q-21. |
@@ -882,7 +903,9 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 | | list_price | int (VND) | Có | Đã gồm thuế GTGT |
 | | stock | int | Có | ≥ 0. Không gồm phần đang giữ cho thanh toán chờ IPN (BR-28) |
 | | expiry | date | Có | |
-| | brand, origin | string | Có nếu bán lại | BR-12 |
+| | crusts, fillings | CakeAttribute[] | Có | Ít nhất một vỏ và một nhân (BR-34); dùng cho bộ lọc (AC-06.2) |
+| | brand | string | Có | Người bán bán lại phải tự nhập; còn lại để trống thì lấy tên đơn vị (BR-12, AC-29.4) |
+| | origin | string | Có nếu bán lại | BR-12 |
 | | delivery_label | enum | Có | nội thành / toàn quốc (BR-13) |
 | | qty_price_tiers | {from_qty, unit_price}[] | Không | |
 | | quote_threshold | int | Không | Chỉ có tác dụng khi Vendor accepts_orders |
@@ -928,6 +951,12 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 | **Review** | review_id, order_id, product_id, rating, text | | | Chỉ cho đơn mua ngay đã giao (BR-32). Người bán không trả lời và không xóa được |
 | **Voucher** | code, discount, valid_from/to, max_uses, conditions, active | | Có | |
 | **InterprovinceFee** (bảng phí giao liên tỉnh) | province_code, fee, effective_from | string, int (VND), datetime | Có | FR-52, BR-30. Một mức hiện hành cho mỗi tỉnh/thành nhận hàng |
+| **CakeAttribute** (giá trị trong danh mục vỏ và nhân) | attribute_id | string | Có | FR-54, BR-34 |
+| | group | enum | Có | vỏ / nhân |
+| | code | string | Có | Sinh từ tên khi tạo; duy nhất trong nhóm; không đổi (AC-54.1) |
+| | label | string | Có | Tên hiển thị; duy nhất trong nhóm sau chuẩn hóa (AC-54.2) |
+| | sort_order | int | Có | AC-54.6 |
+| | active | bool | Có | false = đã ẩn (AC-54.4). Không xóa |
 | **RegistrationFeeConfig** (mức phí đăng ký mở bán) | amount, effective_from | int (VND), datetime | Có | FR-53, BR-31. amount > 0; mặc định 200.000đ. Một mức hiện hành |
 
 ### 7.2 Quy tắc nghiệp vụ
@@ -942,7 +971,7 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 - **BR-09:** Giải ngân cọc theo báo cáo số tiền và mục đích của người bán, do quản trị duyệt; tổng giải ngân của một đơn không vượt số cọc đang giữ.
 - **BR-10:** *Bỏ (v1.4).* Dự án không tính hoa hồng (Context mục 9); nguồn thu của nền tảng là phí đăng ký mở bán (BR-31).
 - **BR-11:** Người bán là đơn vị có đăng ký kinh doanh (hộ kinh doanh, doanh nghiệp tư nhân hoặc công ty) đã được duyệt, do đúng một tài khoản đã xác minh NFC làm chủ (BR-23); không có tài khoản nhân viên. Cách xác minh quyền làm chủ phân theo tư cách pháp nhân (BR-26, BR-27).
-- **BR-12:** Sản phẩm bán lại phải ghi thương hiệu và nơi sản xuất. Không yêu cầu khai nguồn nhập.
+- **BR-12:** Sản phẩm bán lại phải ghi thương hiệu và nơi sản xuất. Không yêu cầu khai nguồn nhập. Mọi sản phẩm đều có thương hiệu: hàng tự sản xuất mang thương hiệu của chính người bán, nên khi người bán không phải người bán thuần bán lại để trống thương hiệu, hệ thống lấy tên đơn vị (`business_name`) làm thương hiệu (AC-29.4). Nhờ vậy bộ lọc thương hiệu (AC-06.2) không bỏ sót hàng tự sản xuất.
 - **BR-13:** Nhãn "giao toàn quốc" chỉ dùng cho sản phẩm đạt tiêu chuẩn đóng gói của nền tảng; sản phẩm "giao nội thành" chỉ hiện trong vùng giao người bán đã khai.
 - **BR-14:** Custom chỉ gồm in logo lên túi, thiệp, sticker và hộp theo mẫu có sẵn của người bán. Không có hạn chót của mùa (mục 4.2).
 - **BR-15:** Đơn có custom chỉ chuyển sang sản xuất khi có một phiên bản maket được người mua duyệt.
@@ -951,7 +980,7 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 - **BR-18:** Khi có khiếu nại đang mở, nền tảng tiếp tục giữ tiền của đơn.
 - **BR-19:** Thay đổi giá, tồn kho, phí giao nội thành và bảng phí giao liên tỉnh không ảnh hưởng đơn đã tạo.
 - **BR-20:** Người bán bị khóa không nhận đơn hay yêu cầu mới; đơn đang chạy vẫn được xử lý tiếp.
-- **BR-21:** Trang tìm kiếm sản phẩm (FR-06) là kênh bán lẻ: chỉ hiện sản phẩm đang bán của người bán có bật Shop. Người bán chỉ nhận đặt hàng (không bật Shop) — thường là đơn vị chỉ làm việc với doanh nghiệp và đơn số lượng lớn — không có sản phẩm ở trang tìm kiếm sản phẩm. Người mua tìm thấy họ qua danh sách đơn vị cung cấp và hồ sơ nhận đặt hàng (FR-14), gửi yêu cầu trực tiếp (FR-15), hoặc được nền tảng mời qua yêu cầu mở (FR-16). "Chỉ làm việc với doanh nghiệp" được thực hiện bằng cách chỉ nhận đặt hàng và đặt số lượng tối thiểu; nền tảng không kiểm tra người mua là cá nhân hay doanh nghiệp (BR-01, mục 4.2).
+- **BR-21:** Trang tìm kiếm sản phẩm (FR-06) là kênh bán lẻ: chỉ hiện sản phẩm đang bán của người bán có bật Shop. Người bán chỉ nhận đặt hàng (không bật Shop) — thường là đơn vị chỉ làm việc với doanh nghiệp và đơn số lượng lớn — không có sản phẩm ở trang tìm kiếm sản phẩm. Người mua tìm thấy họ qua danh sách đơn vị cung cấp và hồ sơ nhận đặt hàng (FR-14), qua khối đơn vị cung cấp trên trang kết quả tìm kiếm khi gõ đúng tên (AC-14.5; khối này không đưa sản phẩm của họ vào danh sách bán lẻ), gửi yêu cầu trực tiếp (FR-15), hoặc được nền tảng mời qua yêu cầu mở (FR-16). "Chỉ làm việc với doanh nghiệp" được thực hiện bằng cách chỉ nhận đặt hàng và đặt số lượng tối thiểu; nền tảng không kiểm tra người mua là cá nhân hay doanh nghiệp (BR-01, mục 4.2).
 - **BR-22 (cấm tự giao dịch):** Một tài khoản không được giao dịch với người bán do chính tài khoản đó làm chủ (`buyer_account_id = vendor.owner_account_id`). Quy tắc áp dụng cho: thêm vào giỏ và thanh toán mua ngay (FR-08, FR-09), gửi yêu cầu trực tiếp (FR-15), lời mời và báo giá của yêu cầu mở (FR-16), chấp nhận báo giá (FR-19), đặt lại (FR-23). Nếu một tài khoản làm chủ nhiều người bán, quy tắc áp cho tất cả người bán đó. Sản phẩm và hồ sơ của chính mình vẫn hiển thị với nhãn "Sản phẩm của bạn" nhưng không có thao tác mua hay gửi yêu cầu. Hệ thống kiểm ở phía máy chủ tại thời điểm tạo giỏ, yêu cầu và đơn, không chỉ ẩn nút trên giao diện. Áp dụng như nhau dù đơn có chọn xuất hóa đơn doanh nghiệp hay không. Mục đích: ngăn tự đánh giá, thổi phồng số đơn, lạm dụng voucher và giải ngân cọc từ đơn giả. Nền tảng không phát hiện tự giao dịch qua tài khoản khác (mục 4.2).
 - **BR-23 (xác minh NFC):** Tài khoản phải có trạng thái "đã xác minh NFC" (FR-04) trước khi: (a) khai hoặc nộp hồ sơ người bán (FR-26), áp dụng cho mọi người bán bất kể cách bán; (b) gửi yêu cầu trực tiếp, tạo yêu cầu mở hoặc đặt lại (FR-15, FR-16, FR-23). Mua ngay (FR-08, FR-09) không cần xác minh NFC. Một CCCD chỉ gắn với một tài khoản. Hệ thống kiểm ở phía máy chủ tại thời điểm tạo hồ sơ người bán và tạo yêu cầu, không chỉ ẩn nút trên giao diện. Xác minh NFC chỉ ghi nhận thông tin CCCD (AC-04.11) của người thao tác tài khoản; không chứng minh quyền đại diện cho doanh nghiệp (mục 4.2) và không chứng minh thẻ là thật (A-08). Mục đích: buộc mỗi tài khoản đặt hàng hoặc bán hàng gắn với một số CCCD duy nhất.
 - **BR-24 (kiểm soát sản phẩm sau khi đăng):** Sản phẩm mới đăng hoặc vừa sửa hiển thị ngay, không qua duyệt của quản trị. Quản trị kiểm soát sau bằng cách gỡ sản phẩm vi phạm (FR-46). Sản phẩm "bị gỡ" thì người bán không sửa và không hiện lại được.
@@ -965,6 +994,7 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 - **BR-31 (phí đăng ký mở bán):** Sau khi hồ sơ được duyệt, mọi người bán, dù mở Shop hay chỉ nhận đặt hàng, phải đóng phí đăng ký mở bán một lần để bắt đầu hoạt động kinh doanh (FR-27). Mức phí do quản trị đặt (FR-53), mặc định 200.000đ; số phải đóng là mức hiện hành lúc tạo giao dịch thanh toán, và đổi mức không ảnh hưởng người bán đã đóng. Chưa đóng phí thì người bán không đăng bán, không nhận yêu cầu trực tiếp và không được mời từ yêu cầu mở. Phí thanh toán qua cổng thanh toán và được xác nhận theo BR-25. Phí không thu lúc nộp hồ sơ nên không phát sinh hoàn phí khi hồ sơ bị từ chối. Nền tảng lập hóa đơn cho khoản phí này (Q-36). Nguồn: Context mục 4 (Thanh toán, Hóa đơn).
 - **BR-32 (đơn đặt hàng là thỏa thuận riêng):** Đơn đặt hàng không có đánh giá và không áp dụng voucher hệ thống; đánh giá và voucher chỉ dùng cho đơn mua ngay. Nguồn: Context mục 4 (Đặt hàng qua báo giá).
 - **BR-33 (người bán là công ty tạm thời không đăng ký qua hệ thống):** Công ty TNHH, công ty cổ phần và công ty hợp danh tạm thời không khai hồ sơ người bán trên nền tảng; công ty muốn bán làm việc trực tiếp với đội vận hành Moonkage, ngoài hệ thống. Form khai hồ sơ người bán (FR-26) chỉ có hai loại hình hộ kinh doanh và doanh nghiệp tư nhân, kèm một dòng hướng dẫn công ty liên hệ đội vận hành. Máy chủ từ chối mọi loại hình khác, kể cả khi gọi trực tiếp API. Cả hai loại hình còn lại đều phải là chính chủ (BR-27). Trong thời gian áp dụng quy tắc này, BR-26, AC-26.7, AC-45.6 và phần dành cho công ty của AC-26.1, AC-45.4, AC-45.5 tạm hoãn; doanh nghiệp tư nhân vẫn được quản trị tra cứu mã số trên Cổng thông tin quốc gia về đăng ký doanh nghiệp (AC-45.5). Quyết định của nhóm ngày 22/10/2026.
+- **BR-34 (vỏ và nhân bánh):** Bánh được phân loại theo hai nhóm độc lập: **vỏ** và **nhân**. Giá trị của mỗi nhóm nằm trong một danh mục do quản trị quản lý (FR-54), không cố định trong phần mềm. Mỗi sản phẩm Shop gắn ít nhất một vỏ và ít nhất một nhân, chọn nhiều được; hộp quà nhiều loại bánh gắn đủ các vỏ và nhân có trong hộp. Người bán chỉ chọn giá trị đang hiện; máy chủ từ chối mã không có trong danh mục hoặc đã ẩn khi thêm mới. Hồ sơ nhận đặt hàng (AC-35.2) dùng cùng danh mục. Nguồn: Context mục 4, User Stories US-06, US-29, US-54.
 
 ---
 
@@ -1023,7 +1053,7 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 
 ### Flow 7: Quản lý sản phẩm (Shop)
 1. Người bán đã duyệt, đã đóng phí đăng ký mở bán (BR-31) và có Shop; mở trang Quản lý sản phẩm.
-2. Đăng mới: nhập thông tin bắt buộc; hàng bán lại nhập thương hiệu và nơi sản xuất; chọn nhãn giao theo tiêu chuẩn đóng gói; hợp lệ thì sản phẩm "đang bán" và hiện ngay, không qua duyệt (FR-29, BR-12, BR-13, BR-24).
+2. Đăng mới: nhập thông tin bắt buộc, gồm ít nhất một vỏ và một nhân trong danh mục (BR-34); hàng bán lại nhập thương hiệu và nơi sản xuất, hàng tự sản xuất để trống thương hiệu thì lấy tên đơn vị (BR-12); chọn nhãn giao theo tiêu chuẩn đóng gói; hợp lệ thì sản phẩm "đang bán" và hiện ngay, không qua duyệt (FR-29, BR-12, BR-13, BR-24).
 3. Sửa thông tin (FR-33); sửa tồn kho và giá (FR-30); đặt bậc giá và ngưỡng báo giá, ngưỡng chỉ có tác dụng khi bật nhận đặt hàng (FR-31). Đơn đã tạo không đổi (BR-19).
 4. Ẩn / hiện lại sản phẩm (FR-34); không có thao tác xóa.
 5. Quản trị gỡ sản phẩm vi phạm kèm lý do; sản phẩm "bị gỡ" rời trang tìm kiếm, bị loại khỏi giỏ; người bán không tự hiện lại được (FR-46, BR-24).
@@ -1070,6 +1100,7 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 - **A-16:** Công ty có nhiều người đại diện theo pháp luật: hồ sơ khai một người đại diện; thỏa thuận hợp tác do chính người đó ký.
 - **A-17:** Trong demo, email (mã xác nhận tài khoản, đặt lại mật khẩu) gửi thật qua Gmail SMTP bằng một tài khoản Gmail của nhóm với mật khẩu ứng dụng (App Password), đặt qua biến môi trường. Gmail giới hạn số thư mỗi ngày; đủ cho demo, không dùng cho vận hành thật. Vì chưa có SMS, demo chỉ cho đăng ký bằng email; trường số điện thoại giữ trong đặc tả để làm sau.
 - **A-18:** Bảng phí giao liên tỉnh luôn có mức cho mọi tỉnh/thành nhận hàng (FR-52). Không có trường hợp đơn liên tỉnh thiếu phí.
+- **A-19:** Danh mục vỏ và nhân ban đầu (FR-54), quản trị sửa được sau khi triển khai. Vỏ: Bánh nướng, Bánh dẻo, Bánh lạnh, Khác. Nhân: Thập cẩm, Đậu xanh, Hạt sen, Đậu đỏ, Khoai môn, Trà xanh, Sầu riêng, Trứng muối, Khác. Trứng muối là một nhân riêng, nên bánh "đậu xanh trứng muối" gắn cả hai.
 - **C-01 (ràng buộc):** *Bỏ (v1.4).* Dự án không mô hình hóa mùa vụ nên không ràng buộc thời điểm mở theo mùa. Deadline và ngân sách: Q-16.
 - **C-02 (ràng buộc):** Ưu tiên tuyển người bán ở một vài thành phố lớn trước khi mở rộng vùng.
 
@@ -1162,6 +1193,8 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 | Bảng phí giao liên tỉnh | Mức phí giao theo tỉnh nhận hàng do quản trị đặt, áp cho sản phẩm "giao toàn quốc" giao ra ngoài vùng của người bán (FR-52). |
 | Lần thanh toán | Một lần người mua trả tiền cho cả giỏ; tạo mỗi Shop một đơn, các đơn được nhóm theo lần thanh toán (BR-29). |
 | Phí đăng ký mở bán | Khoản mọi người bán đóng cho nền tảng một lần sau khi hồ sơ được duyệt để bắt đầu kinh doanh; mức do quản trị đặt, mặc định 200.000đ; là nguồn thu của nền tảng (BR-31, FR-53). |
+| Vỏ bánh, nhân bánh | Hai nhóm phân loại bánh độc lập (BR-34). Giá trị nằm trong danh mục do quản trị quản lý (FR-54); một sản phẩm gắn được nhiều vỏ, nhiều nhân; người mua lọc theo cả hai (AC-06.2). |
+| Thương hiệu | Tên thương hiệu ghi trên sản phẩm. Hàng bán lại: thương hiệu gốc do người bán nhập. Hàng tự sản xuất: mặc định là tên đơn vị của người bán (BR-12). |
 | Giao nội thành / giao toàn quốc | Nhãn giao của sản phẩm Shop; "toàn quốc" chỉ cho sản phẩm đạt tiêu chuẩn đóng gói. |
 | Đơn liên tỉnh | Đơn giao ra ngoài tỉnh/thành của người bán qua hãng vận chuyển. |
 | Tự giao dịch | Giao dịch mà tài khoản mua chính là tài khoản chủ của người bán. Bị cấm (BR-22). |
@@ -1193,6 +1226,8 @@ Các mã FR, US, AC trong các dòng đến v1.4 là mã cũ; đối chiếu v�
 | v1.4 | 2026-10-17 | | Đồng bộ với `Moonkage Context.md` và `docs/product/user-stories.md` mới; sửa chiều phụ thuộc thành Context → User Stories → Requirement → Design. (1) **Không mô hình hóa mùa vụ:** bỏ FR-53, Season, A-06, C-01; sửa BR-14, NFR-02, G-02, FR-15, FR-16, FR-38, FR-42. (2) **Không tính hoa hồng, thêm phí đăng ký mở bán 200.000đ** (đóng một lần sau khi duyệt): bỏ FR-45, FR-50, BR-10, CommissionConfig; thêm BR-31, AC-26.9, AC-27.4 → AC-27.6, Q-36; sửa FR-43, FR-49, NFR-09, Escrow / Ledger, Payment. (3) **Một lần thanh toán, mỗi Shop một đơn:** A-01 thành BR-29; thêm AC-09.7, AC-10.3, payment_group_id; đóng Q-13. (4) **Phí giao:** thêm BR-30, FR-61, AC-29.3, InterprovinceFee, local_delivery_fee; phí giao trong báo giá. (5) **Đơn đặt hàng không đánh giá, không voucher:** thêm BR-32; đóng Q-15, chốt một phần Q-22. (6) Bỏ FR-06 (thay bằng AC-05.5), FR-34, FR-55 (thẻ do người dùng tự có), FR-58 (thêm AC-57.6); tạm bỏ FR-59. (7) Thêm FR-60 (đối soát toàn nền tảng). (8) Chuyển FR-54 vào Nhóm 1. (9) Mục 9 bỏ phần chia service và hạ tầng (thuộc Design); bỏ dẫn chiếu ngược tới Software Design ở BR-28. (10) NFR-03 thêm căn cứ pháp luật về bảo vệ dữ liệu cá nhân. (11) Mức phí đăng ký mở bán do quản trị đặt: thêm FR-62, RegistrationFeeConfig; sửa BR-31. (12) Bảng phí liên tỉnh luôn đủ mọi tỉnh: thêm A-18, sửa AC-61.3. (13) FR-60 làm trọn trong demo, gồm lọc theo khoảng thời gian. (14) Mục 3 bỏ cột "Mức độ dùng". | |
 | v1.5 | 2026-10-17 | | Đánh số lại FR, US và AC liên tục theo thứ tự trong tài liệu (FR-01 → FR-53); bỏ dòng AC đã bỏ ở FR xác minh NFC. Thêm mục 14 (bảng đổi số). Nội dung yêu cầu không đổi so với v1.4. Xác nhận cùng `Moonkage Context.md` và `docs/product/user-stories.md`. | Đã xác nhận |
 | v1.6 | 2026-10-17 | | Đồng bộ luồng xác minh NFC theo app mobile, đi từ Context và User Stories xuống. FR-04 viết lại (AC-04.1 → AC-04.12): app đăng nhập, phiên phải thuộc tài khoản; thẻ JSON 9 khóa (A-08); app kiểm, hiện đủ thông tin trên điện thoại, người dùng xác nhận rồi mới gửi; app mã hóa số định danh, ngày sinh, nơi thường trú khi gửi; máy chủ chặn CCCD hết hạn; lưu 5 trường (họ tên, giới tính, ngày sinh, quốc tịch, số định danh), số định danh và ngày sinh mã hóa khi lưu. Sửa NFR-03, Account, NfcSession, BR-23, Flow 6, mục 9, A-08. So họ tên còn hai mức, họ tên ở hồ sơ người bán nhập không dấu (A-15, AC-26.1, AC-45.4, owner_check). Chốt một phần Q-33; thêm Q-37. Đổi tên tài liệu gốc thành bản Final. | |
+| v1.7 | 2026-10-22 | | Thêm phân loại bánh theo vỏ và nhân, và thương hiệu mặc định cho sản phẩm Shop, đi từ Context và User Stories xuống. (1) Thêm BR-34 và FR-54 (US-54): hai nhóm vỏ và nhân, giá trị nằm trong danh mục do quản trị quản lý (thêm, đổi tên, sắp xếp, ẩn; không xóa); danh mục ban đầu A-19. Trước đây AC-06.2 lọc theo "loại bánh" nhưng Product chưa có trường này. Sản phẩm gắn ít nhất một vỏ và một nhân, chọn được nhiều. Sửa AC-06.2, AC-07.1, AC-29.1, AC-33.1, AC-35.2; thêm AC-06.6, AC-33.6; thực thể CakeAttribute; Product thêm crusts, fillings; NFR-07; Flow 7; mục 3, 4.1, 4.3. (2) BR-12: mọi sản phẩm có thương hiệu; hàng tự sản xuất để trống thì lấy tên đơn vị. Thêm AC-29.4, AC-33.5; `brand` thành bắt buộc. Thuật ngữ "Vỏ bánh, nhân bánh", "Thương hiệu". Ghi nhận BR-33 (22/10) vào phiên bản này. | |
+| v1.8 | 2026-10-23 | | Hai điểm từ rà soát kiến trúc thông tin, đã đối chiếu không mâu thuẫn Context; sửa User Stories US-02, US-06, US-14 trước. (1) **Tìm đơn vị cung cấp theo tên:** người bán chỉ nhận đặt hàng không có sản phẩm nên trước đây gõ tên họ ở ô tìm kiếm ra trang trống. Thêm AC-14.5 (khối "Đơn vị cung cấp" trên trang kết quả, tách khỏi danh sách sản phẩm, không lọc vùng giao) và AC-14.6 (tìm theo tên trong danh sách đơn vị cung cấp); AC-06.4 nói rõ phạm vi là danh sách sản phẩm và bộ lọc Shop; sửa mô tả FR-06, BR-21, AC-26.4. Căn cứ: Context mục 2, 4, 7. (2) **Đăng nhập xong quay về việc đang làm:** thêm AC-02.3; FR-08 ghi rõ không có giỏ hàng của khách. Căn cứ: Context mục 5 (mua cần tài khoản). Sửa thứ tự AC-06.6 sau AC-06.5. | |
 
 ---
 

@@ -73,7 +73,7 @@ Tổng dự kiến khoảng **6–8,5 ngày tập trung**. Để cân đối STE
 
 ## 7. Thiết kế dự kiến cho taxonomy (chưa thêm schema/API)
 
-**Lưu để truy vết đề xuất C1, không triển khai theo bảng này:** fetch ở C2 thấy L-19 trong `origin/develop:d211767` chọn vendor sở hữu taxonomy, `crust_codes`/`filling_codes`. C3 phải dùng contract mới đã merge sau khi đồng bộ base có kiểm soát. C2 không merge schema taxonomy, không tự sửa code vendor.
+**KHÔNG CÒN HIỆU LỰC — chỉ giữ truy vết đề xuất C1:** L-19 chọn vendor sở hữu taxonomy, `crust_codes`/`filling_codes`. Lê Trần đã cho phép Phase A nhận nguyên migration taxonomy có sẵn khi merge develop `6523d00`; chỉ sửa tương thích catalog, không triển khai C3. Không tạo API từ điển catalog theo bảng dưới hoặc sửa migration đã merge.
 
 Đề xuất catalog sở hữu từ điển, vendor sở hữu việc gắn mã vào sản phẩm/năng lực. Đây là thiết kế để thảo luận với nhóm, không phải endpoint đã chạy:
 
