@@ -30,6 +30,10 @@ spring:
         format_sql: true
   # RabbitMQ (domain events, Software Design 5.4)
   rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
@@ -53,6 +57,10 @@ storage:
   download-link-lifetime: ${MINIO_DOWNLOAD_LINK_LIFETIME:10m}
 
 catalog:
+  outbox:
+    enabled: true
+    relay-interval: 2s
+    batch-size: 25
   product-image:
     allowed-content-types: ${PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/webp}
     max-size: ${PRODUCT_IMAGE_MAX_SIZE:5MB}

@@ -65,6 +65,22 @@ public class SecurityConfig {
                         // /internal/** is for service-to-service (OpenFeign) calls only
                         .pathMatchers("/*/internal/**")
                         .denyAll()
+                        .pathMatchers("/internal/**")
+                        .denyAll()
+                        .pathMatchers(
+                                HttpMethod.GET,
+                                "/api/interprovince-fees",
+                                "/api/interprovince-fees/**",
+                                "/catalog-service/api/interprovince-fees",
+                                "/catalog-service/api/interprovince-fees/**")
+                        .permitAll()
+                        .pathMatchers(
+                                HttpMethod.PUT,
+                                "/api/interprovince-fees",
+                                "/api/interprovince-fees/**",
+                                "/catalog-service/api/interprovince-fees",
+                                "/catalog-service/api/interprovince-fees/**")
+                        .hasRole("ADMIN")
                         // Swagger UI and each service's OpenAPI doc
                         .pathMatchers(
                                 "/swagger-ui.html",

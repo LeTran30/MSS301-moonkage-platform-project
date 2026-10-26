@@ -4,6 +4,8 @@
 >
 > **Migration:** [`V2026_10_22_1000__align_with_api_db_outline.sql`](../../../api/catalog-service/src/main/resources/db/migration/V2026_10_22_1000__align_with_api_db_outline.sql)
 
+Tiến độ triển khai theo từng mốc, độ lệch IA v1.8 và hợp đồng phí hiện thực hóa được theo dõi tại [catalog service](../../services/catalog/README.md) và [kế hoạch C0–C5](../../services/catalog/implementation-plan.md). Chưa coi toàn bộ outline dưới đây là đã có code.
+
 catalog là **phía đọc** của sản phẩm (CQRS): không nhận lệnh ghi sản phẩm nào. Bảng đọc được dựng từ sự kiện `product.upserted` và `vendor.updated` của vendor-service, `review.created` của order-service. catalog vẫn sở hữu bảng phí giao liên tỉnh và là nơi duy nhất tính phí giao đơn mua ngay (D-14).
 
 **Bảng**
