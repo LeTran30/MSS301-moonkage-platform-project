@@ -7,7 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,10 +38,10 @@ public class Voucher {
     private Long minOrderAmount;
 
     @Column(nullable = false)
-    private LocalDateTime validFrom;
+    private Instant validFrom;
 
     @Column(nullable = false)
-    private LocalDateTime validTo;
+    private Instant validTo;
 
     @Column(nullable = false)
     private Integer maxUses;
@@ -56,8 +56,8 @@ public class Voucher {
     private Long version;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }

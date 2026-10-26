@@ -14,7 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -39,7 +39,7 @@ public class Dispute {
     private Order order;
 
     @Column(nullable = false)
-    private String buyerUserId;
+    private String buyerAccountId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -60,8 +60,12 @@ public class Dispute {
     @Column(columnDefinition = "TEXT")
     private String decisionReason;
 
-    private LocalDateTime resolvedAt;
+    /** The admin account that decided (FR-49). */
+    @Column(length = 36)
+    private String decidedBy;
+
+    private Instant resolvedAt;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

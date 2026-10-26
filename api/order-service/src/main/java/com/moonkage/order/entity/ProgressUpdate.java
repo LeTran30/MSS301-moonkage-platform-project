@@ -14,7 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -49,10 +49,10 @@ public class ProgressUpdate {
 
     @ElementCollection
     @CollectionTable(name = "progress_update_photos", joinColumns = @JoinColumn(name = "progress_update_id"))
-    @Column(name = "file_url", nullable = false)
-    private List<String> photoUrls = new ArrayList<>();
+    @Column(name = "object_key", nullable = false)
+    private List<String> photoKeys = new ArrayList<>();
 
     @CreationTimestamp
     @Column(updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

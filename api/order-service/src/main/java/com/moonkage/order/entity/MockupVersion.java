@@ -13,7 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -41,7 +41,7 @@ public class MockupVersion {
     private Integer versionNo;
 
     @Column(nullable = false, updatable = false)
-    private String fileUrl;
+    private String objectKey;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -50,9 +50,9 @@ public class MockupVersion {
     @Column(columnDefinition = "TEXT")
     private String reviewNote;
 
-    private LocalDateTime reviewedAt;
+    private Instant reviewedAt;
 
     @CreationTimestamp
     @Column(updatable = false)
-    private LocalDateTime uploadedAt;
+    private Instant uploadedAt;
 }
