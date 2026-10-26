@@ -40,7 +40,7 @@ Giữ hàng bằng một câu lệnh có điều kiện: `UPDATE products SET st
 
 | Method, đường dẫn | Ai | Mục đích | FR |
 | --- | --- | --- | --- |
-| `POST /api/vendors/uploads` | M | Xin chỗ tải giấy tờ (presigned) → `{objectKey, url}` | AC-26.1 |
+| `POST /api/vendors/uploads` | M | Xin chỗ tải giấy tờ (presigned POST): `{contentType, sizeBytes}` → `{tempKey, uploadUrl, formFields, expiresAt}`; gửi `tempKey` làm `objectKey` khi nộp | AC-26.1 |
 | `POST /api/vendors` | M (đã NFC) | Nộp hồ sơ, kèm `documents[{kind, objectKey}]`; kiểm BR-23, BR-27, BR-33 | FR-26 |
 | `GET /api/vendors?ownerAccountId=me` | M | Hồ sơ của mình | FR-27 |
 | `GET /api/vendors?status=` | A | Danh sách hồ sơ chờ duyệt | FR-45 |

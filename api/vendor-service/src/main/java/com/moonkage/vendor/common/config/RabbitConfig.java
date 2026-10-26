@@ -15,6 +15,10 @@ public class RabbitConfig {
 
     public static final String EVENTS_EXCHANGE = "moonkage.events";
 
+    // FR-26, FR-45, consumed by orchestrator-service (notification to the admins / the owner, AC-45.3)
+    public static final String VENDOR_SUBMITTED_ROUTING_KEY = "vendor.submitted";
+    public static final String VENDOR_REVIEWED_ROUTING_KEY = "vendor.reviewed";
+
     @Bean
     TopicExchange eventsExchange() {
         return new TopicExchange(EVENTS_EXCHANGE, true, false);

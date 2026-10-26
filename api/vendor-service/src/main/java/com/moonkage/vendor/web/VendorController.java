@@ -12,16 +12,19 @@ import com.moonkage.vendor.vendor.VendorService;
 import com.moonkage.vendor.vendor.VendorStatus;
 import com.moonkage.vendor.vendor.dto.request.CreateVendorDocumentRequest;
 import com.moonkage.vendor.vendor.dto.request.CreateVendorReviewRequest;
+import com.moonkage.vendor.vendor.dto.request.DocumentUploadRequest;
 import com.moonkage.vendor.vendor.dto.request.SubmitVendorRequest;
 import com.moonkage.vendor.vendor.dto.request.UpdateVendorRequest;
 import com.moonkage.vendor.vendor.dto.response.OwnerCheckResponse;
+import com.moonkage.vendor.vendor.dto.response.PresignedUploadLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentResponse;
-import com.moonkage.vendor.vendor.dto.response.UploadSlotResponse;
+import com.moonkage.vendor.vendor.dto.response.VendorDetailResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -50,14 +53,19 @@ public class VendorController {
     private final DeliveryAreaService deliveryAreaService;
     private final OrderProfileService orderProfileService;
 
+    /**
+     * Upload a legal document straight to MinIO: POST formFields and the file to uploadUrl, then send tempKey as a
+     * document's objectKey when submitting the profile (AC-26.1).
+     */
     @PostMapping("/api/vendors/uploads")
-    public ResponseEntity<ApiResponse<UploadSlotResponse>> createUploadSlot(@CurrentUser CurrentUserInfo caller) {
-        return ResponseEntity.ok(ApiResponse.ok(vendorService.createUploadSlot(caller)));
+    public ResponseEntity<ApiResponse<PresignedUploadLinkResponse>> createDocumentUploadLink(
+            @CurrentUser CurrentUserInfo caller, @Valid @RequestBody DocumentUploadRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(vendorService.createDocumentUploadLink(caller, request)));
     }
 
     @PostMapping("/api/vendors")
-    public ResponseEntity<ApiResponse<VendorResponse>> submit(
-            @CurrentUser CurrentUserInfo caller, @RequestBody SubmitVendorRequest request) {
+    public ResponseEntity<ApiResponse<VendorDetailResponse>> submit(
+            @CurrentUser CurrentUserInfo caller, @Valid @RequestBody SubmitVendorRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(vendorService.submit(caller, request)));
     }
@@ -72,17 +80,17 @@ public class VendorController {
     }
 
     @GetMapping("/api/vendors/{vendorId}")
-    public ResponseEntity<ApiResponse<VendorResponse>> getVendor(
+    public ResponseEntity<ApiResponse<VendorDetailResponse>> getVendor(
             @CurrentUser CurrentUserInfo caller, @PathVariable String vendorId) {
         return ResponseEntity.ok(ApiResponse.ok(vendorService.getVendor(caller, vendorId)));
     }
 
     /** Allowed only while NEEDS_INFO or REJECTED (AC-27.2). */
     @PutMapping("/api/vendors/{vendorId}")
-    public ResponseEntity<ApiResponse<VendorResponse>> resubmit(
+    public ResponseEntity<ApiResponse<VendorDetailResponse>> resubmit(
             @CurrentUser CurrentUserInfo caller,
             @PathVariable String vendorId,
-            @RequestBody SubmitVendorRequest request) {
+            @Valid @RequestBody SubmitVendorRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(vendorService.resubmit(caller, vendorId, request)));
     }
 
@@ -154,7 +162,7 @@ public class VendorController {
     public ResponseEntity<ApiResponse<VendorReviewResponse>> createReview(
             @CurrentUser CurrentUserInfo caller,
             @PathVariable String vendorId,
-            @RequestBody CreateVendorReviewRequest request) {
+            @Valid @RequestBody CreateVendorReviewRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(vendorService.createReview(caller, vendorId, request)));
     }

@@ -66,6 +66,17 @@ storage:
   upload-link-lifetime: ${MINIO_UPLOAD_LINK_LIFETIME:10m}
   download-link-lifetime: ${MINIO_DOWNLOAD_LINK_LIFETIME:10m}
 
+vendor:
+  # legal documents of a vendor profile (AC-26.1): business licence, food safety papers
+  document:
+    allowed-content-types: ${VENDOR_DOCUMENT_ALLOWED_CONTENT_TYPES:application/pdf,image/jpeg,image/png}
+    max-size: ${VENDOR_DOCUMENT_MAX_SIZE:10MB}
+    # fixed: it must match the prefix infra/minio/init.sh grants this service in the vendor-docs bucket
+    key-prefix: vendor
+  # secret, vendor-service only (P-09): AES-256-GCM key of bank account numbers; stored rows record key version 1
+  bank-account:
+    encryption-key: ${BANK_ACCOUNT_ENC_KEY_V1:}
+
 # only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
 management:
   endpoints:

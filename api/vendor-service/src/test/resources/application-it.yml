@@ -16,6 +16,8 @@ MINIO_VENDOR_ACCESS_KEY: test
 MINIO_VENDOR_SECRET_KEY: test
 MINIO_PUBLIC_BUCKET: test-public
 MINIO_VENDOR_DOCS_BUCKET: test-vendor-docs
+# throw-away test key (Base64, 32 bytes)
+BANK_ACCOUNT_ENC_KEY_V1: P6okNI247898yAz4Z1v9TkjXxoCgasBTQeJ8VsJTboY=
 
 eureka:
   client:

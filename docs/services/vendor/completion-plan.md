@@ -65,7 +65,7 @@ Mỗi VO là `record` bất biến, constructor chuẩn hóa rồi kiểm, sai t
 | `Quantity` | `int` > 0 | `minQty`, `fromQty`, số lượng giữ hàng | FR-35, BR-28 |
 | `PriceTiers` | Danh sách bậc giá: `fromQty` tăng dần, không trùng; `unitPriceFor(qty)` | Sản phẩm, hồ sơ nhận đặt hàng | FR-31, FR-35 |
 | `CakeAttributeCode` | Slug `banh-nuong`: sinh từ nhãn (bỏ dấu, kebab), không đổi sau khi tạo | `CakeAttribute.code`, `crustCodes[]`, `fillingCodes[]` | FR-54, BR-34 |
-| `ObjectKey` | Khóa MinIO có tiền tố của chủ (vendor hoặc tài khoản) và bucket; không nhận khóa của người khác | `VendorDocument`, `ProductImage` | AC-26.1, FR-29 |
+| `ObjectKey` | Khóa MinIO có tiền tố của chủ (vendor hoặc tài khoản) và bucket; không nhận khóa của người khác | `ProductImage` | FR-29 |
 
 Không làm VO cho trường không có luật riêng (`address`, `description`): VO chỉ đáng khi nó giữ một bất biến.
 
@@ -86,6 +86,17 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 **Trạng thái (2026-10-26):** xong trên nhánh `feat/vendor-foundation`. `DeliveryArea`, `OrderProfile` giữ `vendorId` thay cho quan hệ JPA tới `Vendor`. Chưa có VO; mỗi VO vào cùng giai đoạn đầu tiên dùng nó.
 
 ### 1. Khai và duyệt hồ sơ (FR-26, FR-27, FR-45; BR-23, BR-27, BR-33)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+
+- AC-26.6: số định danh không phải CCCD của chủ tài khoản thì **chặn** nộp (`VENDOR_004`, 422). Chỉ tên lệch mới cho nộp kèm cảnh báo `nameMatch = MISMATCH`.
+- `POST /api/vendors/uploads` nhận `{contentType, sizeBytes}`, trả `{tempKey, uploadUrl, formFields, expiresAt}` như catalog. Khi nộp, file được chuyển sang `vendor/<vendorId>/…`.
+- Bỏ VO `ObjectKey` cho giấy tờ: `ObjectStorage` đã kiểm temp key, loại và kích thước khi chuyển file. Khi nộp lại, khóa không phải temp key phải là giấy tờ hiện hành cùng loại.
+- `registryChecked` chỉ bắt buộc với SOLE_PROPRIETORSHIP: hộ kinh doanh không có trên cổng đăng ký quốc gia (A-14).
+- NFC và CCCD lấy trong một lần gọi `checkIdNumber`, không gọi `getNfcStatus` riêng. Bản owner check lúc nộp đã đủ dữ liệu AC-45.1, nên admin không gọi identity lúc xem.
+- `vendor.updated` dời sang giai đoạn 3: component `vendor` muốn đọc `deliveryarea` thì sinh vòng phụ thuộc.
+- Chưa làm: phân trang `GET /api/vendors?status=`, seed mỗi trạng thái, chạy kịch bản qua gateway. Test tích hợp hiện chạy MockMvc, với identity và MinIO được mock.
+- Cấu hình mới: `BANK_ACCOUNT_ENC_KEY_V1` (bắt buộc để nộp), `VENDOR_DOCUMENT_ALLOWED_CONTENT_TYPES`, `VENDOR_DOCUMENT_MAX_SIZE`.
 
 - Entity `VendorDocument` (`kind` BUSINESS_LICENSE, FOOD_SAFETY, FEE_INVOICE), `VendorOwnerCheck` (bất biến), `VendorReview`.
 - `POST /api/vendors/uploads`: presigned upload vào `vendor-docs` → `{objectKey, url}`.

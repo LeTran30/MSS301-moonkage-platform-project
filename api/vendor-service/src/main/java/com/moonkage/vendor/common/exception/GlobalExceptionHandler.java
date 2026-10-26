@@ -1,5 +1,7 @@
 package com.moonkage.vendor.common.exception;
 
+import com.moonkage.storage.InvalidFileException;
+import com.moonkage.storage.StorageUnavailableException;
 import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -7,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -30,7 +33,9 @@ public class GlobalExceptionHandler {
         ErrorCode ec = ex.getErrorCode();
         String message = localize(ec, ex.getArgs());
         log.warn("Business Exception: code={}, message={}", ec.getCode(), message);
-        return build(ec, message, null, request);
+        List<ApiResponse.FieldError> fieldErrors =
+                ex.getField() == null ? null : List.of(new ApiResponse.FieldError(ex.getField(), message));
+        return build(ec, message, fieldErrors, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -40,6 +45,23 @@ public class GlobalExceptionHandler {
                 .map(fe -> new ApiResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
                 .toList();
         return build(ErrorCode.INVALID_INPUT, localize(ErrorCode.INVALID_INPUT, null), fieldErrors, request);
+    }
+
+    /** An upload that is missing, of another type, too large or not the declared format (common-storage). */
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidFile(InvalidFileException ex, HttpServletRequest request) {
+        String message = messageSource.getMessage(
+                ex.getErrorCode().getMessageKey(), ex.getMessageArgs(), LocaleContextHolder.getLocale());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(
+                        HttpStatus.BAD_REQUEST, ex.getErrorCode().getCode(), message, null, request.getRequestURI()));
+    }
+
+    @ExceptionHandler(StorageUnavailableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStorageUnavailable(
+            StorageUnavailableException ex, HttpServletRequest request) {
+        log.error("MinIO did not answer: {}", ex.getMessage());
+        return build(ErrorCode.DEPENDENCY_UNAVAILABLE, request);
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})

@@ -2,9 +2,10 @@ package com.moonkage.vendor.vendor;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * Bank account in the vendor's name (AC-26.1). The number is stored encrypted (AES-GCM, NFR-03, P-09) and shown only
@@ -12,8 +13,8 @@ import lombok.Setter;
  */
 @Embeddable
 @Getter
-@Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 class BankAccount {
 
     @Column(name = "bank_name")
@@ -31,4 +32,8 @@ class BankAccount {
 
     @Column(name = "bank_account_holder")
     private String holder;
+
+    static BankAccount of(String bankName, String holder, EncryptedBankAccountNumber number) {
+        return new BankAccount(bankName, number.ciphertext(), number.masked(), number.keyVersion(), holder);
+    }
 }

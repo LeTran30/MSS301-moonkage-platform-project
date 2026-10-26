@@ -45,7 +45,8 @@ public class LocaleConfig {
 
     private static ResourceBundleMessageSource messagesBundle() {
         ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasename("messages");
+        // storage-messages: texts of common-storage errors (InvalidFileException)
+        messageSource.setBasenames("messages", "storage-messages");
         messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
         return messageSource;
     }

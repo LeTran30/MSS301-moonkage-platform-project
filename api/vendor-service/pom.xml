@@ -14,6 +14,12 @@
     <description>Seller profiles, review and approval, onboarding, delivery areas, order profiles, registration fee</description>
 
     <dependencies>
+        <!-- Province codes (L-15, A-18) -->
+        <dependency>
+            <groupId>com.moonkage</groupId>
+            <artifactId>common-reference</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- MinIO: legal documents in the vendor-docs bucket (Software Design section 8) -->
         <dependency>
             <groupId>com.moonkage</groupId>
