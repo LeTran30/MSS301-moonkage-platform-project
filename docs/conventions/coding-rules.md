@@ -4,34 +4,42 @@ Dưới đây là **Bộ Quy Tắc Thiết Kế Package & Viết Class Chuẩn**
 
 > **Mức độ kiểm tra tự động:** Chỉ một phần quy tắc được máy kiểm tra.
 > - `checkstyle.xml` chặn: tên logger (`log`), viết tắt quá 4 chữ hoa liền nhau, `if` thiếu `{}`, `TODO` trơn, tiền tệ dùng `double/float`.
-> - `ArchitectureTest.java` chỉ chặn **phụ thuộc giữa các layer** (controller ↛ repository/entity, dto ↛ entity, repository ↛ layer trên, service ↛ controller, không vòng lặp package).
+> - `ArchitectureTest.java` (dùng chung) chặn **phụ thuộc giữa các layer** (controller ↛ repository/entity, dto ↛ entity, repository ↛ layer trên, service ↛ controller) và **vòng lặp package**.
+> - Service tổ chức theo component (identity-service) có thêm `ComponentArchitectureTest.java`: entity, repository, `*ServiceImpl` không được `public`; controller chỉ nằm ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security.
 > - Các quy tắc còn lại (DTO là `record`, Mapper là `final`, hậu tố tên class, thứ tự method...) là **quy ước nhóm**, kiểm tra bằng code review.
 
 ---
 
-## PHẦN 1: Quy tắc gom nhóm Package (Layer & Domain)
+## PHẦN 1: Quy tắc gom nhóm Package
 
-Trước khi đặt bút viết một class, phải xác định đúng "nhà" cho nó theo 2 trục:
+Trước khi đặt bút viết một class, phải xác định đúng "nhà" cho nó. Mỗi microservice là một domain (`com.moonkage.identity`, `com.moonkage.order`, `com.moonkage.catalog`...); không để class của domain này xử lý hộ dữ liệu cốt lõi của domain khác. Bên trong một service có hai cách tổ chức, **mỗi service chỉ dùng một cách**:
 
-1. **Chia theo Domain (Cùng miền nghiệp vụ):**
-   - Các class giải quyết cùng một bài toán nghiệp vụ phải nằm chung trong một microservice hoặc sub-package miền đó (`com.moonkage.identity`, `com.moonkage.order`, `com.moonkage.catalog`...).
-   - Không để class của miền này xử lý hộ dữ liệu cốt lõi của miền khác.
+### 1.1. Package-by-component (hướng đi của dự án; identity-service đã áp dụng)
 
-2. **Chia theo Layer (Cùng tính chất kỹ thuật):**
-   - Trong một domain, các class có **cùng bản chất kỹ thuật** phải gom vào cùng một package layer:
-     - `controller`: Chỉ tiếp nhận/trả HTTP.
-     - `service` / `service.impl`: Chỉ xử lý luật nghiệp vụ & transaction.
-     - `repository`: Chỉ giao tiếp Database.
-     - `mapper`: Chỉ chuyển đổi qua lại giữa `Entity` và `DTO`.
-     - `dto.request` / `dto.response`: Chỉ mang dữ liệu qua biên API.
-     - `entity`: Ánh xạ bảng cơ sở dữ liệu. Được chứa **hành vi thuần trên chính field của nó** (vd `Account.isNfcLocked(now)`, `Account.acceptsTokenIssuedAt(iat)`) để không lặp lại ở nhiều service; không gọi repository/service, không chứa luồng nghiệp vụ nhiều bước.
+Mỗi package cấp một là một **component** gom mọi thứ của một khối nghiệp vụ: interface service, implementation, entity, repository, mapper, DTO, hằng số, value object.
 
+- **Public = API của component:** interface `<Miền>Service`, DTO (`dto/`), value object, enum mà component khác cần.
+- **Package-private = chi tiết bên trong:** entity, repository, `*ServiceImpl`, mapper, class phụ trợ (`NfcCardValidator`, `PiiCipher`...). Component khác không bao giờ đọc entity hay gọi repository của nó.
+- **Liên kết giữa component bằng id, không bằng quan hệ JPA:** `Address` giữ `accountId` chứ không giữ `Account`. Khóa ngoại vẫn ở DB.
+- **Dữ liệu đi qua biên bằng bản chụp chỉ đọc hoặc value object** (`AccountView`, `NfcLockout`), không bằng entity.
+- **Tầng HTTP `web` nằm ngoài mọi component**, chỉ gọi service public; không component nào phụ thuộc `web`.
+- **Không vòng phụ thuộc giữa các component** (ArchUnit `NO_PACKAGE_CYCLES`). Khi hai component cần nhau, đẩy phần dùng chung về phía component ở dưới (vd hằng số độ dài họ tên nằm ở `profile`, không ở `account`).
+- Sơ đồ component của identity-service: [`docs/services/identity/README.md`](../services/identity/README.md#cấu-trúc-mã-package-by-component).
 
-**Note**: Không bắt buộc phải chọn một trong hai mà có thể mix, nhưng phải đảm bảo một điều về tính đồng nhất giữa các package
+### 1.2. Package-by-layer (các service chưa chuyển)
 
-- Ví dụ mix trong identity-service: package `nfc` gom mọi class nghiệp vụ của xác minh NFC (`NfcService`, `LegalProfileService` và `Impl`, `NfcCardValidator`, mã hóa `PiiCipher` / `IdNumberHasher` / `NfcTransportDecryptor`, cấu hình `NfcProperties`). Controller, entity, repository, dto vẫn nằm ở package layer chung.
-- Một package miền không được tạo vòng phụ thuộc với package layer (ArchUnit `NO_PACKAGE_CYCLES`): `nfc` được dùng `service` (vd `OutboxService`), nhưng `service` không được dùng ngược lại `nfc`.
+Trong service, class cùng bản chất kỹ thuật gom vào một package layer:
+- `controller`: Chỉ tiếp nhận/trả HTTP.
+- `service` / `service.impl`: Chỉ xử lý luật nghiệp vụ & transaction.
+- `repository`: Chỉ giao tiếp Database.
+- `mapper`: Chỉ chuyển đổi qua lại giữa `Entity` và `DTO`.
+- `dto.request` / `dto.response`: Chỉ mang dữ liệu qua biên API.
+- `entity`: Ánh xạ bảng cơ sở dữ liệu.
 
+### 1.3. Áp dụng cho cả hai cách
+
+- **Entity và value object được chứa hành vi thuần trên chính dữ liệu của nó** (vd `NfcLockout.isLocked(now)`, `AccountView.acceptsTokenIssuedAt(iat)`, `PhoneNumber.toNational()`) để không lặp lại ở nhiều service; không gọi repository/service, không chứa luồng nghiệp vụ nhiều bước.
+- **Dữ liệu có luật định dạng dùng value object** (`Email`, `PhoneNumber`, `PasswordHash`): VO tự chuẩn hóa và tự kiểm trong constructor, nên không tồn tại giá trị sai; converter JPA chỉ ghi `value()` của VO.
 
 ---
 
@@ -53,10 +61,10 @@ Một class gồm 3 định danh cốt lõi: **Tên Class**, **Tên Method** và
 | **Entity (DB)** | `<DanhTừMiền>` (Số ít) | `Account`, `Address`, `LegalProfile` | Không thêm hậu tố `Entity` hay `Model`. |
 | **Request DTO** | `<HànhĐộng/MụcĐích> + Request` | `LoginRequest`, `SendOtpRequest`, `SaveAddressRequest` | Dùng Java `record`. Cụm `<HànhĐộng>` đóng vai trò bổ ngữ cho danh từ `Request`. |
 | **Response DTO** | Kết quả của một hành động: `<HànhĐộng> + <ĐốiTượng> + Response`<br>Biểu diễn một tài nguyên: `<DanhTừ> + Response` | Hành động: `RegisterAccountResponse`, `CreateNfcSessionResponse`, `CheckIdNumberResponse`, `SubmitCardResponse`, `LoginResponse`<br>Tài nguyên: `AddressResponse`, `NfcStatusResponse`, `NfcSessionStatusResponse`<br>Bao chung: `ApiResponse<T>` | Dùng Java `record`. Response của hành động đặt cùng cặp với Request (`RegisterAccountRequest` → `RegisterAccountResponse`). Response dùng chung cho nhiều endpoint (GET/POST/PUT cùng trả) thì đặt theo danh từ. |
-| **Controller** | `<TàiNguyên> + Controller` | `AuthController`, `AddressController`, `NfcController`, `IntAccountController`, `IntNfcController` | Controller giao tiếp nội bộ giữa các service (path `/internal/...`) thêm tiền tố `Int`. Mỗi endpoint chỉ đặt ở **một** controller, theo tài nguyên nó thao tác. Thuộc tính con của tài nguyên (vd số định danh của tài khoản) không tách controller riêng mà đặt trong controller của tài nguyên cha: `POST /internal/accounts/check` nằm ở `IntAccountController`. |
-| **Service** | Interface: `<Miền> + Service`<br>Class: `<Miền> + ServiceImpl` | `AddressService` → `AddressServiceImpl` | Nếu tách class phụ trợ chuyên biệt trong `service.impl` thì đặt theo vai trò: `NfcCardValidator`. |
-| **Repository** | `<Entity> + Repository` | `AccountRepository`, `AddressRepository` | Luôn là `interface`. |
-| **Mapper** | `<Entity> + Mapper` | `AddressMapper`, `AccountMapper` | Luôn là `public final class` có `private constructor`. |
+| **Controller** | `<TàiNguyên> + Controller` | `AuthController`, `AccountController`, `AddressController`, `NfcController`, `VendorController` | Mỗi endpoint chỉ đặt ở **một** controller, theo tài nguyên nó thao tác — kể cả endpoint nội bộ giữa các service (`/internal/...`): **không tách controller riêng, không dùng tiền tố `Int`/`Internal`**. Endpoint nội bộ đặt cạnh endpoint public của cùng tài nguyên, ghi path đầy đủ ở mức method và đánh `@Hidden` (vd `GET /internal/nfc/status/{accountId}` nằm ở `NfcController`). Thuộc tính con của tài nguyên (vd số định danh của tài khoản) đặt trong controller của tài nguyên cha: `POST /internal/accounts/check` nằm ở `AccountController`. |
+| **Service** | Interface: `<Miền> + Service`<br>Class: `<Miền> + ServiceImpl` | `AddressService` → `AddressServiceImpl` | Interface là API của component (public); `ServiceImpl` package-private. Class phụ trợ chuyên biệt đặt theo vai trò: `NfcCardValidator`. |
+| **Repository** | `<Entity> + Repository` | `AccountRepository`, `AddressRepository` | Luôn là `interface`; package-private trong component sở hữu bảng. |
+| **Mapper** | `<Entity> + Mapper` | `AddressMapper`, `AccountMapper` | Luôn là `final class` có `private constructor`; package-private trong component (package-by-layer thì `public`). |
 | **Exception** | `<TênLỗi> + Exception` | `AppException` | Handler tập trung đặt là `GlobalExceptionHandler`. |
 | **Event (Messaging)** | `<SựKiệnQuáKhứ/DanhTừ> + Event` | `NfcVerificationEvent`, `EmailNotificationEvent` | Dùng `record`. |
 | **Enum** | `<DanhTừSốÍt>` | `Role`, `Gender`, `OtpPurpose` | Không đặt số nhiều (`Roles` ❌ → `Role` ✅). |
@@ -127,7 +135,7 @@ Mỗi method nghiệp vụ nên đi theo đúng 4 nhịp (xem mẫu tại `Addre
 @Transactional
 public AddressResponse update(String accountId, String addressId, SaveAddressRequest request) {
     // NHỊP 1: Guard Clauses / Fail-Fast (Kiểm tra điều kiện biên, khóa & nạp dữ liệu, sai là dừng ngay)
-    lockAccount(accountId);
+    accountService.lockForUpdate(accountId);
     Address address = getOwned(accountId, addressId);
 
     // NHỊP 2: Thực thi nghiệp vụ chính (Biến đổi trạng thái rõ ràng, tách hàm phụ nếu dài)
@@ -194,8 +202,8 @@ Khi hạn chế tối đa comment dài dòng trong file `.java` (để giữ cod
 
 | Phân loại | Các nhóm Class áp dụng | Lý do |
 | --- | --- | --- |
-| **BẮT BUỘC tạo file Pseudocode** | - Tầng nghiệp vụ chính (`service/impl/*Impl`: `AuthServiceImpl`, `NfcCardServiceImpl`, `OtpServiceImpl`...)<br>- Các class bộ máy kiểm tra / thuật toán / bảo mật phức tạp (`NfcCardValidator`, `JwtFilter`, `OutboxRelay`...) | Chứa nhiều nhánh rẽ điều kiện (`if/else`), khóa đồng thời (locking), nhiều mã lỗi nghiệp vụ và tác dụng phụ (DB + Event + Cache). |
-| **KHÔNG tạo file Pseudocode** | - `controller/*`, `dto/*`, `entity/*`, `enums/*`, `repository/*`, `mapper/*`, `constant/*` | Các class này chỉ định tuyến mỏng, khai báo cấu trúc dữ liệu hoặc ánh xạ 1-1; đọc trực tiếp code nhanh hơn đọc tài liệu. |
+| **BẮT BUỘC tạo file Pseudocode** | - Tầng nghiệp vụ chính (`*ServiceImpl`: `AuthServiceImpl`, `AccountServiceImpl`, `NfcServiceImpl`, `OtpServiceImpl`...)<br>- Các class bộ máy kiểm tra / thuật toán / bảo mật phức tạp (`NfcCardValidator`, `JwtFilter`, `OutboxRelay`...) | Chứa nhiều nhánh rẽ điều kiện (`if/else`), khóa đồng thời (locking), nhiều mã lỗi nghiệp vụ và tác dụng phụ (DB + Event + Cache). |
+| **KHÔNG tạo file Pseudocode** | - Controller (`web/*`, `controller/*`), DTO (`dto/*`), entity, enum, repository, mapper, constant, value object | Các class này chỉ định tuyến mỏng, khai báo cấu trúc dữ liệu hoặc ánh xạ 1-1; đọc trực tiếp code nhanh hơn đọc tài liệu. |
 
 ### 5.2. Cấu trúc chuẩn của một File Docs Pseudocode (`<ClassName>.md`)
 
@@ -218,12 +226,12 @@ Mỗi file tài liệu của một class nặng thống nhất gồm **4 mục**
 ```markdown
 # Class Log: `AddressServiceImpl`
 
-- **Package:** `com.moonkage.identity.service.impl`
+- **Package:** `com.moonkage.identity.address`
 - **Tham chiếu:** `FR-03` (Quản lý sổ địa chỉ), `AC-03.1`
-- **Dependencies:** `AddressRepository`, `AccountRepository`, `AddressMapper`
+- **Dependencies:** `AddressRepository`, `AccountService` (`lockForUpdate`), `AddressMapper`
 - **Luật bất biến (Invariants):**
   1. Mỗi tài khoản chỉ có **tối đa 1** địa chỉ mặc định tại mọi thời điểm.
-  2. Mọi thao tác thêm/sửa đổi cờ mặc định của một tài khoản phải khóa dòng `Account` (`FOR UPDATE`) để chống race condition.
+  2. Mọi thao tác thêm/sửa đổi cờ mặc định của một tài khoản phải khóa dòng tài khoản (`AccountService.lockForUpdate`, `FOR UPDATE`) để chống race condition.
   3. Địa chỉ của tài khoản khác truy cập vào phải trả về lỗi `ADDRESS_NOT_FOUND` (như không tồn tại) để không lộ thông tin.
 
 ## 1. Danh mục Method
@@ -239,7 +247,7 @@ Mỗi file tài liệu của một class nặng thống nhất gồm **4 mục**
 
 ### Method: `create(accountId, request)` -> `AddressResponse`
 1. **[Guard & Lock]**
-   - Khóa dòng tài khoản `accountId` (`findByIdForUpdate`).
+   - Khóa dòng tài khoản `accountId` (`AccountService.lockForUpdate`).
    - NẾU không tồn tại tài khoản -> `THROW ACCOUNT_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
    - Lấy danh sách địa chỉ hiện có `existing` của `accountId`.
@@ -255,7 +263,7 @@ Mỗi file tài liệu của một class nặng thống nhất gồm **4 mục**
 
 ### Method: `update(accountId, addressId, request)` -> `AddressResponse`
 1. **[Guard & Lock]**
-   - Khóa dòng tài khoản `accountId` (`findByIdForUpdate`) -> NẾU không có `THROW ACCOUNT_NOT_FOUND`.
+   - Khóa dòng tài khoản `accountId` (`AccountService.lockForUpdate`) -> NẾU không có `THROW ACCOUNT_NOT_FOUND`.
    - Tìm địa chỉ theo `(addressId, accountId)` -> NẾU không có `THROW ADDRESS_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
    - Cập nhật `detail` và `areaCode` đã chuẩn hóa vào `address`.

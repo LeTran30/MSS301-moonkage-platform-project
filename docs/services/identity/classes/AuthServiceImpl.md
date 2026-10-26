@@ -2,13 +2,13 @@
 
 > **Một câu:** tạo tài khoản, xác nhận email bằng mã OTP, đăng nhập, cấp lại token và đặt lại mật khẩu.
 
-- **Package:** `com.moonkage.identity.service.impl`
+- **Package:** `com.moonkage.identity.auth`
 - **Tham chiếu:** `FR-01` (đăng ký), `FR-02` (đăng nhập, quên mật khẩu), `AC-01.3`, `AC-02.1`, `Q-04`, `Q-05`
-- **Dependencies:** `AccountRepository`, `UserProfileRepository`, `PasswordEncoder`, `AuthenticationManager`, `JwtTokenProvider`, `OtpService`, `EmailService`, `AccountMapper`
+- **Dependencies:** `AccountService`, `UserProfileService`, `PasswordEncoder`, `AuthenticationManager`, `JwtTokenProvider`, `OtpService`, `EmailService`, `AuthMapper`. Không đọc entity hay repository của component khác: tài khoản đi qua `AccountView`, hồ sơ qua `UserProfileService`.
 
 ## 0. Luật bất biến (không bao giờ được vi phạm)
 
-1. **Một email, một số điện thoại chỉ thuộc một tài khoản.** Email lưu dạng chữ thường (`Account.toStoredEmail`), số điện thoại lưu 9 số cuối (`Account.toStoredPhoneNumber`), nên `0912…`, `84912…`, `+84912…` là cùng một số.
+1. **Một email, một số điện thoại chỉ thuộc một tài khoản.** Email được value object `Email` chuẩn hóa về chữ thường, số điện thoại được `PhoneNumber` chuẩn hóa về 9 số cuối, nên `0912…`, `84912…`, `+84912…` là cùng một số. Việc kiểm trùng nằm ở `AccountService.createMember` (xem [`AccountServiceImpl.md`](AccountServiceImpl.md)).
 2. **Chưa xác nhận email thì chưa đăng nhập được.** Tài khoản mới luôn có `accountVerified = false`.
 3. **Không để lộ email nào đã đăng ký.** Các API gửi mã (`sendVerifyAccountOtp`, `sendResetPasswordOtp`) trả lời giống hệt nhau dù email có tài khoản hay không. Email lạ vẫn bị tính lượt gửi (`throttleSend`), nên cả thông báo "đợi 60 giây" cũng không tiết lộ gì.
 4. **Mã của luồng này không dùng được cho luồng kia.** Mã đăng ký (`VERIFY_ACCOUNT`) không đặt lại mật khẩu được, và ngược lại.
@@ -23,20 +23,16 @@
 | `sendVerifyAccountOtp` | `email` | `void` | `OTP_TOO_FREQUENT`, `OTP_SEND_LIMIT_EXCEEDED`, `EMAIL_DELIVERY_FAILED` | Gửi lại mã xác nhận |
 | `login` | `LoginRequest` | `LoginResponse` | `INVALID_CREDENTIALS`, `ACCOUNT_NOT_ACTIVATED` | Kiểm mật khẩu, cấp access token và refresh token |
 | `refreshToken` | `refreshToken` | `LoginResponse` | `REFRESH_TOKEN_INVALID`, `ACCOUNT_NOT_ACTIVATED` | Đổi refresh token lấy cặp token mới |
-| `getMyAccount` | `accountId` | `AccountResponse` | `ACCOUNT_NOT_FOUND`, `USER_PROFILE_NOT_FOUND` | Thông tin tài khoản đang đăng nhập |
 | `sendResetPasswordOtp` | `email` | `void` | `OTP_TOO_FREQUENT`, `OTP_SEND_LIMIT_EXCEEDED` | Gửi mã đặt lại mật khẩu (không bao giờ báo lỗi gửi email) |
 | `resetPassword` | `email`, `otp`, `newPassword` | `void` | `OTP_INVALID_OR_EXPIRED`, `OTP_MAX_ATTEMPTS_EXCEEDED` | Đúng mã thì đổi mật khẩu, đá các phiên cũ |
 
 ## 2. Luồng chi tiết
 
-### `register(request)`
-1. **[Kiểm tra]**
-   - Chuẩn hóa email, số điện thoại, họ tên vào biến cục bộ (request giữ nguyên như client gửi).
-   - Email đã có tài khoản → `THROW EMAIL_ALREADY_EXISTS`. Số điện thoại đã có → `THROW PHONE_ALREADY_EXISTS`.
+### `register(request)` (một transaction)
+1. **[Chuẩn hóa]** Email → `Email`, số điện thoại → `PhoneNumber` (bỏ trống thì `null`), họ tên `trim`. Request giữ nguyên như client gửi.
 2. **[Nghiệp vụ]**
-   - Tạo `Account` vai `MEMBER`, mật khẩu băm bcrypt, `accountVerified = false`.
-   - Lưu và **đẩy xuống DB ngay** (`saveAndFlush`). Nếu có người đăng ký trùng đúng cùng lúc, khóa duy nhất của DB chặn lại; tên khóa (`uk_accounts_email` / `uk_accounts_phone_number`) cho biết trùng email hay trùng số → vẫn ném 409 như bước 1, không ra 500.
-   - Tạo `UserProfile` với họ tên.
+   - `AccountService.createMember(email, phone, PasswordHash.fromRawPassword(...))`: tạo tài khoản `MEMBER`, `accountVerified = false`. Email/số đã có tài khoản (kể cả hai người đăng ký trùng đúng cùng lúc) → `EMAIL_ALREADY_EXISTS` / `PHONE_ALREADY_EXISTS`.
+   - `UserProfileService.createProfile(accountId, fullName)`.
 3. **[Gửi mã]**
    - Thử phát mã và gửi email. Gửi lỗi thì **vẫn giữ tài khoản**, chỉ đánh dấu `otpSent = false`; mã chưa tới tay người dùng bị xóa.
 4. **[Trả kết quả]** `RegisterAccountResponse { id, email, phoneNumber, verified: false, otpSent }`.
@@ -44,8 +40,8 @@
 ### `verifyAccount(request)` và `resetPassword(email, otp, newPassword)`
 1. Chuẩn hóa email → `OtpService.verifyOtp(mục đích, email, otp)`. Sai, hết hạn hoặc đang bị khóa thì `OtpService` ném lỗi.
 2. Tìm tài khoản theo email. Mã đúng mà tài khoản đã biến mất → trả lời như mã sai (`OTP_INVALID_OR_EXPIRED`).
-3. `verifyAccount`: bật `accountVerified = true`.
-   `resetPassword`: băm mật khẩu mới, đặt `passwordChangedAt = bây giờ` → mọi token cũ hết hiệu lực.
+3. `verifyAccount`: `AccountService.markVerified(accountId)`.
+   `resetPassword`: băm mật khẩu mới → `AccountService.changePassword(accountId, hash)`, hàm này đặt `passwordChangedAt = bây giờ` → mọi token cũ hết hiệu lực.
 
 ### `sendVerifyAccountOtp(email)` và `sendResetPasswordOtp(email)`
 1. Chuẩn hóa email, tìm tài khoản **đủ điều kiện**:
@@ -57,15 +53,15 @@
    - Mã đặt lại mật khẩu: gửi lỗi → im lặng, vì báo lỗi sẽ để lộ email có tài khoản.
 
 ### `login(request)`
-1. Giao cho Spring Security (`AuthenticationManager`): tìm theo email hoặc số điện thoại, so mật khẩu.
+1. Giao cho Spring Security (`AuthenticationManager`): `UserDetailsService` gọi `AccountService.findCredentials` (email hoặc số điện thoại), bọc kết quả thành `AccountPrincipal` của component `security`, rồi so mật khẩu.
 2. Sai email/số/mật khẩu → `INVALID_CREDENTIALS` (một câu chung, không nói sai phần nào).
-3. Mật khẩu đúng nhưng chưa xác nhận email → `ACCOUNT_NOT_ACTIVATED`. Chỉ báo **sau khi** mật khẩu đúng, nên người lạ không dò được email.
-4. Thành công → `LoginResponse` gồm access token, refresh token và thông tin tài khoản.
+3. Mật khẩu đúng nhưng chưa xác nhận email (`AccountPrincipal.isEnabled`) → `ACCOUNT_NOT_ACTIVATED`. Chỉ báo **sau khi** mật khẩu đúng, nên người lạ không dò được email.
+4. Thành công → `LoginResponse` gồm access token, refresh token, thông tin tài khoản (`AccountView`) và họ tên (`UserProfileService.getFullName`).
 
 ### `refreshToken(refreshToken)`
 1. Giải mã refresh token (sai chữ ký, hết hạn, hoặc là access token → `REFRESH_TOKEN_INVALID`).
-2. Tài khoản đã bị xóa → `REFRESH_TOKEN_INVALID`. Chưa xác nhận → `ACCOUNT_NOT_ACTIVATED`.
-3. Token phát hành trước lần đổi mật khẩu gần nhất → `REFRESH_TOKEN_INVALID`.
+2. `AccountService.findAccount`: tài khoản đã bị xóa → `REFRESH_TOKEN_INVALID`. Chưa xác nhận → `ACCOUNT_NOT_ACTIVATED`.
+3. Token phát hành trước lần đổi mật khẩu gần nhất (`AccountView.acceptsTokenIssuedAt`) → `REFRESH_TOKEN_INVALID`.
 4. Cấp cặp token mới.
 
 ## 3. Trường hợp biên & ghi chú

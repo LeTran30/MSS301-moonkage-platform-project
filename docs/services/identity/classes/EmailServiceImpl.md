@@ -2,9 +2,9 @@
 
 > **Một câu:** đóng gói mã OTP thành một sự kiện email và đẩy lên RabbitMQ; orchestrator-service nhận và gửi email thật.
 
-- **Package:** `com.moonkage.identity.service.impl`
+- **Package:** `com.moonkage.identity.email`
 - **Tham chiếu:** `FR-01`, `FR-02`, `A-17` (Gmail SMTP)
-- **Dependencies:** `EmailNotificationPublisher`, `OtpProperties` (số phút hiệu lực in trong email), `MessageSource` (tiêu đề email theo ngôn ngữ của request)
+- **Dependencies:** `EmailNotificationPublisher`, `EmailProperties` (đọc `otp.expiration`: số phút hiệu lực in trong email), `MessageSource` (tiêu đề email theo ngôn ngữ của request)
 
 ## 0. Luật bất biến
 
