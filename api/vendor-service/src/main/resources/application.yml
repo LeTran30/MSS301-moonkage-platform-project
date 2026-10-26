@@ -6,6 +6,15 @@ server:
 spring:
   application:
     name: vendor-service
+  # all values come from the repo-root .env (see .env.example)
+  # RabbitMQ (domain events, Software Design 5.4)
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    # OutboxRelay waits for the broker's confirm before marking an event sent
+    publisher-confirm-type: simple
   datasource:
     url: "jdbc:postgresql://${VENDOR_DB_HOST}:${VENDOR_DB_PORT}/vendor_db"
     username: ${DB_USERNAME}
@@ -20,11 +29,12 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    # off by default: every statement in the log is noise and may carry personal data in literals.
+    # Local debugging: JPA_SHOW_SQL=true in .env. The dialect is detected from the connection.
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: ${JPA_SHOW_SQL:false}
 
 eureka:
   client:
@@ -33,6 +43,28 @@ eureka:
   instance:
     # register the container IP, not its random hostname, so the gateway can reach it inside Docker
     prefer-ip-address: true
+
+# domain events go through the outbox_events table (Software Design 6)
+outbox:
+  relay-interval: 2s
+  batch-size: 100
+  confirm-timeout: 5s
+
+storage:
+  internal-url: "${MINIO_INTERNAL_URL:http://localhost:${MINIO_API_PORT}}"
+  browser-url: "${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT}}"
+  # vendor's own MinIO user (infra/minio/init.sh): may only touch <vendor-docs>/vendor/ and <vendor-docs>/tmp/vendor/
+  access-key: ${MINIO_VENDOR_ACCESS_KEY}
+  secret-key: ${MINIO_VENDOR_SECRET_KEY}
+  # product images move here from catalog in phase 5; the vendor user gets <public>/products/ then
+  public-bucket-name: ${MINIO_PUBLIC_BUCKET}
+  # legal documents and fee invoices: reachable only by vendor-service and through presigned links (NFR-03)
+  private-bucket-name: ${MINIO_VENDOR_DOCS_BUCKET}
+  region: ${MINIO_REGION:us-east-1}
+  # fixed: it must match the prefix infra/minio/init.sh grants this service
+  temp-key-prefix: tmp/vendor
+  upload-link-lifetime: ${MINIO_UPLOAD_LINK_LIFETIME:10m}
+  download-link-lifetime: ${MINIO_DOWNLOAD_LINK_LIFETIME:10m}
 
 # only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
 management:

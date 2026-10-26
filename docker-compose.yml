@@ -372,6 +372,21 @@ services:
       - VENDOR_DB_PORT=5432
       # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
       - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
+      # vendor's own MinIO user only, never the root account (infra/minio/init.sh)
+      - MINIO_INTERNAL_URL=http://minio:9000
+      - MINIO_API_PORT
+      - MINIO_BROWSER_URL
+      - MINIO_REGION
+      - MINIO_VENDOR_ACCESS_KEY
+      - MINIO_VENDOR_SECRET_KEY
+      - MINIO_PUBLIC_BUCKET
+      - MINIO_VENDOR_DOCS_BUCKET
+      - MINIO_UPLOAD_LINK_LIFETIME
+      - MINIO_DOWNLOAD_LINK_LIFETIME
     # readiness only (no DB/mail checks), so a slow SMTP does not mark the service unhealthy (RT-05)
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8086/actuator/health/readiness || exit 1"]
@@ -381,6 +396,8 @@ services:
       start_period: 30s
     depends_on:
       vendor-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
       discovery-server: { condition: service_healthy }
 
   payment-service:
