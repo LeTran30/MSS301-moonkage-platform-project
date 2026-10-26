@@ -1,0 +1,33 @@
+package com.moonkage.quotation.service.impl;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.moonkage.quotation.entity.OutboxEvent;
+import com.moonkage.quotation.repository.OutboxEventRepository;
+import com.moonkage.quotation.service.OutboxService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Rows wait in outbox_events until a relay publishes them to moonkage.events (same layout as identity-service). */
+@Service
+@RequiredArgsConstructor
+public class OutboxServiceImpl implements OutboxService {
+
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
+
+    /** MANDATORY: an event written outside the business transaction would defeat the outbox. */
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void enqueue(String eventId, String routingKey, Object event) {
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(event);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Event " + eventId + " cannot be serialized", e);
+        }
+        outboxEventRepository.save(OutboxEvent.of(eventId, routingKey, payload));
+    }
+}

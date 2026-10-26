@@ -44,3 +44,10 @@ management:
     health:
       probes:
         enabled: true
+
+moonkage:
+  quotation:
+    # the buyer has this long on VNPay to pay a deposit; never past the quote's validity (L-10 step 4)
+    deposit-payment-timeout: ${QUOTATION_DEPOSIT_PAYMENT_TIMEOUT:15m}
+    # how often unpaid acceptances and quotes past validity are marked EXPIRED
+    expiry-check-interval: PT1M
