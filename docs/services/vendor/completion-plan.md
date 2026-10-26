@@ -187,7 +187,7 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 
 ### 5. Ghi sản phẩm (L-18; FR-29 → FR-34, FR-46; BR-12, BR-21, BR-24, BR-34)
 
-**Trạng thái (2026-10-26):** phía vendor xong trên nhánh `feat/vendor-foundation`, chưa commit. Phần catalog (bỏ writer cũ, adapter dựng `product_views` từ sự kiện) là PR riêng của catalog. Khác với bản đề xuất bên dưới:
+**Trạng thái (2026-10-26):** phía vendor xong trên nhánh `feat/vendor-foundation`, đã commit (`cf4c2db`). Phần catalog (bỏ writer cũ, adapter dựng `product_views` từ sự kiện) là PR riêng của catalog. Khác với bản đề xuất bên dưới:
 
 - Sự kiện dùng envelope của [contract-proposal.md](../catalog/contract-proposal.md) (mục 2): `OutboxService.enqueueState` bọc `data` trong `EventEnvelope` (`eventId`, `schemaVersion` 1, `eventType`, `sourceService`, `aggregateType`, `aggregateId`, `sourceVersion`, `occurredAt`). `vendor.updated`, `vendor.locked` chuyển luôn sang envelope (`VendorSnapshotEvent` → `VendorSnapshot` là `data`), vì chưa bên nào đọc chúng. Đề xuất đó còn ghi "chưa duyệt": nếu nhóm đổi hợp đồng thì sửa một chỗ là `EventEnvelope`.
 - Thêm cột `products.resold` (migration `V2026_10_26_1200`): RESELL luôn true, SELF_PRODUCED luôn false, BOTH bắt buộc chọn (`VENDOR_113` khi chọn trái nguồn hàng). Bán lại thiếu `brand` hoặc `origin` → `VENDOR_028` tại trường.
@@ -211,6 +211,15 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 **Xong khi:** Shop đăng sản phẩm qua vendor và thấy nó ở `GET /api/products` của catalog sau vài giây; catalog không còn endpoint ghi.
 
 ### 6. Giữ hàng (BR-28; D-01, D-14; P-01)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. order-service chưa gọi các endpoint này. Khác với bản đề xuất bên dưới:
+
+- **Order điều khiển, vendor không nghe `payment.succeeded`/`payment.failed`.** Nếu cả vendor (nghe sự kiện) và order (giữ lại khi IPN trễ) cùng đổi một checkout thì giẫm chân nhau: hàng giữ lại sau khi vendor đã xử lý sự kiện nằm ở HELD rồi bị quét trả về kho dù đơn đã tạo. Thay vào đó order gọi `POST /internal/stock/reservations/{checkoutId}/commit` khi tiền về và nhận trả lời ngay: 200 chốt được; 409 `VENDOR_032` (IPN trễ, hàng đã bán cho người khác) thì order hoàn tiền. `order.md` sửa theo.
+- Giữ hàng khóa dòng `products` (`PESSIMISTIC_WRITE`, theo thứ tự id để hai checkout không deadlock) và trừ tồn kho qua `Product.takeStock`, thay cho câu `UPDATE … WHERE stock >= :qty`: luật "đang bán và đủ hàng" nằm trong `Product.canSupply`, và `@Version` tăng nên `product.upserted` có `sourceVersion` mới. Mọi đường (giữ, chốt, trả, quét) khóa sản phẩm trước rồi mới tới dòng giữ hàng.
+- Thêm cột `stock_reservations.unit_price` (migration `V2026_10_26_1300`): giá chốt lúc giữ, nên gọi lại trả cùng giá và Shop đổi giá giữa chừng không đổi số tiền checkout.
+- Shop bị khóa, chưa đóng phí hoặc tắt Shop thì sản phẩm của nó không giữ được (BR-20, BR-21, BR-31). Thiếu hàng trả 409 với mỗi sản phẩm thiếu là một `errors[].field` (`AppException.atFields`).
+- `DELETE` của checkout đã chốt → 409 `VENDOR_034`; không có hoặc đã trả → 204. Tác vụ quét chỉ trả checkout còn `HELD` và đã quá hạn, mỗi checkout một transaction; lệnh chốt đến trước thì thắng.
+- Hệ quả: mỗi lần bán, version sản phẩm tăng, nên Shop đang mở form sửa sẽ nhận `VENDOR_027` và phải tải lại.
 
 - Entity `StockReservation` (`HELD`, `COMMITTED`, `RELEASED`).
 - `POST /internal/stock/reservations` cho order: nhận `checkoutId`, `expiresAt`, danh sách `{productId, qty}`; mỗi dòng giữ bằng `UPDATE products SET stock = stock - :qty WHERE id = :id AND status = 'ON_SALE' AND stock >= :qty` cùng transaction với dòng reservation; thiếu một dòng thì rollback cả checkout, trả dòng nào thiếu; trả giá hiện hành theo bậc giá. Lặp cùng `checkoutId` trả kết quả cũ.

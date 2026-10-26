@@ -74,6 +74,13 @@ public enum ErrorCode {
     REMOVED_REASON_REQUIRED("VENDOR_029", HttpStatus.BAD_REQUEST, "error.vendor.removed_reason_required"),
     PRODUCT_IMAGE_INVALID("VENDOR_030", HttpStatus.BAD_REQUEST, "error.vendor.product_image_invalid"),
 
+    // Stock held for a checkout (BR-28, P-01)
+    RESERVATION_NOT_FOUND("VENDOR_031", HttpStatus.NOT_FOUND, "error.vendor.reservation_not_found"),
+    /** Each product short is an error field, named by its productId. */
+    STOCK_UNAVAILABLE("VENDOR_032", HttpStatus.CONFLICT, "error.vendor.stock_unavailable"),
+    RESERVATION_MISMATCH("VENDOR_033", HttpStatus.CONFLICT, "error.vendor.reservation_mismatch"),
+    RESERVATION_COMMITTED("VENDOR_034", HttpStatus.CONFLICT, "error.vendor.reservation_committed"),
+
     // Value objects of a vendor profile
     TAX_CODE_INVALID("VENDOR_101", HttpStatus.BAD_REQUEST, "error.vendor.tax_code_invalid"),
     REPRESENTATIVE_NAME_INVALID("VENDOR_102", HttpStatus.BAD_REQUEST, "error.vendor.representative_name_invalid"),
@@ -87,7 +94,9 @@ public enum ErrorCode {
     LEAD_TIME_INVALID("VENDOR_110", HttpStatus.BAD_REQUEST, "error.vendor.lead_time_invalid"),
     STOCK_INVALID("VENDOR_111", HttpStatus.BAD_REQUEST, "error.vendor.stock_invalid"),
     PRODUCT_IMAGE_COUNT_INVALID("VENDOR_112", HttpStatus.BAD_REQUEST, "error.vendor.product_image_count_invalid"),
-    RESOLD_NOT_ALLOWED("VENDOR_113", HttpStatus.BAD_REQUEST, "error.vendor.resold_not_allowed");
+    RESOLD_NOT_ALLOWED("VENDOR_113", HttpStatus.BAD_REQUEST, "error.vendor.resold_not_allowed"),
+    RESERVATION_ITEMS_INVALID("VENDOR_114", HttpStatus.BAD_REQUEST, "error.vendor.reservation_items_invalid"),
+    RESERVATION_EXPIRY_INVALID("VENDOR_115", HttpStatus.BAD_REQUEST, "error.vendor.reservation_expiry_invalid");
 
     private final String code;
     private final HttpStatus httpStatus;

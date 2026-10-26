@@ -166,6 +166,29 @@ class Product {
         removedBy = adminAccountId;
     }
 
+    /** Whether {@code qty} pieces can be sold now: on sale with that much stock (BR-28). */
+    boolean canSupply(int qty) {
+        return status == ProductStatus.ON_SALE && stock >= qty;
+    }
+
+    /** Held for a checkout; stock never goes below 0. Check {@link #canSupply} first. */
+    void takeStock(int qty) {
+        if (!canSupply(qty)) {
+            throw new IllegalStateException("Product " + id + " cannot supply " + qty);
+        }
+        stock -= qty;
+    }
+
+    /** A hold released: the pieces are for sale again, whatever the status is now. */
+    void returnStock(int qty) {
+        stock += qty;
+    }
+
+    /** The price of one piece when {@code qty} are bought: the matching tier, else the list price (AC-31.1). */
+    Price unitPriceFor(Quantity qty) {
+        return toPriceTiers().tierFor(qty).map(PriceTier::unitPrice).orElse(listPrice);
+    }
+
     PriceTiers toPriceTiers() {
         return PriceTiers.of(
                 priceTiers.stream().map(ProductPriceTier::toPriceTier).toList());

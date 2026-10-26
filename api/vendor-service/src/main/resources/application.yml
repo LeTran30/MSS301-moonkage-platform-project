@@ -74,6 +74,10 @@ vendor:
     max-size: ${VENDOR_DOCUMENT_MAX_SIZE:10MB}
     # fixed: it must match the prefix infra/minio/init.sh grants this service in the vendor-docs bucket
     key-prefix: vendor
+  # stock held for a checkout (BR-28): expired holds go back to stock in batches
+  stock:
+    sweep-interval: ${STOCK_SWEEP_INTERVAL:1m}
+    sweep-batch-size: ${STOCK_SWEEP_BATCH_SIZE:100}
   # images of a Shop product (AC-29.1); moved from catalog with the product write side (L-18)
   product-image:
     allowed-content-types: ${PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/webp}

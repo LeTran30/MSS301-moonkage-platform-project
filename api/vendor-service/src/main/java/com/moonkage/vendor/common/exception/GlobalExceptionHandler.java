@@ -33,8 +33,11 @@ public class GlobalExceptionHandler {
         ErrorCode ec = ex.getErrorCode();
         String message = localize(ec, ex.getArgs());
         log.warn("Business Exception: code={}, message={}", ec.getCode(), message);
-        List<ApiResponse.FieldError> fieldErrors =
-                ex.getField() == null ? null : List.of(new ApiResponse.FieldError(ex.getField(), message));
+        List<ApiResponse.FieldError> fieldErrors = ex.getFields().isEmpty()
+                ? null
+                : ex.getFields().stream()
+                        .map(field -> new ApiResponse.FieldError(field, message))
+                        .toList();
         return build(ec, message, fieldErrors, request);
     }
 

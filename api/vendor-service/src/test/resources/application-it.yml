@@ -35,3 +35,8 @@ spring:
 # the relay runs only when a test calls it
 outbox:
   relay-interval: 1h
+
+# the sweep of expired holds runs only when a test calls it
+vendor:
+  stock:
+    sweep-interval: 1h
