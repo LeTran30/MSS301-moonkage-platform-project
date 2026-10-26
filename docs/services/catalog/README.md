@@ -47,6 +47,8 @@ Ghi chú cho owner orchestrator: [orchestrator-handoff.md](orchestrator-handoff.
 
 Verify Phase B: full clean verify **403 pass / 0 fail / 0 error / 0 skip**; catalog 109, gồm 38 full application tests PG/Rabbit thật. Phase A sau merge có 393 tests; B thêm 10 recovery tests. Chi tiết/cách đếm trong [báo cáo A–C](phase-abc-report.md). Kết quả 371/99 bên dưới là lịch sử trước merge develop.
 
+Phase C: [đề xuất contract](contract-proposal.md) **CHƯA ĐƯỢC NHÓM DUYỆT**. Chưa có production adapter theo tài liệu đó, chưa bắt đầu D. Gate yêu cầu Lê Trần xác nhận contract đã được nhóm duyệt, sau đó mới làm C3/C4/C5. Local commits A/B không phải lệnh push/deploy.
+
 ## API đọc cơ bản C2
 
 Qua discovery route gateway `/catalog-service/api/products`; endpoint service giữ `/api/products` (root gateway/facets đầy đủ thuộc C3). GET list yêu cầu `provinceCode` hợp lệ trong 34 mã, hỗ trợ q theo name/brand, vendorId, page/size (1–100), sort cố định updatedAt rồi id. Chỉ ON_SALE + canOperate + sellsShop + giao được; LOCAL ngoài vùng không lọt ra. GET detail/reviews chặn hàng không công khai, detail chưa chọn tỉnh không trả shippingFee giả bằng 0. Phí/snapshot đầy đủ thuộc C4.
@@ -115,3 +117,5 @@ Bản cuối 26/10/2026: `clean verify` toàn backend **BUILD SUCCESS, 371 pass 
 Pseudocode: [InterprovinceFeeServiceImpl](classes/InterprovinceFeeServiceImpl.md), [OutboxDeliveryServiceImpl](classes/OutboxDeliveryServiceImpl.md).
 
 Pseudocode C2: [CatalogProjectionServiceImpl](classes/CatalogProjectionServiceImpl.md), [JdbcCatalogProjectionRepository](classes/JdbcCatalogProjectionRepository.md), [ProjectionInboxServiceImpl](classes/ProjectionInboxServiceImpl.md), [ProductReadServiceImpl](classes/ProductReadServiceImpl.md).
+
+Pseudocode recovery B: [ProjectionRecoveryServiceImpl](classes/ProjectionRecoveryServiceImpl.md), [ProjectionReplayEntryServiceImpl](classes/ProjectionReplayEntryServiceImpl.md).

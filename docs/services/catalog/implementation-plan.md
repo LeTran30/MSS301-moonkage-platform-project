@@ -103,6 +103,8 @@ Phase B thêm recovery internal port: batch rebuild rating từ reviews; replay 
 
 Verify B bản cuối **403 pass / 0 fail / 0 error / 0 skip**, full clean verify 18:05:11 ngày 26/10/2026; catalog 109 gồm 38 full application tests. Đếm XML theo 11 module parent POM sau clean, không targets cũ; PG/Rabbit thật, checks chất lượng và diff check qua. C2 vẫn chưa hoàn tất business integration.
 
+Commit B **local** `1cf65c5`. Phase C đã soạn [contract-proposal.md](contract-proposal.md), chưa được nhóm duyệt, không nối adapter theo payload đề xuất. **DỪNG trước D**; chờ Lê Trần xác nhận “contract đã được nhóm duyệt”. Không push, merge vào develop/main hoặc deploy; §7 cũ chỉ truy vết.
+
 Tài liệu bàn giao audit cho owner orchestrator: [handoff](orchestrator-handoff.md), không sửa code hoặc gửi tin ra ngoài. Pseudocode: [recovery coordinator](classes/ProjectionRecoveryServiceImpl.md), [entry transaction](classes/ProjectionReplayEntryServiceImpl.md).
 
 Đã đối chiếu trước code: [audit contract](c2-contract-audit.md). Lê Trần xác nhận chưa có contract được nhóm duyệt ngoài repo, cho phép chỉ triển khai phần đã xác nhận và cô lập legacy. Giữ nguyên code vendor/order/orchestrator/frontend, migration V2, writer entity/repository và test ảnh cũ. Migration mới chỉ thêm inbox/tombstone và backfill removal đã tồn tại.

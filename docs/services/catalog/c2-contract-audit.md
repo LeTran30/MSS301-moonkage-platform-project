@@ -2,6 +2,8 @@
 
 Đối chiếu ngày 26/10/2026, trên C1 `3cbb1ff`. Đã fetch và đọc thêm `origin/develop` tại `d211767`; không merge ref đó vì có thay đổi vendor/order/frontend và taxonomy ngoài scope C2. Các tham chiếu đường dẫn dưới đây là bản trong checkout, trừ khi ghi rõ ref remote.
 
+**Mốc lịch sử:** audit này ghi nhận trước master prompt A–C. Phase A sau đó đã merge develop `6523d00` vào feature bằng commit local `3227fed`, theo chấp thuận nhận nguyên migration L-19 và chỉ sửa tương thích catalog. Core/read row hiện dùng crustCodes/fillingCodes. Vendor product endpoint/producer contract vẫn chưa có; merge base không phải duyệt wire contract. Xem [báo cáo A–C](phase-abc-report.md) và [đề xuất chưa duyệt](contract-proposal.md).
+
 ## 1. Kết quả §5.1–§5.4 của kế hoạch
 
 | Điểm | Bằng chứng đã xác nhận | Chưa được xác nhận / ảnh hưởng |
