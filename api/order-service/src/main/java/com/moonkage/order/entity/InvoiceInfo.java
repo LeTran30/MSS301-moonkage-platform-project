@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class InvoiceInfo {
 
-    private String invoiceLegalName;
+    private String invoiceName;
 
     private String invoiceTaxCode;
 

@@ -7,7 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,7 +18,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * Multi-shop cart line (FR-08). Grouped by vendor at display; re-checked at checkout.
  */
 @Entity
-@Table(name = "cart_items", uniqueConstraints = @UniqueConstraint(columnNames = {"buyerUserId", "productId"}))
+@Table(name = "cart_items", uniqueConstraints = @UniqueConstraint(columnNames = {"buyer_account_id", "product_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,7 +29,7 @@ public class CartItem {
     private String id;
 
     @Column(nullable = false)
-    private String buyerUserId;
+    private String buyerAccountId;
 
     @Column(nullable = false)
     private String productId;
@@ -41,8 +41,8 @@ public class CartItem {
     private Integer quantity;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }
