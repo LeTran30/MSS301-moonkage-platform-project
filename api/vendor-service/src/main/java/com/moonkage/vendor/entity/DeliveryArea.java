@@ -15,11 +15,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Area (province/city, Q-12) a vendor delivers to (FR-28). catalog and quotation will filter on a copy of it
+ * Province (Q-12, L-15) a vendor delivers to (FR-28). catalog and quotation will filter on a copy of it
  * (vendor snapshot, Software Design 4.1).
  */
 @Entity
-@Table(name = "vendor_delivery_areas", uniqueConstraints = @UniqueConstraint(columnNames = {"vendor_id", "areaCode"}))
+@Table(
+        name = "vendor_delivery_areas",
+        uniqueConstraints =
+                @UniqueConstraint(
+                        name = "uk_vendor_delivery_areas_province",
+                        columnNames = {"vendor_id", "province_code"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,6 +38,6 @@ public class DeliveryArea {
     @JoinColumn(name = "vendor_id", nullable = false)
     private Vendor vendor;
 
-    @Column(nullable = false)
-    private String areaCode;
+    @Column(nullable = false, length = 2)
+    private String provinceCode;
 }
