@@ -59,6 +59,10 @@ public enum ErrorCode {
     ORDER_PROFILE_NOT_FOUND("VENDOR_016", HttpStatus.NOT_FOUND, "error.vendor.order_profile_not_found"),
     ORDER_TERM_REQUIRED("VENDOR_017", HttpStatus.BAD_REQUEST, "error.vendor.order_term_required"),
     LOCK_REASON_REQUIRED("VENDOR_018", HttpStatus.BAD_REQUEST, "error.vendor.lock_reason_required"),
+    CAKE_ATTRIBUTE_NOT_FOUND("VENDOR_019", HttpStatus.NOT_FOUND, "error.vendor.cake_attribute_not_found"),
+    CAKE_ATTRIBUTE_DUPLICATE("VENDOR_020", HttpStatus.CONFLICT, "error.vendor.cake_attribute_duplicate"),
+    LAST_VISIBLE_CAKE_ATTRIBUTE("VENDOR_021", HttpStatus.CONFLICT, "error.vendor.last_visible_cake_attribute"),
+    CAKE_ATTRIBUTE_NOT_SELECTABLE("VENDOR_022", HttpStatus.BAD_REQUEST, "error.vendor.cake_attribute_not_selectable"),
 
     // Value objects of a vendor profile
     TAX_CODE_INVALID("VENDOR_101", HttpStatus.BAD_REQUEST, "error.vendor.tax_code_invalid"),
@@ -66,7 +70,11 @@ public enum ErrorCode {
     ID_NUMBER_INVALID("VENDOR_103", HttpStatus.BAD_REQUEST, "error.vendor.id_number_invalid"),
     BANK_ACCOUNT_NUMBER_INVALID("VENDOR_104", HttpStatus.BAD_REQUEST, "error.vendor.bank_account_number_invalid"),
     DELIVERY_FEE_INVALID("VENDOR_105", HttpStatus.BAD_REQUEST, "error.vendor.delivery_fee_invalid"),
-    DELIVERY_AREAS_INVALID("VENDOR_106", HttpStatus.BAD_REQUEST, "error.vendor.delivery_areas_invalid");
+    DELIVERY_AREAS_INVALID("VENDOR_106", HttpStatus.BAD_REQUEST, "error.vendor.delivery_areas_invalid"),
+    CAKE_ATTRIBUTE_LABEL_INVALID("VENDOR_107", HttpStatus.BAD_REQUEST, "error.vendor.cake_attribute_label_invalid"),
+    CAKE_ATTRIBUTE_CODE_INVALID("VENDOR_108", HttpStatus.BAD_REQUEST, "error.vendor.cake_attribute_code_invalid"),
+    SORT_ORDER_INVALID("VENDOR_109", HttpStatus.BAD_REQUEST, "error.vendor.sort_order_invalid"),
+    LEAD_TIME_INVALID("VENDOR_110", HttpStatus.BAD_REQUEST, "error.vendor.lead_time_invalid");
 
     private final String code;
     private final HttpStatus httpStatus;

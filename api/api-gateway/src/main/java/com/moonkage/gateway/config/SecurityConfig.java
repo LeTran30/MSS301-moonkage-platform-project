@@ -87,6 +87,9 @@ public class SecurityConfig {
                         // AC-26.9: the registration fee is shown before anyone registers
                         .pathMatchers(HttpMethod.GET, "/vendor-service/api/registration-fee-config")
                         .permitAll()
+                        // AC-06.6: guests filter by crust and filling; hidden values stay admin only
+                        .pathMatchers(HttpMethod.GET, "/vendor-service/api/cake-attributes")
+                        .permitAll()
                         // shop product management (/catalog-service/api/seller/**): any logged-in account;
                         // catalog-service checks the account owns an approved vendor (D-19: owner is not a role)
                         .anyExchange()

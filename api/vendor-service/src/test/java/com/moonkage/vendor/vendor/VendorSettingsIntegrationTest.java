@@ -56,6 +56,7 @@ class VendorSettingsIntegrationTest {
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
 
     private static final String ADMIN_ID = "admin-1";
+    private static final String ONE_TIER = "[{\"fromQty\":50,\"unitPrice\":90000}]";
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
@@ -229,6 +230,65 @@ class VendorSettingsIntegrationTest {
                 lastSnapshot(RabbitConfig.VENDOR_UPDATED_ROUTING_KEY, vendorId).get("orderProfile");
         assertEquals(50, profile.get("minQty").asInt());
         assertEquals(200, profile.get("priceTiers").get(1).get("fromQty").asInt());
+        // fillings in the admin's order of the catalogue, not the order sent
+        assertEquals("banh-nuong", profile.get("crustCodes").get(0).asText());
+        assertEquals("thap-cam", profile.get("fillingCodes").get(0).asText());
+        assertEquals("dau-xanh", profile.get("fillingCodes").get(1).asText());
+    }
+
+    @Test
+    void aProducerChoosesItsCrustsAndFillingsInTheCatalogue() throws Exception {
+        String vendorId = saveApproved(VendorTestData.profile(SupplySource.SELF_PRODUCED, false, true));
+
+        saveOrderProfile(vendorId, producerProfile(ONE_TIER, "[]", "[\"dau-xanh\"]", "Hộp giấy"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VENDOR_017"))
+                .andExpect(jsonPath("$.errors[0].field").value("crustCodes"));
+        saveOrderProfile(vendorId, producerProfile(ONE_TIER, "[\"banh-nuong\"]", "[\"banh-gio\"]", "Hộp giấy"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VENDOR_022"))
+                .andExpect(jsonPath("$.errors[0].field").value("fillingCodes"));
+        // a crust code in the filling list is not a filling
+        saveOrderProfile(vendorId, producerProfile(ONE_TIER, "[\"banh-nuong\"]", "[\"banh-deo\"]", "Hộp giấy"))
+                .andExpect(jsonPath("$.code").value("VENDOR_022"));
+    }
+
+    @Test
+    void aHiddenCrustStaysOnTheProfileThatHadItButIsNotAddedAnew() throws Exception {
+        String vendorId = saveApproved(VendorTestData.profile(SupplySource.SELF_PRODUCED, false, true));
+        String body = producerProfile(ONE_TIER, "[\"banh-deo\"]", "[\"dau-xanh\"]", "Hộp giấy");
+        saveOrderProfile(vendorId, body).andExpect(status().isOk());
+
+        jdbcTemplate.update("UPDATE cake_attributes SET active = false WHERE code = 'banh-deo'");
+        try {
+            saveOrderProfile(vendorId, body)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.crustCodes", contains("banh-deo")));
+
+            ownerId = UUID.randomUUID().toString();
+            String otherId = saveApproved(VendorTestData.profile(SupplySource.SELF_PRODUCED, false, true));
+            saveOrderProfile(otherId, body)
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VENDOR_022"))
+                    .andExpect(jsonPath("$.errors[0].field").value("crustCodes"));
+        } finally {
+            jdbcTemplate.update("UPDATE cake_attributes SET active = true WHERE code = 'banh-deo'");
+        }
+    }
+
+    @Test
+    void aTooLongPackagingIsRefusedAtItsField() throws Exception {
+        String vendorId = saveApproved(VendorTestData.profile(SupplySource.SELF_PRODUCED, false, true));
+
+        saveOrderProfile(
+                        vendorId,
+                        producerProfile(
+                                ONE_TIER,
+                                "[\"banh-nuong\"]",
+                                "[\"dau-xanh\"]",
+                                "x".repeat(VendorConstant.TEXT_MAX_LENGTH + 1)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("packagingTypes"));
     }
 
     @Test
@@ -289,8 +349,14 @@ class VendorSettingsIntegrationTest {
     }
 
     private static String producerProfile(String priceTiers) {
+        return producerProfile(priceTiers, "[\"banh-nuong\"]", "[\"dau-xanh\",\"thap-cam\"]", "Hộp giấy");
+    }
+
+    private static String producerProfile(
+            String priceTiers, String crustCodes, String fillingCodes, String packagingTypes) {
         return "{\"minQty\":50,\"leadTimeDays\":7,\"priceTiers\":" + priceTiers + ",\"customTypes\":[\"BAG\"],"
-                + "\"weeklyCapacity\":500,\"packagingTypes\":\"Hộp giấy\",\"logoPrinting\":true}";
+                + "\"weeklyCapacity\":500,\"crustCodes\":" + crustCodes + ",\"fillingCodes\":" + fillingCodes
+                + ",\"packagingTypes\":\"" + packagingTypes + "\",\"logoPrinting\":true}";
     }
 
     private ResultActions patchVendor(MockHttpServletRequestBuilder request, String body) throws Exception {

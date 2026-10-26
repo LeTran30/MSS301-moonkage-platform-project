@@ -1,5 +1,6 @@
 package com.moonkage.vendor.vendor;
 
+import com.moonkage.vendor.cakeattribute.CakeAttributeService;
 import com.moonkage.vendor.common.config.RabbitConfig;
 import com.moonkage.vendor.common.vo.Quantity;
 import com.moonkage.vendor.outbox.OutboxService;
@@ -22,6 +23,7 @@ class VendorSnapshotPublisher {
     private final DeliveryAreaRepository deliveryAreaRepository;
     private final OrderProfileRepository orderProfileRepository;
     private final OutboxService outboxService;
+    private final CakeAttributeService cakeAttributeService;
 
     /** vendor.updated: any change copies care about (FR-28, FR-35, FR-45, BR-31). */
     void announceUpdated(Vendor vendor, String changedBy) {
@@ -56,18 +58,20 @@ class VendorSnapshotPublisher {
                         : vendor.getLocalDeliveryFee().value(),
                 orderProfileRepository
                         .findByVendorId(vendor.getId())
-                        .map(VendorSnapshotPublisher::toSnapshot)
+                        .map(this::toSnapshot)
                         .orElse(null),
                 changedBy,
                 Instant.now());
         outboxService.enqueue(event.eventId(), routingKey, event);
     }
 
-    private static VendorSnapshotEvent.OrderProfileSnapshot toSnapshot(OrderProfile profile) {
+    private VendorSnapshotEvent.OrderProfileSnapshot toSnapshot(OrderProfile profile) {
         List<VendorSnapshotEvent.PriceTierSnapshot> tiers = profile.toPriceTiers().tiers().stream()
                 .map(tier -> new VendorSnapshotEvent.PriceTierSnapshot(
                         tier.fromQty().value(), tier.unitPrice().value()))
                 .toList();
+        CakeAttributeCodes cakeAttributes =
+                CakeAttributeCodes.of(cakeAttributeService.getRefs(profile.getCakeAttributeIds()));
         return new VendorSnapshotEvent.OrderProfileSnapshot(
                 profile.getMinQty().value(),
                 profile.getLeadTimeDays(),
@@ -75,6 +79,8 @@ class VendorSnapshotPublisher {
                 Set.copyOf(profile.getCustomTypes()),
                 profile.getEarlyBirdOffer(),
                 valueOf(profile.getWeeklyCapacity()),
+                cakeAttributes.crusts(),
+                cakeAttributes.fillings(),
                 profile.getPackagingTypes(),
                 profile.getLogoPrinting(),
                 profile.getDistributedBrands(),

@@ -33,7 +33,10 @@ public record VendorSnapshotEvent(
         String changedBy,
         Instant occurredAt) {
 
-    /** What quotation-service matches requests against (FR-36). */
+    /**
+     * What quotation-service matches requests against (FR-36). Crusts and fillings are codes of the FR-54 catalogue;
+     * a rename there sends no event, the code stays.
+     */
     public record OrderProfileSnapshot(
             int minQty,
             int leadTimeDays,
@@ -41,6 +44,8 @@ public record VendorSnapshotEvent(
             Set<CustomType> customTypes,
             String earlyBirdOffer,
             Integer weeklyCapacity,
+            List<String> crustCodes,
+            List<String> fillingCodes,
             String packagingTypes,
             Boolean logoPrinting,
             String distributedBrands,

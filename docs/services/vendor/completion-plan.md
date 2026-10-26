@@ -34,7 +34,7 @@
 | `web` | — | `VendorController`, `RegistrationFeeConfigController`, `CakeAttributeController`, `ProductController`, `StockReservationController` (nội bộ) |
 | `vendor` | `vendors`, `vendor_documents`, `vendor_owner_checks`, `vendor_reviews`, `vendor_delivery_areas`, `order_profiles`, `ref_price_tiers`, `order_profile_custom_types` | `VendorService`, `DeliveryAreaService`, `OrderProfileService`, `VendorView` (bản chụp chỉ đọc: `ownerAccountId`, `status`, `sellsShop`, `acceptsOrders`, `isOwnedBy()`, `canOperate()`), DTO, enum trạng thái, `vendor.vo` |
 | `registrationfee` | `registration_fee_configs` | `RegistrationFeeService` |
-| `cakeattribute` | `cake_attributes` | `CakeAttributeService`, `CakeAttributeCode` |
+| `cakeattribute` | `cake_attributes` | `CakeAttributeService`, `CakeAttributeGroup`, `CakeAttributeCode`, `CakeAttributeLabel`, `CakeAttributeRef`, DTO |
 | `product` | `products`, `product_images`, `product_price_tiers`, `product_cake_attributes` | `ProductService` |
 | `stock` | `stock_reservations` | `StockReservationService` |
 | `outbox` | `outbox_events` | `OutboxService` |
@@ -143,7 +143,7 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 
 ### 3. Cài đặt bán và khóa người bán (FR-28, FR-35, FR-46)
 
-**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, đã commit (`9d59708`). Khác với bản đề xuất bên dưới:
 
 - Vùng giao và hồ sơ nhận đặt hàng gộp vào component `vendor` (bỏ `deliveryarea`, `orderprofile`): chúng là một phần aggregate `Vendor`, và bản chụp `vendor.updated` phải đọc cả ba mà không sinh vòng phụ thuộc. `DeliveryAreaService`, `OrderProfileService` vẫn là interface public riêng.
 - Mọi thay đổi aggregate nạp vendor qua `VendorFinder.getForChange`: khóa dòng và tăng `version` ngay (`PESSIMISTIC_FORCE_INCREMENT` trên entity đang quản lý), nên đổi vùng giao hay hồ sơ đặt hàng cũng có `sourceVersion` mới, và hai thay đổi của một vendor không phát lệch thứ tự.
@@ -165,6 +165,17 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 **Xong khi:** catalog nhận `vendor.updated` và cập nhật `vendor_snapshots`; khóa Shop làm sản phẩm biến mất khỏi `GET /api/products`.
 
 ### 4. Danh mục vỏ và nhân (FR-54; BR-34)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+
+- `GET /api/cake-attributes`: `group` không bắt buộc (bỏ trống trả cả hai nhóm, nhóm này rồi nhóm kia). Khách không cần đăng nhập; gateway mở `GET /vendor-service/api/cake-attributes`. `includeHidden=true` không có header gateway → 401, thành viên → 403. `@CurrentUser(required = false)` cho phép endpoint mở trả `null` khi không có cả hai header.
+- Luật giữa các giá trị một nhóm nằm trong `CakeAttributeCatalog` (không ở service): trùng khóa tên hoặc trùng mã → `VENDOR_020` nêu tên giá trị đã có; giá trị mới đứng sau mọi giá trị (kể cả đã ẩn); ẩn giá trị đang hiện cuối cùng → `VENDOR_021`. Service khóa các dòng của nhóm (`PESSIMISTIC_WRITE`) khi đổi; hai admin thêm cùng lúc thì ràng buộc duy nhất của bảng bắt, trả cùng lỗi trùng.
+- `CakeAttributeLabel` (VO) chuẩn hóa NFC, gộp khoảng trắng, tối đa 60 ký tự để mã sinh ra vừa `code varchar(60)`; phải có chữ hoặc số sau khi bỏ dấu. `key()` và `toCode()` dùng chung `Diacritics.strip`.
+- Thứ tự bằng nhau xếp theo khóa tên, để mọi lần đọc cùng thứ tự. `sortOrder` âm → `VENDOR_109`.
+- Không phát sự kiện khi đổi danh mục: catalog chỉ giữ mã, nhãn và thứ tự lấy từ endpoint này (L-19).
+- Làm luôn phần vỏ và nhân của hồ sơ nhận đặt hàng dời từ giai đoạn 3 (AC-35.2): bảng `order_profile_cake_attributes`, bỏ cột `cake_types` (migration `V2026_10_26_1100`). `PUT order-profile` nhận `crustCodes`, `fillingCodes`; tự sản xuất bắt buộc ít nhất một vỏ và một nhân. Mã không có hoặc đã ẩn → `VENDOR_022` tại trường; mã đã ẩn mà hồ sơ đang có thì giữ được (giống AC-33.6). Response và `VendorSnapshotEvent.orderProfile` mang `crustCodes`, `fillingCodes` theo thứ tự của danh mục.
+- Theo [correctness-review.md](correctness-review.md): luật đủ điều khoản theo nguồn hàng chuyển từ service vào `OrderTerms` (constructor gọn, nhận `SupplySource`; `SupplySource.produces()`/`resells()`), kèm `leadTimeDays ≥ 0` (`VENDOR_110`). `packagingTypes`, `distributedBrands` có `@Size` (trước đây dài quá 255 ký tự ra 500).
+- `CakeAttributeService.select(group, codes, linkedIds)` là chỗ dùng chung cho giai đoạn 5 (sản phẩm): cùng luật "mã đang hiện, hoặc đã ẩn nhưng đang gắn".
 
 - Entity `CakeAttribute`; danh mục ban đầu đã có trong migration `V2026_10_22_1500`.
 - `GET /api/cake-attributes?group=` (công khai, chỉ `active`, theo `sortOrder`); `includeHidden=true` chỉ A.

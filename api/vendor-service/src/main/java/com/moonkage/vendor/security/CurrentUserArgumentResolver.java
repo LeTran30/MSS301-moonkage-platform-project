@@ -13,7 +13,8 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 /**
  * Builds {@link CurrentUserInfo} from {@link GatewayHeader}. Missing or unknown values mean the request did not come
- * through the gateway with a valid token, so the answer is 401 rather than a guess.
+ * through the gateway with a valid token, so the answer is 401 rather than a guess. A guest on an open endpoint sends
+ * neither header and gets null; one header without the other is still 401.
  */
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
@@ -32,6 +33,10 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             WebDataBinderFactory binderFactory) {
         String accountId = webRequest.getHeader(GatewayHeader.ACCOUNT_ID);
         String role = webRequest.getHeader(GatewayHeader.USER_ROLE);
+        boolean required = parameter.getParameterAnnotation(CurrentUser.class).required();
+        if (!required && accountId == null && role == null) {
+            return null;
+        }
         if (!StringUtils.hasText(accountId) || !isKnownRole(role)) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }

@@ -15,7 +15,8 @@ Bảng `vendors` thiếu phần lớn trường xác minh theo tư cách pháp n
 | `vendor_owner_checks` **Mới** | `id`, `vendor_id`, `submission_no`, `owner_legal_name`, `owner_id_masked`, `nfc_verified_at`, `id_match`, `name_match` (MATCH, MISMATCH), `checked_at` | Bất biến, một dòng mỗi lần nộp | AC-26.8, A-15 |
 | `vendor_reviews` **Mới** | `id`, `vendor_id`, `admin_account_id`, `decision` (APPROVE, NEEDS_INFO, REJECT), `reason`, `license_checked`, `registry_checked`, `decided_at` | `reason` bắt buộc khi không duyệt | AC-45.2, AC-45.5 |
 | `vendor_delivery_areas` | `id`, `vendor_id`, `province_code` | `(vendor_id, province_code)` duy nhất | FR-28 |
-| `order_profiles` | `id`, `vendor_id`, `min_qty`, `lead_time_days`, `early_bird_offer`, `weekly_capacity`, `cake_types`, `packaging_types`, `logo_printing`, `distributed_brands`, `gatherable_qty` | Một vendor tối đa một; `min_qty > 0` | FR-35 |
+| `order_profiles` | `id`, `vendor_id`, `min_qty`, `lead_time_days`, `early_bird_offer`, `weekly_capacity`, `packaging_types`, `logo_printing`, `distributed_brands`, `gatherable_qty` | Một vendor tối đa một; `min_qty > 0` | FR-35 |
+| `order_profile_cake_attributes` **Mới** | `order_profile_id`, `attribute_id` | PK `(order_profile_id, attribute_id)`; FK tới `order_profiles`, `cake_attributes`; thay cột `cake_types` (L-19); tự sản xuất phải có ít nhất một vỏ và một nhân (kiểm ở service) | AC-35.2, FR-54 |
 | `ref_price_tiers` | `id`, `order_profile_id`, `from_qty`, `unit_price` | `(order_profile_id, from_qty)` duy nhất **Mới** | FR-35 |
 | `order_profile_custom_types` | `order_profile_id`, `custom_type` (BAG, CARD, STICKER, TEMPLATE_BOX) |  | BR-14 |
 | `cake_attributes` **Mới** | `id`, `attribute_group` (CRUST, FILLING), `code`, `label`, `label_key`, `sort_order`, `active`, `version` | `(attribute_group, code)` và `(attribute_group, label_key)` duy nhất; `code` dạng `banh-nuong`, không đổi; không xóa, chỉ `active = false`; danh mục ban đầu A-19 nằm trong migration | FR-54, BR-34 |
@@ -91,7 +92,7 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 
 **Phát**
 
-- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator. Cùng một payload là bản chụp đầy đủ của vendor (`sourceVersion` = `vendors.version`, vùng giao, phí giao, hồ sơ nhận đặt hàng); bên nghe bỏ bản có `sourceVersion` không lớn hơn bản đang giữ. Khóa chỉ phát `vendor.locked`.
+- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator. Cùng một payload là bản chụp đầy đủ của vendor (`sourceVersion` = `vendors.version`, vùng giao, phí giao, hồ sơ nhận đặt hàng kèm mã vỏ và nhân `crustCodes`, `fillingCodes`); bên nghe bỏ bản có `sourceVersion` không lớn hơn bản đang giữ. Khóa chỉ phát `vendor.locked`.
 - `product.upserted`, `product.removed` → catalog, order, orchestrator
 - `vendor.submitted`, `vendor.onboarding_recorded`, `vendor.reviewed`, `vendor.registration_fee_paid`, `registration_fee.changed`, `vendor.bank_account_changed` → orchestrator
 

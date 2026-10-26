@@ -62,6 +62,12 @@ class OrderProfile {
     @Column(name = "custom_type", nullable = false)
     private Set<CustomType> customTypes = new HashSet<>();
 
+    /** Crusts and fillings it makes (AC-35.2), ids of the FR-54 catalogue; a hidden one stays until removed. */
+    @ElementCollection
+    @CollectionTable(name = "order_profile_cake_attributes", joinColumns = @JoinColumn(name = "order_profile_id"))
+    @Column(name = "attribute_id", nullable = false)
+    private Set<String> cakeAttributeIds = new HashSet<>();
+
     /** Informational only; its effect on a quote price is open (Q-20). */
     @Column(columnDefinition = "TEXT")
     private String earlyBirdOffer;
@@ -100,6 +106,8 @@ class OrderProfile {
         gatherableQty = terms.gatherableQty();
         customTypes.clear();
         customTypes.addAll(terms.customTypes());
+        cakeAttributeIds.clear();
+        terms.cakeAttributes().forEach(value -> cakeAttributeIds.add(value.id()));
         replacePriceTiers(terms.priceTiers());
     }
 

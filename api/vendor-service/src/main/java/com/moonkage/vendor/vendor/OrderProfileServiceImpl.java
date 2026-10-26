@@ -1,5 +1,8 @@
 package com.moonkage.vendor.vendor;
 
+import com.moonkage.vendor.cakeattribute.CakeAttributeGroup;
+import com.moonkage.vendor.cakeattribute.CakeAttributeRef;
+import com.moonkage.vendor.cakeattribute.CakeAttributeService;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.PriceTier;
@@ -8,29 +11,21 @@ import com.moonkage.vendor.common.vo.Quantity;
 import com.moonkage.vendor.security.CurrentUserInfo;
 import com.moonkage.vendor.vendor.dto.request.SaveOrderProfileRequest;
 import com.moonkage.vendor.vendor.dto.response.OrderProfileResponse;
-import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
 class OrderProfileServiceImpl implements OrderProfileService {
 
-    private static final String FIELD_MIN_QTY = "minQty";
-    private static final String FIELD_PRICE_TIERS = "priceTiers";
-    private static final String FIELD_WEEKLY_CAPACITY = "weeklyCapacity";
-    private static final String FIELD_PACKAGING_TYPES = "packagingTypes";
-    private static final String FIELD_LOGO_PRINTING = "logoPrinting";
-    private static final String FIELD_DISTRIBUTED_BRANDS = "distributedBrands";
-    private static final String FIELD_GATHERABLE_QTY = "gatherableQty";
-
     private final VendorFinder vendorFinder;
     private final OrderProfileRepository orderProfileRepository;
+    private final CakeAttributeService cakeAttributeService;
     private final VendorSnapshotPublisher snapshotPublisher;
 
     @Override
@@ -39,7 +34,7 @@ class OrderProfileServiceImpl implements OrderProfileService {
         vendorFinder.getVisibleTo(caller, vendorId);
         return orderProfileRepository
                 .findByVendorId(vendorId)
-                .map(OrderProfileServiceImpl::toResponse)
+                .map(this::toResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_PROFILE_NOT_FOUND));
     }
 
@@ -52,81 +47,50 @@ class OrderProfileServiceImpl implements OrderProfileService {
         if (!vendor.isAcceptsOrders()) {
             throw new AppException(ErrorCode.VENDOR_NOT_ACCEPTING_ORDERS);
         }
-        OrderTerms terms = toTerms(request, vendor.getSupplySource());
+        Optional<OrderProfile> existing = orderProfileRepository.findByVendorId(vendorId);
+        Set<String> linkedIds =
+                existing.map(OrderProfile::getCakeAttributeIds).map(Set::copyOf).orElse(Set.of());
+        OrderTerms terms = toTerms(request, vendor.getSupplySource(), linkedIds);
 
-        OrderProfile profile = orderProfileRepository
-                .findByVendorId(vendorId)
-                .map(existing -> {
-                    existing.replace(terms);
-                    return existing;
+        OrderProfile profile = existing.map(current -> {
+                    current.replace(terms);
+                    return current;
                 })
                 .orElseGet(() -> orderProfileRepository.save(OrderProfile.of(vendorId, terms)));
         snapshotPublisher.announceUpdated(vendor, caller.accountId());
         return toResponse(profile);
     }
 
-    /** AC-35.1 for every vendor, AC-35.2 when it produces, AC-35.3 when it resells. */
-    private static OrderTerms toTerms(SaveOrderProfileRequest request, SupplySource supplySource) {
-        Quantity minQty = atField(FIELD_MIN_QTY, () -> Quantity.of(request.minQty()));
-        PriceTiers priceTiers = atField(
-                FIELD_PRICE_TIERS,
-                () -> PriceTiers.of(request.priceTiers().stream()
-                        .map(tier -> PriceTier.of(tier.fromQty(), tier.unitPrice()))
-                        .toList()));
-        boolean produces = supplySource != SupplySource.RESELL;
-        boolean resells = supplySource != SupplySource.SELF_PRODUCED;
-        Quantity weeklyCapacity =
-                optionalQuantity(FIELD_WEEKLY_CAPACITY, request.weeklyCapacity(), produces, supplySource);
-        Quantity gatherableQty = optionalQuantity(FIELD_GATHERABLE_QTY, request.gatherableQty(), resells, supplySource);
-        if (produces) {
-            requireText(FIELD_PACKAGING_TYPES, request.packagingTypes(), supplySource);
-            if (request.logoPrinting() == null) {
-                throw termRequired(FIELD_LOGO_PRINTING, supplySource);
-            }
-        }
-        if (resells) {
-            requireText(FIELD_DISTRIBUTED_BRANDS, request.distributedBrands(), supplySource);
-        }
-        Set<CustomType> customTypes =
-                request.customTypes() == null || request.customTypes().isEmpty()
-                        ? EnumSet.noneOf(CustomType.class)
-                        : EnumSet.copyOf(request.customTypes());
+    /** Each value object at its field; whether the terms are complete for the supply source is OrderTerms' rule. */
+    private OrderTerms toTerms(SaveOrderProfileRequest request, SupplySource supplySource, Set<String> linkedIds) {
         return new OrderTerms(
-                minQty,
+                supplySource,
+                atField(OrderTerms.MIN_QTY, () -> Quantity.of(request.minQty())),
                 request.leadTimeDays(),
-                priceTiers,
-                customTypes,
-                trimToNull(request.earlyBirdOffer()),
-                weeklyCapacity,
-                produces ? request.packagingTypes().trim() : trimToNull(request.packagingTypes()),
+                atField(
+                        OrderTerms.PRICE_TIERS,
+                        () -> PriceTiers.of(request.priceTiers().stream()
+                                .map(tier -> PriceTier.of(tier.fromQty(), tier.unitPrice()))
+                                .toList())),
+                request.customTypes(),
+                request.earlyBirdOffer(),
+                optionalQuantity(OrderTerms.WEEKLY_CAPACITY, request.weeklyCapacity()),
+                select(OrderTerms.CRUST_CODES, CakeAttributeGroup.CRUST, request.crustCodes(), linkedIds),
+                select(OrderTerms.FILLING_CODES, CakeAttributeGroup.FILLING, request.fillingCodes(), linkedIds),
+                request.packagingTypes(),
                 request.logoPrinting(),
-                resells ? request.distributedBrands().trim() : trimToNull(request.distributedBrands()),
-                gatherableQty);
+                request.distributedBrands(),
+                optionalQuantity(OrderTerms.GATHERABLE_QTY, request.gatherableQty()));
     }
 
-    /** Required when {@code required}; when sent anyway it must still be a quantity. */
-    private static Quantity optionalQuantity(String field, Integer value, boolean required, SupplySource supplySource) {
-        if (value == null) {
-            if (required) {
-                throw termRequired(field, supplySource);
-            }
-            return null;
-        }
-        return atField(field, () -> Quantity.of(value));
+    private List<CakeAttributeRef> select(
+            String field, CakeAttributeGroup group, List<String> codes, Set<String> linkedIds) {
+        return atField(field, () -> cakeAttributeService.select(group, codes, linkedIds));
     }
 
-    private static void requireText(String field, String value, SupplySource supplySource) {
-        if (!StringUtils.hasText(value)) {
-            throw termRequired(field, supplySource);
-        }
-    }
-
-    private static AppException termRequired(String field, SupplySource supplySource) {
-        return new AppException(ErrorCode.ORDER_TERM_REQUIRED, supplySource.name()).atField(field);
-    }
-
-    private static String trimToNull(String text) {
-        return StringUtils.hasText(text) ? text.trim() : null;
+    /** Left out is null (OrderTerms decides whether it was required); sent, it must be a quantity. */
+    private static Quantity optionalQuantity(String field, Integer value) {
+        return value == null ? null : atField(field, () -> Quantity.of(value));
     }
 
     private static <T> T atField(String field, Supplier<T> valueObject) {
@@ -137,26 +101,30 @@ class OrderProfileServiceImpl implements OrderProfileService {
         }
     }
 
-    private static OrderProfileResponse toResponse(OrderProfile profile) {
+    private OrderProfileResponse toResponse(OrderProfile profile) {
         List<OrderProfileResponse.PriceTier> tiers = profile.toPriceTiers().tiers().stream()
                 .map(tier -> new OrderProfileResponse.PriceTier(
                         tier.fromQty().value(), tier.unitPrice().value()))
                 .toList();
+        CakeAttributeCodes cakeAttributes =
+                CakeAttributeCodes.of(cakeAttributeService.getRefs(profile.getCakeAttributeIds()));
         return new OrderProfileResponse(
                 profile.getMinQty().value(),
                 profile.getLeadTimeDays(),
                 tiers,
                 Set.copyOf(profile.getCustomTypes()),
                 profile.getEarlyBirdOffer(),
-                profile.getWeeklyCapacity() == null
-                        ? null
-                        : profile.getWeeklyCapacity().value(),
+                valueOf(profile.getWeeklyCapacity()),
+                cakeAttributes.crusts(),
+                cakeAttributes.fillings(),
                 profile.getPackagingTypes(),
                 profile.getLogoPrinting(),
                 profile.getDistributedBrands(),
-                profile.getGatherableQty() == null
-                        ? null
-                        : profile.getGatherableQty().value(),
+                valueOf(profile.getGatherableQty()),
                 profile.getUpdatedAt());
+    }
+
+    private static Integer valueOf(Quantity quantity) {
+        return quantity == null ? null : quantity.value();
     }
 }
