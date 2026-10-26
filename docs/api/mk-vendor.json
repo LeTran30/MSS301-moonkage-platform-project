@@ -1,0 +1,1142 @@
+{
+  "info": {
+    "name": "MoonKage - Vendor",
+    "description": "vendor-service qua api-gateway, đường dẫn theo tên root (L-17). Đặt seedPassword (SEED_PASSWORD trong .env), adminPassword, rồi chạy thư mục 0 và các bước theo thứ tự. Xem docs/services/vendor/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Đăng nhập",
+      "item": [
+        {
+          "name": "Seller login (member4, chủ vendor seed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/identity-service/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "identity-service",
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"member4@mk.com\",\n  \"password\": \"{{seedPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('sellerToken', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/identity-service/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "identity-service",
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('adminToken', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Công khai",
+      "item": [
+        {
+          "name": "Mức phí đăng ký",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/registration-fee-config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "registration-fee-config"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Danh mục nhân",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cake-attributes?group=FILLING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cake-attributes"
+              ],
+              "query": [
+                {
+                  "key": "group",
+                  "value": "FILLING"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nhãn theo mã (kể cả đã ẩn)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cake-attributes?codes=dau-xanh,tra-xanh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cake-attributes"
+              ],
+              "query": [
+                {
+                  "key": "codes",
+                  "value": "dau-xanh,tra-xanh"
+                }
+              ]
+            },
+            "description": "AC-54.4: trang sản phẩm hiện tên giá trị nó đang gắn, kể cả giá trị admin đã ẩn."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Hồ sơ người bán",
+      "item": [
+        {
+          "name": "Hồ sơ của tôi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors?ownerAccountId=me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors"
+              ],
+              "query": [
+                {
+                  "key": "ownerAccountId",
+                  "value": "me"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('vendorId', pm.response.json().data[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chi tiết",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xin chỗ tải giấy tờ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/uploads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "uploads"
+              ]
+            },
+            "description": "Gửi file bằng multipart POST tới uploadUrl kèm formFields, rồi gửi tempKey làm objectKey khi nộp hồ sơ (FR-26). Nộp hồ sơ cần tài khoản đã xác minh NFC.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentType\": \"application/pdf\",\n  \"sizeBytes\": 100000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đổi phí giao nội thành",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"localDeliveryFee\": 30000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vùng giao",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/delivery-areas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "delivery-areas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provinceCodes\": [\n    \"79\",\n    \"74\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hồ sơ nhận đặt hàng",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/order-profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "order-profile"
+              ]
+            },
+            "description": "Vendor seed chưa khai hồ sơ nhận đặt hàng: 404 VENDOR_016. Khai bằng PUT cùng đường dẫn."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Khoản phí đã đóng",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/registration-fee-payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "registration-fee-payments"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Sản phẩm Shop",
+      "item": [
+        {
+          "name": "Xin chỗ tải ảnh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/products/uploads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "products",
+                "uploads"
+              ]
+            },
+            "description": "Tải ảnh lên uploadUrl (multipart, kèm formFields, file ở trường 'file'), rồi tạo sản phẩm.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentType\": \"image/jpeg\",\n  \"sizeBytes\": 200000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('imageTempKey', pm.response.json().data.tempKey);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tạo sản phẩm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "products"
+              ]
+            },
+            "description": "Vendor seed có nguồn hàng BOTH nên phải gửi resold. Để trống brand thì dùng tên doanh nghiệp (AC-29.4).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hộp 4 bánh nướng đậu xanh\",\n  \"description\": \"Bánh nướng nhân đậu xanh, hộp giấy 4 cái.\",\n  \"resold\": false,\n  \"listPrice\": 320000,\n  \"stock\": 50,\n  \"expiryDate\": \"2026-12-31\",\n  \"deliveryLabel\": \"LOCAL\",\n  \"priceTiers\": [\n    {\n      \"fromQty\": 10,\n      \"unitPrice\": 300000\n    }\n  ],\n  \"imageKeys\": [\n    \"{{imageTempKey}}\"\n  ],\n  \"crustCodes\": [\n    \"banh-nuong\"\n  ],\n  \"fillingCodes\": [\n    \"dau-xanh\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "const p = pm.response.json().data;",
+                  "pm.collectionVariables.set('productId', p.id);",
+                  "pm.collectionVariables.set('productVersion', p.version);",
+                  "pm.collectionVariables.set('imageKey', p.images[0].key);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Danh sách của Shop",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "products"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sửa (cần version đã đọc)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": "version khác bản hiện tại → 409 VENDOR_027.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hộp 4 bánh nướng đậu xanh\",\n  \"description\": \"Bánh nướng nhân đậu xanh, hộp giấy 4 cái.\",\n  \"resold\": false,\n  \"listPrice\": 320000,\n  \"stock\": 40,\n  \"expiryDate\": \"2026-12-31\",\n  \"deliveryLabel\": \"LOCAL\",\n  \"priceTiers\": [\n    {\n      \"fromQty\": 10,\n      \"unitPrice\": 300000\n    }\n  ],\n  \"imageKeys\": [\n    \"{{imageKey}}\"\n  ],\n  \"crustCodes\": [\n    \"banh-nuong\"\n  ],\n  \"fillingCodes\": [\n    \"dau-xanh\"\n  ],\n  \"version\": \"{{productVersion}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('productVersion', pm.response.json().data.version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ẩn",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"HIDDEN\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hiện lại",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ON_SALE\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Nội bộ (gọi thẳng vendor-service, gateway chặn /internal)",
+      "item": [
+        {
+          "name": "Vendor theo chủ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{vendorServiceUrl}}/internal/vendors/by-owner/00000000-0000-4000-8000-000100000004",
+              "host": [
+                "{{vendorServiceUrl}}"
+              ],
+              "path": [
+                "internal",
+                "vendors",
+                "by-owner",
+                "00000000-0000-4000-8000-000100000004"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Giữ hàng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{vendorServiceUrl}}/internal/stock/reservations",
+              "host": [
+                "{{vendorServiceUrl}}"
+              ],
+              "path": [
+                "internal",
+                "stock",
+                "reservations"
+              ]
+            },
+            "description": "Thiếu hàng → 409 VENDOR_032, errors[].field là productId thiếu. Gọi lại cùng checkoutId trả kết quả cũ.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkoutId\": \"{{checkoutId}}\",\n  \"expiresAt\": \"2030-01-01T00:00:00Z\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"qty\": 2\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Chốt khi tiền về",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{vendorServiceUrl}}/internal/stock/reservations/{{checkoutId}}/commit",
+              "host": [
+                "{{vendorServiceUrl}}"
+              ],
+              "path": [
+                "internal",
+                "stock",
+                "reservations",
+                "{{checkoutId}}",
+                "commit"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Trả hàng (đã chốt → 409)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{vendorServiceUrl}}/internal/stock/reservations/{{checkoutId}}",
+              "host": [
+                "{{vendorServiceUrl}}"
+              ],
+              "path": [
+                "internal",
+                "stock",
+                "reservations",
+                "{{checkoutId}}"
+              ]
+            },
+            "description": "Đã chốt thì 409 VENDOR_034; checkout còn HELD thì 204."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Admin",
+      "item": [
+        {
+          "name": "Hồ sơ chờ duyệt",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors?status=PENDING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Thêm giá trị nhân",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cake-attributes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cake-attributes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"group\": \"FILLING\",\n  \"label\": \"Trà sữa\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cả giá trị đã ẩn",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cake-attributes?includeHidden=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cake-attributes"
+              ],
+              "query": [
+                {
+                  "key": "includeHidden",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gỡ sản phẩm",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vendors/{{vendorId}}/products/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vendors",
+                "{{vendorId}}",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "description": "BR-24: gỡ hẳn, không quay lại; phát product.removed.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REMOVED\",\n  \"removedReason\": \"Ảnh không đúng sản phẩm\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đổi mức phí đăng ký",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/registration-fee-config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "registration-fee-config"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 200000\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "vendorServiceUrl",
+      "value": "http://localhost:8086"
+    },
+    {
+      "key": "seedPassword",
+      "value": ""
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@moonkage.vn"
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "sellerToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "vendorId",
+      "value": "00000000-0000-4000-8000-000200000001"
+    },
+    {
+      "key": "imageTempKey",
+      "value": ""
+    },
+    {
+      "key": "imageKey",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "productVersion",
+      "value": ""
+    },
+    {
+      "key": "checkoutId",
+      "value": "11111111-1111-4111-8111-111111111111"
+    }
+  ]
+}

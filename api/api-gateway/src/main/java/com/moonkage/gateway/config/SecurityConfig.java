@@ -63,7 +63,7 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/health")
                         .permitAll()
                         // /internal/** is for service-to-service (OpenFeign) calls only
-                        .pathMatchers("/*/internal/**")
+                        .pathMatchers("/internal/**", "/*/internal/**")
                         .denyAll()
                         // Swagger UI and each service's OpenAPI doc
                         .pathMatchers(
@@ -85,10 +85,13 @@ public class SecurityConfig {
                                 HttpMethod.GET, "/catalog-service/api/products/**", "/order-service/api/reviews/**")
                         .permitAll()
                         // AC-26.9: the registration fee is shown before anyone registers
-                        .pathMatchers(HttpMethod.GET, "/vendor-service/api/registration-fee-config")
+                        .pathMatchers(
+                                HttpMethod.GET,
+                                "/vendor-service/api/registration-fee-config",
+                                "/api/registration-fee-config")
                         .permitAll()
                         // AC-06.6: guests filter by crust and filling; hidden values stay admin only
-                        .pathMatchers(HttpMethod.GET, "/vendor-service/api/cake-attributes")
+                        .pathMatchers(HttpMethod.GET, "/vendor-service/api/cake-attributes", "/api/cake-attributes")
                         .permitAll()
                         // shop product management (/catalog-service/api/seller/**): any logged-in account;
                         // catalog-service checks the account owns an approved vendor (D-19: owner is not a role)

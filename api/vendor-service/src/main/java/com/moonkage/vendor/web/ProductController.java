@@ -31,6 +31,7 @@ public class ProductController {
 
     private final ProductService productService;
 
+    /** Step 1 of an image upload (FR-29): send the file to uploadUrl, then its tempKey among imageKeys. */
     @PostMapping("/uploads")
     public ResponseEntity<ApiResponse<PresignedUploadLinkResponse>> createImageUploadLink(
             @CurrentUser CurrentUserInfo caller,
@@ -39,6 +40,10 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(productService.createImageUploadLink(caller, vendorId, request)));
     }
 
+    /**
+     * FR-29: a new product, on sale at once (BR-24). The Shop must be approved, paid up and selling in the Shop; at
+     * least one image, one crust and one filling; brand and origin when resold.
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
             @CurrentUser CurrentUserInfo caller,
@@ -48,18 +53,24 @@ public class ProductController {
                 .body(ApiResponse.created(productService.createProduct(caller, vendorId, request)));
     }
 
+    /** The Shop's products, every status, newest first. Owner or admin. */
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getProducts(
             @CurrentUser CurrentUserInfo caller, @PathVariable String vendorId) {
         return ResponseEntity.ok(ApiResponse.ok(productService.getProducts(caller, vendorId)));
     }
 
+    /** One product as its Shop sees it, with the version to send back on PUT. Owner or admin. */
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(
             @CurrentUser CurrentUserInfo caller, @PathVariable String vendorId, @PathVariable String productId) {
         return ResponseEntity.ok(ApiResponse.ok(productService.getProduct(caller, vendorId, productId)));
     }
 
+    /**
+     * FR-30, FR-32, FR-33: the whole product again, with the version read before editing (409 VENDOR_027 when
+     * someone changed it since, a sale included).
+     */
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> replaceProduct(
             @CurrentUser CurrentUserInfo caller,
@@ -69,6 +80,7 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(productService.replaceProduct(caller, vendorId, productId, request)));
     }
 
+    /** Owner: {status: ON_SALE | HIDDEN} (FR-34). Admin: {status: REMOVED, removedReason}, for good (FR-46). */
     @PatchMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @CurrentUser CurrentUserInfo caller,

@@ -387,7 +387,11 @@ class VendorApiIntegrationTest {
                 .andExpect(jsonPath("$.data[0].id").value(vendorId));
         mvc.perform(get("/internal/vendors/by-owner/{accountId}", accountId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(vendorId));
+                .andExpect(jsonPath("$.id").value(vendorId))
+                .andExpect(jsonPath("$.canOperate").value(false))
+                // nothing private crosses to other services (NFR-03)
+                .andExpect(jsonPath("$.bankAccount").doesNotExist())
+                .andExpect(jsonPath("$.bankAccountMasked").doesNotExist());
     }
 
     // ─── framework behaviour ───
@@ -430,6 +434,14 @@ class VendorApiIntegrationTest {
         mvc.perform(get("/api/nothing-here"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("COMMON_404"));
+    }
+
+    @Test
+    void swaggerDescribesEndpointsFromTheirJavadoc() throws Exception {
+        mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/vendors/{vendorId}/products'].post.description")
+                        .value(org.hamcrest.Matchers.containsString("on sale at once")));
     }
 
     @Test

@@ -47,6 +47,10 @@ public class CakeAttributeController {
         return ResponseEntity.ok(ApiResponse.ok(values));
     }
 
+    /**
+     * Admin: a new value {group, label}; code and order come from the label (AC-54.1). 409 VENDOR_020 on a
+     * duplicate name.
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<CakeAttributeResponse>> createCakeAttribute(
             @CurrentUser CurrentUserInfo caller, @Valid @RequestBody CreateCakeAttributeRequest request) {
@@ -54,6 +58,10 @@ public class CakeAttributeController {
                 .body(ApiResponse.created(cakeAttributeService.createCakeAttribute(caller, request)));
     }
 
+    /**
+     * Admin: {label?, sortOrder?, active?}; the code never changes. Hiding the last visible value of a group is
+     * 409 VENDOR_021 (AC-54.6).
+     */
     @PatchMapping("/{attributeId}")
     public ResponseEntity<ApiResponse<CakeAttributeResponse>> updateCakeAttribute(
             @CurrentUser CurrentUserInfo caller,

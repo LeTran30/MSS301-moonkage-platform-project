@@ -51,7 +51,7 @@ class ProductServiceImplImageTest {
     private static final String ACCOUNT_ID = "account-1";
     private static final String PRODUCT_ID = "product-1";
     private static final VendorInfo SHOP =
-            new VendorInfo("vendor-1", ACCOUNT_ID, "Shop", "APPROVED", "OWN", true, false);
+            new VendorInfo("vendor-1", ACCOUNT_ID, "Shop", "APPROVED", "OWN", true, false, true);
     private static final String TEMP_A = "tmp/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png";
     private static final String TEMP_B = "tmp/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.png";
     private static final String FINAL_A = "products/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png";
@@ -123,7 +123,7 @@ class ProductServiceImplImageTest {
     @Test
     void createImageUploadLinkRefusesAccountWithoutApprovedShop() {
         when(vendorClient.getVendorByOwnerAccountId(ACCOUNT_ID))
-                .thenReturn(new VendorInfo("vendor-1", ACCOUNT_ID, "Shop", "PENDING", "OWN", true, false));
+                .thenReturn(new VendorInfo("vendor-1", ACCOUNT_ID, "Shop", "PENDING", "OWN", true, false, false));
 
         assertThatThrownBy(
                         () -> productService.createImageUploadLink(ACCOUNT_ID, new ImageUploadRequest("image/png", 1L)))

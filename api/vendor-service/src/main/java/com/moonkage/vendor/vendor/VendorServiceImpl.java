@@ -130,8 +130,8 @@ class VendorServiceImpl implements VendorService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<VendorResponse> findByOwnerAccountId(String accountId) {
-        return vendorRepository.findByOwnerAccountId(accountId).map(VendorMapper::toResponse);
+    public Optional<VendorView> findByOwnerAccountId(String accountId) {
+        return vendorRepository.findByOwnerAccountId(accountId).map(VendorMapper::toView);
     }
 
     @Override

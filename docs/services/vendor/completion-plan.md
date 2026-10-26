@@ -212,7 +212,7 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 
 ### 6. Giữ hàng (BR-28; D-01, D-14; P-01)
 
-**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. order-service chưa gọi các endpoint này. Khác với bản đề xuất bên dưới:
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, đã commit (`e92b5e3`). order-service chưa gọi các endpoint này. Khác với bản đề xuất bên dưới:
 
 - **Order điều khiển, vendor không nghe `payment.succeeded`/`payment.failed`.** Nếu cả vendor (nghe sự kiện) và order (giữ lại khi IPN trễ) cùng đổi một checkout thì giẫm chân nhau: hàng giữ lại sau khi vendor đã xử lý sự kiện nằm ở HELD rồi bị quét trả về kho dù đơn đã tạo. Thay vào đó order gọi `POST /internal/stock/reservations/{checkoutId}/commit` khi tiền về và nhận trả lời ngay: 200 chốt được; 409 `VENDOR_032` (IPN trễ, hàng đã bán cho người khác) thì order hoàn tiền. `order.md` sửa theo.
 - Giữ hàng khóa dòng `products` (`PESSIMISTIC_WRITE`, theo thứ tự id để hai checkout không deadlock) và trừ tồn kho qua `Product.takeStock`, thay cho câu `UPDATE … WHERE stock >= :qty`: luật "đang bán và đủ hàng" nằm trong `Product.canSupply`, và `@Version` tăng nên `product.upserted` có `sourceVersion` mới. Mọi đường (giữ, chốt, trả, quét) khóa sản phẩm trước rồi mới tới dòng giữ hàng.
@@ -232,6 +232,14 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 **Xong khi:** luồng mua ngay của order giữ, chốt, trả hàng đúng; test tranh chấp qua.
 
 ### 7. Hoàn thiện
+
+**Trạng thái (2026-10-26):** xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+
+- `GET /internal/vendors/by-owner` trả `VendorView` (bản chụp chỉ đọc đã dùng giữa các component, thêm `canOperate`), không có tài khoản ngân hàng, số định danh, giấy tờ; test khẳng định điều đó. `VendorResponse` chỉ còn cho chủ và admin. Chỉ catalog có `VendorClient`: `VendorInfo` thêm `canOperate`. quotation, order chưa gọi endpoint này.
+- Gateway thêm route theo tên root cho vendor (`/api/vendors/**`, `/api/registration-fee-config/**`, `/api/cake-attributes/**`) và mở `GET` công khai ở cả hai dạng đường dẫn; chặn thêm `/internal/**` ở gốc. **Chưa** tắt discovery locator: việc đó làm cho mọi service cùng lúc (giai đoạn 3 của alignment plan), nên `/vendor-service/api/**` vẫn chạy và web hiện tại không vỡ.
+- [README.md](README.md) theo mẫu identity; Postman [`docs/api/mk-vendor.json`](../../api/mk-vendor.json) dùng tài khoản seed `member4@mk.com` (chủ vendor seed) và admin.
+- Swagger lấy mô tả từ Javadoc của controller và DTO (`therapi-runtime-javadoc`, chỉ thêm ở vendor-service), mọi endpoint có Javadoc. Chưa có ví dụ body riêng trong Swagger; ví dụ nằm ở Postman.
+- NFR-03 không phải sửa: `IdNumber`, `BankAccountNumber`, `SubmitVendorRequest`, `CheckIdNumberRequest` che số trong `toString()`; Feign không log body; handler không log body request; link giấy tờ hết hạn sau 10 phút.
 
 - `GET /internal/vendors/by-owner/{accountId}` dùng DTO nội bộ riêng (không lộ số tài khoản), cập nhật `VendorClient` của catalog, quotation, order.
 - Gateway: route `/api/vendors/**`, `/api/registration-fee-config/**`, `/api/cake-attributes/**` → vendor-service (giai đoạn 3 của alignment plan); chặn `/internal/**`.
