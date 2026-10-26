@@ -52,7 +52,7 @@ Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ng�
 
 **Phát**
 
-- `payment.succeeded`, `payment.failed` (kèm `purpose`, `referenceId`) → order, quotation, vendor
+- `payment.succeeded`, `payment.failed` (kèm `purpose`, `referenceId`) → order, quotation, vendor. `payment.succeeded` = `{eventId, paymentId, purpose, referenceId, amount, paidAt}` (vendor-service đọc đúng các trường này)
 - `refund.completed`, `refund.manual_required`, `disbursement.requested`, `disbursement.reviewed`, `payout.completed` → order, orchestrator
 
 **Nghe**
@@ -61,7 +61,7 @@ Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ng�
 
 **API nội bộ**
 
-- Cung cấp `POST /internal/payments` cho order, quotation, vendor: `{purpose, referenceId, amount, allocations[]?}` → `{paymentId, paymentUrl}`
+- Cung cấp `POST /internal/payments` cho order, quotation, vendor: `{purpose, referenceId, payerAccountId, amount, allocations[]?}` → `{paymentId, paymentUrl}`
 - Cung cấp `POST /internal/refunds` cho quotation (`QUOTE_EXPIRED`), order (`LATE_PAYMENT`): `{paymentId, reason, amount}`
 - Gọi order: `POST /internal/orders/{orderId}/payout-lock` trước khi chuyển tiền (P-02)
 

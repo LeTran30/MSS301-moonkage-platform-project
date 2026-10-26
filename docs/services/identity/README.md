@@ -25,7 +25,7 @@ Mỗi package cấp một dưới `com.moonkage.identity` là một **component*
 
 | Package | Sở hữu (bảng / dữ liệu) | Public | Phụ thuộc |
 |---|---|---|---|
-| `web` | — | Controller: `AuthController`, `AccountController`, `AddressController`, `NfcController` | mọi service public |
+| `web` | — | Controller: `AuthController`, `AccountController`, `AddressController`, `KycController` | mọi service public |
 | `auth` | — (luồng đăng ký, OTP, đăng nhập) | `AuthService`, `auth.dto` | `account`, `profile`, `otp`, `email`, `security` |
 | `account` | `accounts` | `AccountService`, `AccountView`, `AccountCredentials`, `AccountResponse`, `NfcLockout`, `Role`, `account.vo` (`Email`, `PhoneNumber`, `PasswordHash`) | `profile` |
 | `profile` | `user_profiles` | `UserProfileService`, `ProfileConstant` | — |
