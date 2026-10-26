@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
  * token.
  */
 @RestController
+@Profile("legacy-writer")
 @RequestMapping("/api/seller/products")
 @RequiredArgsConstructor
 public class SellerProductController {
