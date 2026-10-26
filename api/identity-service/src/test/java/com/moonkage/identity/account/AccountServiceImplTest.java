@@ -1,0 +1,172 @@
+package com.moonkage.identity.account;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.moonkage.identity.account.vo.Email;
+import com.moonkage.identity.account.vo.PasswordHash;
+import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.common.exception.AppException;
+import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.profile.UserProfileService;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.util.Optional;
+import org.hibernate.exception.ConstraintViolationException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+
+@ExtendWith(MockitoExtension.class)
+class AccountServiceImplTest {
+
+    private static final String ACCOUNT_ID = "acc-1";
+    private static final Email EMAIL = Email.of("a@x.vn");
+    private static final PhoneNumber PHONE = PhoneNumber.of("0912345678");
+    private static final PasswordHash HASH =
+            PasswordHash.of("$2a$10$abcdefghijklmnopqrstuuJ8r6b0qkF3U9e5R1yW2Hn0mDxv3pL7a");
+
+    @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
+    private UserProfileService userProfileService;
+
+    @InjectMocks
+    private AccountServiceImpl accountService;
+
+    @Test
+    void myAccountCarriesTheProfileName() {
+        when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true)));
+        when(userProfileService.getFullName(ACCOUNT_ID)).thenReturn("Lan Nguyen");
+
+        AccountResponse response = accountService.getMyAccount(ACCOUNT_ID);
+
+        assertEquals(ACCOUNT_ID, response.accountId());
+        assertEquals("a@x.vn", response.email());
+        assertEquals("Lan Nguyen", response.fullName());
+    }
+
+    @Test
+    void unknownAccountAnswersNotFound() {
+        when(accountRepository.findById("ghost")).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () -> accountService.getAccount("ghost"));
+
+        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    void newMemberIsUnverified() {
+        when(accountRepository.saveAndFlush(any(Account.class))).thenAnswer(inv -> {
+            Account saved = inv.getArgument(0);
+            saved.setId(ACCOUNT_ID);
+            return saved;
+        });
+
+        AccountView member = accountService.createMember(EMAIL, PHONE, HASH);
+
+        assertEquals(ACCOUNT_ID, member.id());
+        assertEquals(Role.MEMBER, member.role());
+        assertFalse(member.verified());
+    }
+
+    @Test
+    void takenEmailIsRejectedBeforeSaving() {
+        when(accountRepository.existsByEmail(EMAIL)).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> accountService.createMember(EMAIL, PHONE, HASH));
+
+        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+        verify(accountRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void parallelRegistrationWithTheSameEmailAnswers409Not500() {
+        // both requests passed the pre-check; the unique key stops the second one at flush
+        when(accountRepository.saveAndFlush(any(Account.class))).thenThrow(duplicateKey(Account.EMAIL_UNIQUE_KEY));
+
+        AppException ex = assertThrows(AppException.class, () -> accountService.createMember(EMAIL, PHONE, HASH));
+
+        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+    }
+
+    @Test
+    void parallelRegistrationWithTheSamePhoneAnswers409Not500() {
+        when(accountRepository.saveAndFlush(any(Account.class)))
+                .thenThrow(duplicateKey(Account.PHONE_NUMBER_UNIQUE_KEY));
+
+        AppException ex = assertThrows(AppException.class, () -> accountService.createMember(EMAIL, PHONE, HASH));
+
+        assertEquals(ErrorCode.PHONE_ALREADY_EXISTS, ex.getErrorCode());
+    }
+
+    @Test
+    void passwordChangeEndsOlderTokens() {
+        Account account = account(true);
+        when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account));
+        Instant issuedBefore = Instant.now().minusSeconds(60);
+
+        accountService.changePassword(ACCOUNT_ID, HASH);
+
+        assertEquals(HASH, account.passwordHash());
+        assertNotNull(account.getPasswordChangedAt());
+        assertFalse(AccountMapper.toView(account).acceptsTokenIssuedAt(issuedBefore));
+    }
+
+    @Test
+    void lockForUpdateOfAnUnknownAccountAnswersNotFound() {
+        when(accountRepository.findByIdForUpdate("ghost")).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () -> accountService.lockForUpdate("ghost"));
+
+        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    void nfcLockoutIsStoredOnTheAccount() {
+        Account account = account(true);
+        when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account));
+        Instant until = Instant.now().plusSeconds(60);
+
+        accountService.saveNfcLockout(ACCOUNT_ID, new NfcLockout(0, until));
+
+        assertEquals(until, account.getNfcLockedUntil());
+        assertTrue(accountService.getNfcLockout(ACCOUNT_ID).isLocked(Instant.now()));
+    }
+
+    @Test
+    void loginFindsTheAccountByEmailOrPhone() {
+        when(accountRepository.findByEmail(EMAIL)).thenReturn(Optional.of(account(true)));
+        when(accountRepository.findByPhoneNumber(PHONE)).thenReturn(Optional.of(account(true)));
+
+        assertTrue(accountService.findCredentials("A@X.vn").isPresent());
+        assertTrue(accountService.findCredentials("+84912345678").isPresent());
+        assertTrue(accountService.findCredentials("not-a-login").isEmpty());
+    }
+
+    private static Account account(boolean verified) {
+        return Account.builder()
+                .id(ACCOUNT_ID)
+                .email(EMAIL)
+                .passwordHash(HASH)
+                .accountVerified(verified)
+                .build();
+    }
+
+    private static DataIntegrityViolationException duplicateKey(String constraintName) {
+        return new DataIntegrityViolationException(
+                "duplicate key",
+                new ConstraintViolationException("duplicate key", new SQLException("23505"), constraintName));
+    }
+}

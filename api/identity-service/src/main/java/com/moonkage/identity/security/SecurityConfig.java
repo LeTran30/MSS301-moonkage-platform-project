@@ -1,10 +1,6 @@
 package com.moonkage.identity.security;
 
-import com.moonkage.identity.constant.PhoneConstant;
-import com.moonkage.identity.entity.Account;
-import com.moonkage.identity.repository.AccountRepository;
-import com.moonkage.identity.security.jwt.JwtFilter;
-import java.util.Optional;
+import com.moonkage.identity.account.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -31,18 +27,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AccountRepository accountRepository;
+    private final AccountService accountService;
     private final JwtFilter jwtFilter;
     private final SecurityProperties securityProperties;
 
     /** FR-02: log in with email or phone number. */
     @Bean
     public UserDetailsService userDetailsService() {
-        return identifier -> (identifier.contains("@")
-                        ? accountRepository.findByEmail(Account.toStoredEmail(identifier))
-                        : identifier.matches(PhoneConstant.PATTERN)
-                                ? accountRepository.findByPhoneNumber(Account.toStoredPhoneNumber(identifier))
-                                : Optional.<Account>empty())
+        return identifier -> accountService
+                .findCredentials(identifier)
+                .map(AccountPrincipal::new)
                 .orElseThrow(() -> new UsernameNotFoundException(identifier));
     }
 
@@ -56,7 +50,7 @@ public class SecurityConfig {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService());
         provider.setPasswordEncoder(passwordEncoder());
-        // check "e-mail not confirmed" (Account.isEnabled) only AFTER the password matched, so a stranger
+        // check "e-mail not confirmed" (AccountPrincipal.isEnabled) only AFTER the password matched, so a stranger
         // cannot learn that an email exists from a "not activated" reply (FR-02)
         provider.setPreAuthenticationChecks(user -> {});
         provider.setPostAuthenticationChecks(new AccountStatusUserDetailsChecker());

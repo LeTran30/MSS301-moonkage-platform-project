@@ -59,13 +59,13 @@ Java 21 cho phép đưa phần lớn quy tắc ngữ nghĩa lên L1 (record, sea
 
 ### A4. Đặc thù framework
 
-- **Cấu trúc thư mục bắt buộc:** mỗi service một module `api/<service>/`; package `com.moonkage.<service>` chia layer `controller`, `service` + `service.impl`, `repository`, `entity`, `dto.request`, `dto.response`, `mapper`, `exception`, `config`, `messaging`. Được thêm package miền (vd `nfc` ở identity) nếu không tạo vòng với package layer. Migration ở `src/main/resources/db/migration` (`V<n>__*.sql`), seed ở `db/seed` (`R__seed.sql`).
+- **Cấu trúc thư mục bắt buộc:** mỗi service một module `api/<service>/`; package `com.moonkage.<service>` tổ chức theo **component** (identity-service: `account`, `profile`, `address`, `kyc`, `auth`, `otp`, `email`, `outbox`, `security`, `common` + tầng HTTP `web`; xem `coding-rules.md` Phần 1.1) hoặc, với service chưa chuyển, theo layer `controller`, `service` + `service.impl`, `repository`, `entity`, `dto.request`, `dto.response`, `mapper`, `exception`, `config`, `messaging`. Không tạo vòng phụ thuộc giữa các package. Migration ở `src/main/resources/db/migration` (`V<n>__*.sql`), seed ở `db/seed` (`R__seed.sql`).
 - **DI / vòng đời:** chỉ constructor injection (`@RequiredArgsConstructor`); Checkstyle `noFieldInjection` chặn `@Autowired` trên field. Bean là singleton, nên field của service không được giữ dữ liệu theo request.
-- **Nơi đặt logic:** controller chỉ đổi HTTP ↔ DTO; luật nghiệp vụ và `@Transactional` ở `service.impl`; entity chỉ chứa hành vi thuần trên field của nó (vd `Account.isNfcLocked(now)`); mapper là `public final class` với method `static`.
+- **Nơi đặt logic:** controller chỉ đổi HTTP ↔ DTO; luật nghiệp vụ và `@Transactional` ở `*ServiceImpl`; entity và value object chỉ chứa hành vi thuần trên dữ liệu của nó (vd `NfcLockout.isLocked(now)`); mapper là `final class` với method `static` (package-private trong component).
 - **Cấu hình và secrets:** `application.yml` đọc `${ENV:mặc định}`; nhóm cấu hình dùng `@ConfigurationProperties` + `@Validated`; secrets nằm trong `../../.env` theo mẫu `.env.example`, không commit. Pepper, khóa PII và khóa giải mã thẻ chỉ cấp cho identity-service (D-07, D-08).
 - **"Phép màu" cần làm tường minh:**
   - `@Transactional` chỉ có hiệu lực khi gọi qua proxy: gọi nội bộ trong cùng class, hoặc trên method không `public`, sẽ không mở transaction.
-  - Dirty checking của JPA: sửa field của entity đang được quản lý là tự ghi xuống database khi commit. Chỉ sửa entity trong `service.impl`.
+  - Dirty checking của JPA: sửa field của entity đang được quản lý là tự ghi xuống database khi commit. Chỉ sửa entity trong `*ServiceImpl` của component sở hữu nó.
   - `spring.jpa.open-in-view` mặc định `true`: query lazy chạy cả trong tầng web. Đề xuất đặt `false` ở mọi service.
   - OpenFeign và `lb://` qua Eureka: tên service là hợp đồng; Feign không có timeout hợp lý mặc định (xem DS-01).
   - Lombok `@Data` trên entity sinh `equals/hashCode` theo mọi field, kể cả quan hệ lazy: cấm; dùng `@Getter` + `@Setter` có chọn lọc.
@@ -117,7 +117,7 @@ Tầng B1–B3 và phần lớn B6 đã có công cụ chặn trong repo; độ 
 | ID | Quy tắc | Mức | Thực thi | Ngưỡng |
 | --- | --- | --- | --- | --- |
 | MD-01 | Một lý do để thay đổi | L4 | Review; dấu hiệu tách: service inject quá nhiều phụ thuộc | > 7 phụ thuộc trong một service → xem xét tách |
-| MD-02 | Ẩn trạng thái nội bộ | L1 | `private` cho field; `package-private` cho class phụ trợ trong `service.impl`; entity chỉ có setter cho field được đổi ngoài luồng chuyển trạng thái | — |
+| MD-02 | Ẩn trạng thái nội bộ | L1 | `private` cho field; `package-private` cho entity, repository, `*ServiceImpl`, mapper và class phụ trợ của một component; entity chỉ có setter cho field được đổi ngoài luồng chuyển trạng thái | — |
 | MD-03 | Giới hạn kích thước file | L2 (cảnh báo) | **Đề xuất:** Checkstyle `FileLength` (`severity = info`) | ≤ 500 dòng |
 
 ### B6. Gói & phụ thuộc

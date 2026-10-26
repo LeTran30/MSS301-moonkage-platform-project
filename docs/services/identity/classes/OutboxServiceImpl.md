@@ -2,7 +2,7 @@
 
 > **Một câu:** ghi một sự kiện vào bảng `outbox_events` trong **cùng transaction** với dữ liệu nó mô tả; `OutboxRelay` gửi lên RabbitMQ sau.
 
-- **Package:** `com.moonkage.identity.service.impl`
+- **Package:** `com.moonkage.identity.outbox` (entity `OutboxEvent`, repository và `OutboxRelay` đều package-private)
 - **Tham chiếu:** Software Design mục 6, `NFR-05`
 - **Dependencies:** `OutboxEventRepository`, `ObjectMapper`
 - **Người gọi:** `NfcServiceImpl` (sự kiện `account.nfc_verified / nfc_failed / nfc_locked`)
