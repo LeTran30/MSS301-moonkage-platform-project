@@ -6,6 +6,15 @@ server:
 spring:
   application:
     name: payment-service
+  # all values come from the repo-root .env (see .env.example)
+  # RabbitMQ (domain events, Software Design 5.4)
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    # OutboxRelay waits for the broker's confirm before marking an event sent
+    publisher-confirm-type: simple
   datasource:
     url: "jdbc:postgresql://${PAYMENT_DB_HOST}:${PAYMENT_DB_PORT}/payment_db"
     username: ${DB_USERNAME}
@@ -20,11 +29,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    # off by default: every statement in the log is noise. Local debugging: JPA_SHOW_SQL=true in .env.
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: ${JPA_SHOW_SQL:false}
 
 eureka:
   client:
@@ -44,3 +53,22 @@ management:
     health:
       probes:
         enabled: true
+
+# domain events go through the outbox_events table (Software Design 6)
+outbox:
+  relay-interval: 2s
+  batch-size: 100
+  confirm-timeout: 5s
+
+# VNPay sandbox (A-11); merchant values from sandbox.vnpayment.vn go in .env
+vnpay:
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  # the web result page (M4.3); it forwards the query to GET /api/payments/vnpay/return
+  return-url: ${VNPAY_RETURN_URL:http://localhost:5173/thanh-toan/ket-qua}
+  default-lifetime: 15m
+
+payment:
+  # PENDING payments past expires_at become FAILED (payment.failed)
+  expiry-sweep-interval: 60s

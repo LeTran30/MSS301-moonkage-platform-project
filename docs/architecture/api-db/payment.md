@@ -61,7 +61,8 @@ Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ng�
 
 **API nội bộ**
 
-- Cung cấp `POST /internal/payments` cho order, quotation, vendor: `{purpose, referenceId, payerAccountId, amount, allocations[]?}` → `{paymentId, paymentUrl}`
+- Cung cấp `POST /internal/payments` cho order, quotation, vendor: `{purpose, referenceId, payerAccountId, amount, expiresAt?, allocations[]?}` → `{paymentId, paymentUrl}`. Chỉ `CHECKOUT` gửi `allocations[]` (tổng = `amount`, mỗi đơn một dòng). `DEPOSIT` phân bổ toàn bộ cho đơn có id = `acceptanceId` (order-service tạo đơn đặt hàng từ `quote.accepted` với chính id này), `REMAINDER` cho đơn `referenceId`, `REGISTRATION_FEE` không phân bổ. Đã có lần thành công cho cùng `(purpose, referenceId)` thì trả 409 `PAYMENT_002`
+- `payment.failed` = `{eventId, paymentId, purpose, referenceId, amount, reason (DECLINED | EXPIRED), gatewayResponseCode, failedAt}`. Thanh toán quá `expiresAt` mà chưa có IPN bị đánh FAILED (EXPIRED); IPN thành công đến sau vẫn được ghi SUCCEEDED và phát `payment.succeeded`, bên sở hữu tham chiếu tự quyết (P-01)
 - Cung cấp `POST /internal/refunds` cho quotation (`QUOTE_EXPIRED`), order (`LATE_PAYMENT`): `{paymentId, reason, amount}`
 - Gọi order: `POST /internal/orders/{orderId}/payout-lock` trước khi chuyển tiền (P-02)
 
