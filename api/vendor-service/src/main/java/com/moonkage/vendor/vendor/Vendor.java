@@ -4,6 +4,7 @@ import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.Price;
 import com.moonkage.vendor.common.vo.ProvinceCode;
+import com.moonkage.vendor.vendor.vo.DeliveryFee;
 import com.moonkage.vendor.vendor.vo.RepresentativeName;
 import com.moonkage.vendor.vendor.vo.TaxCode;
 import jakarta.persistence.Column;
@@ -94,7 +95,7 @@ class Vendor {
     private String statusReason;
 
     /** Flat fee per order delivered inside the vendor's areas (FR-28, BR-30). */
-    private Long localDeliveryFee;
+    private DeliveryFee localDeliveryFee;
 
     /** Registration fee paid once after approval (BR-31); the amount is the level at payment time (AC-53.2). */
     @Column(length = 36)
@@ -131,6 +132,27 @@ class Vendor {
     /** FR-45: only a pending profile is decided; the reason is what the owner reads (AC-27.2). */
     void decide(ReviewDecision decision, String reason) {
         moveTo(decision.getResultingStatus(), reason);
+    }
+
+    /** FR-46, BR-20: an approved vendor stops taking new orders and requests; the reason is required (AC-46.2). */
+    void lock(String reason) {
+        moveTo(VendorStatus.LOCKED, reason);
+    }
+
+    /** AC-28.3: the flat fee of an order delivered inside the vendor's areas; orders already made keep theirs. */
+    void changeLocalDeliveryFee(DeliveryFee fee) {
+        checkSellingSettingsEditable();
+        localDeliveryFee = fee;
+    }
+
+    /**
+     * Delivery areas, delivery fee and order profile are set once the vendor is approved (AC-28.1, AC-35.1); a
+     * locked vendor keeps what it had.
+     */
+    void checkSellingSettingsEditable() {
+        if (status != VendorStatus.APPROVED) {
+            throw new AppException(ErrorCode.VENDOR_NOT_APPROVED);
+        }
     }
 
     boolean isOwnedBy(String accountId) {

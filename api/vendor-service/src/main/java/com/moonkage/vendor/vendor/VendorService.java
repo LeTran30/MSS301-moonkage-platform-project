@@ -48,7 +48,11 @@ public interface VendorService {
     /** AC-27.2: the owner, while NEEDS_INFO or REJECTED; every check of a first submission runs again. */
     VendorDetailResponse resubmit(CurrentUserInfo caller, String vendorId, SubmitVendorRequest request);
 
-    VendorResponse update(CurrentUserInfo caller, String vendorId, UpdateVendorRequest request);
+    /**
+     * The owner sets its delivery fee (FR-28, AC-28.3); an admin locks an approved vendor with a reason (FR-46).
+     * Any other field from either is refused.
+     */
+    VendorDetailResponse update(CurrentUserInfo caller, String vendorId, UpdateVendorRequest request);
 
     /** Short-lived link to one document of the vendor, for its owner or an admin (AC-27.6, NFR-03). */
     VendorDocumentLinkResponse getDocumentLink(CurrentUserInfo caller, String vendorId, String documentId);

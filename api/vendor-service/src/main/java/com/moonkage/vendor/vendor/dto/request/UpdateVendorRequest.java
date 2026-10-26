@@ -1,7 +1,12 @@
 package com.moonkage.vendor.vendor.dto.request;
 
+import com.moonkage.vendor.vendor.VendorStatus;
+
 /**
- * Partial update. The seller sends {@code localDeliveryFee} (FR-28); the admin sends {@code status = LOCKED} with
- * {@code statusReason} (FR-46).
+ * Partial update; each caller sends only its own fields, anything else is refused (403).
+ *
+ * @param localDeliveryFee the owner: whole VND, 0 or more, per order delivered inside its areas (FR-28, AC-28.3)
+ * @param status the admin: only LOCKED (FR-46)
+ * @param statusReason the admin: required with LOCKED (AC-46.2)
  */
-public record UpdateVendorRequest(Long localDeliveryFee, String status, String statusReason) {}
+public record UpdateVendorRequest(Long localDeliveryFee, VendorStatus status, String statusReason) {}

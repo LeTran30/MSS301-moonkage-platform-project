@@ -14,6 +14,8 @@ public enum ErrorCode {
     MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "error.common.malformed_json"),
     PROVINCE_CODE_INVALID("COMMON_400_PROVINCE", HttpStatus.BAD_REQUEST, "error.common.province_code_invalid"),
     PRICE_INVALID("COMMON_400_PRICE", HttpStatus.BAD_REQUEST, "error.common.price_invalid"),
+    QUANTITY_INVALID("COMMON_400_QUANTITY", HttpStatus.BAD_REQUEST, "error.common.quantity_invalid"),
+    PRICE_TIERS_INVALID("COMMON_400_PRICE_TIERS", HttpStatus.BAD_REQUEST, "error.common.price_tiers_invalid"),
     /** No X-Account-Id / X-User-Role: the call did not come through the gateway with a token. */
     UNAUTHENTICATED("COMMON_401", HttpStatus.UNAUTHORIZED, "error.common.unauthenticated"),
     ACCESS_DENIED("COMMON_403", HttpStatus.FORBIDDEN, "error.common.access_denied"),
@@ -53,12 +55,18 @@ public enum ErrorCode {
     VENDOR_NOT_APPROVED("VENDOR_012", HttpStatus.CONFLICT, "error.vendor.not_approved"),
     REGISTRATION_FEE_ALREADY_PAID("VENDOR_013", HttpStatus.CONFLICT, "error.vendor.registration_fee_already_paid"),
     REGISTRATION_FEE_NOT_PAID("VENDOR_014", HttpStatus.CONFLICT, "error.vendor.registration_fee_not_paid"),
+    VENDOR_NOT_ACCEPTING_ORDERS("VENDOR_015", HttpStatus.CONFLICT, "error.vendor.not_accepting_orders"),
+    ORDER_PROFILE_NOT_FOUND("VENDOR_016", HttpStatus.NOT_FOUND, "error.vendor.order_profile_not_found"),
+    ORDER_TERM_REQUIRED("VENDOR_017", HttpStatus.BAD_REQUEST, "error.vendor.order_term_required"),
+    LOCK_REASON_REQUIRED("VENDOR_018", HttpStatus.BAD_REQUEST, "error.vendor.lock_reason_required"),
 
     // Value objects of a vendor profile
     TAX_CODE_INVALID("VENDOR_101", HttpStatus.BAD_REQUEST, "error.vendor.tax_code_invalid"),
     REPRESENTATIVE_NAME_INVALID("VENDOR_102", HttpStatus.BAD_REQUEST, "error.vendor.representative_name_invalid"),
     ID_NUMBER_INVALID("VENDOR_103", HttpStatus.BAD_REQUEST, "error.vendor.id_number_invalid"),
-    BANK_ACCOUNT_NUMBER_INVALID("VENDOR_104", HttpStatus.BAD_REQUEST, "error.vendor.bank_account_number_invalid");
+    BANK_ACCOUNT_NUMBER_INVALID("VENDOR_104", HttpStatus.BAD_REQUEST, "error.vendor.bank_account_number_invalid"),
+    DELIVERY_FEE_INVALID("VENDOR_105", HttpStatus.BAD_REQUEST, "error.vendor.delivery_fee_invalid"),
+    DELIVERY_AREAS_INVALID("VENDOR_106", HttpStatus.BAD_REQUEST, "error.vendor.delivery_areas_invalid");
 
     private final String code;
     private final HttpStatus httpStatus;

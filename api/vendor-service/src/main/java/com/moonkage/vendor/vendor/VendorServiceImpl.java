@@ -35,6 +35,7 @@ import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
 import com.moonkage.vendor.vendor.vo.BankAccountNumber;
+import com.moonkage.vendor.vendor.vo.DeliveryFee;
 import com.moonkage.vendor.vendor.vo.IdNumber;
 import com.moonkage.vendor.vendor.vo.RepresentativeName;
 import com.moonkage.vendor.vendor.vo.TaxCode;
@@ -54,8 +55,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Vendor profile, submission, review and registration fee (phases 1 and 2 of docs/services/vendor/completion-plan.md).
- * {@link #update} still answers NOT_IMPLEMENTED until phase 3.
+ * Vendor profile, submission, review, registration fee, delivery fee and lock (phases 1 to 3 of
+ * docs/services/vendor/completion-plan.md). Every change other services copy ends with a snapshot
+ * (vendor.updated / vendor.locked).
  */
 @Service
 @RequiredArgsConstructor
@@ -72,10 +74,16 @@ class VendorServiceImpl implements VendorService {
     private static final String FIELD_REASON = "reason";
     private static final String FIELD_KIND = "kind";
     private static final String FIELD_OBJECT_KEY = "objectKey";
+    private static final String FIELD_LOCAL_DELIVERY_FEE = "localDeliveryFee";
+    private static final String FIELD_STATUS = "status";
+    private static final String FIELD_STATUS_REASON = "statusReason";
     private static final String FIELD_LICENSE_CHECKED = "licenseChecked";
     private static final String FIELD_REGISTRY_CHECKED = "registryChecked";
 
     private final VendorRepository vendorRepository;
+    private final VendorFinder vendorFinder;
+    private final DeliveryAreaRepository deliveryAreaRepository;
+    private final VendorSnapshotPublisher snapshotPublisher;
     private final VendorDocumentRepository documentRepository;
     private final VendorOwnerCheckRepository ownerCheckRepository;
     private final VendorReviewRepository reviewRepository;
@@ -110,6 +118,7 @@ class VendorServiceImpl implements VendorService {
         Vendor vendor = register(caller.accountId(), toProfile(request, submission, ownerCard));
         attachDocuments(vendor.getId(), request.documents(), Map.of());
         recordSubmission(vendor, submission.representativeName(), ownerCard);
+        snapshotPublisher.announceUpdated(vendor, caller.accountId());
         return toDetailResponse(vendor, caller);
     }
 
@@ -141,36 +150,65 @@ class VendorServiceImpl implements VendorService {
     @Override
     @Transactional(readOnly = true)
     public VendorDetailResponse getVendor(CurrentUserInfo caller, String vendorId) {
-        Vendor vendor = getVendorFor(caller, vendorId);
+        Vendor vendor = vendorFinder.getVisibleTo(caller, vendorId);
         return toDetailResponse(vendor, caller);
     }
 
     @Override
     @Transactional
     public VendorDetailResponse resubmit(CurrentUserInfo caller, String vendorId, SubmitVendorRequest request) {
-        Vendor vendor = getVendor(vendorId);
-        if (!vendor.isOwnedBy(caller.accountId())) {
+        if (!vendorFinder.get(vendorId).isOwnedBy(caller.accountId())) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
         CheckedSubmission submission = check(request);
         OwnerCard ownerCard = getOwnerCard(caller.accountId(), submission.idNumber());
 
-        // the status check runs before any file is moved
+        // locked only now, not across the call to identity-service; the status check runs before any file moves
+        Vendor vendor = vendorFinder.getForChange(vendorId);
         vendor.resubmit(toProfile(request, submission, ownerCard));
         attachDocuments(vendorId, request.documents(), getCurrentDocuments(vendorId));
         recordSubmission(vendor, submission.representativeName(), ownerCard);
+        snapshotPublisher.announceUpdated(vendor, caller.accountId());
         return toDetailResponse(vendor, caller);
     }
 
     @Override
-    public VendorResponse update(CurrentUserInfo caller, String vendorId, UpdateVendorRequest request) {
-        throw new AppException(ErrorCode.NOT_IMPLEMENTED);
+    @Transactional
+    public VendorDetailResponse update(CurrentUserInfo caller, String vendorId, UpdateVendorRequest request) {
+        if (caller.isAdmin()) {
+            return lock(caller, vendorId, request);
+        }
+        if (request.status() != null || request.statusReason() != null) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+        DeliveryFee fee = atField(FIELD_LOCAL_DELIVERY_FEE, () -> DeliveryFee.of(request.localDeliveryFee()));
+        Vendor vendor = vendorFinder.getForOwnerChange(caller, vendorId);
+        vendor.changeLocalDeliveryFee(fee);
+        snapshotPublisher.announceUpdated(vendor, caller.accountId());
+        return toDetailResponse(vendor, caller);
+    }
+
+    /** FR-46: only LOCKED, with a reason (AC-46.2); the admin and the time travel on vendor.locked for the audit. */
+    private VendorDetailResponse lock(CurrentUserInfo caller, String vendorId, UpdateVendorRequest request) {
+        if (request.localDeliveryFee() != null) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+        if (request.status() != VendorStatus.LOCKED) {
+            throw new AppException(ErrorCode.INVALID_INPUT).atField(FIELD_STATUS);
+        }
+        if (!StringUtils.hasText(request.statusReason())) {
+            throw new AppException(ErrorCode.LOCK_REASON_REQUIRED).atField(FIELD_STATUS_REASON);
+        }
+        Vendor vendor = vendorFinder.getForChange(vendorId);
+        vendor.lock(request.statusReason().trim());
+        snapshotPublisher.announceLocked(vendor, caller.accountId());
+        return toDetailResponse(vendor, caller);
     }
 
     @Override
     @Transactional(readOnly = true)
     public VendorDocumentLinkResponse getDocumentLink(CurrentUserInfo caller, String vendorId, String documentId) {
-        getVendorFor(caller, vendorId);
+        vendorFinder.getVisibleTo(caller, vendorId);
         VendorDocument document = documentRepository
                 .findByIdAndVendorId(documentId, vendorId)
                 .orElseThrow(() -> new AppException(ErrorCode.DOCUMENT_NOT_FOUND));
@@ -183,7 +221,7 @@ class VendorServiceImpl implements VendorService {
     public VendorDocumentResponse createDocument(
             CurrentUserInfo caller, String vendorId, CreateVendorDocumentRequest request) {
         requireAdmin(caller);
-        Vendor vendor = getVendor(vendorId);
+        Vendor vendor = vendorFinder.get(vendorId);
         if (request.kind() != DocumentKind.FEE_INVOICE) {
             throw new AppException(ErrorCode.DOCUMENT_NOT_ACCEPTED).atField(FIELD_KIND);
         }
@@ -202,7 +240,7 @@ class VendorServiceImpl implements VendorService {
     @Transactional(readOnly = true)
     public List<OwnerCheckResponse> getOwnerChecks(CurrentUserInfo caller, String vendorId) {
         requireAdmin(caller);
-        getVendor(vendorId);
+        vendorFinder.get(vendorId);
         return ownerCheckRepository.findByVendorIdOrderBySubmissionNoAsc(vendorId).stream()
                 .map(VendorMapper::toOwnerCheckResponse)
                 .toList();
@@ -212,7 +250,7 @@ class VendorServiceImpl implements VendorService {
     @Transactional(readOnly = true)
     public List<VendorReviewResponse> getReviews(CurrentUserInfo caller, String vendorId) {
         requireAdmin(caller);
-        getVendor(vendorId);
+        vendorFinder.get(vendorId);
         return reviewRepository.findByVendorIdOrderByDecidedAtAsc(vendorId).stream()
                 .map(VendorMapper::toReviewResponse)
                 .toList();
@@ -223,7 +261,7 @@ class VendorServiceImpl implements VendorService {
     public VendorReviewResponse createReview(
             CurrentUserInfo caller, String vendorId, CreateVendorReviewRequest request) {
         requireAdmin(caller);
-        Vendor vendor = getVendor(vendorId);
+        Vendor vendor = vendorFinder.getForChange(vendorId);
         String reason = StringUtils.hasText(request.reason()) ? request.reason().trim() : null;
         checkReview(vendor, request, reason);
 
@@ -237,13 +275,14 @@ class VendorServiceImpl implements VendorService {
                 request.registryChecked()));
         VendorReviewedEvent event = VendorReviewedEvent.of(vendor, review, review.getDecidedAt());
         outboxService.enqueue(event.eventId(), RabbitConfig.VENDOR_REVIEWED_ROUTING_KEY, event);
+        snapshotPublisher.announceUpdated(vendor, caller.accountId());
         return VendorMapper.toReviewResponse(review);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<RegistrationFeePaymentResponse> getRegistrationFeePayments(CurrentUserInfo caller, String vendorId) {
-        Vendor vendor = getVendorFor(caller, vendorId);
+        Vendor vendor = vendorFinder.getVisibleTo(caller, vendorId);
         if (!vendor.isRegistrationFeePaid()) {
             return List.of();
         }
@@ -256,7 +295,7 @@ class VendorServiceImpl implements VendorService {
     /** No transaction: nothing is written here, and none should stay open across the call to payment-service. */
     @Override
     public RegistrationFeePaymentLinkResponse createRegistrationFeePayment(CurrentUserInfo caller, String vendorId) {
-        Vendor vendor = getVendor(vendorId);
+        Vendor vendor = vendorFinder.get(vendorId);
         if (!vendor.isOwnedBy(caller.accountId())) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
@@ -451,20 +490,11 @@ class VendorServiceImpl implements VendorService {
                         .findFirstByVendorIdOrderBySubmissionNoDesc(vendor.getId())
                         .orElse(null)
                 : null;
-        return VendorMapper.toDetailResponse(vendor, documents, ownerCheck);
-    }
-
-    private Vendor getVendor(String vendorId) {
-        return vendorRepository.findById(vendorId).orElseThrow(() -> new AppException(ErrorCode.VENDOR_NOT_FOUND));
-    }
-
-    /** The vendor, when the caller is its owner or an admin. */
-    private Vendor getVendorFor(CurrentUserInfo caller, String vendorId) {
-        Vendor vendor = getVendor(vendorId);
-        if (!caller.isAdmin() && !vendor.isOwnedBy(caller.accountId())) {
-            throw new AppException(ErrorCode.ACCESS_DENIED);
-        }
-        return vendor;
+        List<String> deliveryAreas = deliveryAreaRepository.findByVendorId(vendor.getId()).stream()
+                .map(area -> area.getProvinceCode().value())
+                .sorted()
+                .toList();
+        return VendorMapper.toDetailResponse(vendor, deliveryAreas, documents, ownerCheck);
     }
 
     private static void requireAdmin(CurrentUserInfo caller) {

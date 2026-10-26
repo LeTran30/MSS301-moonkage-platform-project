@@ -6,6 +6,7 @@ import com.moonkage.vendor.vendor.dto.response.VendorDetailResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
+import com.moonkage.vendor.vendor.vo.DeliveryFee;
 import com.moonkage.vendor.vendor.vo.RepresentativeName;
 import com.moonkage.vendor.vendor.vo.TaxCode;
 import java.util.List;
@@ -29,7 +30,7 @@ final class VendorMapper {
 
     /** @param ownerCheck null when the caller may not see it */
     static VendorDetailResponse toDetailResponse(
-            Vendor v, List<VendorDocument> documents, VendorOwnerCheck ownerCheck) {
+            Vendor v, List<String> deliveryAreas, List<VendorDocument> documents, VendorOwnerCheck ownerCheck) {
         return new VendorDetailResponse(
                 v.getId(),
                 v.getOwnerAccountId(),
@@ -47,7 +48,8 @@ final class VendorMapper {
                 v.getStatus(),
                 v.getStatusReason(),
                 v.canOperate(),
-                v.getLocalDeliveryFee(),
+                valueOf(v.getLocalDeliveryFee(), DeliveryFee::value),
+                deliveryAreas,
                 v.getRegistrationFeePaidAt(),
                 documents.stream().map(VendorMapper::toDocumentResponse).toList(),
                 ownerCheck == null ? null : toOwnerCheckResponse(ownerCheck),
@@ -88,7 +90,7 @@ final class VendorMapper {
     }
 
     /** Value objects travel as their plain value; a row from before the profile was required may hold null. */
-    private static <T> String valueOf(T valueObject, Function<T, String> value) {
+    private static <T, R> R valueOf(T valueObject, Function<T, R> value) {
         return valueObject == null ? null : value.apply(valueObject);
     }
 }

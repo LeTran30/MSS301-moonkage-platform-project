@@ -393,13 +393,13 @@ class VendorApiIntegrationTest {
     // ─── framework behaviour ───
 
     @Test
-    void anOperationNotWrittenYetAnswersNotImplementedInTheApiResponseShape() throws Exception {
-        mvc.perform(asMember(patch("/api/vendors/{id}", "any"))
+    void anErrorAnswersInTheApiResponseShape() throws Exception {
+        mvc.perform(asMember(patch("/api/vendors/{id}", "missing"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isNotImplemented())
-                .andExpect(jsonPath("$.status").value(501))
-                .andExpect(jsonPath("$.code").value("COMMON_501"))
+                        .content("{\"localDeliveryFee\":0}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.code").value("VENDOR_001"))
                 .andExpect(jsonPath("$.message").value(notNullValue()))
                 .andExpect(jsonPath("$.data").value(nullValue()));
     }

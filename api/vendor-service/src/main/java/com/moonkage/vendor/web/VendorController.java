@@ -1,20 +1,20 @@
 package com.moonkage.vendor.web;
 
 import com.moonkage.vendor.common.exception.ApiResponse;
-import com.moonkage.vendor.deliveryarea.DeliveryAreaService;
-import com.moonkage.vendor.deliveryarea.dto.SaveDeliveryAreasRequest;
-import com.moonkage.vendor.orderprofile.OrderProfileService;
-import com.moonkage.vendor.orderprofile.dto.request.SaveOrderProfileRequest;
-import com.moonkage.vendor.orderprofile.dto.response.OrderProfileResponse;
 import com.moonkage.vendor.security.CurrentUser;
 import com.moonkage.vendor.security.CurrentUserInfo;
+import com.moonkage.vendor.vendor.DeliveryAreaService;
+import com.moonkage.vendor.vendor.OrderProfileService;
 import com.moonkage.vendor.vendor.VendorService;
 import com.moonkage.vendor.vendor.VendorStatus;
 import com.moonkage.vendor.vendor.dto.request.CreateVendorDocumentRequest;
 import com.moonkage.vendor.vendor.dto.request.CreateVendorReviewRequest;
 import com.moonkage.vendor.vendor.dto.request.DocumentUploadRequest;
+import com.moonkage.vendor.vendor.dto.request.SaveDeliveryAreasRequest;
+import com.moonkage.vendor.vendor.dto.request.SaveOrderProfileRequest;
 import com.moonkage.vendor.vendor.dto.request.SubmitVendorRequest;
 import com.moonkage.vendor.vendor.dto.request.UpdateVendorRequest;
+import com.moonkage.vendor.vendor.dto.response.OrderProfileResponse;
 import com.moonkage.vendor.vendor.dto.response.OwnerCheckResponse;
 import com.moonkage.vendor.vendor.dto.response.PresignedUploadLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentLinkResponse;
@@ -96,7 +96,7 @@ public class VendorController {
     }
 
     @PatchMapping("/api/vendors/{vendorId}")
-    public ResponseEntity<ApiResponse<VendorResponse>> update(
+    public ResponseEntity<ApiResponse<VendorDetailResponse>> update(
             @CurrentUser CurrentUserInfo caller,
             @PathVariable String vendorId,
             @RequestBody UpdateVendorRequest request) {
@@ -128,7 +128,7 @@ public class VendorController {
     public ResponseEntity<ApiResponse<List<String>>> saveDeliveryAreas(
             @CurrentUser CurrentUserInfo caller,
             @PathVariable String vendorId,
-            @RequestBody SaveDeliveryAreasRequest request) {
+            @Valid @RequestBody SaveDeliveryAreasRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(deliveryAreaService.saveDeliveryAreas(caller, vendorId, request)));
     }
 
@@ -142,7 +142,7 @@ public class VendorController {
     public ResponseEntity<ApiResponse<OrderProfileResponse>> saveOrderProfile(
             @CurrentUser CurrentUserInfo caller,
             @PathVariable String vendorId,
-            @RequestBody SaveOrderProfileRequest request) {
+            @Valid @RequestBody SaveOrderProfileRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(orderProfileService.saveOrderProfile(caller, vendorId, request)));
     }
 

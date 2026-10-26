@@ -21,9 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 class PaymentSucceededListener {
 
-    private final VendorRepository vendorRepository;
+    private final VendorFinder vendorFinder;
     private final InboxService inboxService;
     private final OutboxService outboxService;
+    private final VendorSnapshotPublisher snapshotPublisher;
 
     @Transactional
     @RabbitListener(queues = RabbitConfig.PAYMENT_EVENTS_QUEUE)
@@ -32,7 +33,7 @@ class PaymentSucceededListener {
                 || !inboxService.markProcessed(event.eventId(), RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY)) {
             return;
         }
-        Vendor vendor = vendorRepository.findById(event.referenceId()).orElse(null);
+        Vendor vendor = vendorFinder.findForChange(event.referenceId()).orElse(null);
         if (vendor == null) {
             log.error(
                     "payment.succeeded {} names vendor {}, which does not exist", event.eventId(), event.referenceId());
@@ -49,5 +50,7 @@ class PaymentSucceededListener {
         }
         VendorRegistrationFeePaidEvent paid = VendorRegistrationFeePaidEvent.of(vendor);
         outboxService.enqueue(paid.eventId(), RabbitConfig.VENDOR_REGISTRATION_FEE_PAID_ROUTING_KEY, paid);
+        // canOperate turned true: catalog shows the shop's products from now on (AC-27.5)
+        snapshotPublisher.announceUpdated(vendor, null);
     }
 }

@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Package-by-component rules of vendor-service (docs/conventions/coding-rules.md 1.1). Each top-level package
- * (vendor, deliveryarea, orderprofile, outbox, ...) is a component: other code uses its public service interface and
+ * (vendor, registrationfee, inbox, outbox, ...) is a component: other code uses its public service interface and
  * DTOs; its entities, repositories and implementations are package-private. {@code web} is the only HTTP entry
  * point and nothing depends on it. Cycles between components are checked by the shared ArchitectureTest
  * (NO_PACKAGE_CYCLES).
  *
  * <pre>
- * web ──▶ vendor, deliveryarea, orderprofile ──▶ security, client, outbox   (all ──▶ common)
+ * web ──▶ vendor, registrationfee ──▶ security, client, inbox, outbox   (all ──▶ common)
  * </pre>
  */
 @AnalyzeClasses(

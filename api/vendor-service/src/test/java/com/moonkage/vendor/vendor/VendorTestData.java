@@ -9,7 +9,12 @@ final class VendorTestData {
 
     private VendorTestData() {}
 
+    /** A self-producing shop that does not accept orders. */
     static VendorProfile profile() {
+        return profile(SupplySource.SELF_PRODUCED, true, false);
+    }
+
+    static VendorProfile profile(SupplySource supplySource, boolean sellsShop, boolean acceptsOrders) {
         return new VendorProfile(
                 "Tiệm bánh Trăng",
                 VendorEntityType.SOLE_PROPRIETORSHIP,
@@ -18,9 +23,9 @@ final class VendorTestData {
                 ProvinceCode.of("79"),
                 RepresentativeName.of("NGUYEN VAN A"),
                 new HashedIdNumber("a".repeat(64), 1, "********1234"),
-                SupplySource.SELF_PRODUCED,
-                true,
-                false,
+                supplySource,
+                sellsShop,
+                acceptsOrders,
                 BankAccount.of(
                         "Vietcombank",
                         "NGUYEN VAN A",

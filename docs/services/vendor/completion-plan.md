@@ -32,9 +32,7 @@
 | Package | Sở hữu | Public |
 | --- | --- | --- |
 | `web` | — | `VendorController`, `RegistrationFeeConfigController`, `CakeAttributeController`, `ProductController`, `StockReservationController` (nội bộ) |
-| `vendor` | `vendors`, `vendor_documents`, `vendor_owner_checks`, `vendor_reviews` | `VendorService`, `VendorView` (bản chụp chỉ đọc: `ownerAccountId`, `status`, `sellsShop`, `acceptsOrders`, `isOwnedBy()`, `canOperate()`), DTO, enum trạng thái, `vendor.vo` |
-| `deliveryarea` | `vendor_delivery_areas` | `DeliveryAreaService` |
-| `orderprofile` | `order_profiles`, `ref_price_tiers`, `order_profile_custom_types` | `OrderProfileService` |
+| `vendor` | `vendors`, `vendor_documents`, `vendor_owner_checks`, `vendor_reviews`, `vendor_delivery_areas`, `order_profiles`, `ref_price_tiers`, `order_profile_custom_types` | `VendorService`, `DeliveryAreaService`, `OrderProfileService`, `VendorView` (bản chụp chỉ đọc: `ownerAccountId`, `status`, `sellsShop`, `acceptsOrders`, `isOwnedBy()`, `canOperate()`), DTO, enum trạng thái, `vendor.vo` |
 | `registrationfee` | `registration_fee_configs` | `RegistrationFeeService` |
 | `cakeattribute` | `cake_attributes` | `CakeAttributeService`, `CakeAttributeCode` |
 | `product` | `products`, `product_images`, `product_price_tiers`, `product_cake_attributes` | `ProductService` |
@@ -144,6 +142,18 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 **Xong khi:** vendor đã duyệt đóng phí qua VNPay sandbox, `canOperate = true`; IPN lặp không ghi hai lần.
 
 ### 3. Cài đặt bán và khóa người bán (FR-28, FR-35, FR-46)
+
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+
+- Vùng giao và hồ sơ nhận đặt hàng gộp vào component `vendor` (bỏ `deliveryarea`, `orderprofile`): chúng là một phần aggregate `Vendor`, và bản chụp `vendor.updated` phải đọc cả ba mà không sinh vòng phụ thuộc. `DeliveryAreaService`, `OrderProfileService` vẫn là interface public riêng.
+- Mọi thay đổi aggregate nạp vendor qua `VendorFinder.getForChange`: khóa dòng và tăng `version` ngay (`PESSIMISTIC_FORCE_INCREMENT` trên entity đang quản lý), nên đổi vùng giao hay hồ sơ đặt hàng cũng có `sourceVersion` mới, và hai thay đổi của một vendor không phát lệch thứ tự.
+- Một sự kiện `VendorSnapshotEvent` mang toàn bộ trạng thái: `sourceVersion`, `ownerAccountId`, `businessName`, `status`, `statusReason`, `canOperate`, `sellsShop`, `acceptsOrders`, `deliveryAreas`, `localDeliveryFee`, `orderProfile` (cho `vendor_snapshots` của quotation), `changedBy`, `occurredAt`. Phát trên `vendor.updated` sau nộp, nộp lại, duyệt, đóng phí, đổi phí giao, đổi vùng giao, đổi hồ sơ đặt hàng.
+- Khóa chỉ phát `vendor.locked` (cùng payload), không phát thêm `vendor.updated`; bên nghe coi hai khóa như nhau. Ai khóa và lúc nào nằm ở `changedBy`, `occurredAt` của sự kiện cho audit (AC-46.2); bảng `vendors` không thêm cột `locked_by`.
+- Admin gửi trạng thái khác `LOCKED` → 400 tại `status`; gửi `localDeliveryFee` → 403. Thiếu lý do → `VENDOR_018` tại `statusReason`.
+- Cài đặt bán chỉ sửa được khi vendor `APPROVED` (`VENDOR_012`); khóa rồi thì giữ nguyên cài đặt cũ.
+- Hồ sơ đặt hàng: AC-35.2 (tự sản xuất) bắt buộc `weeklyCapacity`, `packagingTypes`, `logoPrinting`; AC-35.3 (bán lại) bắt buộc `distributedBrands`, `gatherableQty`; `BOTH` bắt buộc cả hai nhóm (`VENDOR_017` tại trường thiếu). Vỏ và nhân của hồ sơ (cột `cake_types`) dời sang giai đoạn 4, khi có `cake_attributes`.
+- Bậc giá thay theo `fromQty`: bậc giữ lại chỉ đổi giá, không xóa rồi chèn, để không vướng ràng buộc duy nhất.
+- Đổi tài khoản ngân hàng ngoài nộp lại chưa làm (chưa có yêu cầu); `vendor.bank_account_changed` để sau.
 
 - `PATCH /api/vendors/{id}` (S): `{localDeliveryFee}` → `DeliveryFee`; trường khác → 403.
 - `PATCH /api/vendors/{id}` (A): `{status: LOCKED, statusReason}` bắt buộc lý do; outbox `vendor.locked`, `vendor.updated` (BR-20).

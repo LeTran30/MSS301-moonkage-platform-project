@@ -1,21 +1,23 @@
-package com.moonkage.vendor.orderprofile.dto.response;
+package com.moonkage.vendor.vendor.dto.response;
 
+import com.moonkage.vendor.vendor.CustomType;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
+/** A vendor's order profile (FR-35); price tiers ordered by fromQty. */
 public record OrderProfileResponse(
-        String id,
         int minQty,
-        Integer leadTimeDays,
+        int leadTimeDays,
+        List<PriceTier> priceTiers,
+        Set<CustomType> customTypes,
         String earlyBirdOffer,
         Integer weeklyCapacity,
-        String cakeTypes,
         String packagingTypes,
         Boolean logoPrinting,
         String distributedBrands,
         Integer gatherableQty,
-        Set<String> customTypes,
-        List<PriceTier> priceTiers) {
+        Instant updatedAt) {
 
     public record PriceTier(int fromQty, long unitPrice) {}
 }

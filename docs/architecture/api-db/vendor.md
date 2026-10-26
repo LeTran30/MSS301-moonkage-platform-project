@@ -91,7 +91,7 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 
 **Phát**
 
-- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator
+- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator. Cùng một payload là bản chụp đầy đủ của vendor (`sourceVersion` = `vendors.version`, vùng giao, phí giao, hồ sơ nhận đặt hàng); bên nghe bỏ bản có `sourceVersion` không lớn hơn bản đang giữ. Khóa chỉ phát `vendor.locked`.
 - `product.upserted`, `product.removed` → catalog, order, orchestrator
 - `vendor.submitted`, `vendor.onboarding_recorded`, `vendor.reviewed`, `vendor.registration_fee_paid`, `registration_fee.changed`, `vendor.bank_account_changed` → orchestrator
 
