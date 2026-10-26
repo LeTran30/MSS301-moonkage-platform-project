@@ -67,7 +67,7 @@ Seed không bao giờ đụng tới tài khoản người dùng tự tạo: emai
 | vendor | `0002` | `…-000200000001` | Trăng Vàng (của member4) | vendor |
 | | | `…-000200000002` | Bánh Quê (của member5) | vendor |
 | product | `0003` | | *chờ người phụ trách vendor* (sản phẩm ghi ở vendor-service, L-18) | vendor |
-| tender request | `0004` | | *chờ người phụ trách quotation* | quotation |
+| quote request | `0004` | | *chưa dùng*; seed quotation chỉ có bản sao người bán (`vendor_snapshots`) theo ID `0002` | quotation |
 | order | `0005` | | *chờ người phụ trách order* | order |
 | address | `0006` | `…-000600000001`, `…02` | 2 địa chỉ của member1 (TP.HCM, Hà Nội) | identity |
 | | | `…-000600000003` | địa chỉ của member2 | identity |

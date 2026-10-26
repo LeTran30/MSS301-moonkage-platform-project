@@ -10,7 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -34,6 +34,9 @@ public class DisbursementRequest {
     @Column(name = "order_id", nullable = false)
     private String orderId;
 
+    @Column(length = 36)
+    private String vendorId;
+
     @Column(nullable = false)
     private Long amount;
 
@@ -52,8 +55,12 @@ public class DisbursementRequest {
     @Column(columnDefinition = "TEXT")
     private String reason;
 
-    private LocalDateTime decidedAt;
+    /** The admin account that decided (FR-47). */
+    @Column(length = 36)
+    private String decidedBy;
+
+    private Instant decidedAt;
 
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

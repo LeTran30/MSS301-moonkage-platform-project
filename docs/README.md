@@ -33,6 +33,7 @@ Mọi tài liệu của dự án nằm trong `docs/`, xếp theo **loại**: m�
 |---|---|---|
 | identity | [services/identity/README.md](services/identity/README.md) | [classes/](services/identity/classes/) |
 | catalog | — | [classes/](services/catalog/classes/) |
+| quotation | [services/quotation/README.md](services/quotation/README.md) | [classes/](services/quotation/classes/) |
 | common-storage (thư viện) | — | [classes/](services/common-storage/classes/) |
 
 Service chưa có thư mục thì tạo `services/<tên>/README.md` khi viết tài liệu đầu tiên.

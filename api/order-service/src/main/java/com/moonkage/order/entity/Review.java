@@ -7,7 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,7 +17,7 @@ import org.hibernate.annotations.CreationTimestamp;
  * Buyer review of a delivered order's product; one vendor reply, never deletable by vendor (FR-11, FR-34).
  */
 @Entity
-@Table(name = "reviews", uniqueConstraints = @UniqueConstraint(columnNames = {"orderId", "productId"}))
+@Table(name = "reviews", uniqueConstraints = @UniqueConstraint(columnNames = {"order_id", "product_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -45,11 +45,6 @@ public class Review {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(columnDefinition = "TEXT")
-    private String vendorReply;
-
-    private LocalDateTime repliedAt;
-
     @CreationTimestamp
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

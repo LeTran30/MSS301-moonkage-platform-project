@@ -7,8 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,6 +33,13 @@ public class Ledger {
     @Column(name = "order_id", nullable = false, unique = true)
     private String orderId;
 
+    @Column(length = 36)
+    private String vendorId;
+
+    /** What the buyer paid for the order; held = totalCollected - disbursed - refunded - paidOut. */
+    @Column(nullable = false)
+    private Long totalCollected = 0L;
+
     @Column(nullable = false)
     private Long held = 0L;
 
@@ -49,8 +56,9 @@ public class Ledger {
     private LocalDate expectedPayoutDate;
 
     @Version
+    @Column(nullable = false)
     private Long version;
 
     @UpdateTimestamp
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 }
