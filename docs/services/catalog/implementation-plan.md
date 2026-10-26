@@ -69,7 +69,7 @@ Tổng dự kiến khoảng **6–8,5 ngày tập trung**. Để cân đối STE
 - Test relay: broker down/NACK/timeout/return giữ pending; ACK có route mới đánh published; messageId=eventId, persistent, chấp nhận at-least-once khi crash sau ACK.
 - C2/C3 cần Postgres thật cho text[], jsonb, pg_trgm, view, upsert version và cạnh tranh consumer; không thay bằng H2 để kết luận tương đương.
 - AC-05.3: public listing phải có vùng giao hợp lệ trước khi trả sản phẩm; thiếu provinceCode yêu cầu chọn vùng, không mặc định trả tất cả LOCAL. Owner/admin listing là luồng quản lý riêng. Detail chưa chọn vùng không tự gán shippingFee=0; web yêu cầu chọn vùng để báo phí.
-- C1 đã commit/push `3cbb1ff` theo lệnh riêng của Lê Trần. **C2 chưa được commit/push/merge/deploy**; tiếp tục giữ gate cho tới lệnh riêng. Mỗi mốc cập nhật [README](README.md), pseudocode class và kết quả test thực tế.
+- C1 đã push `3cbb1ff`. Master prompt Phase A–C cho phép commit **local** mỗi mốc và merge develop **vào feat/catalog-service**, không rebase. Không push, merge vào develop/main hoặc deploy. Phase D chỉ bắt đầu khi Lê Trần xác nhận contract đã được nhóm duyệt. Mỗi mốc cập nhật [README](README.md), pseudocode class và kết quả test thực tế.
 
 ## 7. Thiết kế dự kiến cho taxonomy (chưa thêm schema/API)
 
@@ -97,17 +97,25 @@ Docker ban đầu chưa chạy; đã khởi động Docker Desktop để chạy 
 
 ## 9. C2: phạm vi đã làm và nghiệm thu còn thiếu
 
+Cập nhật master prompt Phase A–C: C2 cũ đã commit local `1e160ae`; merge develop `6523d00` bằng merge commit local `3227fed` sau xác nhận Lê Trần cho phép nhận nguyên migration L-19. A không có conflict Git, chỉ sửa tương thích schema catalog; verify A **393 pass / 0 fail / 0 error / 0 skip**. Proposal catalog ghi taxonomy ở §7 không còn hiệu lực. [Báo cáo theo phase](phase-abc-report.md).
+
+Phase B thêm recovery internal port: batch rebuild rating từ reviews; replay pending raw qua interface ProjectionReplayAdapter, transaction riêng lock entry, kiểm marker đúng eventId/key. Không có adapter production, nên chưa duyệt contract thì toàn bộ entry liên quan deferred. ReplayCheckpoint chỉ là scan cursor tạm, không persist như producer checkpoint; mỗi run mới bắt đầu null. Không tạo feed giả, không xóa processed_events/tombstone/raw. Full rebuild còn blocker producer feed và business contract.
+
+Verify B bản cuối **403 pass / 0 fail / 0 error / 0 skip**, full clean verify 18:05:11 ngày 26/10/2026; catalog 109 gồm 38 full application tests. Đếm XML theo 11 module parent POM sau clean, không targets cũ; PG/Rabbit thật, checks chất lượng và diff check qua. C2 vẫn chưa hoàn tất business integration.
+
+Tài liệu bàn giao audit cho owner orchestrator: [handoff](orchestrator-handoff.md), không sửa code hoặc gửi tin ra ngoài. Pseudocode: [recovery coordinator](classes/ProjectionRecoveryServiceImpl.md), [entry transaction](classes/ProjectionReplayEntryServiceImpl.md).
+
 Đã đối chiếu trước code: [audit contract](c2-contract-audit.md). Lê Trần xác nhận chưa có contract được nhóm duyệt ngoài repo, cho phép chỉ triển khai phần đã xác nhận và cô lập legacy. Giữ nguyên code vendor/order/orchestrator/frontend, migration V2, writer entity/repository và test ảnh cũ. Migration mới chỉ thêm inbox/tombstone và backfill removal đã tồn tại.
 
 - Runtime mặc định: read-only ProductListing/view, basic public reads và reviews; không storage upload/MinIO startup. Entity/repository legacy còn trong source/profile, không giả làm bản đọc và không còn chặn default entity scan.
 - Core nội bộ đã chuẩn hóa theo row V2: transactional eventId dedup, bigint version gate, tombstone kể cả removed đến trước, vendor state stream độc lập product, reviewId dedup và aggregate kể cả reviews đến trước. Không dùng timestamp làm version.
 - Rabbit chỉ capture minimum envelope đã chốt vào JSONB inbox; ACK sau commit, malformed/conflict vào DLQ, transient DB requeue. Không đánh processed hay sửa projection từ wire payload chưa duyệt. Tests core fixtures không phải producer contract tests.
-- Recovery: đọc pending theo batch, giữ raw sau processing và rebuild rating từ reviews. **Full replay/rebuild chưa hoàn tất**: thiếu business adapter, snapshot/history feed và checkpoint của producer. Không xóa processed_events/tombstone để tự dựng rebuild giả.
+- Recovery: đọc/replay pending theo batch, giữ raw sau processing, rebuild rating từ reviews theo batch. **Full replay/rebuild chưa hoàn tất**: thiếu business adapter, snapshot/history feed và checkpoint của producer. Không xóa processed_events/tombstone để tự dựng rebuild giả.
 - **Vendor endpoint chưa có** kể cả remote develop mới: không thể bàn giao/xóa writer. **Product event chưa chốt full/patch, field/envelope/tiers/sourceVersion wire; vendor.locked full/signal/shared version chưa chốt; review.created wire và review sửa/xóa chưa chốt.** C2 chưa nghiệm thu business event E2E.
 - **Orchestrator adapter/dedup cho interprovince_fee.changed vẫn thiếu**, giữ pending C1 khi không route; không sửa ở C2.
 - C2 chưa được công bố hoàn tất trước khi các blocker contract được giải quyết.
 
-### Kết quả bản C2 cuối, 26/10/2026
+### Lịch sử kiểm tra C2 trước master prompt Phase A–C, 26/10/2026
 
 - Lệnh Maven wrapper từ `api`: `-o -B -ntp clean verify`; kết thúc **BUILD SUCCESS lúc 17:31 (Asia/Saigon)**, cả parent và 11 module con thành công. Spotless/Checkstyle/Error Prone/ArchUnit qua, không thay cấu hình chất lượng.
 - **371 tests: 371 pass, 0 failure, 0 error, 0 skip.** Cách đếm: đọc danh sách `<modules>` trong `api/pom.xml`, cộng thuộc tính tests/failures/errors/skipped của `target/surefire-reports/TEST-*.xml` chỉ ở các module đó sau clean verify; loại targets cũ của module đã xóa.

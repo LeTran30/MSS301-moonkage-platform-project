@@ -581,6 +581,180 @@ class CatalogProjectionIntegrationTest {
         assertThat(count("processed_events")).isZero();
     }
 
+    @Test
+    void defaultRecoveryHasNoBusinessAdapterAndDefersStoredInboxAcrossPages() {
+        for (String eventId : List.of("a", "b", "c")) {
+            inbox.capture("product.removed", bytes("{\"eventId\":\"" + eventId + "\"}"));
+        }
+        jdbc.update("UPDATE projection_inbox SET received_at=?", java.sql.Timestamp.from(REVIEW_TIME));
+        var recovery = context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class);
+        var first = recovery.replayPending(null, 2);
+        assertThat(first.inspected()).isEqualTo(2);
+        assertThat(first.deferred()).isEqualTo(2);
+        assertThat(first.applied()).isZero();
+        assertThat(first.hasMore()).isTrue();
+        assertThat(first.nextScanPosition().eventId()).isEqualTo("b");
+        var second = recovery.replayPending(first.nextScanPosition(), 2);
+        assertThat(second.inspected()).isEqualTo(1);
+        assertThat(second.deferred()).isEqualTo(1);
+        assertThat(second.hasMore()).isFalse();
+        assertThat(context.getBeansOfType(com.moonkage.catalog.service.replay.ProjectionReplayAdapter.class))
+                .isEmpty();
+        assertThat(count("processed_events")).isZero();
+        assertThat(count("product_tombstones")).isZero();
+        assertThat(count("projection_inbox")).isEqualTo(3);
+    }
+
+    @Test
+    void ratingBatchRebuildUsesReviewsWithoutResettingClaimsOrTombstones() {
+        for (String productId : List.of("a", "b", "c")) {
+            projection.applyProduct(id(), product(productId, 1, productId, ProductStatus.ON_SALE));
+        }
+        projection.applyReview(id(), review("a-review", "a", 5));
+        projection.applyReview(id(), review("b-review", "b", 3));
+        projection.applyReview(id(), review("early", "missing-product", 4));
+        projection.removeProduct(id(), "a", 2);
+        long claims = count("processed_events");
+        jdbc.update("UPDATE product_views SET rating_count=999, rating_avg=1");
+        var recovery = context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class);
+        var first = recovery.rebuildRatings(null, 2);
+        assertThat(first.rebuilt()).isEqualTo(2);
+        assertThat(first.hasMore()).isTrue();
+        assertThat(first.nextProductId()).isEqualTo("b");
+        var second = recovery.rebuildRatings(first.nextProductId(), 2);
+        assertThat(second.rebuilt()).isEqualTo(1);
+        assertThat(second.hasMore()).isFalse();
+        assertThat(jdbc.queryForList("SELECT rating_count FROM product_views ORDER BY product_id", Integer.class))
+                .containsExactly(1, 1, 0);
+        assertThat(jdbc.queryForObject("SELECT rating_avg FROM product_views WHERE product_id='c'", Object.class))
+                .isNull();
+        assertThat(count("processed_events")).isEqualTo(claims);
+        assertThat(count("product_tombstones")).isEqualTo(1);
+        assertThat(count("product_reviews")).isEqualTo(3);
+    }
+
+    @Test
+    void replaySkeletonUsesStoredIdentityAndSkipsPreviouslyAppliedRows() {
+        captureRemovalFixture("replay-event");
+        var entryService = context.getBean(com.moonkage.catalog.service.ProjectionReplayEntryService.class);
+        var adapter = fixtureAdapter(event -> projection.removeProduct(event.eventId(), "fixture-product", 3));
+        assertThat(entryService.replay("replay-event", adapter)).isEqualTo(ProjectionOutcome.APPLIED);
+        assertThat(entryService.replay("replay-event", adapter)).isEqualTo(ProjectionOutcome.DUPLICATE);
+        assertThat(count("processed_events")).isEqualTo(1);
+        assertThat(count("product_tombstones")).isEqualTo(1);
+        assertThat(count("projection_inbox")).isEqualTo(1);
+    }
+
+    @Test
+    void replayRollsBackProjectionAndMarkerWhenAdapterFailsAfterApplying() {
+        captureRemovalFixture("failed");
+        var entryService = context.getBean(com.moonkage.catalog.service.ProjectionReplayEntryService.class);
+        var adapter = fixtureAdapter(event -> {
+            projection.removeProduct(event.eventId(), "fixture-product", 3);
+            throw new IllegalStateException("test adapter fails after mutation");
+        });
+        assertThatThrownBy(() -> entryService.replay("failed", adapter)).isInstanceOf(IllegalStateException.class);
+        assertThat(count("processed_events")).isZero();
+        assertThat(count("product_tombstones")).isZero();
+        assertThat(inbox.findPending(10)).hasSize(1);
+    }
+
+    @Test
+    void replayRefusesNoOpAdapterWithoutProcessedMarker() {
+        captureRemovalFixture("no-op");
+        var entryService = context.getBean(com.moonkage.catalog.service.ProjectionReplayEntryService.class);
+        assertThatThrownBy(() -> entryService.replay("no-op", fixtureAdapter(event -> ProjectionOutcome.APPLIED)))
+                .isInstanceOf(com.moonkage.catalog.exception.CatalogException.class);
+        assertThat(count("processed_events")).isZero();
+        assertThat(inbox.findPending(10)).hasSize(1);
+    }
+
+    @Test
+    void replayRefusesMarkerForDifferentRoutingKeyAndRollsItBack() {
+        captureRemovalFixture("wrong-key");
+        var entryService = context.getBean(com.moonkage.catalog.service.ProjectionReplayEntryService.class);
+        var adapter = fixtureAdapter(event -> projection.applyReview(event.eventId(), review("r", "p", 5)));
+        assertThatThrownBy(() -> entryService.replay("wrong-key", adapter))
+                .isInstanceOf(com.moonkage.catalog.exception.CatalogException.class);
+        assertThat(count("processed_events")).isZero();
+        assertThat(count("product_reviews")).isZero();
+    }
+
+    @Test
+    void concurrentReplayWorkersLockTheSameStoredEntryAndApplyOnlyOnce() throws Exception {
+        captureRemovalFixture("concurrent-replay");
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        var adapter = fixtureAdapter(event -> {
+            calls.incrementAndGet();
+            return projection.removeProduct(event.eventId(), "fixture-product", 3);
+        });
+        var entryService = context.getBean(com.moonkage.catalog.service.ProjectionReplayEntryService.class);
+        parallel(12, index -> entryService.replay("concurrent-replay", adapter));
+        assertThat(calls.get()).isEqualTo(1);
+        assertThat(count("processed_events")).isEqualTo(1);
+    }
+
+    @Test
+    void scanCheckpointIsNotDurableAndRestartFindsRowsCommittedBehindIt() {
+        captureRemovalFixture("first");
+        var recovery = context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class);
+        var first = recovery.replayPending(null, 1);
+        captureRemovalFixture("late-commit");
+        jdbc.update(
+                "UPDATE projection_inbox SET received_at=? WHERE event_id='late-commit'",
+                java.sql.Timestamp.from(REVIEW_TIME));
+        assertThat(recovery.replayPending(first.nextScanPosition(), 10).inspected())
+                .isZero();
+        assertThat(recovery.replayPending(null, 10).deferred()).isEqualTo(2);
+        assertThat(count("processed_events")).isZero();
+    }
+
+    @Test
+    void recoveryCoordinatorReplaysStoredInboxThroughTestOnlyAdapterAndRetainsRaw() {
+        captureRemovalFixture("coordinator");
+        var recovery = new com.moonkage.catalog.service.impl.ProjectionRecoveryServiceImpl(
+                context.getBean(com.moonkage.catalog.repository.ProjectionRecoveryRepository.class),
+                projection,
+                context.getBean(com.moonkage.catalog.service.ProjectionReplayEntryService.class),
+                List.of(fixtureAdapter(event -> projection.removeProduct(event.eventId(), "fixture-product", 3))));
+        var result = recovery.replayPending(null, 10);
+        assertThat(result.applied()).isEqualTo(1);
+        assertThat(result.deferred()).isZero();
+        assertThat(inbox.findPending(10)).isEmpty();
+        assertThat(count("projection_inbox")).isEqualTo(1);
+    }
+
+    @Test
+    void recoveryRejectsInvalidBatchAndCursorBeforeMutation() {
+        var recovery = context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class);
+        assertThatThrownBy(() -> recovery.replayPending(null, 0)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> recovery.rebuildRatings(null, 1001)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> recovery.rebuildRatings("", 10)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new com.moonkage.catalog.dto.replay.ReplayCheckpoint(null, "id"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(count("processed_events")).isZero();
+    }
+
+    private void captureRemovalFixture(String eventId) {
+        inbox.capture("product.removed", bytes("{\"eventId\":\"" + eventId + "\"}"));
+    }
+
+    private com.moonkage.catalog.service.replay.ProjectionReplayAdapter fixtureAdapter(
+            java.util.function.Function<com.moonkage.catalog.entity.projection.InboxEntry, ProjectionOutcome> apply) {
+        // Transaction test fixture only: no invented producer fields, wire mapping or replay source.
+        return new com.moonkage.catalog.service.replay.ProjectionReplayAdapter() {
+            @Override
+            public String routingKey() {
+                return "product.removed";
+            }
+
+            @Override
+            public ProjectionOutcome apply(com.moonkage.catalog.entity.projection.InboxEntry event) {
+                return apply.apply(event);
+            }
+        };
+    }
+
     private void seedVendor() {
         projection.applyVendor(id(), "vendor.updated", vendor(1, false));
     }

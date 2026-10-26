@@ -5,6 +5,7 @@ Ngày: 26/10/2026. Nhánh `feat/catalog-service`. Không push, merge vào develo
 ## Phase A — khóa C2, nhận develop
 
 - A1 commit **local** `1e160ae`: C2 kỹ thuật đã kiểm chứng 371 tests ở phiên trước. Không đưa tài liệu audit cũ ngoài scope vào commit.
+- Merge commit **local** `3227fed`, parents `1e160ae` và `6523d00`.
 - Fetch thực tế: develop mới nhất là `6523d00`, mới hơn `d211767` trong prompt; bao gồm L-19 và migration catalog `V2026_10_22_1510__product_views_crust_filling.sql`.
 - Lê Trần đã xác nhận ngoại lệ: **cho phép nhận migration đã merge từ develop; chỉ sửa tương thích catalog, không triển khai C3**. Giữ nguyên migration, không sửa/xóa checksum, không phục hồi cake_type hoặc tạo từ điển ở catalog.
 - Merge `--no-ff`, không rebase. **Không có conflict Git**; Dockerfile/catalog API-DB docs tự merge. Giữ copy src/pom common-reference của C2, nhận VendorInfo.businessName từ develop.
@@ -15,6 +16,11 @@ Ngày: 26/10/2026. Nhánh `feat/catalog-service`. Không push, merge vào develo
 ## Phase B — phạm vi recovery được phép
 
 Chỉ dùng dữ liệu catalog đã lưu và contract tối thiểu đã xác nhận. Không tạo feed/snapshot giả, không suy diễn payload nghiệp vụ, không reset processed_events/tombstone. Checkpoint tạm để quét inbox không được coi là checkpoint nguồn producer.
+
+- B1: batch rebuild rating_count/rating_avg từ reviews của sản phẩm hiện có. Không tái tạo product/vendor đã mất khi raw payload chưa có adapter được duyệt.
+- B2: ProjectionReplayAdapter interface + ReplayCheckpoint placeholder; coordinator quét pending raw, không có adapter production → deferred. Entry service lock raw thật và áp core/kiểm marker đúng key cùng transaction, rollback khi lỗi. Checkpoint không persist, không phải watermark producer; mỗi run mới bắt đầu null.
+- B3: [handoff cho orchestrator](orchestrator-handoff.md); không sửa service đó, không nhắn owner qua tool.
+- B4: README, plan §9 và hai pseudocode class đã cập nhật. Full `-o -B -ntp clean verify` **BUILD SUCCESS 18:05:11, 403 pass / 0 fail / 0 error / 0 skip**; catalog 109 (38 full application tests), identity 190, vendor 8 và các module khác như A. Đếm Surefire XML theo đúng 11 module parent POM sau clean; PostgreSQL/RabbitMQ thật, không H2/disable/skip. Spotless/Checkstyle/Error Prone/ArchUnit qua; git diff --check sạch.
 
 ## Phase C — đề xuất cần duyệt
 
