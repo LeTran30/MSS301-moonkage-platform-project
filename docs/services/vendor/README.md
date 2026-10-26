@@ -133,7 +133,7 @@ Phát qua outbox (cùng transaction với thay đổi), exchange `moonkage.event
 | `product.upserted`, `product.removed` | Envelope, `data` = `ProductSnapshot` / `{productId, vendorId, status}` | catalog, order, orchestrator |
 | `vendor.submitted`, `vendor.reviewed`, `vendor.registration_fee_paid`, `registration_fee.changed` | Phẳng | orchestrator |
 
-Envelope theo [contract-proposal.md](../catalog/contract-proposal.md) mục 2: `{eventId, schemaVersion, eventType, sourceService, aggregateType, aggregateId, sourceVersion, occurredAt, data}`. `sourceVersion` là version của vendor hoặc sản phẩm sau thay đổi; bên nghe bỏ bản không mới hơn bản đang giữ. `data` là bản chụp đầy đủ, trường null vẫn có mặt.
+Envelope theo [contract-proposal.md](https://github.com/LeTran30/MSS301-moonkage-platform-project/blob/feat/catalog-service/docs/services/catalog/contract-proposal.md) (nhánh `feat/catalog-service`) mục 2: `{eventId, schemaVersion, eventType, sourceService, aggregateType, aggregateId, sourceVersion, occurredAt, data}`. `sourceVersion` là version của vendor hoặc sản phẩm sau thay đổi; bên nghe bỏ bản không mới hơn bản đang giữ. `data` là bản chụp đầy đủ, trường null vẫn có mặt.
 
 Nghe: `payment.succeeded` với `purpose = REGISTRATION_FEE` (queue `vendor-service.payment-events`), ghi phí đăng ký; chống lặp bằng `processed_events`. Thanh toán của checkout không do vendor nghe: order gọi các endpoint giữ hàng ở trên.
 
