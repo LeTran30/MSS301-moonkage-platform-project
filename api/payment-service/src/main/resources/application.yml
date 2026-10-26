@@ -68,7 +68,11 @@ vnpay:
   # the web result page (M4.3); it forwards the query to GET /api/payments/vnpay/return
   return-url: ${VNPAY_RETURN_URL:http://localhost:5173/thanh-toan/ket-qua}
   default-lifetime: 15m
+  # merchant_webapi: refunds (AC-49.3)
+  api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}
 
 payment:
   # PENDING payments past expires_at become FAILED (payment.failed)
   expiry-sweep-interval: 60s
+  # PENDING refunds are sent to VNPay; a refused one waits for an admin (MANUAL_REQUIRED)
+  refund-interval: 30s

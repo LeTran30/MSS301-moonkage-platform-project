@@ -1,0 +1,6 @@
+package com.moonkage.payment.repository;
+
+import com.moonkage.payment.entity.ProcessedEvent;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProcessedEventRepository extends JpaRepository<ProcessedEvent, String> {}

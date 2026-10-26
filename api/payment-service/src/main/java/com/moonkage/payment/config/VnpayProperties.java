@@ -22,6 +22,9 @@ public class VnpayProperties {
 
     private String payUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
+    /** merchant_webapi: refunds (AC-49.3). */
+    private String apiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
+
     /** Web page VNPay sends the payer back to; it only shows the result (BR-25). */
     private String returnUrl;
 

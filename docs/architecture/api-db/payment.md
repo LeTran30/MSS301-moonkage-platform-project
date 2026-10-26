@@ -44,9 +44,13 @@ Payment chỉ được tạo qua root nghiệp vụ sở hữu nó (Checkout, Ac
 | `PATCH /api/ledgers/{orderId}/disbursements/{requestId}` | A | `{status: APPROVED \| REJECTED, approvedAmount?, reason?}` → ghi sổ | FR-47 |
 | `PUT /api/ledgers/{orderId}/payout` | A | Duyệt chuyển tiền cho người bán (mỗi đơn một lần) | FR-48 |
 | `GET /api/ledgers/{orderId}/refunds` | S, A | Các lần hoàn tiền | AC-49.3 |
-| `PATCH /api/ledgers/{orderId}/refunds/{refundId}` | A | `{status: SUCCEEDED}` sau khi xử lý tay | AC-49.3 |
+| `GET /api/refunds?status=MANUAL_REQUIRED`, `PATCH /api/refunds/{refundId}` | A | Hoàn tiền VNPay từ chối, gồm cả lần không gắn đơn (trả trễ, trả trùng); PATCH = đã hoàn tay, sổ tiền ghi `REFUND` lúc này | AC-49.3 |
 
 Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ngân, hoàn tiền, chuyển tiền.
+
+**Hoàn tiền.** Lệnh hoàn ghi `PENDING`; job gửi VNPay (`merchant_webapi`, command `refund`). VNPay nhận thì `SUCCEEDED` và sổ tiền ghi `REFUND` (khiếu nại: từ đơn; trả trễ, báo giá hết hạn: từ các đơn mà thanh toán đã được phân bổ; trả trùng: không ghi sổ). VNPay từ chối, lỗi mạng, hoặc số hoàn vượt số đang giữ (Q-01) thì `MANUAL_REQUIRED`, sổ không đổi.
+
+**Chuyển tiền.** Từ chối khi đơn còn lệnh hoàn `PENDING`/`MANUAL_REQUIRED` hoặc yêu cầu giải ngân đang chờ; sau đó gọi `payout-lock` (409 → `LEDGER_007`), rồi chuyển toàn bộ số đang giữ.
 
 ## Sự kiện và API nội bộ
 

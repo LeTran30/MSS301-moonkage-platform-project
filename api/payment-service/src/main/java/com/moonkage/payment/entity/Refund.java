@@ -67,6 +67,14 @@ public class Refund {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    /** FR-49: through the payment that brought the order's money. */
+    public static Refund dispute(String orderId, String disputeId, String originalPaymentId, long amount) {
+        Refund refund = automatic(originalPaymentId, RefundReason.DISPUTE, amount);
+        refund.orderId = orderId;
+        refund.disputeId = disputeId;
+        return refund;
+    }
+
     /** A refund not tied to an order or dispute (LATE_PAYMENT, DUPLICATE_PAYMENT, QUOTE_EXPIRED). */
     public static Refund automatic(String originalPaymentId, RefundReason reason, long amount) {
         Refund refund = new Refund();

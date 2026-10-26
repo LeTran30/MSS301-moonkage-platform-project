@@ -7,6 +7,7 @@ import com.moonkage.payment.dto.event.PaymentSucceededEvent;
 import com.moonkage.payment.dto.request.CreatePaymentRequest;
 import com.moonkage.payment.dto.request.CreatePaymentRequest.AllocationRequest;
 import com.moonkage.payment.dto.response.CreatePaymentResponse;
+import com.moonkage.payment.dto.response.PageResponse;
 import com.moonkage.payment.dto.response.PaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
 import com.moonkage.payment.entity.Payment;
@@ -43,6 +44,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class PaymentServiceImpl implements PaymentService {
 
     private static final int EXPIRY_BATCH = 100;
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final PaymentRepository paymentRepository;
     private final PaymentAllocationRepository allocationRepository;
@@ -68,11 +70,11 @@ public class PaymentServiceImpl implements PaymentService {
             throw new AppException(ErrorCode.PAYMENT_ALREADY_PAID);
         }
 
+        if (!vnpayProperties.isConfigured()) {
+            throw new AppException(ErrorCode.GATEWAY_NOT_CONFIGURED);
+        }
         // 32 hex characters: unique, and only characters VNPay accepts in vnp_TxnRef
         String txnRef = UUID.randomUUID().toString().replace("-", "");
-        String payUrl = vnpayGateway.payUrl(
-                txnRef, request.amount(), "Moonkage " + request.purpose() + " " + txnRef, now, expiresAt);
-
         Payment payment = new Payment();
         payment.setPurpose(request.purpose());
         payment.setReferenceId(request.referenceId());
@@ -82,9 +84,14 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setGatewayTxnRef(txnRef);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setExpiresAt(expiresAt);
-        String paymentId = paymentRepository.saveAndFlush(payment).getId();
+        Payment saved = paymentRepository.saveAndFlush(payment);
+        String paymentId = saved.getId();
         shares.forEach(
                 share -> allocationRepository.save(new PaymentAllocation(paymentId, share.orderId(), share.amount())));
+        // vnp_CreateDate is the payment's own creation time: the refund API asks for it back (vnp_TransactionDate)
+        Instant createdAt = saved.getCreatedAt() != null ? saved.getCreatedAt() : now;
+        String payUrl = vnpayGateway.payUrl(
+                txnRef, request.amount(), "Moonkage " + request.purpose() + " " + txnRef, createdAt, expiresAt);
         return new CreatePaymentResponse(paymentId, payUrl);
     }
 
@@ -112,6 +119,19 @@ public class PaymentServiceImpl implements PaymentService {
                 .findByGatewayTxnRef(callback.get(VnpayGateway.TXN_REF))
                 .map(PaymentServiceImpl::toResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<PaymentResponse> list(
+            CurrentUserInfo caller, PaymentPurpose purpose, Instant from, Instant to, int page, int size) {
+        if (!caller.isAdmin()) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
+        return PageResponse.from(paymentRepository
+                .search(purpose, from == null ? Instant.EPOCH : from, to == null ? Instant.now() : to, pageable)
+                .map(PaymentServiceImpl::toResponse));
     }
 
     @Override
