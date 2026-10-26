@@ -23,9 +23,14 @@ public class RabbitConfig {
     public static final String VENDOR_SUBMITTED_ROUTING_KEY = "vendor.submitted";
     public static final String VENDOR_REVIEWED_ROUTING_KEY = "vendor.reviewed";
 
-    // full vendor snapshot (VendorSnapshotEvent), consumed by catalog, quotation, order and orchestrator-service
+    // full vendor snapshot (VendorSnapshot in an EventEnvelope), consumed by catalog, quotation, order and
+    // orchestrator-service
     public static final String VENDOR_UPDATED_ROUTING_KEY = "vendor.updated";
     public static final String VENDOR_LOCKED_ROUTING_KEY = "vendor.locked";
+
+    // product of a Shop (ProductSnapshot in an EventEnvelope), consumed by catalog-service (L-18); removed is final
+    public static final String PRODUCT_UPSERTED_ROUTING_KEY = "product.upserted";
+    public static final String PRODUCT_REMOVED_ROUTING_KEY = "product.removed";
 
     // FR-53, BR-31, consumed by orchestrator-service (notification and audit)
     public static final String VENDOR_REGISTRATION_FEE_PAID_ROUTING_KEY = "vendor.registration_fee_paid";

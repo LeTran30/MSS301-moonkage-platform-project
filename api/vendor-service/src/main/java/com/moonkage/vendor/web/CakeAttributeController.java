@@ -30,13 +30,21 @@ public class CakeAttributeController {
 
     private final CakeAttributeService cakeAttributeService;
 
-    /** Open to guests: the buyer's filter (AC-06.6) and the seller's picker (AC-29.1); hidden values admin only. */
+    /**
+     * Open to guests. Without {@code codes}: the buyer's filter (AC-06.6) and the seller's picker (AC-29.1), hidden
+     * values admin only. With {@code codes}: the labels of those codes, hidden ones included, for a product page
+     * (AC-54.4).
+     */
     @GetMapping
     public ResponseEntity<ApiResponse<List<CakeAttributeResponse>>> getCakeAttributes(
             @CurrentUser(required = false) CurrentUserInfo caller,
             @RequestParam(required = false) CakeAttributeGroup group,
-            @RequestParam(defaultValue = "false") boolean includeHidden) {
-        return ResponseEntity.ok(ApiResponse.ok(cakeAttributeService.getCakeAttributes(caller, group, includeHidden)));
+            @RequestParam(defaultValue = "false") boolean includeHidden,
+            @RequestParam(required = false) List<String> codes) {
+        List<CakeAttributeResponse> values = codes == null
+                ? cakeAttributeService.getCakeAttributes(caller, group, includeHidden)
+                : cakeAttributeService.getByCodes(group, codes);
+        return ResponseEntity.ok(ApiResponse.ok(values));
     }
 
     @PostMapping

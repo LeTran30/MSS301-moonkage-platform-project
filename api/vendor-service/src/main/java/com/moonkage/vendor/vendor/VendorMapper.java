@@ -93,4 +93,16 @@ final class VendorMapper {
     private static <T, R> R valueOf(T valueObject, Function<T, R> value) {
         return valueObject == null ? null : value.apply(valueObject);
     }
+
+    static VendorView toView(Vendor v) {
+        return new VendorView(
+                v.getId(),
+                v.getOwnerAccountId(),
+                v.getBusinessName(),
+                v.getStatus(),
+                v.getSupplySource(),
+                v.isSellsShop(),
+                v.isAcceptsOrders(),
+                v.canOperate());
+    }
 }

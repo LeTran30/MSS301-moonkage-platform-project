@@ -53,10 +53,11 @@ outbox:
 storage:
   internal-url: "${MINIO_INTERNAL_URL:http://localhost:${MINIO_API_PORT}}"
   browser-url: "${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT}}"
-  # vendor's own MinIO user (infra/minio/init.sh): may only touch <vendor-docs>/vendor/ and <vendor-docs>/tmp/vendor/
+  # vendor's own MinIO user (infra/minio/init.sh): may only touch <vendor-docs>/vendor/, <vendor-docs>/tmp/vendor/
+  # and <public>/products/
   access-key: ${MINIO_VENDOR_ACCESS_KEY}
   secret-key: ${MINIO_VENDOR_SECRET_KEY}
-  # product images move here from catalog in phase 5; the vendor user gets <public>/products/ then
+  # product images (FR-29), anonymously readable; the vendor user may write <public>/products/ (infra/minio/init.sh)
   public-bucket-name: ${MINIO_PUBLIC_BUCKET}
   # legal documents and fee invoices: reachable only by vendor-service and through presigned links (NFR-03)
   private-bucket-name: ${MINIO_VENDOR_DOCS_BUCKET}
@@ -73,6 +74,12 @@ vendor:
     max-size: ${VENDOR_DOCUMENT_MAX_SIZE:10MB}
     # fixed: it must match the prefix infra/minio/init.sh grants this service in the vendor-docs bucket
     key-prefix: vendor
+  # images of a Shop product (AC-29.1); moved from catalog with the product write side (L-18)
+  product-image:
+    allowed-content-types: ${PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/webp}
+    max-size: ${PRODUCT_IMAGE_MAX_SIZE:5MB}
+    # fixed: it must match the prefix infra/minio/init.sh grants this service in the public bucket
+    key-prefix: products
   # secret, vendor-service only (P-09): AES-256-GCM key of bank account numbers; stored rows record key version 1
   bank-account:
     encryption-key: ${BANK_ACCOUNT_ENC_KEY_V1:}

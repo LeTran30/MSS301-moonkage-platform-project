@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * (NO_PACKAGE_CYCLES).
  *
  * <pre>
- * web ──▶ vendor ──▶ cakeattribute, registrationfee ──▶ security, client, inbox, outbox   (all ──▶ common)
+ * web ──▶ product ──▶ vendor ──▶ cakeattribute, registrationfee ──▶ security, client, inbox, outbox   (all ──▶ common)
  * </pre>
  */
 @AnalyzeClasses(

@@ -100,6 +100,22 @@ class CakeAttributeIntegrationTest {
     }
 
     @Test
+    void anyoneReadsTheLabelsOfCodesHiddenOnesIncluded() throws Exception {
+        String id = create("FILLING", "Trà sữa");
+        update(id, "{\"active\":false}").andExpect(status().isOk());
+
+        // a product page shows what the product links, even a value hidden since (AC-54.4)
+        mvc.perform(get("/api/cake-attributes").param("codes", "tra-sua", "dau-xanh", "khong-co", "Sai Ma"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].code", contains("dau-xanh", "tra-sua")))
+                .andExpect(jsonPath("$.data[1].label").value("Trà sữa"))
+                .andExpect(jsonPath("$.data[1].active").value(false));
+        // "khac" is in both groups; the group narrows it
+        mvc.perform(get("/api/cake-attributes").param("codes", "khac").param("group", "CRUST"))
+                .andExpect(jsonPath("$.data[*].group", contains("CRUST")));
+    }
+
+    @Test
     void theAdminAddsAValueWithACodeFromItsLabelAtTheEnd() throws Exception {
         mvc.perform(as(Role.ADMIN, post("/api/cake-attributes"))
                         .contentType(MediaType.APPLICATION_JSON)

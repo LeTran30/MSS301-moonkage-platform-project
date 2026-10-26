@@ -11,4 +11,15 @@ public interface OutboxService {
      * @param event serialized to JSON as is
      */
     void enqueue(String eventId, String routingKey, Object event);
+
+    /**
+     * Records the new state of an aggregate in an {@link EventEnvelope}, under a new event id. Same transaction rule
+     * as {@link #enqueue}.
+     *
+     * @param sourceVersion the aggregate's version after this change, as it will be committed
+     * @param data the full state
+     * @return the event id
+     */
+    String enqueueState(
+            String routingKey, AggregateType aggregateType, String aggregateId, long sourceVersion, Object data);
 }

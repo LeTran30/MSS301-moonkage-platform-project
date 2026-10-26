@@ -11,6 +11,8 @@ public enum ErrorCode {
     // Common
     INTERNAL_SERVER_ERROR("COMMON_500", HttpStatus.INTERNAL_SERVER_ERROR, "error.common.internal"),
     INVALID_INPUT("COMMON_400", HttpStatus.BAD_REQUEST, "error.common.invalid_input"),
+    FIELD_REQUIRED("COMMON_400_REQUIRED", HttpStatus.BAD_REQUEST, "error.common.field_required"),
+    TEXT_TOO_LONG("COMMON_400_TOO_LONG", HttpStatus.BAD_REQUEST, "error.common.text_too_long"),
     MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "error.common.malformed_json"),
     PROVINCE_CODE_INVALID("COMMON_400_PROVINCE", HttpStatus.BAD_REQUEST, "error.common.province_code_invalid"),
     PRICE_INVALID("COMMON_400_PRICE", HttpStatus.BAD_REQUEST, "error.common.price_invalid"),
@@ -63,6 +65,14 @@ public enum ErrorCode {
     CAKE_ATTRIBUTE_DUPLICATE("VENDOR_020", HttpStatus.CONFLICT, "error.vendor.cake_attribute_duplicate"),
     LAST_VISIBLE_CAKE_ATTRIBUTE("VENDOR_021", HttpStatus.CONFLICT, "error.vendor.last_visible_cake_attribute"),
     CAKE_ATTRIBUTE_NOT_SELECTABLE("VENDOR_022", HttpStatus.BAD_REQUEST, "error.vendor.cake_attribute_not_selectable"),
+    PRODUCT_NOT_FOUND("VENDOR_023", HttpStatus.NOT_FOUND, "error.vendor.product_not_found"),
+    VENDOR_NOT_OPERATING("VENDOR_024", HttpStatus.CONFLICT, "error.vendor.not_operating"),
+    VENDOR_NOT_SELLING_SHOP("VENDOR_025", HttpStatus.CONFLICT, "error.vendor.not_selling_shop"),
+    PRODUCT_REMOVED("VENDOR_026", HttpStatus.CONFLICT, "error.vendor.product_removed"),
+    PRODUCT_CHANGED("VENDOR_027", HttpStatus.CONFLICT, "error.vendor.product_changed"),
+    RESALE_TERM_REQUIRED("VENDOR_028", HttpStatus.BAD_REQUEST, "error.vendor.resale_term_required"),
+    REMOVED_REASON_REQUIRED("VENDOR_029", HttpStatus.BAD_REQUEST, "error.vendor.removed_reason_required"),
+    PRODUCT_IMAGE_INVALID("VENDOR_030", HttpStatus.BAD_REQUEST, "error.vendor.product_image_invalid"),
 
     // Value objects of a vendor profile
     TAX_CODE_INVALID("VENDOR_101", HttpStatus.BAD_REQUEST, "error.vendor.tax_code_invalid"),
@@ -74,7 +84,10 @@ public enum ErrorCode {
     CAKE_ATTRIBUTE_LABEL_INVALID("VENDOR_107", HttpStatus.BAD_REQUEST, "error.vendor.cake_attribute_label_invalid"),
     CAKE_ATTRIBUTE_CODE_INVALID("VENDOR_108", HttpStatus.BAD_REQUEST, "error.vendor.cake_attribute_code_invalid"),
     SORT_ORDER_INVALID("VENDOR_109", HttpStatus.BAD_REQUEST, "error.vendor.sort_order_invalid"),
-    LEAD_TIME_INVALID("VENDOR_110", HttpStatus.BAD_REQUEST, "error.vendor.lead_time_invalid");
+    LEAD_TIME_INVALID("VENDOR_110", HttpStatus.BAD_REQUEST, "error.vendor.lead_time_invalid"),
+    STOCK_INVALID("VENDOR_111", HttpStatus.BAD_REQUEST, "error.vendor.stock_invalid"),
+    PRODUCT_IMAGE_COUNT_INVALID("VENDOR_112", HttpStatus.BAD_REQUEST, "error.vendor.product_image_count_invalid"),
+    RESOLD_NOT_ALLOWED("VENDOR_113", HttpStatus.BAD_REQUEST, "error.vendor.resold_not_allowed");
 
     private final String code;
     private final HttpStatus httpStatus;

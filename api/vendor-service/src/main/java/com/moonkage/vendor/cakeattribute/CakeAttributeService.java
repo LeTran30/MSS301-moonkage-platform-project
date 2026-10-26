@@ -20,6 +20,15 @@ public interface CakeAttributeService {
     List<CakeAttributeResponse> getCakeAttributes(
             CurrentUserInfo caller, CakeAttributeGroup group, boolean includeHidden);
 
+    /**
+     * The values named by {@code codes}, hidden ones included, for anyone: a product keeps showing a value hidden
+     * after it was linked (AC-07.1, AC-54.4). Not a picker: it returns only what is asked. A code that names no
+     * value, or is not a code, is left out. In the admin's order.
+     *
+     * @param group null for both groups ("khac" exists in each)
+     */
+    List<CakeAttributeResponse> getByCodes(CakeAttributeGroup group, Collection<String> codes);
+
     /** Admin only (AC-54.1, AC-54.2). */
     CakeAttributeResponse createCakeAttribute(CurrentUserInfo caller, CreateCakeAttributeRequest request);
 

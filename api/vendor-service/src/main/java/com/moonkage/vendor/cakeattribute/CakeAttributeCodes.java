@@ -1,14 +1,12 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.cakeattribute;
 
-import com.moonkage.vendor.cakeattribute.CakeAttributeGroup;
-import com.moonkage.vendor.cakeattribute.CakeAttributeRef;
 import java.util.List;
 
 /** The crusts and fillings something links, by code, as responses and events carry them (L-19). */
-record CakeAttributeCodes(List<String> crusts, List<String> fillings) {
+public record CakeAttributeCodes(List<String> crusts, List<String> fillings) {
 
     /** Keeps the order of {@code values}. */
-    static CakeAttributeCodes of(List<CakeAttributeRef> values) {
+    public static CakeAttributeCodes of(List<CakeAttributeRef> values) {
         return new CakeAttributeCodes(
                 codesOf(values, CakeAttributeGroup.CRUST), codesOf(values, CakeAttributeGroup.FILLING));
     }

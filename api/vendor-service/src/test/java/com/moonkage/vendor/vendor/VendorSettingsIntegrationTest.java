@@ -101,7 +101,17 @@ class VendorSettingsIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.localDeliveryFee").value(15_000));
 
-        JsonNode snapshot = lastSnapshot(RabbitConfig.VENDOR_UPDATED_ROUTING_KEY, vendorId);
+        JsonNode envelope =
+                envelopes(RabbitConfig.VENDOR_UPDATED_ROUTING_KEY, vendorId).getLast();
+        assertEquals(1, envelope.get("schemaVersion").asInt());
+        assertEquals(
+                RabbitConfig.VENDOR_UPDATED_ROUTING_KEY,
+                envelope.get("eventType").asText());
+        assertEquals("vendor-service", envelope.get("sourceService").asText());
+        assertEquals("VENDOR", envelope.get("aggregateType").asText());
+        assertEquals(vendorId, envelope.get("aggregateId").asText());
+        JsonNode snapshot = envelope.get("data");
+        assertEquals(vendorId, snapshot.get("vendorId").asText());
         assertEquals(15_000, snapshot.get("localDeliveryFee").asLong());
         assertEquals(ownerId, snapshot.get("changedBy").asText());
     }
@@ -151,11 +161,12 @@ class VendorSettingsIntegrationTest {
                 .andExpect(jsonPath("$.data", contains("01", "48")));
         mvc.perform(asOwner(get("/api/vendors/{id}", vendorId)))
                 .andExpect(jsonPath("$.data.deliveryAreas", contains("01", "48")));
-        List<JsonNode> snapshots = snapshots(RabbitConfig.VENDOR_UPDATED_ROUTING_KEY, vendorId);
+        List<JsonNode> snapshots = envelopes(RabbitConfig.VENDOR_UPDATED_ROUTING_KEY, vendorId);
         assertEquals(2, snapshots.size());
         assertTrue(snapshots.get(1).get("sourceVersion").asLong()
                 > snapshots.get(0).get("sourceVersion").asLong());
-        assertEquals("48", snapshots.get(1).get("deliveryAreas").get(1).asText());
+        assertEquals(
+                "48", snapshots.get(1).get("data").get("deliveryAreas").get(1).asText());
     }
 
     @Test
@@ -316,7 +327,7 @@ class VendorSettingsIntegrationTest {
                 .andExpect(jsonPath("$.data.canOperate").value(false));
 
         assertEquals(
-                0, snapshots(RabbitConfig.VENDOR_UPDATED_ROUTING_KEY, vendorId).size());
+                0, envelopes(RabbitConfig.VENDOR_UPDATED_ROUTING_KEY, vendorId).size());
         JsonNode locked = lastSnapshot(RabbitConfig.VENDOR_LOCKED_ROUTING_KEY, vendorId);
         assertEquals("LOCKED", locked.get("status").asText());
         assertEquals(ADMIN_ID, locked.get("changedBy").asText());
@@ -375,22 +386,23 @@ class VendorSettingsIntegrationTest {
                 .content(body));
     }
 
-    /** Snapshots this vendor announced on {@code routingKey}, oldest first. */
-    private List<JsonNode> snapshots(String routingKey, String vendorId) throws Exception {
+    /** Envelopes this vendor announced on {@code routingKey}, oldest first. */
+    private List<JsonNode> envelopes(String routingKey, String vendorId) throws Exception {
         List<String> payloads = jdbcTemplate.queryForList(
                 "SELECT payload FROM outbox_events WHERE routing_key = ? AND payload LIKE ? ORDER BY created_at",
                 String.class,
                 routingKey,
                 "%" + vendorId + "%");
-        List<JsonNode> snapshots = new ArrayList<>();
+        List<JsonNode> envelopes = new ArrayList<>();
         for (String payload : payloads) {
-            snapshots.add(objectMapper.readTree(payload));
+            envelopes.add(objectMapper.readTree(payload));
         }
-        return snapshots;
+        return envelopes;
     }
 
+    /** The vendor state of the last envelope on {@code routingKey}. */
     private JsonNode lastSnapshot(String routingKey, String vendorId) throws Exception {
-        return snapshots(routingKey, vendorId).getLast();
+        return envelopes(routingKey, vendorId).getLast().get("data");
     }
 
     private MockHttpServletRequestBuilder asOwner(String vendorId) {

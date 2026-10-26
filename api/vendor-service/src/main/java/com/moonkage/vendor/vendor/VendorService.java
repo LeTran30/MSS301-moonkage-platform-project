@@ -36,6 +36,9 @@ public interface VendorService {
     /** For other services (GET /internal/vendors/by-owner); empty when the account owns no vendor. */
     Optional<VendorResponse> findByOwnerAccountId(String accountId);
 
+    /** For other components (products): who owns the vendor and whether it may sell. VENDOR_NOT_FOUND if none. */
+    VendorView getView(String vendorId);
+
     /**
      * A member sees only their own vendor ({@code ownerAccountId} = themselves, FR-27); the admin filters by owner
      * and/or status (FR-45). Oldest first.

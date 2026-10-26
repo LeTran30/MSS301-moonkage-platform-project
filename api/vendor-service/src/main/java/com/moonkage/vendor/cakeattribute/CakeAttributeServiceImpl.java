@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -46,6 +47,19 @@ class CakeAttributeServiceImpl implements CakeAttributeService {
                 : repository.findByAttributeGroupOrderBySortOrderAscLabelKeyAsc(group);
         return values.stream()
                 .filter(value -> includeHidden || value.isActive())
+                .map(CakeAttributeServiceImpl::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CakeAttributeResponse> getByCodes(CakeAttributeGroup group, Collection<String> codes) {
+        Set<String> wanted = codes.stream().map(String::trim).collect(Collectors.toSet());
+        List<CakeAttribute> values = group == null
+                ? repository.findAllByOrderByAttributeGroupAscSortOrderAscLabelKeyAsc()
+                : repository.findByAttributeGroupOrderBySortOrderAscLabelKeyAsc(group);
+        return values.stream()
+                .filter(value -> wanted.contains(value.getCode().value()))
                 .map(CakeAttributeServiceImpl::toResponse)
                 .toList();
     }

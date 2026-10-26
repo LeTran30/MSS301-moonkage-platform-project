@@ -1,5 +1,6 @@
 package com.moonkage.vendor.vendor;
 
+import com.moonkage.vendor.cakeattribute.CakeAttributeCodes;
 import com.moonkage.vendor.cakeattribute.CakeAttributeGroup;
 import com.moonkage.vendor.cakeattribute.CakeAttributeRef;
 import com.moonkage.vendor.cakeattribute.CakeAttributeService;

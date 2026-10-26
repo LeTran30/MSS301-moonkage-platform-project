@@ -166,7 +166,7 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 
 ### 4. Danh mục vỏ và nhân (FR-54; BR-34)
 
-**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, chưa commit. Khác với bản đề xuất bên dưới:
+**Trạng thái (2026-10-26):** code và test xong trên nhánh `feat/vendor-foundation`, đã commit (`edb7879`). Khác với bản đề xuất bên dưới:
 
 - `GET /api/cake-attributes`: `group` không bắt buộc (bỏ trống trả cả hai nhóm, nhóm này rồi nhóm kia). Khách không cần đăng nhập; gateway mở `GET /vendor-service/api/cake-attributes`. `includeHidden=true` không có header gateway → 401, thành viên → 403. `@CurrentUser(required = false)` cho phép endpoint mở trả `null` khi không có cả hai header.
 - Luật giữa các giá trị một nhóm nằm trong `CakeAttributeCatalog` (không ở service): trùng khóa tên hoặc trùng mã → `VENDOR_020` nêu tên giá trị đã có; giá trị mới đứng sau mọi giá trị (kể cả đã ẩn); ẩn giá trị đang hiện cuối cùng → `VENDOR_021`. Service khóa các dòng của nhóm (`PESSIMISTIC_WRITE`) khi đổi; hai admin thêm cùng lúc thì ràng buộc duy nhất của bảng bắt, trả cùng lỗi trùng.
@@ -186,6 +186,19 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 **Xong khi:** web người bán và bộ lọc người mua đọc danh mục từ endpoint này.
 
 ### 5. Ghi sản phẩm (L-18; FR-29 → FR-34, FR-46; BR-12, BR-21, BR-24, BR-34)
+
+**Trạng thái (2026-10-26):** phía vendor xong trên nhánh `feat/vendor-foundation`, chưa commit. Phần catalog (bỏ writer cũ, adapter dựng `product_views` từ sự kiện) là PR riêng của catalog. Khác với bản đề xuất bên dưới:
+
+- Sự kiện dùng envelope của [contract-proposal.md](../catalog/contract-proposal.md) (mục 2): `OutboxService.enqueueState` bọc `data` trong `EventEnvelope` (`eventId`, `schemaVersion` 1, `eventType`, `sourceService`, `aggregateType`, `aggregateId`, `sourceVersion`, `occurredAt`). `vendor.updated`, `vendor.locked` chuyển luôn sang envelope (`VendorSnapshotEvent` → `VendorSnapshot` là `data`), vì chưa bên nào đọc chúng. Đề xuất đó còn ghi "chưa duyệt": nếu nhóm đổi hợp đồng thì sửa một chỗ là `EventEnvelope`.
+- Thêm cột `products.resold` (migration `V2026_10_26_1200`): RESELL luôn true, SELF_PRODUCED luôn false, BOTH bắt buộc chọn (`VENDOR_113` khi chọn trái nguồn hàng). Bán lại thiếu `brand` hoặc `origin` → `VENDOR_028` tại trường.
+- Luật của sản phẩm nằm trong `ProductDetails` (record, như `OrderTerms`): đủ trường bắt buộc, độ dài, `stock ≥ 0` (`VENDOR_111`), 1 → 10 ảnh không trùng (`VENDOR_112`), ít nhất một vỏ và một nhân. `Product` chỉ đổi qua một `ProductDetails` đầy đủ, nên hiện lại sản phẩm đã ẩn luôn bán được (AC-34.4). `ProductStatus.canTransitionTo`: `ON_SALE ⇄ HIDDEN`, cả hai → `REMOVED`, không gì ra khỏi `REMOVED`; sản phẩm đã gỡ không sửa được (`VENDOR_026`); gỡ thiếu lý do → `VENDOR_029`.
+- `VendorService.getView` trả `VendorView` (bản chụp chỉ đọc) cho component `product`. Ghi cần chủ (`ACCESS_DENIED`), `canOperate` (`VENDOR_024`), `sellsShop` (`VENDOR_025`); admin chỉ gỡ.
+- `PUT` bắt buộc `version` đã đọc; khác bản hiện tại → `VENDOR_027`. Mọi lần ghi tăng version ngay bằng `PESSIMISTIC_FORCE_INCREMENT`, nên chỉ đổi một bậc giá (bảng con) vẫn cho `sourceVersion` mới, và hai lần ghi cùng lúc không cùng qua.
+- Ảnh: `imageKeys` theo thứ tự hiển thị, mỗi key là temp key vừa tải hoặc key sản phẩm đang có; key khác → `VENDOR_030` (không gắn được file của người khác). `ProductImages` chuyển ảnh mới vào `<public>/products/<vendorId>/`, xóa lại nếu transaction rollback, và xóa ảnh bị bỏ sau khi commit. `infra/minio/init.sh` cấp cho user vendor `<public>/products`; cấu hình ở `vendor.product-image.*`.
+- Thêm `GET /api/vendors/{id}/products` và `GET .../{productId}` (chủ, admin) cho màn hình quản lý của Shop.
+- Resolver nhãn cho trang sản phẩm (đề xuất §8 của catalog): `GET /api/cake-attributes?codes=` trả nhãn của đúng các mã đó, kể cả mã đã ẩn (AC-54.4).
+- `CakeAttributeCodes` chuyển sang `cakeattribute` để `vendor` và `product` dùng chung. Mã lỗi chung mới `COMMON_400_REQUIRED`, `COMMON_400_TOO_LONG`.
+- Chưa làm: seed sản phẩm ở `R__seed.sql` (cần file ảnh thật trong MinIO, làm cùng PR catalog).
 
 - Entity `Product`, `ProductImage`, `ProductPriceTier`, liên kết `product_cake_attributes`.
 - `POST /api/vendors/{id}/products/uploads`: presigned upload bucket công khai, kiểm loại và kích thước bằng `common-storage`.

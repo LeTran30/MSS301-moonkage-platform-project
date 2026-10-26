@@ -1,13 +1,13 @@
 package com.moonkage.vendor.vendor;
 
+import com.moonkage.vendor.cakeattribute.CakeAttributeCodes;
 import com.moonkage.vendor.cakeattribute.CakeAttributeService;
 import com.moonkage.vendor.common.config.RabbitConfig;
 import com.moonkage.vendor.common.vo.Quantity;
+import com.moonkage.vendor.outbox.AggregateType;
 import com.moonkage.vendor.outbox.OutboxService;
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -38,10 +38,8 @@ class VendorSnapshotPublisher {
     private void announce(String routingKey, Vendor vendor, String changedBy) {
         // the flush writes pending changes, so the version read below is the one committed
         vendorRepository.flush();
-        VendorSnapshotEvent event = new VendorSnapshotEvent(
-                UUID.randomUUID().toString(),
+        VendorSnapshot snapshot = new VendorSnapshot(
                 vendor.getId(),
-                vendor.getVersion(),
                 vendor.getOwnerAccountId(),
                 vendor.getBusinessName(),
                 vendor.getStatus(),
@@ -60,19 +58,18 @@ class VendorSnapshotPublisher {
                         .findByVendorId(vendor.getId())
                         .map(this::toSnapshot)
                         .orElse(null),
-                changedBy,
-                Instant.now());
-        outboxService.enqueue(event.eventId(), routingKey, event);
+                changedBy);
+        outboxService.enqueueState(routingKey, AggregateType.VENDOR, vendor.getId(), vendor.getVersion(), snapshot);
     }
 
-    private VendorSnapshotEvent.OrderProfileSnapshot toSnapshot(OrderProfile profile) {
-        List<VendorSnapshotEvent.PriceTierSnapshot> tiers = profile.toPriceTiers().tiers().stream()
-                .map(tier -> new VendorSnapshotEvent.PriceTierSnapshot(
+    private VendorSnapshot.OrderProfileSnapshot toSnapshot(OrderProfile profile) {
+        List<VendorSnapshot.PriceTierSnapshot> tiers = profile.toPriceTiers().tiers().stream()
+                .map(tier -> new VendorSnapshot.PriceTierSnapshot(
                         tier.fromQty().value(), tier.unitPrice().value()))
                 .toList();
         CakeAttributeCodes cakeAttributes =
                 CakeAttributeCodes.of(cakeAttributeService.getRefs(profile.getCakeAttributeIds()));
-        return new VendorSnapshotEvent.OrderProfileSnapshot(
+        return new VendorSnapshot.OrderProfileSnapshot(
                 profile.getMinQty().value(),
                 profile.getLeadTimeDays(),
                 tiers,
