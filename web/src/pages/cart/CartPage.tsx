@@ -8,5 +8,9 @@ import { useCartItems } from '../useCartItems';
 export function CartPage() {
   const navigate = useNavigate();
   const { loading, items } = useCartItems();
-  return <div className="shop__inner">{loading ? <LoadingState /> : <CartView items={items} onContinue={() => navigate(routes.checkout)} />}</div>;
+  return (
+    <div className="shop__inner page">
+      {loading ? <LoadingState /> : <CartView items={items} onContinue={() => navigate(routes.checkout)} />}
+    </div>
+  );
 }

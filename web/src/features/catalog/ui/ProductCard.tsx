@@ -4,6 +4,7 @@ import { routes } from '../../../shared/config/routes';
 import { formatRating, formatVnd } from '../../../shared/utils/money';
 import type { ProductSummary } from '../model/useCatalog';
 import { catalogStrings } from '../strings';
+import styles from './ProductCard.module.css';
 
 /**
  * DS ProductCard (mk-card): flat, the photo on a square muted frame, name and price on one row, shop · district,
@@ -13,24 +14,30 @@ import { catalogStrings } from '../strings';
 export function ProductCard({ product, action }: { product: ProductSummary; action?: ReactNode }) {
   const to = routes.product(product.id);
   return (
-    <article className="mk-card">
-      <div className="mk-card__img">
-        {product.images[0] ? <img src={product.images[0]} alt="" /> : <span className="mk-card__empty">{product.name}</span>}
+    <article className={`${styles.card} mk-card`}>
+      <div className={styles.imageBox}>
+        {product.images[0] ? (
+          <img src={product.images[0]} alt="" className={styles.image} />
+        ) : (
+          <span className={styles.empty}>{product.name}</span>
+        )}
       </div>
-      <div className="mk-card__info">
-        <div className="mk-card__row">
-          <h3 className="mk-card__name">
-            <Link to={to}>{product.name}</Link>
+      <div className={styles.info}>
+        <div className={styles.row}>
+          <h3 className={styles.name}>
+            <Link to={to} className={styles.link}>
+              {product.name}
+            </Link>
           </h3>
           <span className="mk-price">{formatVnd(product.price)}</span>
         </div>
-        <p className="mk-card__shop">
+        <p className={styles.meta}>
           {product.shopName}
           {product.district ? ` · ${product.district}` : ''}
         </p>
-        <p className="mk-card__meta mk-num">{catalogStrings.packStock(product.pack, product.stock)}</p>
+        <p className={`${styles.meta} mk-num`}>{catalogStrings.packStock(product.pack, product.stock)}</p>
         {product.rating !== null && product.reviewCount > 0 && (
-          <p className="mk-card__meta mk-num">
+          <p className={`${styles.meta} mk-num`}>
             <span className="mk-star" aria-hidden="true">
               ★
             </span>{' '}
@@ -53,9 +60,9 @@ export function ProductGrid({
   labelledBy?: string;
 }) {
   return (
-    <ul className="product-grid" aria-labelledby={labelledBy}>
+    <ul className={`${styles.grid} product-grid`} aria-labelledby={labelledBy}>
       {products.map((p) => (
-        <li key={p.id}>
+        <li key={p.id} className={styles.gridItem}>
           <ProductCard product={p} action={renderAction?.(p)} />
         </li>
       ))}

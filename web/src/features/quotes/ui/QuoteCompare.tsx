@@ -3,6 +3,7 @@ import { KeyValue, PageHeader, StatusBadge } from '../../../shared/ui';
 import { formatRating, formatVnd } from '../../../shared/utils/money';
 import { bestOf, deposit, perBox, requestStatusLabel } from '../model/quoteModel';
 import { closeRequest, type QuoteRequest } from '../model/useQuotes';
+import styles from './QuoteCompare.module.css';
 
 /**
  * M6.2.1: the request and its quotes side by side (DS QuoteCompare). Money stays with Moonkage until accepted:
@@ -47,14 +48,14 @@ export function QuoteCompare({
       {request.quotes.length === 0 ? (
         <p className="notice">Chưa có báo giá. Bạn nhận thông báo khi đơn vị gửi báo giá.</p>
       ) : (
-        <div className="table-scroll">
-          <table className="mk-quotes">
+        <div className={styles.tableScroll}>
+          <table className={styles.quotesTable}>
             <thead>
               <tr>
                 <td />
                 {request.quotes.map((q) => (
                   <th key={q.supplierId} scope="col">
-                    <div className="quote-head">
+                    <div className={styles.quoteHead}>
                       {q.supplierName}
                       {open && (
                         <button type="button" className="mk-btn mk-btn--primary mk-btn--sm" onClick={() => onAccept(q.supplierId)}>
@@ -66,7 +67,7 @@ export function QuoteCompare({
                   </th>
                 ))}
                 {pending.map((p) => (
-                  <th key={p.supplierId} scope="col" className="mk-expired">
+                  <th key={p.supplierId} scope="col" className={styles.expired}>
                     {p.supplierName}
                     <br />
                     <span className="muted">Chưa gửi báo giá</span>
@@ -75,17 +76,17 @@ export function QuoteCompare({
               </tr>
             </thead>
             <tbody>
-              <tr className="mk-total">
+              <tr className={styles.totalRow}>
                 <th scope="row">Tổng giá</th>
                 {request.quotes.map((q) => (
-                  <td key={q.supplierId} className={best && q.total === best.total ? 'mk-best' : undefined}>
+                  <td key={q.supplierId} className={best && q.total === best.total ? styles.best : undefined}>
                     {formatVnd(q.total)}
                     <br />
                     <span className="muted">{formatVnd(perBox(q))}/hộp</span>
                   </td>
                 ))}
                 {pending.map((p) => (
-                  <td key={p.supplierId} className="mk-expired">—</td>
+                  <td key={p.supplierId} className={styles.expired}>—</td>
                 ))}
               </tr>
               <tr>
@@ -102,7 +103,7 @@ export function QuoteCompare({
               <tr>
                 <th scope="row">Giao trước</th>
                 {request.quotes.map((q) => (
-                  <td key={q.supplierId} className={best && q.deliverBy === best.deliverBy ? 'mk-best' : undefined}>
+                  <td key={q.supplierId} className={best && q.deliverBy === best.deliverBy ? styles.best : undefined}>
                     {q.deliverBy}
                   </td>
                 ))}

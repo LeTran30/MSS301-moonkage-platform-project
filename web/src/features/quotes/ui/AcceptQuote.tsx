@@ -3,6 +3,7 @@ import { KeyValue, PageHeader, Steps } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
 import { deposit } from '../model/quoteModel';
 import type { Quote, QuoteRequest } from '../model/useQuotes';
+import styles from './AcceptQuote.module.css';
 
 /** M6.2.2: the chosen quote, the binding agreement, and the deposit (paid on VNPay by the page). */
 export function AcceptQuote({
@@ -24,7 +25,7 @@ export function AcceptQuote({
     <div className="page">
       <PageHeader title="Chấp nhận báo giá và đặt cọc" />
       <Steps label="Các bước" steps={['So sánh báo giá', 'Xác nhận và đặt cọc', 'Thanh toán VNPay', 'Đơn được tạo']} current={1} />
-      <div className="detail-layout">
+      <div className={styles.detailLayout}>
         <div className="stack">
           <section className="panel panel--wide" aria-labelledby="quote-of">
             <div className="row-between">
@@ -61,22 +62,22 @@ export function AcceptQuote({
             ‹ Quay lại so sánh
           </button>
         </div>
-        <aside className="action-box" aria-labelledby="pay-heading">
+        <aside className={styles.actionBox} aria-labelledby="pay-heading">
           <h2 id="pay-heading" className="card-title-text">
             Thanh toán
           </h2>
-          <ul className="lines">
-            <li className="lines__row">
+          <ul className={styles.lines}>
+            <li className={styles.lineRow}>
               <span>Giá trị đơn</span>
               <span />
               <span className="mk-num">{formatVnd(quote.total)}</span>
             </li>
-            <li className="lines__row lines__row--total">
+            <li className={`${styles.lineRow} ${styles.lineTotal}`}>
               <span>Đặt cọc bây giờ ({quote.depositPercent}%)</span>
               <span />
               <span className="mk-num">{formatVnd(deposit(quote))}</span>
             </li>
-            <li className="lines__row">
+            <li className={styles.lineRow}>
               <span>Trả sau khi giao</span>
               <span />
               <span className="mk-num">{formatVnd(quote.total - deposit(quote))}</span>

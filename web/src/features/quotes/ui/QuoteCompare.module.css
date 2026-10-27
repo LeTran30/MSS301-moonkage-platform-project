@@ -1,0 +1,58 @@
+.tableScroll {
+  overflow-x: auto;
+}
+
+.quotesTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: var(--text-body-sm);
+  font-variant-numeric: tabular-nums;
+  border: var(--border-thin) solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.quotesTable th,
+.quotesTable td {
+  color: var(--ink);
+  padding: var(--space-3) var(--space-4);
+  text-align: right;
+  border-top: var(--border-thin) solid var(--line);
+  vertical-align: top;
+}
+
+.quotesTable thead th,
+.quotesTable thead td {
+  border-top: 0;
+  background: var(--surface-muted);
+  font: var(--text-card-title);
+  color: var(--ink);
+}
+
+.quotesTable tbody th {
+  text-align: left;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.totalRow td,
+.totalRow th {
+  font: var(--text-body-strong);
+  color: var(--ink);
+}
+
+.best {
+  color: var(--gold-ink);
+  font-weight: 700;
+}
+
+.expired {
+  color: var(--ink-muted);
+}
+
+.quoteHead {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: end;
+}

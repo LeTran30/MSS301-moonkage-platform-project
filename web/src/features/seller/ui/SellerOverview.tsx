@@ -3,6 +3,7 @@ import { routes } from '../../../shared/config/routes';
 import { PageHeader, StatusBadge, Steps, TaskList, type Task } from '../../../shared/ui';
 import { sellerTodo } from '../model/sellerModel';
 import { resubmitProfile, type SellerOrder, type SellerProfile } from '../model/useSeller';
+import styles from './SellerOverview.module.css';
 
 const ONBOARDING = ['Nộp hồ sơ', 'Moonkage duyệt', 'Đóng phí 200.000đ', 'Cài vùng giao, đăng sản phẩm'];
 
@@ -117,12 +118,12 @@ export function SellerOverview({
         <h2 id="todo-heading" className="detail-heading">
           Việc cần làm
         </h2>
-        <div className="stat-grid stat-grid--4">
+        <div className={styles.statGrid}>
           {tiles.map((t) => (
-            <Link key={t.label} to={t.to} className="stat-tile">
+            <Link key={t.label} to={t.to} className={styles.statTile}>
               <span className="muted">{t.label}</span>
-              <span className="stat-tile__num mk-num">{t.n}</span>
-              <span className="stat-tile__go">{t.go}</span>
+              <span className={`${styles.statNum} mk-num`}>{t.n}</span>
+              <span className={styles.statGo}>{t.go}</span>
             </Link>
           ))}
         </div>

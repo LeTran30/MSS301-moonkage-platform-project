@@ -1,0 +1,51 @@
+/* [NGUYÊN TẮC 1 & 2: CÔ LẬP & ĐỒNG VỊ TRÍ]
+   SellerOrders.module.css — Style cô lập cho SellerOrders */
+
+.filterRow {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.filterRow [aria-pressed="true"] {
+  text-decoration-thickness: var(--border-thick);
+  color: var(--ink);
+}
+
+.filterRow [aria-pressed="false"] {
+  text-decoration: none;
+  color: var(--ink-muted);
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: var(--text-body-sm);
+  border: var(--border-thin) solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dataTable th {
+  text-align: left;
+  font: var(--text-label);
+  background: var(--surface-muted);
+  padding: var(--space-3) var(--space-4);
+}
+
+.dataTable td {
+  padding: var(--space-4);
+  border-top: var(--border-thin) solid var(--line);
+  vertical-align: middle;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  text-align: right;
+  white-space: nowrap;
+}

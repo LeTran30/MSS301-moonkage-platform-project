@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { guideStrings as s } from '../strings';
+import styles from './HomeHero.module.css';
 
 /**
  * Hero of M1.0: one 16:9 photo across the whole screen with the text block in the middle; the title is the
@@ -10,15 +11,15 @@ import { guideStrings as s } from '../strings';
  */
 export function HomeHero({ area, photo, areaPrompt }: { area: string; photo?: string; areaPrompt?: ReactNode }) {
   return (
-    <section className={`home-hero${photo ? ' home-hero--photo' : ''}`} aria-labelledby="hero-title">
-      {photo && <img className="home-hero__photo" src={photo} alt="" />}
-      <div className="home-hero__text">
-        <h1 id="hero-title" className="home-hero__title">
+    <section className={styles.hero} aria-labelledby="hero-title">
+      {photo && <img className={styles.photo} src={photo} alt="" />}
+      <div className={styles.text}>
+        <h1 id="hero-title" className={styles.title}>
           {s.heroTitle(area)}
         </h1>
-        <p className="home-hero__lead">{s.heroLead}</p>
+        <p className={styles.lead}>{s.heroLead}</p>
         {areaPrompt}
-        <div className="home-hero__actions">
+        <div className={styles.actions}>
           <Link to={routes.products} className="mk-btn mk-btn--primary">
             {s.heroAvailable}
           </Link>
@@ -27,7 +28,7 @@ export function HomeHero({ area, photo, areaPrompt }: { area: string; photo?: st
           </Link>
         </div>
       </div>
-      {!photo && <p className="home-hero__note">{s.heroPhotoNote}</p>}
+      {!photo && <p className={styles.note}>{s.heroPhotoNote}</p>}
     </section>
   );
 }

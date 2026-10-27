@@ -4,6 +4,7 @@ import { routes } from '../../../shared/config/routes';
 import { KeyValue, PageHeader, StatusBadge } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
 import { resubmitProfile, saveTerms, saveZones, type CustomTerms, type DeliveryZones, type SellerProfile } from '../model/useSeller';
+import styles from './SellerSettings.module.css';
 
 /** B6.0 */
 export function SettingsHub({ profile }: { profile: SellerProfile }) {
@@ -17,11 +18,11 @@ export function SettingsHub({ profile }: { profile: SellerProfile }) {
   return (
     <div className="page">
       <PageHeader title="Cài đặt bán hàng" />
-      <ul className="row-list">
+      <ul className={styles.rowList}>
         {rows.map((r) => (
-          <li key={r.title} className="row-list__item">
-            <div className="row-list__main">
-              <p className="row-list__title">{r.title}</p>
+          <li key={r.title} className={styles.rowItem}>
+            <div className={styles.rowMain}>
+              <p className={styles.rowTitle}>{r.title}</p>
               <p className="muted">{r.body}</p>
             </div>
             <StatusBadge tone={r.enabled ? 'soft' : 'muted'}>{r.badge}</StatusBadge>
@@ -102,11 +103,11 @@ export function LegalInfo({ profile, onChanged }: { profile: SellerProfile; onCh
         <h2 id="docs-h" className="detail-heading">
           Giấy tờ
         </h2>
-        <ul className="row-list">
+        <ul className={styles.rowList}>
           {['Giấy đăng ký hộ kinh doanh', 'Giấy an toàn thực phẩm', ...(profile.state === 'open' ? [`Hóa đơn phí mở bán ${formatVnd(200000)}`] : [])].map((d) => (
-            <li key={d} className="row-list__item">
+            <li key={d} className={styles.rowItem}>
               <span className="mk-badge">PDF</span>
-              <span className="row-list__main">{d}</span>
+              <span className={styles.rowMain}>{d}</span>
               <button type="button" className="mk-btn mk-btn--text">
                 {d.startsWith('Hóa đơn') ? 'Tải' : 'Xem'}
               </button>
@@ -139,9 +140,9 @@ export function DeliveryZonesForm({
   return (
     <div className="page">
       <PageHeader title="Vùng giao và phí giao" lead="Người mua ở ngoài các vùng này sẽ không thấy sản phẩm của bạn." />
-      <div className="form-layout">
-        <form className="form" onSubmit={submit}>
-          <fieldset className="form-section">
+      <div className={styles.formLayout}>
+        <form className={styles.form} onSubmit={submit}>
+          <fieldset className={styles.formSection}>
             <legend>Nội tỉnh · {form.homeProvince}</legend>
             <label className="check">
               <input type="checkbox" checked={form.homeAll} onChange={(e) => setForm({ ...form, homeAll: e.target.checked })} /> Giao toàn {form.homeProvince}
@@ -151,18 +152,18 @@ export function DeliveryZonesForm({
               <input id="home-fee" className="mk-num" inputMode="numeric" value={form.homeFee} onChange={(e) => setForm({ ...form, homeFee: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
             </div>
           </fieldset>
-          <fieldset className="form-section">
+          <fieldset className={styles.formSection}>
             <legend>Liên tỉnh</legend>
             <label className="check">
               <input type="checkbox" checked={form.interProvince} onChange={(e) => setForm({ ...form, interProvince: e.target.checked })} /> Nhận giao liên tỉnh
             </label>
             <p className="muted">Phí theo bảng phí liên tỉnh của Moonkage. Bạn phải nhập mã vận đơn khi giao.</p>
             {form.interProvince && (
-              <table className="data-table">
+              <table className={styles.dataTable}>
                 <thead>
                   <tr>
                     <th scope="col">Tỉnh</th>
-                    <th scope="col" className="num">
+                    <th scope="col" className={styles.num}>
                       Phí
                     </th>
                   </tr>
@@ -171,7 +172,7 @@ export function DeliveryZonesForm({
                   {fees.map((f) => (
                     <tr key={f.province}>
                       <td>{f.province}</td>
-                      <td className="num mk-num">{formatVnd(f.fee)}</td>
+                      <td className={`${styles.num} mk-num`}>{formatVnd(f.fee)}</td>
                     </tr>
                   ))}
                   <tr>
@@ -183,7 +184,7 @@ export function DeliveryZonesForm({
               </table>
             )}
           </fieldset>
-          <div className="form-actions">
+          <div className={styles.formActions}>
             {saved && (
               <span className="muted" role="status">
                 Đã lưu.
@@ -194,7 +195,7 @@ export function DeliveryZonesForm({
             </button>
           </div>
         </form>
-        <aside className="side-note">
+        <aside className={styles.sideNote}>
           <h2 className="card-title-text">Bước tiếp theo</h2>
           <p className="muted">Lưu xong, đăng sản phẩm đầu tiên hoặc khai điều kiện nhận đặt hàng.</p>
           <Link to={routes.sellerTerms} className="mk-btn mk-btn--text">
@@ -227,11 +228,11 @@ export function CustomTermsForm({ terms, onSaved }: { terms: CustomTerms; onSave
   return (
     <div className="page">
       <PageHeader title="Điều kiện nhận đặt hàng" lead="Hiện trên trang đơn vị của bạn; Moonkage dùng để chọn ai nhận yêu cầu báo giá." />
-      <div className="form-layout">
-        <form className="form" onSubmit={submit}>
-          <fieldset className="form-section">
+      <div className={styles.formLayout}>
+        <form className={styles.form} onSubmit={submit}>
+          <fieldset className={styles.formSection}>
             <legend>1. Quy mô</legend>
-            <div className="field-row">
+            <div className={styles.fieldRow}>
               <div className="mk-field">
                 <label htmlFor="min">Số hộp tối thiểu</label>
                 <input id="min" className="mk-num" type="number" min={1} value={form.minBoxes} onChange={(e) => setForm({ ...form, minBoxes: Number(e.target.value) || 1 })} />
@@ -248,18 +249,18 @@ export function CustomTermsForm({ terms, onSaved }: { terms: CustomTerms; onSave
               </div>
             </div>
           </fieldset>
-          <fieldset className="form-section">
+          <fieldset className={styles.formSection}>
             <legend>2. Vỏ và nhân làm được</legend>
-            <div className="check-group">
-              <span className="check-group__label">Vỏ</span>
+            <div className={styles.checkGroup}>
+              <span className={styles.checkGroupLabel}>Vỏ</span>
               {CRUSTS.map((c) => (
                 <label key={c} className="check">
                   <input type="checkbox" checked={form.crusts.includes(c)} onChange={() => toggle('crusts', c)} /> {c}
                 </label>
               ))}
             </div>
-            <div className="check-group">
-              <span className="check-group__label">Nhân</span>
+            <div className={styles.checkGroup}>
+              <span className={styles.checkGroupLabel}>Nhân</span>
               {FILLINGS.map((f) => (
                 <label key={f} className="check">
                   <input type="checkbox" checked={form.fillings.includes(f)} onChange={() => toggle('fillings', f)} /> {f}
@@ -267,7 +268,7 @@ export function CustomTermsForm({ terms, onSaved }: { terms: CustomTerms; onSave
               ))}
             </div>
           </fieldset>
-          <fieldset className="form-section">
+          <fieldset className={styles.formSection}>
             <legend>3. Làm riêng</legend>
             {CUSTOM.map((c) => (
               <label key={c} className="check">
@@ -275,9 +276,9 @@ export function CustomTermsForm({ terms, onSaved }: { terms: CustomTerms; onSave
               </label>
             ))}
           </fieldset>
-          <fieldset className="form-section">
+          <fieldset className={styles.formSection}>
             <legend>4. Bậc giá gợi ý</legend>
-            <table className="data-table">
+            <table className={styles.dataTable}>
               <thead>
                 <tr>
                   <th scope="col">Từ</th>
@@ -289,13 +290,13 @@ export function CustomTermsForm({ terms, onSaved }: { terms: CustomTerms; onSave
                 {form.tiers.map((t, i) => (
                   <tr key={i}>
                     <td>
-                      <input aria-label={`Bậc ${i + 1} từ`} className="cell-input mk-num" value={t.from} onChange={(e) => setTier(i, 'from', e.target.value)} />
+                      <input aria-label={`Bậc ${i + 1} từ`} className={`${styles.cellInput} mk-num`} value={t.from} onChange={(e) => setTier(i, 'from', e.target.value)} />
                     </td>
                     <td>
-                      <input aria-label={`Bậc ${i + 1} đến`} className="cell-input mk-num" value={t.to ?? ''} placeholder="—" onChange={(e) => setTier(i, 'to', e.target.value)} />
+                      <input aria-label={`Bậc ${i + 1} đến`} className={`${styles.cellInput} mk-num`} value={t.to ?? ''} placeholder="—" onChange={(e) => setTier(i, 'to', e.target.value)} />
                     </td>
                     <td>
-                      <input aria-label={`Bậc ${i + 1} giá`} className="cell-input mk-num" value={t.price} onChange={(e) => setTier(i, 'price', e.target.value)} />
+                      <input aria-label={`Bậc ${i + 1} giá`} className={`${styles.cellInput} mk-num`} value={t.price} onChange={(e) => setTier(i, 'price', e.target.value)} />
                     </td>
                   </tr>
                 ))}
@@ -309,7 +310,7 @@ export function CustomTermsForm({ terms, onSaved }: { terms: CustomTerms; onSave
               + Thêm bậc
             </button>
           </fieldset>
-          <div className="form-actions">
+          <div className={styles.formActions}>
             {saved && (
               <span className="muted" role="status">
                 Đã lưu.
@@ -320,7 +321,7 @@ export function CustomTermsForm({ terms, onSaved }: { terms: CustomTerms; onSave
             </button>
           </div>
         </form>
-        <aside className="side-note">
+        <aside className={styles.sideNote}>
           <h2 className="card-title-text">Người mua sẽ thấy</h2>
           <KeyValue
             rows={[

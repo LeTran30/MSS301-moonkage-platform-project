@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, KeyValue, LoadingState, PageHeader, StatusBadge
 import { formatVnd } from '../../../shared/utils/money';
 import { mismatches } from '../model/adminModel';
 import { decideDisbursement, payOut, useDisbursementRequests, usePayouts, useReconciliation } from '../model/useAdmin';
+import styles from './AdminMoney.module.css';
 
 /** Q4.0: the three money jobs. */
 export function AdminMoneyHub() {
@@ -23,12 +24,12 @@ export function AdminMoneyHub() {
   return (
     <div className="page">
       <PageHeader title="Tiền" lead="Moonkage giữ tiền của người mua tới khi đủ điều kiện chuyển cho người bán." />
-      <div className="stat-grid">
+      <div className={styles.statGrid}>
         {tiles.map((t) => (
-          <Link key={t.label} to={t.to} className="stat-tile">
+          <Link key={t.label} to={t.to} className={styles.statTile}>
             <span className="muted">{t.label}</span>
-            <span className="stat-tile__num mk-num">{t.value}</span>
-            <span className="stat-tile__go">{t.go}</span>
+            <span className={`${styles.statNum} mk-num`}>{t.value}</span>
+            <span className={styles.statGo}>{t.go}</span>
           </Link>
         ))}
       </div>
@@ -87,7 +88,7 @@ export function DisbursementApprovals() {
                   Duyệt {formatVnd(d.amount)}
                 </button>
                 <input
-                  className="cell-input"
+                  className={styles.cellInput}
                   aria-label={`Lý do từ chối ${d.id}`}
                   placeholder="Lý do từ chối"
                   value={refusals[d.id] ?? ''}
@@ -123,7 +124,7 @@ export function Payouts() {
         <EmptyState title="Không còn đơn nào chờ chuyển" />
       ) : (
         <>
-          <table className="data-table">
+          <table className={styles.dataTable}>
             <thead>
               <tr>
                 <th scope="col">
@@ -137,7 +138,7 @@ export function Payouts() {
                 <th scope="col">Đơn</th>
                 <th scope="col">Người bán</th>
                 <th scope="col">Hết hạn khiếu nại</th>
-                <th scope="col" className="num">
+                <th scope="col" className={styles.num}>
                   Số tiền
                 </th>
               </tr>
@@ -159,7 +160,7 @@ export function Payouts() {
                   </td>
                   <td>{p.seller}</td>
                   <td className="mk-num">{p.complaintEnds}</td>
-                  <td className="num mk-num">{formatVnd(p.amount)}</td>
+                  <td className={`${styles.num} mk-num`}>{formatVnd(p.amount)}</td>
                 </tr>
               ))}
             </tbody>
@@ -209,15 +210,15 @@ export function ReconciliationView() {
           { label: 'Phí mở bán thu được', value: <span className="mk-num">{formatVnd(r.sellerFees)}</span> },
         ]}
       />
-      <table className="data-table">
+      <table className={styles.dataTable}>
         <thead>
           <tr>
             <th scope="col">Mã</th>
             <th scope="col">Loại</th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               VNPay
             </th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               Hệ thống
             </th>
             <th scope="col">Kết quả</th>
@@ -230,8 +231,8 @@ export function ReconciliationView() {
               <tr key={row.id}>
                 <td className="mk-num">{row.id}</td>
                 <td>{row.kind}</td>
-                <td className="num mk-num">{formatVnd(row.vnpay)}</td>
-                <td className="num mk-num">{formatVnd(row.system)}</td>
+                <td className={`${styles.num} mk-num`}>{formatVnd(row.vnpay)}</td>
+                <td className={`${styles.num} mk-num`}>{formatVnd(row.system)}</td>
                 <td>{diff === 0 ? <StatusBadge tone="ok">Khớp</StatusBadge> : <StatusBadge tone="warn">{`Lệch ${formatVnd(Math.abs(diff))}`}</StatusBadge>}</td>
               </tr>
             );

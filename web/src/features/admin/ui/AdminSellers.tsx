@@ -15,6 +15,7 @@ import {
   type ApplicationState,
   type SellerApplication,
 } from '../model/useAdmin';
+import styles from './AdminSellers.module.css';
 
 /** Q1.0: the queues, oldest first. */
 export function AdminOverview() {
@@ -36,12 +37,12 @@ export function AdminOverview() {
   return (
     <div className="page">
       <PageHeader title="Tổng quan" lead="Hàng chờ xử lý, cũ nhất trước." />
-      <div className="stat-grid stat-grid--4">
+      <div className={styles.statGrid}>
         {tiles.map((t) => (
-          <Link key={t.label} to={t.to} className="stat-tile">
+          <Link key={t.label} to={t.to} className={styles.statTile}>
             <span className="muted">{t.label}</span>
-            <span className="stat-tile__num mk-num">{t.n}</span>
-            <span className="stat-tile__go">{t.go}</span>
+            <span className={`${styles.statNum} mk-num`}>{t.n}</span>
+            <span className={styles.statGo}>{t.go}</span>
           </Link>
         ))}
       </div>
@@ -87,9 +88,9 @@ export function SellerApplications() {
   return (
     <div className="page">
       <PageHeader title="Người bán" />
-      <div className="product-toolbar">
+      <div className={styles.productToolbar}>
         <Tabs label="Trạng thái hồ sơ" current={tab} onChange={setTab} tabs={STATES.map((s) => ({ key: s, label: applicationLabel[s].label, count: state.data.filter((a) => a.state === s).length }))} />
-        <div className="mk-field supplier-search">
+        <div className={`mk-field ${styles.supplierSearch}`}>
           <label htmlFor="app-q" className="mk-sr">
             Tìm hồ sơ
           </label>
@@ -99,7 +100,7 @@ export function SellerApplications() {
       {list.length === 0 ? (
         <EmptyState title="Không có hồ sơ nào ở đây" />
       ) : (
-        <table className="data-table">
+        <table className={styles.dataTable}>
           <thead>
             <tr>
               <th scope="col">Đơn vị</th>
@@ -132,7 +133,7 @@ export function SellerApplications() {
                     <br />
                     <span className="muted">{a.waiting}</span>
                   </td>
-                  <td className="actions">
+                  <td className={styles.actions}>
                     <Link to={routes.adminSeller(a.id)} className="mk-btn mk-btn--quiet mk-btn--sm">
                       Xem hồ sơ
                     </Link>
@@ -170,7 +171,7 @@ export function ApplicationReview({ app, onChanged }: { app: SellerApplication; 
         }
         lead={`${app.kind} · ${app.city} · nộp ${app.submittedAt}`}
       />
-      <div className="detail-layout">
+      <div className={styles.detailLayout}>
         <SectionTabs
           current={tab}
           onChange={setTab}
@@ -182,7 +183,7 @@ export function ApplicationReview({ app, onChanged }: { app: SellerApplication; 
           {tab === 'profile' ? (
             <div className="stack">
               <h2 className="detail-heading">So khớp chủ hộ (tự động)</h2>
-              <table className="data-table">
+              <table className={styles.dataTable}>
                 <thead>
                   <tr>
                     <th scope="col" />
@@ -212,8 +213,8 @@ export function ApplicationReview({ app, onChanged }: { app: SellerApplication; 
               </table>
               <div className="grid-2">
                 {['Giấy đăng ký kinh doanh', 'Giấy an toàn thực phẩm'].map((d) => (
-                  <div key={d} className="doc-tile">
-                    <div className="mockup__frame">{d}</div>
+                  <div key={d} className={styles.docTile}>
+                    <div className={styles.mockupFrame}>{d}</div>
                     <button type="button" className="mk-btn mk-btn--text">
                       Xem tệp gốc
                     </button>
@@ -233,7 +234,7 @@ export function ApplicationReview({ app, onChanged }: { app: SellerApplication; 
             <KeyValue rows={app.history.map((h) => ({ label: h.at, value: h.label }))} />
           )}
         </SectionTabs>
-        <aside className="action-box" aria-labelledby="decide-heading">
+        <aside className={styles.actionBox} aria-labelledby="decide-heading">
           <h2 id="decide-heading" className="card-title-text">
             Quyết định
           </h2>
@@ -247,14 +248,14 @@ export function ApplicationReview({ app, onChanged }: { app: SellerApplication; 
               </button>
               <div className="mk-field">
                 <label htmlFor="more">Yêu cầu bổ sung</label>
-                <textarea id="more" className="textarea" rows={2} value={more} onChange={(e) => setMore(e.target.value)} placeholder="Ảnh giấy đăng ký rõ hơn, thấy đủ 4 góc." />
+                <textarea id="more" className={styles.textarea} rows={2} value={more} onChange={(e) => setMore(e.target.value)} placeholder="Ảnh giấy đăng ký rõ hơn, thấy đủ 4 góc." />
               </div>
               <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" disabled={!more.trim()} onClick={() => decide('needs-more', more.trim())}>
                 Gửi yêu cầu bổ sung
               </button>
               <div className="mk-field">
                 <label htmlFor="refuse">Từ chối</label>
-                <textarea id="refuse" className="textarea" rows={2} value={refuse} onChange={(e) => setRefuse(e.target.value)} placeholder="Lý do người bán sẽ đọc" />
+                <textarea id="refuse" className={styles.textarea} rows={2} value={refuse} onChange={(e) => setRefuse(e.target.value)} placeholder="Lý do người bán sẽ đọc" />
               </div>
               <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" disabled={!refuse.trim()} onClick={() => decide('rejected', refuse.trim())}>
                 Từ chối hồ sơ
@@ -288,7 +289,7 @@ export function AdminProducts() {
   return (
     <div className="page">
       <PageHeader title="Sản phẩm" />
-      <div className="product-toolbar">
+      <div className={styles.productToolbar}>
         <Tabs
           label="Trạng thái"
           current={tab}
@@ -298,19 +299,19 @@ export function AdminProducts() {
             { key: 'removed', label: 'Đã gỡ' },
           ]}
         />
-        <div className="mk-field supplier-search">
+        <div className={`mk-field ${styles.supplierSearch}`}>
           <label htmlFor="ap-q" className="mk-sr">
             Tìm sản phẩm
           </label>
           <input id="ap-q" type="search" placeholder="Tên sản phẩm" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
-      <table className="data-table">
+      <table className={styles.dataTable}>
         <thead>
           <tr>
             <th scope="col">Sản phẩm</th>
             <th scope="col">Shop</th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               Giá
             </th>
             <th scope="col">{tab === 'live' ? 'Gỡ' : 'Lý do gỡ'}</th>
@@ -323,7 +324,7 @@ export function AdminProducts() {
                 <strong>{p.name}</strong>
               </td>
               <td>{p.shop}</td>
-              <td className="num mk-num">{formatVnd(p.price)}</td>
+              <td className={`${styles.num} mk-num`}>{formatVnd(p.price)}</td>
               <td>
                 {p.removed ? (
                   <span className="muted">
@@ -332,7 +333,7 @@ export function AdminProducts() {
                 ) : (
                   <div className="row">
                     <input
-                      className="cell-input"
+                      className={styles.cellInput}
                       aria-label={`Lý do gỡ ${p.name}`}
                       placeholder="Lý do gỡ"
                       value={reasons[p.id] ?? ''}

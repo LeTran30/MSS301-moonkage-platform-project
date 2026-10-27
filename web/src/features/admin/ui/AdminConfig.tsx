@@ -14,6 +14,7 @@ import {
   type ProvinceFee,
   type Taxonomy,
 } from '../model/useAdmin';
+import styles from './AdminConfig.module.css';
 
 /** Q6.0 */
 export function ConfigHub() {
@@ -26,9 +27,9 @@ export function ConfigHub() {
   return (
     <div className="page">
       <PageHeader title="Cấu hình" />
-      <div className="stat-grid stat-grid--2">
+      <div className={styles.statGrid}>
         {items.map((i) => (
-          <Link key={i.to} to={i.to} className="stat-tile">
+          <Link key={i.to} to={i.to} className={styles.statTile}>
             <span className="card-title-text">
               {i.title} {i.deferred && <StatusBadge tone="muted">Hoãn</StatusBadge>}
             </span>
@@ -64,7 +65,7 @@ function ProvinceFeeTable({ initial }: { initial: ProvinceFee[] }) {
           Còn {missing.length} tỉnh chưa có phí: {missing.join(', ')}. Chưa lưu được.
         </p>
       )}
-      <div className="fee-grid">
+      <div className={styles.feeGrid}>
         {fees.map((f) => (
           <div key={f.province} className={`mk-field${f.fee === null ? ' mk-field--error' : ''}`}>
             <label htmlFor={`fee-${f.province}`}>{f.province}</label>
@@ -199,7 +200,7 @@ function TaxonomyEditor({ initial }: { initial: Taxonomy }) {
           })}
         </ul>
         <div className="row">
-          <input className="cell-input" aria-label={`Thêm ${title.toLowerCase()}`} placeholder="Tên mới" value={drafts[g]} onChange={(e) => setDrafts({ ...drafts, [g]: e.target.value })} />
+          <input className={styles.cellInput} aria-label={`Thêm ${title.toLowerCase()}`} placeholder="Tên mới" value={drafts[g]} onChange={(e) => setDrafts({ ...drafts, [g]: e.target.value })} />
           <button type="button" className="mk-btn mk-btn--quiet mk-btn--sm" disabled={!drafts[g].trim()} onClick={() => add(g)}>
             Thêm
           </button>

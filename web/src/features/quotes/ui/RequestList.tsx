@@ -4,6 +4,7 @@ import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, LoadingState, StatusBadge, Tabs } from '../../../shared/ui';
 import { requestStatusLabel, requestTitle } from '../model/quoteModel';
 import { useRequests, type RequestStatus } from '../model/useQuotes';
+import styles from './RequestList.module.css';
 
 const ORDER: RequestStatus[] = ['new-quotes', 'waiting', 'accepted', 'closed'];
 
@@ -34,12 +35,12 @@ export function RequestList() {
       {list.length === 0 ? (
         <EmptyState title="Không có yêu cầu nào ở đây" body="Tạo yêu cầu báo giá để các đơn vị gửi giá cho bạn." />
       ) : (
-        <table className="data-table">
+        <table className={styles.dataTable}>
           <thead>
             <tr>
               <th scope="col">Yêu cầu</th>
               <th scope="col">Loại</th>
-              <th scope="col" className="num">
+              <th scope="col" className={styles.num}>
                 Mời / Báo giá
               </th>
               <th scope="col">Trạng thái</th>
@@ -61,13 +62,13 @@ export function RequestList() {
                     <span className="muted">Tạo {r.createdAt}</span>
                   </td>
                   <td>{r.kind === 'open' ? 'Gửi nhiều nơi' : `Gửi riêng ${r.directTo}`}</td>
-                  <td className="num mk-num">
+                  <td className={`${styles.num} mk-num`}>
                     {r.invited.length} / {r.quotes.length}
                   </td>
                   <td>
                     <StatusBadge tone={requestStatusLabel[r.status].tone}>{requestStatusLabel[r.status].label}</StatusBadge>
                   </td>
-                  <td className="actions">
+                  <td className={styles.actions}>
                     <Link to={routes.quoteRequest(r.id)} className="mk-btn mk-btn--quiet mk-btn--sm">
                       {r.quotes.length > 1 && r.status === 'new-quotes' ? 'So sánh' : 'Xem'}
                     </Link>

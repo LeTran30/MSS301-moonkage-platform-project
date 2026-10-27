@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
-import { ApiError } from '../../../shared/api/client';
 import { Link } from 'react-router-dom';
+import { ApiError } from '../../../shared/api/client';
 import { routes } from '../../../shared/config/routes';
 import { strings } from '../../../shared/config/strings';
+import { Button } from '../../../shared/ui';
 import { useAuth } from '../model/useAuth';
 import { authStrings } from '../strings';
 import { DemoAccounts } from './DemoAccounts';
+import styles from './LoginForm.module.css';
 
 /** E-mail or phone number and password (FR-02); `onLoggedIn` runs once the session is stored. */
 export function LoginForm({ onLoggedIn }: { onLoggedIn: () => void }) {
@@ -33,17 +35,20 @@ export function LoginForm({ onLoggedIn }: { onLoggedIn: () => void }) {
   };
 
   return (
-    <form className="panel login__form" onSubmit={handleSubmit} noValidate aria-labelledby="login-heading">
-      <p className="brand-text">{strings.appName}</p>
-      <h1 id="login-heading" className="title-text">
+    <form className={styles.form} onSubmit={handleSubmit} noValidate aria-labelledby="login-heading">
+      <p className={styles.brand}>{strings.appName}</p>
+      <h1 id="login-heading" className={styles.title}>
         {authStrings.title}
       </h1>
 
-      <div className="mk-field">
-        <label htmlFor="login-username">{authStrings.username}</label>
+      <div className={styles.field}>
+        <label htmlFor="login-username" className={styles.label}>
+          {authStrings.username}
+        </label>
         <input
           id="login-username"
           name="username"
+          className={styles.input}
           autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -52,12 +57,15 @@ export function LoginForm({ onLoggedIn }: { onLoggedIn: () => void }) {
         />
       </div>
 
-      <div className="mk-field">
-        <label htmlFor="login-password">{authStrings.password}</label>
+      <div className={styles.field}>
+        <label htmlFor="login-password" className={styles.label}>
+          {authStrings.password}
+        </label>
         <input
           id="login-password"
           name="password"
           type="password"
+          className={styles.input}
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -67,22 +75,29 @@ export function LoginForm({ onLoggedIn }: { onLoggedIn: () => void }) {
       </div>
 
       {error && (
-        <p id="login-error" role="alert" className="error-text">
+        <p id="login-error" role="alert" className={styles.error}>
           {error}
         </p>
       )}
 
-      <button
+      <Button
         type="submit"
-        className="mk-btn mk-btn--primary"
+        variant="primary"
+        className={styles.submitButton}
         disabled={submitting}
-        aria-busy={submitting || undefined}
+        busy={submitting}
       >
         {submitting ? authStrings.submitting : authStrings.submit}
-      </button>
+      </Button>
 
-      <p className="auth-footer">
-        <Link to={routes.forgotPassword}>Quên mật khẩu?</Link> · Chưa có tài khoản? <Link to={routes.register}>Đăng ký</Link>
+      <p className={styles.footer}>
+        <Link to={routes.forgotPassword} className={styles.footerLink}>
+          Quên mật khẩu?
+        </Link>{' '}
+        · Chưa có tài khoản?{' '}
+        <Link to={routes.register} className={styles.footerLink}>
+          Đăng ký
+        </Link>
       </p>
 
       <DemoAccounts

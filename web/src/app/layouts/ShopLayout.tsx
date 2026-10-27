@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router-dom';
 import { AccountMenu, useAuth } from '../../features/auth';
 import { CartLink } from '../../features/cart';
 import { ProductSearchBox } from '../../features/catalog';
@@ -10,6 +10,7 @@ import logoMark from '../../shared/assets/moonkage-mark.png';
 import { routes } from '../../shared/config/routes';
 import { strings } from '../../shared/config/strings';
 import { useDisclosure } from '../../shared/ui';
+import styles from './ShopLayout.module.css';
 
 /** "Đặt theo yêu cầu ▾": the description line and its ways in. */
 function CustomOrderMenu() {
@@ -52,7 +53,8 @@ export function ShopLayout() {
   const sellerStatus = session?.sellerStatus ?? 'none';
 
   return (
-    <div className="shop">
+    <div className={styles.shop}>
+      <ScrollRestoration />
       <header className="mk-nav">
         <div className="mk-topbar">
           <div className="mk-topbar__in">
@@ -95,17 +97,17 @@ export function ShopLayout() {
         </div>
       </header>
 
-      <main className="shop__main">
+      <main className={styles.main}>
         <Outlet />
       </main>
 
-      <footer className="site-footer mk-on-brand">
-        <div className="shop__inner site-footer__inner">
-          <div className="site-footer__brand">
-            <img src={logoFull} alt={strings.appName} className="site-footer__logo" />
-            <p>{strings.footer.note}</p>
+      <footer className={`${styles.footer} mk-on-brand`}>
+        <div className={styles.footerInner}>
+          <div className={styles.footerBrand}>
+            <img src={logoFull} alt={strings.appName} className={styles.footerLogo} width="96" height="118" />
+            <p className={styles.footerNote}>{strings.footer.note}</p>
           </div>
-          <nav className="site-footer__links" aria-label="Chân trang">
+          <nav className={styles.footerLinks} aria-label="Chân trang">
             <SellEntryLink status={sellerStatus} />
             <Link to={routes.policy}>{strings.nav.policy}</Link>
           </nav>

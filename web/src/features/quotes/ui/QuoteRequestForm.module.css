@@ -1,0 +1,98 @@
+/* [NGUYÊN TẮC 1 & 2: CÔ LẬP & ĐỒNG VỊ TRÍ]
+   QuoteRequestForm.module.css — Style cô lập cho QuoteRequestForm */
+
+.formLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-12);
+  align-items: start;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.formSection {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.formSection > legend {
+  font: var(--text-heading);
+  font-size: 20px;
+  line-height: 28px;
+  padding: 0;
+  margin-bottom: var(--space-4);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.checkGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+}
+
+.checkGroupLabel {
+  font: var(--text-label);
+  width: 100%;
+}
+
+.textarea {
+  font: var(--text-body);
+  color: var(--ink);
+  background: var(--surface);
+  border: var(--border-thin) solid var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.textarea:hover {
+  border-color: var(--ink);
+}
+
+.textarea:focus-visible {
+  outline: var(--border-thick) solid var(--focus);
+  outline-offset: var(--border-thick);
+}
+
+.textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.sideNote {
+  display: grid;
+  gap: var(--space-4);
+  position: sticky;
+  top: var(--space-6);
+  padding: var(--space-6);
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 840px) {
+  .formLayout {
+    grid-template-columns: 1fr;
+  }
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+}

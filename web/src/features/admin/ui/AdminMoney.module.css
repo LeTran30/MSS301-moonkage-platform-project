@@ -1,0 +1,80 @@
+/* [NGUYÊN TẮC 1 & 2: CÔ LẬP & ĐỒNG VỊ TRÍ]
+   AdminMoney.module.css — Style cô lập cho AdminMoney */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.statTile {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-5) var(--space-6);
+  background: var(--surface-muted);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--ink);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.statTile:hover {
+  background: var(--surface-hover);
+}
+
+.statNum {
+  font: var(--text-heading);
+}
+
+.statGo {
+  font: var(--text-label);
+  color: var(--brand);
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font: var(--text-body-sm);
+  border: var(--border-thin) solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dataTable th {
+  text-align: left;
+  font: var(--text-label);
+  background: var(--surface-muted);
+  padding: var(--space-3) var(--space-4);
+}
+
+.dataTable td {
+  padding: var(--space-4);
+  border-top: var(--border-thin) solid var(--line);
+  vertical-align: middle;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cellInput {
+  width: 100%;
+  box-sizing: border-box;
+  font: var(--text-body-sm);
+  border: var(--border-thin) solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.cellInput:focus-visible {
+  outline: var(--border-thick) solid var(--focus);
+  outline-offset: 1px;
+}
+
+@media (max-width: 768px) {
+  .statGrid {
+    grid-template-columns: 1fr;
+  }
+}

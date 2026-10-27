@@ -21,7 +21,13 @@ export function page<K extends string>(load: () => Promise<Record<K, ComponentTy
     }
   });
   return (
-    <Suspense fallback={<LoadingState />}>
+    <Suspense
+      fallback={
+        <div className="shop__inner page page--loading">
+          <LoadingState />
+        </div>
+      }
+    >
       <Page />
     </Suspense>
   );

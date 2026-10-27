@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, KeyValue, LoadingState, PageHeader, StatusBadge
 import { formatVnd } from '../../../shared/utils/money';
 import { maxRefund } from '../model/adminModel';
 import { decideDispute, useDisputes, type Dispute } from '../model/useAdmin';
+import styles from './AdminDisputes.module.css';
 
 const stateLabel = { open: { label: 'Đang mở', tone: 'warn' }, decided: { label: 'Đã quyết định', tone: 'ok' }, manual: { label: 'Xử lý ngoài hệ thống', tone: 'muted' } } as const;
 
@@ -30,13 +31,13 @@ export function DisputeList() {
       {list.length === 0 ? (
         <EmptyState title="Không có khiếu nại nào" />
       ) : (
-        <table className="data-table">
+        <table className={styles.dataTable}>
           <thead>
             <tr>
               <th scope="col">Khiếu nại</th>
               <th scope="col">Lý do</th>
               <th scope="col">Người bán đề xuất</th>
-              <th scope="col" className="num">
+              <th scope="col" className={styles.num}>
                 Đang giữ
               </th>
               <th scope="col">
@@ -56,8 +57,8 @@ export function DisputeList() {
                 </td>
                 <td>{d.reason}</td>
                 <td>{d.sellerProposal ? `${d.sellerProposal.kind} ${formatVnd(d.sellerProposal.amount)}` : <span className="muted">Chưa có</span>}</td>
-                <td className="num mk-num">{formatVnd(d.held)}</td>
-                <td className="actions">
+                <td className={`${styles.num} mk-num`}>{formatVnd(d.held)}</td>
+                <td className={styles.actions}>
                   <Link to={routes.adminDispute(d.id)} className="mk-btn mk-btn--quiet mk-btn--sm">
                     {d.state === 'open' ? 'Xử lý' : 'Xem'}
                   </Link>
@@ -93,7 +94,7 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
         }
         lead={`${d.buyer} ↔ ${d.seller} · mở ${d.openedAt}`}
       />
-      <div className="detail-layout">
+      <div className={styles.detailLayout}>
         <div className="stack">
           <section className="panel panel--wide">
             <h2 className="detail-heading">Người mua nói</h2>
@@ -102,7 +103,7 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
             </p>
             <div className="grid-2">
               {['Ảnh người mua gửi 1', 'Ảnh người mua gửi 2'].map((x) => (
-                <div key={x} className="mockup__frame">
+                <div key={x} className={styles.mockupFrame}>
                   {x}
                 </div>
               ))}
@@ -133,7 +134,7 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
             <KeyValue rows={d.history.map((h) => ({ label: h.at, value: h.label }))} />
           </section>
         </div>
-        <aside className="action-box" aria-labelledby="dd-heading">
+        <aside className={styles.actionBox} aria-labelledby="dd-heading">
           <h2 id="dd-heading" className="card-title-text">
             Quyết định
           </h2>
@@ -169,7 +170,7 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
               {tooMuch && <p className="error-text">Không thể hoàn quá số đang giữ.</p>}
               <div className="mk-field">
                 <label htmlFor="dnote">Lý do (cả hai bên sẽ đọc)</label>
-                <textarea id="dnote" className="textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+                <textarea id="dnote" className={styles.textarea} rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
               </div>
               <KeyValue
                 rows={[
