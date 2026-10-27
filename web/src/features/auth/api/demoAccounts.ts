@@ -59,3 +59,51 @@ export function demoLogin(username: string, password: string): Promise<LoginResp
     }, 300),
   );
 }
+
+export function demoRegister(input: {
+  email: string;
+  fullName: string;
+  phoneNumber?: string;
+  password: string;
+}): Promise<{ id: string; email: string; phoneNumber?: string; verified: boolean; otpSent: boolean }> {
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      resolve({
+        id: input.email.trim().toLowerCase(),
+        email: input.email.trim().toLowerCase(),
+        phoneNumber: input.phoneNumber,
+        verified: false,
+        otpSent: true,
+      });
+    }, 250),
+  );
+}
+
+export function demoVerifyAccount(_email: string, otp: string): Promise<{ verified: boolean }> {
+  return new Promise((resolve, reject) =>
+    setTimeout(() => {
+      if (otp.trim().length !== 6) {
+        reject(new ApiError(400, 'OTP_INVALID', 'Mã xác nhận gồm 6 chữ số.'));
+        return;
+      }
+      resolve({ verified: true });
+    }, 250),
+  );
+}
+
+export function demoSendOtp(_email: string): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 200));
+}
+
+export function demoResetPassword(_email: string, otp: string, _newPassword: string): Promise<void> {
+  return new Promise((resolve, reject) =>
+    setTimeout(() => {
+      if (otp.trim().length !== 6) {
+        reject(new ApiError(400, 'OTP_INVALID', 'Mã xác nhận gồm 6 chữ số.'));
+        return;
+      }
+      resolve();
+    }, 250),
+  );
+}
+

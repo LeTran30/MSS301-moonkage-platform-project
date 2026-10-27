@@ -1,17 +1,36 @@
 import { useState, type ReactNode } from 'react';
+import { ApiError } from '../../../shared/api/client';
+import { config } from '../../../shared/config/env';
+import { ALL_PROVINCE_NAMES, DEFAULT_PROVINCE_NAME } from '../../../shared/config/provinces';
+import { strings } from '../../../shared/config/strings';
 import { FileDrop, KeyValue, PageHeader, Steps } from '../../../shared/ui';
+import { formatVnd } from '../../../shared/utils/money';
+import { submitSellerOnboarding, useRegistrationFee } from '../model/useSellerOnboarding';
 
 const STEPS = ['Loại hình', 'Đơn vị', 'Chủ hộ', 'Giấy tờ', 'Nguồn hàng, cách bán', 'Xem lại'];
 
 /**
- * M7.1: the seller profile in six steps; the owner comes from the verified CCCD (`owner`). Submitting is
- * simulated until the seller endpoints exist; `onSubmitted` moves to the seller channel (profile waiting).
+ * M7.1: the seller profile in six steps; the owner comes from the verified CCCD (`owner`).
  */
 export function SellerApplyForm({ owner, onSubmitted }: { owner: { name: string; idMasked: string }; onSubmitted: () => void }) {
+  const feeState = useRegistrationFee();
+  const feeAmount = feeState.kind === 'loaded' ? feeState.data : 200000;
   const [step, setStep] = useState(0);
   const [kind, setKind] = useState('Hộ kinh doanh');
-  const [unit, setUnit] = useState({ name: '', address: '', regNo: '', phone: '' });
+  const [unit, setUnit] = useState({
+    name: '',
+    province: DEFAULT_PROVINCE_NAME,
+    address: '',
+    regNo: '',
+    phone: '',
+    bankName: 'Vietcombank',
+    bankAccountNumber: '',
+    bankAccountHolder: owner.name.toUpperCase(),
+  });
+  const [idNumber, setIdNumber] = useState('');
   const [isOwner, setIsOwner] = useState(false);
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [foodSafetyFile, setFoodSafetyFile] = useState<File | null>(null);
   const [source, setSource] = useState('Tự sản xuất');
   const [ways, setWays] = useState(['Shop – hàng có sẵn', 'Nhận đặt hàng']);
   const [agree, setAgree] = useState(false);
@@ -20,21 +39,63 @@ export function SellerApplyForm({ owner, onSubmitted }: { owner: { name: string;
 
   const checks: (() => string | null)[] = [
     () => null,
-    () => (!unit.name.trim() || !unit.address.trim() || !unit.regNo.trim() || !/^0\d{9}$/.test(unit.phone.replace(/\s/g, '')) ? 'Điền đủ tên, địa chỉ, mã số đăng ký và số điện thoại 10 số.' : null),
-    () => (isOwner ? null : 'Chỉ chủ hộ / chủ doanh nghiệp ghi trên giấy đăng ký được khai hồ sơ.'),
-    () => null,
+    () => {
+      if (!unit.name.trim() || !unit.address.trim() || !unit.regNo.trim() || !/^0\d{9}$/.test(unit.phone.replace(/\s/g, ''))) {
+        return 'Điền đủ tên, địa chỉ, mã số đăng ký và số điện thoại 10 số.';
+      }
+      if (!config.demoMode && (!unit.bankName.trim() || !unit.bankAccountNumber.trim() || !unit.bankAccountHolder.trim())) {
+        return 'Điền đầy đủ ngân hàng, số tài khoản và chủ tài khoản nhận tiền.';
+      }
+      return null;
+    },
+    () => {
+      if (!isOwner) return 'Chỉ chủ hộ / chủ doanh nghiệp ghi trên giấy đăng ký được khai hồ sơ.';
+      if (!config.demoMode && !/^\d{12}$/.test(idNumber.replace(/\D/g, ''))) {
+        return 'Nhập số CCCD 12 chữ số của chủ hộ trên giấy đăng ký để đối chiếu.';
+      }
+      return null;
+    },
+    () => {
+      if (!config.demoMode && !licenseFile) return 'Đính kèm Giấy đăng ký kinh doanh.';
+      if (!config.demoMode && source === 'Tự sản xuất' && !foodSafetyFile) return 'Đính kèm Giấy an toàn thực phẩm khi tự sản xuất.';
+      return null;
+    },
     () => (ways.length ? null : 'Chọn ít nhất một cách bán.'),
     () => (agree ? null : 'Đánh dấu ô xác nhận để nộp hồ sơ.'),
   ];
 
-  const next = () => {
+  const next = async () => {
     const problem = checks[step]();
     setError(problem);
     if (problem) return;
-    if (step < STEPS.length - 1) setStep(step + 1);
-    else {
-      setBusy(true);
-      setTimeout(onSubmitted, 400);
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+      return;
+    }
+    setBusy(true);
+    try {
+      await submitSellerOnboarding({
+        kind,
+        name: unit.name,
+        province: unit.province,
+        address: unit.address,
+        regNo: unit.regNo,
+        phone: unit.phone,
+        representativeName: owner.name || unit.bankAccountHolder || 'Chủ hộ',
+        representativeIdNumber: idNumber.replace(/\D/g, '') || '001090001234',
+        source,
+        ways,
+        bankName: unit.bankName || 'Vietcombank',
+        bankAccountNumber: unit.bankAccountNumber || '0011001234567',
+        bankAccountHolder: unit.bankAccountHolder || owner.name || 'CHU HO',
+        licenseFile,
+        foodSafetyFile,
+      });
+      onSubmitted();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : strings.errors.server);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -86,11 +147,26 @@ export function SellerApplyForm({ owner, onSubmitted }: { owner: { name: string;
             {step === 1 && (
               <>
                 {input('name', 'Tên hiển thị trên Moonkage')}
-                {input('address', 'Địa chỉ cơ sở')}
+                <div className="field-row">
+                  <div className="mk-field">
+                    <label htmlFor="u-province">Tỉnh / thành phố</label>
+                    <select id="u-province" value={unit.province} onChange={(e) => setUnit({ ...unit, province: e.target.value })}>
+                      {ALL_PROVINCE_NAMES.map((p) => (
+                        <option key={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {input('address', 'Địa chỉ cơ sở')}
+                </div>
                 <div className="field-row">
                   {input('regNo', 'Mã số đăng ký')}
                   {input('phone', 'Điện thoại', 'tel')}
                 </div>
+                <div className="field-row">
+                  {input('bankName', 'Ngân hàng nhận tiền')}
+                  {input('bankAccountNumber', 'Số tài khoản ngân hàng')}
+                </div>
+                {input('bankAccountHolder', 'Chủ tài khoản ngân hàng')}
               </>
             )}
             {step === 2 && (
@@ -102,6 +178,19 @@ export function SellerApplyForm({ owner, onSubmitted }: { owner: { name: string;
                     { label: 'Số định danh', value: owner.idMasked },
                   ]}
                 />
+                {!config.demoMode && (
+                  <div className="mk-field">
+                    <label htmlFor="u-idnum">Số CCCD trên giấy đăng ký (12 số)</label>
+                    <input
+                      id="u-idnum"
+                      className="mk-num"
+                      inputMode="numeric"
+                      maxLength={12}
+                      value={idNumber}
+                      onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ''))}
+                    />
+                  </div>
+                )}
                 <label className="check">
                   <input type="checkbox" checked={isOwner} onChange={(e) => setIsOwner(e.target.checked)} /> Tôi là chủ hộ / chủ doanh nghiệp ghi trên giấy đăng ký
                 </label>
@@ -109,8 +198,18 @@ export function SellerApplyForm({ owner, onSubmitted }: { owner: { name: string;
             )}
             {step === 3 && (
               <>
-                <FileDrop label="Giấy đăng ký kinh doanh" hint="PDF, ảnh · tối đa 10MB" accept=".pdf,image/*" />
-                <FileDrop label="Giấy an toàn thực phẩm" hint="Cần khi bạn tự sản xuất (bước 5)" accept=".pdf,image/*" />
+                <FileDrop
+                  label="Giấy đăng ký kinh doanh"
+                  hint="PDF, ảnh · tối đa 10MB"
+                  accept=".pdf,image/*"
+                  onSelect={(files) => setLicenseFile(files[0] ?? null)}
+                />
+                <FileDrop
+                  label="Giấy an toàn thực phẩm"
+                  hint="Cần khi bạn tự sản xuất (bước 5)"
+                  accept=".pdf,image/*"
+                  onSelect={(files) => setFoodSafetyFile(files[0] ?? null)}
+                />
               </>
             )}
             {step === 4 && (
@@ -136,12 +235,12 @@ export function SellerApplyForm({ owner, onSubmitted }: { owner: { name: string;
                     { label: 'Loại hình', value: withEdit(kind, 0) },
                     { label: 'Đơn vị', value: withEdit(unit.name || '—', 1) },
                     { label: 'Chủ hộ', value: owner.name },
-                    { label: 'Giấy tờ', value: withEdit('Đã đính kèm', 3) },
+                    { label: 'Giấy tờ', value: withEdit(licenseFile || foodSafetyFile ? 'Đã đính kèm' : 'Đã đính kèm', 3) },
                     { label: 'Cách bán', value: withEdit(ways.map((w) => w.split(' –')[0]).join(', '), 4) },
                   ]}
                 />
                 <label className="check">
-                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> Thông tin trên là đúng. Tôi hiểu phí mở bán 200.000đ đóng
+                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> Thông tin trên là đúng. Tôi hiểu phí mở bán {formatVnd(feeAmount)} đóng
                   sau khi hồ sơ được duyệt.
                 </label>
               </>
@@ -158,7 +257,7 @@ export function SellerApplyForm({ owner, onSubmitted }: { owner: { name: string;
                 ‹ Quay lại
               </button>
             )}
-            <button type="button" className="mk-btn mk-btn--primary" onClick={next} aria-busy={busy || undefined}>
+            <button type="button" className="mk-btn mk-btn--primary" onClick={() => void next()} disabled={busy} aria-busy={busy || undefined}>
               {step === STEPS.length - 1 ? 'Nộp hồ sơ' : 'Tiếp tục'}
             </button>
           </div>

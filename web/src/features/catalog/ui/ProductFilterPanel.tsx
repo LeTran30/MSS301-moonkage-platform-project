@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Crust, Filling, ProductSummary } from '../api/types';
-import { crustLabels, fillingLabels, type ProductFilters } from '../model/filters';
+import { crustLabels, fillingLabels, type Crust, type Filling, type ProductFilters } from '../model/filters';
+import type { ProductSummary } from '../model/useCatalog';
 import { catalogStrings } from '../strings';
 
 type ListKey = 'crusts' | 'fillings' | 'brands' | 'shops';

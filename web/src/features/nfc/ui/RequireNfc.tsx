@@ -2,8 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { ErrorState, LoadingState } from '../../../shared/ui';
-import type { NfcStatusInfo } from '../api/nfc';
-import { useNfcStatus } from '../model/useNfcStatus';
+import { useNfcStatus, type NfcStatusInfo } from '../model/useNfcStatus';
 
 /**
  * Gate of the actions that need a verified CCCD (BR-23): quote requests, seller profile. Shows the content with the

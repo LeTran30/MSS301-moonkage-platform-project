@@ -1,7 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { FileDrop, PageHeader } from '../../../shared/ui';
-import { createRequest } from '../api/quotesApi';
-import type { QuoteRequest } from '../api/types';
+import { createRequest, type QuoteRequest } from '../model/useQuotes';
 
 const CRUSTS = ['Nướng', 'Dẻo', 'Than tre'];
 const FILLINGS = ['Thập cẩm', 'Hạt sen', 'Đậu xanh', 'Trà xanh'];

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { Avatar, KeyValue, StatusBadge } from '../../../shared/ui';
 import { formatRating } from '../../../shared/utils/money';
-import type { SupplierProfile } from '../api/suppliersApi';
+import type { SupplierProfile } from '../model/useSuppliers';
 import { supplierStrings } from '../strings';
 
 /** M3.3: who the supplier is, what it makes to order, its conditions; `products` is its Shop (from the catalogue). */

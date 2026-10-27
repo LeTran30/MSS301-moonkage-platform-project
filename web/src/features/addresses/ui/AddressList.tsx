@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { Dialog, EmptyState, ErrorState, LoadingState, StatusBadge } from '../../../shared/ui';
-import { deleteAddress, formatAddress, setDefaultAddress, type Address } from '../api/addressesApi';
-import { useAddresses } from '../model/useAddresses';
+import { deleteAddress, formatAddress, setDefaultAddress, useAddresses, type Address } from '../model/useAddresses';
 
 /** M6.3 with the delete confirmation (M6.3.2). */
 export function AddressList() {

@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { Dialog, ErrorState, LoadingState, PageHeader, StatusBadge } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { requestDisbursement } from '../api/sellerApi';
 import { settlementTotal } from '../model/sellerModel';
-import { useDisbursements, useSettlements } from '../model/useSeller';
+import { requestDisbursement, useDisbursements, useSettlements } from '../model/useSeller';
 
 /** B5.0 */
 export function SellerMoneyOverview({ takesCustom }: { takesCustom: boolean }) {

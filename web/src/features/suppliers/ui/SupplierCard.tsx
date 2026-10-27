@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { Avatar, Stars } from '../../../shared/ui';
-import type { Supplier } from '../api/suppliersApi';
+import type { Supplier } from '../model/useSuppliers';
 import { supplierStrings } from '../strings';
 
 /** One supplier: identity, what it makes, its own minimum and reach, then the request button. */

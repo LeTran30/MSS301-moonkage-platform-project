@@ -1,5 +1,9 @@
 import { useAsync } from '../../../shared/ui';
 import {
+  addProgress,
+  attachInvoice,
+  confirmOrder,
+  declineRequest,
   fetchDisbursements,
   fetchIncoming,
   fetchIncomingRequest,
@@ -13,7 +17,71 @@ import {
   fetchShopNotifications,
   fetchTerms,
   fetchZones,
+  markDelivered,
+  markFeePaid,
+  proposeResolution,
+  requestDisbursement,
+  resubmitProfile,
+  saveProduct,
+  saveTerms,
+  saveZones,
+  sendMockup,
+  sendQuote,
+  setProductVisible,
+  shipOrder,
+  withdrawQuote,
 } from '../api/sellerApi';
+import type {
+  CustomTerms,
+  DeliveryZones,
+  Disbursement,
+  IncomingRequest,
+  SellerCustomOrder,
+  SellerOrder,
+  SellerOrderStatus,
+  SellerProduct,
+  SellerProfile,
+  SellerReadyOrder,
+  SellerState,
+  Settlement,
+  ShopNotification,
+} from '../api/types';
+
+export type {
+  CustomTerms,
+  DeliveryZones,
+  Disbursement,
+  IncomingRequest,
+  SellerCustomOrder,
+  SellerOrder,
+  SellerOrderStatus,
+  SellerProduct,
+  SellerProfile,
+  SellerReadyOrder,
+  SellerState,
+  Settlement,
+  ShopNotification,
+};
+
+export {
+  addProgress,
+  attachInvoice,
+  confirmOrder,
+  declineRequest,
+  markDelivered,
+  markFeePaid,
+  proposeResolution,
+  requestDisbursement,
+  resubmitProfile,
+  saveProduct,
+  saveTerms,
+  saveZones,
+  sendMockup,
+  sendQuote,
+  setProductVisible,
+  shipOrder,
+  withdrawQuote,
+};
 
 export const useSellerProfile = () => useAsync(fetchProfile, []);
 export const useSellerOrders = () => useAsync(fetchSellerOrders, []);

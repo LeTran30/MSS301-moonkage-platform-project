@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { formatRating, formatVnd } from '../../../shared/utils/money';
-import type { ProductSummary } from '../api/types';
+import type { ProductSummary } from '../model/useCatalog';
 import { catalogStrings } from '../strings';
 
 /**

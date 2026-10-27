@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
-import type { Supplier } from '../api/suppliersApi';
+import type { Supplier } from '../model/useSuppliers';
 import { supplierStrings } from '../strings';
 
 /** DS VendorTile (mk-vendor): initials in a white ring, the name, one line of real conditions. */

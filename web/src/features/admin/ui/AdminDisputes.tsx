@@ -3,10 +3,8 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, KeyValue, LoadingState, PageHeader, StatusBadge, Tabs } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { decideDispute } from '../api/adminApi';
-import type { Dispute } from '../api/types';
 import { maxRefund } from '../model/adminModel';
-import { useDisputes } from '../model/useAdmin';
+import { decideDispute, useDisputes, type Dispute } from '../model/useAdmin';
 
 const stateLabel = { open: { label: 'Đang mở', tone: 'warn' }, decided: { label: 'Đã quyết định', tone: 'ok' }, manual: { label: 'Xử lý ngoài hệ thống', tone: 'muted' } } as const;
 

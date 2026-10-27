@@ -3,10 +3,8 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, FileDrop, KeyValue, LoadingState, PageHeader, StatusBadge, Tabs } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { declineRequest, sendQuote, withdrawQuote } from '../api/sellerApi';
-import type { CustomTerms, IncomingRequest } from '../api/types';
 import { tierPrice } from '../model/sellerModel';
-import { useIncomingRequests } from '../model/useSeller';
+import { declineRequest, sendQuote, useIncomingRequests, withdrawQuote, type CustomTerms, type IncomingRequest } from '../model/useSeller';
 
 const timeLeft = (h: number) => (h <= 0 ? 'Hết hạn' : h < 24 ? `Còn ${h} giờ` : `Còn ${Math.round(h / 24)} ngày`);
 
@@ -167,7 +165,7 @@ export function SellerRequestDetail({ request, onChanged }: { request: IncomingR
                   ))}
                 </select>
               </div>
-              <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" onClick={() => run(() => declineRequest(request.id))}>
+              <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" onClick={() => run(() => declineRequest(request.id, reason))}>
                 Từ chối
               </button>
             </>

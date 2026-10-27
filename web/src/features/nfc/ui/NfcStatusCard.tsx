@@ -1,5 +1,5 @@
 import { formatDateTime } from '../../../shared/utils/format';
-import type { NfcStatusInfo } from '../api/nfc';
+import type { NfcStatusInfo } from '../model/useNfcStatus';
 import { nfcStrings } from '../strings';
 
 /** A verified account: masked data only (AC-04.12). */
