@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { FileDrop, PageHeader } from '../../../shared/ui';
 import { createRequest, type QuoteRequest } from '../model/useQuotes';
+import styles from './QuoteRequestForm.module.css';
 
 const CRUSTS = ['Nướng', 'Dẻo', 'Than tre'];
 const FILLINGS = ['Thập cẩm', 'Hạt sen', 'Đậu xanh', 'Trà xanh'];
@@ -87,11 +88,11 @@ export function QuoteRequestForm({
             : 'Mô tả thứ bạn cần; các đơn vị phù hợp sẽ gửi báo giá để bạn so sánh.'
         }
       />
-      <div className="form-layout">
-        <form className="form" onSubmit={submit} noValidate>
-          <fieldset className="form-section">
+      <div className={styles.formLayout}>
+        <form className={styles.form} onSubmit={submit} noValidate>
+          <fieldset className={styles.formSection}>
             <legend>1. Bánh và hộp</legend>
-            <div className="field-row">
+            <div className={styles.fieldRow}>
               <div className={`mk-field${tooFew || blocked ? ' mk-field--error' : ''}`}>
                 <label htmlFor="boxes">Số hộp</label>
                 <input
@@ -118,8 +119,8 @@ export function QuoteRequestForm({
               </div>
             </div>
             {!direct && (
-              <div className="check-group">
-                <span className="check-group__label">Vỏ bánh</span>
+              <div className={styles.checkGroup}>
+                <span className={styles.checkGroupLabel}>Vỏ bánh</span>
                 {CRUSTS.map((c) => (
                   <label key={c} className="check">
                     <input type="checkbox" checked={crusts.includes(c)} onChange={() => setCrusts(toggle(crusts, c))} /> {c}
@@ -127,8 +128,8 @@ export function QuoteRequestForm({
                 ))}
               </div>
             )}
-            <div className="check-group">
-              <span className="check-group__label">Nhân bánh</span>
+            <div className={styles.checkGroup}>
+              <span className={styles.checkGroupLabel}>Nhân bánh</span>
               {FILLINGS.map((f) => (
                 <label key={f} className="check">
                   <input type="checkbox" checked={fillings.includes(f)} onChange={() => setFillings(toggle(fillings, f))} /> {f}
@@ -137,7 +138,7 @@ export function QuoteRequestForm({
             </div>
           </fieldset>
 
-          <fieldset className="form-section">
+          <fieldset className={styles.formSection}>
             <legend>2. Làm riêng</legend>
             {direct ? (
               <div className="mk-field">
@@ -166,9 +167,9 @@ export function QuoteRequestForm({
             <FileDrop label="Đính kèm logo hoặc mẫu (không bắt buộc)" hint="PDF, AI, PNG · tối đa 20MB" accept=".pdf,.ai,.png,.jpg" />
           </fieldset>
 
-          <fieldset className="form-section">
+          <fieldset className={styles.formSection}>
             <legend>3. Giao hàng</legend>
-            <div className="field-row">
+            <div className={styles.fieldRow}>
               <div className="mk-field">
                 <label htmlFor="by">Cần nhận trước ngày</label>
                 <input id="by" type="date" value={deliverBy} onChange={(e) => setDeliverBy(e.target.value)} />
@@ -184,11 +185,11 @@ export function QuoteRequestForm({
             </div>
             <div className="mk-field">
               <label htmlFor="note">{direct ? 'Ghi chú' : 'Ghi chú cho đơn vị'}</label>
-              <textarea id="note" className="textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+              <textarea id="note" className={styles.textarea} rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
             </div>
           </fieldset>
 
-          <div className="form-actions">
+          <div className={styles.formActions}>
             <button type="button" className="mk-btn mk-btn--quiet" onClick={onCancel}>
               Hủy
             </button>
@@ -197,7 +198,7 @@ export function QuoteRequestForm({
             </button>
           </div>
         </form>
-        <aside className="side-note">{side}</aside>
+        <aside className={styles.sideNote}>{side}</aside>
       </div>
     </div>
   );

@@ -1,0 +1,13 @@
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.heading {
+  font: var(--text-heading);
+  margin: 0;
+  color: var(--ink);
+}

@@ -1,0 +1,21 @@
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-3) var(--space-8);
+  margin: 0;
+}
+
+.row {
+  display: contents;
+}
+
+.term {
+  font: var(--text-body-sm);
+  color: var(--ink-muted);
+}
+
+.detail {
+  font: var(--text-body-sm);
+  color: var(--ink);
+  margin: 0;
+}

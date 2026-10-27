@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ErrorState, LoadingState, PageHeader } from '../../../shared/ui';
 import { useShopNotifications } from '../model/useSeller';
+import styles from './ShopNotifications.module.css';
 
 /** B7.0: the shop's own inbox, separate from the owner's buying notifications (M6.6). */
 export function ShopNotifications({ shopName }: { shopName: string }) {
@@ -10,9 +11,9 @@ export function ShopNotifications({ shopName }: { shopName: string }) {
   return (
     <div className="page page--narrow">
       <PageHeader title="Thông báo cửa hàng" lead={shopName} />
-      <ul className="notifications__list">
+      <ul className={styles.list}>
         {state.data.map((n) => (
-          <li key={n.id} className={`notifications__item${n.unread ? ' notifications__item--unread' : ''}`}>
+          <li key={n.id} className={`${styles.item}${n.unread ? ` ${styles.itemUnread}` : ''}`}>
             <div>
               <p>
                 {n.unread ? <strong>{n.title}</strong> : n.title} · {n.detail}

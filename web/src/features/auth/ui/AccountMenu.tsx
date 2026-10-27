@@ -3,6 +3,7 @@ import { routes } from '../../../shared/config/routes';
 import { useDisclosure } from '../../../shared/ui';
 import { useAuth } from '../model/useAuth';
 import { authStrings } from '../strings';
+import styles from './AccountMenu.module.css';
 
 /** Initials for the avatar: first letters of the last two words of the name. */
 function initialsOf(name: string): string {
@@ -30,9 +31,9 @@ export function AccountMenu() {
   ];
 
   return (
-    <div className="account-menu" ref={ref}>
-      <button type="button" className="account-menu__toggle" aria-expanded={open} aria-controls={menuId} onClick={toggle}>
-        <span className="account-menu__initials" aria-hidden="true">
+    <div className={styles.menu} ref={ref}>
+      <button type="button" className={styles.toggle} aria-expanded={open} aria-controls={menuId} onClick={toggle}>
+        <span className={styles.initials} aria-hidden="true">
           {initialsOf(session.displayName)}
         </span>
         {authStrings.menu.account}

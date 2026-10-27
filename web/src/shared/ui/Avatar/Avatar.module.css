@@ -1,0 +1,19 @@
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--radius-full);
+  background: var(--surface-muted);
+  color: var(--brand);
+  font: var(--text-label);
+}
+
+.md {
+  width: 40px;
+  height: 40px;
+}
+
+.lg {
+  width: 56px;
+  height: 56px;
+}

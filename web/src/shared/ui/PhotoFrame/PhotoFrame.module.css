@@ -1,0 +1,22 @@
+.photoFrame {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-muted);
+  display: grid;
+  place-items: center;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.label {
+  font: var(--text-body-sm);
+  color: var(--ink-muted);
+  padding: var(--space-4);
+  text-align: center;
+}

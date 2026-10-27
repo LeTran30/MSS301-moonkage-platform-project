@@ -11,13 +11,19 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const { loading, items } = useCartItems();
   const addresses = useAddresses();
-  if (loading || addresses.kind === 'loading') return <LoadingState />;
+  if (loading || addresses.kind === 'loading') {
+    return (
+      <div className="shop__inner page">
+        <LoadingState />
+      </div>
+    );
+  }
   if (!items.length) return <Navigate to={routes.cart} replace />;
   const list = addresses.kind === 'loaded' ? addresses.data : [];
   const groups = groupByShop(items);
 
   return (
-    <div className="shop__inner">
+    <div className="shop__inner page">
       <CheckoutView
         items={items}
         addresses={list.map((a) => ({ id: a.id, label: a.label, name: a.name, phone: a.phone, text: formatAddress(a), isDefault: a.isDefault }))}

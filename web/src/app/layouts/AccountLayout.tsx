@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../features/auth';
 import { SellEntryLink } from '../../features/seller-onboarding';
 import { routes } from '../../shared/config/routes';
+import styles from './AccountLayout.module.css';
 
 const items = [
   { to: routes.account, label: 'Tổng quan', end: true },
@@ -16,10 +17,10 @@ const items = [
 export function AccountLayout() {
   const { session, logout } = useAuth();
   return (
-    <div className="shop__inner account-layout">
-      <aside className="account-nav" aria-label="Tài khoản">
-        <div className="account-nav__user">
-          <span className="account-menu__initials" aria-hidden="true">
+    <div className={`${styles.layout} account-layout`}>
+      <aside className={styles.sidebar} aria-label="Tài khoản">
+        <div className={styles.user}>
+          <span className={styles.initials} aria-hidden="true">
             {(session?.displayName ?? '?')
               .split(/\s+/)
               .slice(-2)
@@ -32,19 +33,19 @@ export function AccountLayout() {
             <span className="muted">{session?.accountId}</span>
           </span>
         </div>
-        <nav>
+        <nav className={styles.nav}>
           {items.map((i) => (
-            <NavLink key={i.to} to={i.to} end={i.end} className="account-nav__link">
+            <NavLink key={i.to} to={i.to} end={i.end} className={styles.link}>
               {i.label}
             </NavLink>
           ))}
-          <SellEntryLink status={session?.sellerStatus ?? 'none'} className="account-nav__link" />
-          <button type="button" className="account-nav__link" onClick={logout}>
+          <SellEntryLink status={session?.sellerStatus ?? 'none'} className={styles.link} />
+          <button type="button" className={styles.link} onClick={logout}>
             Đăng xuất
           </button>
         </nav>
       </aside>
-      <div className="account-layout__main">
+      <div className={`${styles.main} account-layout__main`}>
         <Outlet />
       </div>
     </div>

@@ -4,6 +4,7 @@ import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge, Tabs } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
 import { saveProduct, setProductVisible, useSellerProducts, type SellerProduct } from '../model/useSeller';
+import styles from './SellerProducts.module.css';
 
 const LOW_STOCK = 5;
 
@@ -38,12 +39,12 @@ export function SellerProductList() {
       {list.length === 0 ? (
         <EmptyState title="Không có sản phẩm ở đây" />
       ) : tab === 'removed' ? (
-        <ul className="row-list">
+        <ul className={styles.rowList}>
           {list.map((p) => (
-            <li key={p.id} className="row-list__item">
+            <li key={p.id} className={styles.rowItem}>
               <StatusBadge tone="warn">Bị gỡ</StatusBadge>
-              <div className="row-list__main">
-                <p className="row-list__title">{p.name}</p>
+              <div className={styles.rowMain}>
+                <p className={styles.rowTitle}>{p.name}</p>
                 <p className="muted">
                   Gỡ {p.removed?.at}: "{p.removed?.reason}"
                 </p>
@@ -55,14 +56,14 @@ export function SellerProductList() {
           ))}
         </ul>
       ) : (
-        <table className="data-table">
+        <table className={styles.dataTable}>
           <thead>
             <tr>
               <th scope="col">Sản phẩm</th>
-              <th scope="col" className="num">
+              <th scope="col" className={styles.num}>
                 Giá
               </th>
-              <th scope="col" className="num">
+              <th scope="col" className={styles.num}>
                 Tồn
               </th>
               <th scope="col">Hiện trên Moonkage</th>
@@ -76,7 +77,7 @@ export function SellerProductList() {
               <tr key={p.id}>
                 <td>
                   <div className="row">
-                    <span className="cart-line__photo thumb-sm" aria-hidden="true" />
+                    <span className={styles.thumbSm} aria-hidden="true" />
                     <span>
                       <strong>{p.name}</strong>
                       <br />
@@ -86,8 +87,8 @@ export function SellerProductList() {
                     </span>
                   </div>
                 </td>
-                <td className="num mk-num">{formatVnd(p.price)}</td>
-                <td className="num mk-num">
+                <td className={`${styles.num} mk-num`}>{formatVnd(p.price)}</td>
+                <td className={`${styles.num} mk-num`}>
                   {p.stock} {p.stock <= LOW_STOCK && <StatusBadge tone="warn">Sắp hết</StatusBadge>}
                 </td>
                 <td>
@@ -103,7 +104,7 @@ export function SellerProductList() {
                     {p.visible ? 'Đang hiện' : 'Đang ẩn'}
                   </label>
                 </td>
-                <td className="actions">
+                <td className={styles.actions}>
                   <Link to={routes.sellerProduct(p.id)} className="mk-btn mk-btn--quiet mk-btn--sm">
                     Sửa
                   </Link>
@@ -160,20 +161,20 @@ export function SellerProductEditor({
         </p>
       )}
       <PageHeader title={product ? 'Sửa sản phẩm' : 'Đăng sản phẩm'} />
-      <div className="form-layout">
-        <form className="form" onSubmit={submit} noValidate>
-          <fieldset className="form-section" disabled={readOnly}>
+      <div className={styles.formLayout}>
+        <form className={styles.form} onSubmit={submit} noValidate>
+          <fieldset className={styles.formSection} disabled={readOnly}>
             <legend>1. Ảnh</legend>
-            <div className="photo-slots">
-              <div className="mockup__frame">Ảnh chính</div>
-              <div className="mockup__frame">Ảnh 2</div>
-              <label className="mockup__frame photo-slots__add">
+            <div className={styles.photoSlots}>
+              <div className={styles.mockupFrame}>Ảnh chính</div>
+              <div className={styles.mockupFrame}>Ảnh 2</div>
+              <label className={`${styles.mockupFrame} ${styles.photoSlotsAdd}`}>
                 + Thêm
                 <input type="file" accept="image/*" className="mk-sr" />
               </label>
             </div>
           </fieldset>
-          <fieldset className="form-section" disabled={readOnly}>
+          <fieldset className={styles.formSection} disabled={readOnly}>
             <legend>2. Thông tin</legend>
             <div className="mk-field">
               <label htmlFor="p-name">Tên sản phẩm</label>
@@ -186,7 +187,7 @@ export function SellerProductEditor({
                 Để trống thì dùng tên đơn vị của bạn.
               </span>
             </div>
-            <div className="field-row">
+            <div className={styles.fieldRow}>
               <div className="mk-field">
                 <label htmlFor="p-price">Giá (đ)</label>
                 <input id="p-price" className="mk-num" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ''))} />
@@ -197,19 +198,19 @@ export function SellerProductEditor({
               </div>
             </div>
           </fieldset>
-          <fieldset className="form-section" disabled={readOnly}>
+          <fieldset className={styles.formSection} disabled={readOnly}>
             <legend>3. Vỏ và nhân</legend>
             <p className="muted">Chọn ít nhất một vỏ và một nhân. Danh mục do Moonkage quản lý.</p>
-            <div className="check-group">
-              <span className="check-group__label">Vỏ</span>
+            <div className={styles.checkGroup}>
+              <span className={styles.checkGroupLabel}>Vỏ</span>
               {CRUSTS.map((c) => (
                 <label key={c} className="check">
                   <input type="checkbox" checked={crusts.includes(c)} onChange={() => setCrusts(toggle(crusts, c))} /> {c}
                 </label>
               ))}
             </div>
-            <div className="check-group">
-              <span className="check-group__label">Nhân</span>
+            <div className={styles.checkGroup}>
+              <span className={styles.checkGroupLabel}>Nhân</span>
               {FILLINGS.map((f) => (
                 <label key={f} className="check">
                   <input type="checkbox" checked={fillings.includes(f)} onChange={() => setFillings(toggle(fillings, f))} /> {f}
@@ -222,7 +223,7 @@ export function SellerProductEditor({
               {error}
             </p>
           )}
-          <div className="form-actions">
+          <div className={styles.formActions}>
             <button type="button" className="mk-btn mk-btn--quiet" onClick={onCancel}>
               {readOnly ? 'Quay lại' : 'Hủy'}
             </button>
@@ -233,7 +234,7 @@ export function SellerProductEditor({
             )}
           </div>
         </form>
-        <aside className="side-note">
+        <aside className={styles.sideNote}>
           <h2 className="card-title-text">Người mua sẽ thấy</h2>
           {preview({ name: name || 'Tên sản phẩm', price: Number(price) || 0 })}
         </aside>
