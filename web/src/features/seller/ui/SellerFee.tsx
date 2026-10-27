@@ -2,6 +2,7 @@ import { PageHeader, Steps } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
 import { SELLER_FEE } from '../model/sellerModel';
 import type { SellerProfile } from '../model/useSeller';
+import styles from './SellerFee.module.css';
 
 /** B1.1: pay the one-off fee after approval (VNPay through the page). */
 export function SellerFee({ profile, onPay, onLater }: { profile: SellerProfile; onPay: () => void; onLater: () => void }) {
@@ -12,7 +13,7 @@ export function SellerFee({ profile, onPay, onLater }: { profile: SellerProfile;
       <p className="notice">
         Đã duyệt · Hồ sơ {profile.shopName} được duyệt ngày {profile.approvedAt ?? '—'}.
       </p>
-      <div className="detail-layout">
+      <div className={styles.detailLayout}>
         <section className="panel panel--wide" aria-labelledby="after-fee">
           <h2 id="after-fee" className="detail-heading">
             Đóng phí xong bạn sẽ
@@ -23,17 +24,17 @@ export function SellerFee({ profile, onPay, onLater }: { profile: SellerProfile;
             <li>Bắt đầu nhận đơn</li>
           </ul>
         </section>
-        <aside className="action-box" aria-labelledby="fee-heading">
+        <aside className={styles.actionBox} aria-labelledby="fee-heading">
           <h2 id="fee-heading" className="card-title-text">
             Phí mở bán
           </h2>
-          <ul className="lines">
-            <li className="lines__row">
+          <ul className={styles.lines}>
+            <li className={styles.lineRow}>
               <span>Thu một lần</span>
               <span />
               <span className="mk-num">{formatVnd(SELLER_FEE)}</span>
             </li>
-            <li className="lines__row lines__row--total">
+            <li className={`${styles.lineRow} ${styles.lineTotal}`}>
               <span>Tổng</span>
               <span />
               <span className="mk-num">{formatVnd(SELLER_FEE)}</span>

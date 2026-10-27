@@ -4,6 +4,7 @@ import { ApiError } from '../../../shared/api/client';
 import { config } from '../../../shared/config/env';
 import { routes } from '../../../shared/config/routes';
 import { strings } from '../../../shared/config/strings';
+import { Button } from '../../../shared/ui';
 import {
   confirmPasswordReset,
   registerAccount,
@@ -11,6 +12,7 @@ import {
   resendVerifyAccountOtp,
   verifyAccountOtp,
 } from '../model/useAuthActions';
+import styles from './AccountForms.module.css';
 
 /**
  * The account forms around login (M5.2–M5.5), wired to identity-service (`/api/auth/*`) and demo mode.
@@ -20,12 +22,12 @@ const MIN_PASSWORD = 8;
 
 function AuthCard({ title, lead, children, footer }: { title: string; lead?: string; children: ReactNode; footer?: ReactNode }) {
   return (
-    <div className="panel login__form">
+    <div className={styles.card}>
       <p className="brand-text">{strings.appName}</p>
-      <h1 className="title-text auth-title">{title}</h1>
+      <h1 className={styles.title}>{title}</h1>
       {lead && <p className="muted">{lead}</p>}
       {children}
-      {footer && <div className="auth-footer">{footer}</div>}
+      {footer && <div className={styles.footer}>{footer}</div>}
     </div>
   );
 }
@@ -120,7 +122,7 @@ export function RegisterForm({ onRegistered }: { onRegistered: (email: string) =
         </>
       }
     >
-      <form className="auth-form" onSubmit={submit} noValidate>
+      <form className={styles.form} onSubmit={submit} noValidate>
         <Field id="reg-name" label="Họ tên" value={fullName} onChange={setFullName} error={errors.fullName} autoComplete="name" />
         <Field id="reg-email" label="Email" type="email" value={email} onChange={setEmail} error={errors.email} autoComplete="email" />
         <Field
@@ -139,9 +141,9 @@ export function RegisterForm({ onRegistered }: { onRegistered: (email: string) =
             {serverError}
           </p>
         )}
-        <button type="submit" className="mk-btn mk-btn--primary" disabled={submitting} aria-busy={submitting || undefined}>
+        <Button type="submit" variant="primary" disabled={submitting} busy={submitting}>
           {submitting ? 'Đang tạo tài khoản…' : 'Tạo tài khoản'}
-        </button>
+        </Button>
       </form>
     </AuthCard>
   );
@@ -186,8 +188,8 @@ export function ConfirmAccountForm({ email, onConfirmed }: { email: string; onCo
   };
   return (
     <AuthCard title="Xác nhận tài khoản" lead={`Nhập mã 6 số vừa gửi tới ${email || 'email của bạn'}.`}>
-      <form className="auth-form" onSubmit={submit} noValidate>
-        <fieldset className="otp">
+      <form className={styles.form} onSubmit={submit} noValidate>
+        <fieldset className={styles.otp}>
           <legend className="mk-sr">Mã xác nhận</legend>
           {digits.map((d, i) => (
             <input
@@ -195,7 +197,7 @@ export function ConfirmAccountForm({ email, onConfirmed }: { email: string; onCo
               ref={(el) => {
                 refs.current[i] = el;
               }}
-              className="otp__box mk-num"
+              className={`${styles.otpBox} mk-num`}
               inputMode="numeric"
               maxLength={1}
               value={d}
@@ -210,14 +212,14 @@ export function ConfirmAccountForm({ email, onConfirmed }: { email: string; onCo
             {error}
           </p>
         )}
-        <button type="submit" className="mk-btn mk-btn--primary" disabled={submitting} aria-busy={submitting || undefined}>
+        <Button type="submit" variant="primary" disabled={submitting} busy={submitting}>
           {submitting ? 'Đang xác nhận…' : 'Xác nhận'}
-        </button>
+        </Button>
         <p className="muted">
           Chưa nhận được?{' '}
-          <button type="button" className="mk-btn mk-btn--text" onClick={() => void handleResend()}>
+          <Button variant="text" onClick={() => void handleResend()}>
             Gửi lại mã
-          </button>{' '}
+          </Button>{' '}
           · <Link to={routes.register}>Đổi email</Link>
         </p>
         {resent && (
@@ -264,11 +266,11 @@ export function ForgotPasswordForm() {
           </Link>
         </div>
       ) : (
-        <form className="auth-form" onSubmit={submit} noValidate>
+        <form className={styles.form} onSubmit={submit} noValidate>
           <Field id="fp-email" label="Email" type="email" value={email} onChange={setEmail} error={error} autoComplete="email" />
-          <button type="submit" className="mk-btn mk-btn--primary" disabled={submitting} aria-busy={submitting || undefined}>
+          <Button type="submit" variant="primary" disabled={submitting} busy={submitting}>
             {submitting ? 'Đang gửi…' : 'Gửi mã xác nhận'}
-          </button>
+          </Button>
         </form>
       )}
     </AuthCard>
@@ -312,7 +314,7 @@ export function ResetPasswordForm({ initialEmail = '', onDone }: { initialEmail?
   };
   return (
     <AuthCard title="Đặt lại mật khẩu">
-      <form className="auth-form" onSubmit={submit} noValidate>
+      <form className={styles.form} onSubmit={submit} noValidate>
         {(!initialEmail || !config.demoMode) && (
           <Field id="rp-email" label="Email" type="email" value={email} onChange={setEmail} error={errors.email} autoComplete="email" />
         )}
@@ -324,9 +326,9 @@ export function ResetPasswordForm({ initialEmail = '', onDone }: { initialEmail?
             {serverError}
           </p>
         )}
-        <button type="submit" className="mk-btn mk-btn--primary" disabled={submitting} aria-busy={submitting || undefined}>
+        <Button type="submit" variant="primary" disabled={submitting} busy={submitting}>
           {submitting ? 'Đang lưu…' : 'Lưu và đăng nhập'}
-        </button>
+        </Button>
       </form>
     </AuthCard>
   );

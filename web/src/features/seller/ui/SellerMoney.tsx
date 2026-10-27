@@ -5,24 +5,25 @@ import { Dialog, ErrorState, LoadingState, PageHeader, StatusBadge } from '../..
 import { formatVnd } from '../../../shared/utils/money';
 import { settlementTotal } from '../model/sellerModel';
 import { requestDisbursement, useDisbursements, useSettlements } from '../model/useSeller';
+import styles from './SellerMoney.module.css';
 
 /** B5.0 */
 export function SellerMoneyOverview({ takesCustom }: { takesCustom: boolean }) {
   return (
     <div className="page">
       <PageHeader title="Tiền" />
-      <div className="stat-grid">
-        <div className="stat-tile">
+      <div className={styles.statGrid}>
+        <div className={styles.statTile}>
           <span className="muted">Moonkage đang giữ</span>
-          <span className="stat-tile__num mk-num">{formatVnd(9840000)}</span>
+          <span className={`${styles.statNum} mk-num`}>{formatVnd(9840000)}</span>
         </div>
-        <div className="stat-tile">
+        <div className={styles.statTile}>
           <span className="muted">Chờ chuyển cho bạn</span>
-          <span className="stat-tile__num mk-num">{formatVnd(1360000)}</span>
+          <span className={`${styles.statNum} mk-num`}>{formatVnd(1360000)}</span>
         </div>
-        <div className="stat-tile">
+        <div className={styles.statTile}>
           <span className="muted">Đã nhận tháng 10/2026</span>
-          <span className="stat-tile__num mk-num">{formatVnd(12400000)}</span>
+          <span className={`${styles.statNum} mk-num`}>{formatVnd(12400000)}</span>
         </div>
       </div>
       <div className="grid-2">
@@ -59,18 +60,18 @@ export function SellerSettlements() {
   return (
     <div className="page">
       <PageHeader title="Đối soát" lead="Tiền hàng và phí giao của từng đơn đã giao, và ngày Moonkage chuyển cho bạn." />
-      <table className="data-table">
+      <table className={styles.dataTable}>
         <thead>
           <tr>
             <th scope="col">Đơn</th>
             <th scope="col">Giao xong</th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               Tiền hàng
             </th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               Phí giao
             </th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               Bạn nhận
             </th>
             <th scope="col">Chuyển</th>
@@ -83,9 +84,9 @@ export function SellerSettlements() {
                 <Link to={routes.sellerOrder(s.orderId)}>{s.orderId}</Link>
               </td>
               <td className="mk-num">{s.deliveredAt}</td>
-              <td className="num mk-num">{formatVnd(s.goods)}</td>
-              <td className="num mk-num">{formatVnd(s.shipping)}</td>
-              <td className="num mk-num">
+              <td className={`${styles.num} mk-num`}>{formatVnd(s.goods)}</td>
+              <td className={`${styles.num} mk-num`}>{formatVnd(s.shipping)}</td>
+              <td className={`${styles.num} mk-num`}>
                 <strong>{formatVnd(settlementTotal(s))}</strong>
               </td>
               <td>
@@ -117,15 +118,15 @@ export function SellerDisbursements() {
           </button>
         }
       />
-      <table className="data-table">
+      <table className={styles.dataTable}>
         <thead>
           <tr>
             <th scope="col">Đơn</th>
             <th scope="col">Mốc tiến độ</th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               Xin giải ngân
             </th>
-            <th scope="col" className="num">
+            <th scope="col" className={styles.num}>
               Còn giữ sau đó
             </th>
             <th scope="col">Trạng thái</th>
@@ -136,8 +137,8 @@ export function SellerDisbursements() {
             <tr key={`${d.orderId}-${i}`}>
               <td>{d.orderId}</td>
               <td>{d.milestone}</td>
-              <td className="num mk-num">{d.amount === null ? '—' : formatVnd(d.amount)}</td>
-              <td className="num mk-num">{formatVnd(d.heldAfter)}</td>
+              <td className={`${styles.num} mk-num`}>{d.amount === null ? '—' : formatVnd(d.amount)}</td>
+              <td className={`${styles.num} mk-num`}>{formatVnd(d.heldAfter)}</td>
               <td>
                 <StatusBadge tone={d.state.startsWith('Đã') ? 'ok' : d.state.startsWith('Chờ') ? 'soft' : 'muted'}>{d.state}</StatusBadge>
               </td>
@@ -166,7 +167,7 @@ export function SellerDisbursements() {
               Đang giữ {formatVnd(9000000)} cho đơn này.
             </span>
           </div>
-          <div className="form-actions">
+          <div className={styles.formActions}>
             <button type="button" className="mk-btn mk-btn--quiet" onClick={() => setOpen(false)}>
               Hủy
             </button>

@@ -1,0 +1,112 @@
+/* UI Kit dùng chung: Style thuần túy theo Design System "DS: Moonkage v2" */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font: var(--text-label);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-full);
+  border: var(--border-thin) solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  min-height: var(--control-h);
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.button:focus-visible {
+  outline: var(--border-thick) solid var(--focus);
+  outline-offset: var(--border-thick);
+}
+
+.primary {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.primary:hover,
+.primary:active {
+  background: var(--brand-hover);
+}
+
+.outline {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.outline:hover,
+.outline:active {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.quiet {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.quiet:hover,
+.quiet:active {
+  background: var(--surface-hover);
+  border-color: var(--ink);
+}
+
+.text {
+  background: transparent;
+  color: var(--brand);
+  padding-inline: var(--space-1);
+  min-height: auto;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.text:hover {
+  text-decoration-thickness: var(--border-thick);
+}
+
+.sm {
+  min-height: var(--control-h-sm);
+  padding: 0 var(--space-4);
+}
+
+.block {
+  width: 100%;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  background: var(--surface-sunk);
+  color: var(--ink-muted);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.button[aria-busy="true"] {
+  cursor: progress;
+  pointer-events: none;
+}
+
+.button[aria-busy="true"]::before {
+  content: "";
+  width: var(--space-4);
+  height: var(--space-4);
+  box-sizing: border-box;
+  border-radius: var(--radius-full);
+  border: var(--border-thick) solid currentColor;
+  border-right-color: transparent;
+  animation: buttonSpin var(--duration-spin) linear infinite;
+}
+
+@keyframes buttonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,9 +1,10 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router-dom';
 import { useAuth } from '../../features/auth';
 import { useSellerProfile } from '../../features/seller';
 import logoMark from '../../shared/assets/moonkage-mark.png';
 import { routes } from '../../shared/config/routes';
 import { LoadingState, StatusBadge } from '../../shared/ui';
+import styles from './SellerLayout.module.css';
 
 const stateLabel = { pending: 'Hồ sơ chờ duyệt', 'needs-more': 'Hồ sơ cần bổ sung', approved: 'Đã duyệt · chưa đóng phí', open: 'Đang mở bán', rejected: 'Hồ sơ bị từ chối' } as const;
 
@@ -29,33 +30,34 @@ export function SellerLayout() {
   const p = profile.data;
   const open = p.state === 'open';
   const link = (to: string, label: string, end = false) => (
-    <NavLink to={to} end={end} className="seller-nav__link">
+    <NavLink to={to} end={end} className={styles.sellerLink}>
       {label}
     </NavLink>
   );
 
   return (
     <div className="shop">
-      <header className="mk-nav seller-bar">
+      <ScrollRestoration />
+      <header className={`mk-nav ${styles.sellerBar}`}>
         <div className="mk-nav__in">
           <Link to={routes.sellerChannel} className="mk-nav__brand">
             <img src={logoMark} alt="" />
-            Moonkage <span className="seller-bar__zone">Kênh người bán</span>
+            Moonkage <span className={styles.sellerZone}>Kênh người bán</span>
           </Link>
-          <span className="seller-bar__shop">
+          <span className={styles.sellerShop}>
             {p.shopName} <StatusBadge tone={open ? 'ok' : 'soft'}>{stateLabel[p.state]}</StatusBadge>
           </span>
         </div>
-        <nav className="mk-nav__in seller-nav" aria-label="Kênh người bán">
+        <nav className={`mk-nav__in ${styles.sellerNav}`} aria-label="Kênh người bán">
           {link(routes.sellerChannel, 'Tổng quan', true)}
           {open && link(routes.sellerOrders, 'Đơn hàng')}
           {open && p.ways.custom && link(routes.sellerRequests, 'Yêu cầu báo giá')}
           {open && p.ways.shop && link(routes.sellerProducts, 'Sản phẩm')}
           {open && link(routes.sellerMoney, 'Tiền')}
           {link(routes.sellerSettings, 'Cài đặt bán hàng')}
-          <span className="seller-nav__spacer" />
+          <span className={styles.spacer} />
           {link(routes.sellerNotifications, 'Thông báo')}
-          <Link to={routes.home} className="seller-nav__link">
+          <Link to={routes.home} className={styles.sellerLink}>
             ↩ Về trang mua hàng
           </Link>
         </nav>

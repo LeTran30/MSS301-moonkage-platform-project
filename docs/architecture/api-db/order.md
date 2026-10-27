@@ -30,7 +30,7 @@ Schema đã có đơn, maket, tiến độ, khiếu nại, đánh giá. Thiếu 
 
 | Method, đường dẫn | Ai | Mục đích | FR |
 | --- | --- | --- | --- |
-| `GET /api/carts/me?addressId=` | M | Giỏ tách theo Shop + phí giao từng Shop | FR-08, AC-09.1 |
+| `GET /api/carts/me?provinceCode=` | M | Giỏ tách theo Shop + phí giao từng Shop tới tỉnh đã chọn | FR-08, AC-09.1 |
 | `POST /api/carts/me/items` | M | Thêm sản phẩm; vượt tồn kho hoặc ngưỡng thì từ chối kèm gợi ý gửi yêu cầu | FR-08, BR-22 |
 | `PATCH\|DELETE /api/carts/me/items/{itemId}` | M | Đổi số lượng, bỏ | FR-08 |
 
@@ -38,7 +38,7 @@ Schema đã có đơn, maket, tiến độ, khiếu nại, đánh giá. Thiếu 
 
 | Method, đường dẫn | Ai | Mục đích | FR |
 | --- | --- | --- | --- |
-| `POST /api/checkouts` | M | `{addressId, invoiceInfo?}` từ giỏ → giữ hàng, `{checkoutId, paymentUrl}` | FR-09, BR-28 |
+| `POST /api/checkouts` | M | `{recipientName, recipientPhone, provinceCode, addressDetail, invoiceInfo?}` từ giỏ → giữ hàng, `{checkoutId, paymentId, paymentUrl, totalAmount, expiresAt}`. Địa chỉ là một địa chỉ đã lưu ở identity, web gửi nguyên nội dung vì identity chưa có API nội bộ đọc địa chỉ | FR-09, BR-28 |
 | `GET /api/checkouts/{checkoutId}` | M | Trạng thái và các `orderIds` đã tạo | FR-09, BR-29 |
 
 **Root Order** (`/api/orders`)
@@ -71,6 +71,10 @@ Dispute nằm trong Order vì nó chặn chuyển trạng thái tiền của đ�
 | `PENDING_PAYMENT` | `payment.succeeded` | `SUCCEEDED`: chốt hàng đã giữ, tạo đơn với id có sẵn trong `checkout_groups` |
 | `PENDING_PAYMENT` | `payment.failed` / quá `expires_at` | `FAILED` / `EXPIRED`: trả hàng |
 | `FAILED`, `EXPIRED` | `payment.succeeded` đến trễ | Giữ hàng lại: đủ thì `SUCCEEDED`; không đủ thì `REFUND_REQUESTED`, hoàn tiền `LATE_PAYMENT` |
+
+**Đơn đặt hàng từ `quote.accepted`.** Id đơn = `acceptanceId`: payment-service ghi tiền cọc vào đúng id này (payment.md). Mỗi dòng báo giá thành một `order_items`; dòng custom không có sản phẩm catalog nên `product_id` = `quoteId`. `interprovince` = false vì cách giao đã thỏa thuận trong báo giá (BR-30).
+
+**Chuyển trạng thái (`PATCH /api/orders/{orderId}`).** Người bán chỉ đi đúng bước kế tiếp; mỗi bước ghi một `progress_updates`. `DEPOSITED` → `AWAITING_MOCKUP_APPROVAL` khi có custom, ngược lại → `IN_PRODUCTION`; rời `AWAITING_MOCKUP_APPROVAL` cần một maket `APPROVED` (BR-15). `DELIVERED` đặt `complaint_deadline` (3 ngày mua ngay nội thành, 7 ngày còn lại, Q-10 tạm) và phát `order.delivered`. Người mua xác nhận đã nhận: đơn mua ngay sang `COMPLETED`; đơn đặt hàng sang `COMPLETED` khi `payment.succeeded` (`REMAINDER`) đến (AC-22.2).
 
 **Khóa chuyển tiền (P-02).** `POST /internal/orders/{orderId}/payout-lock` khóa dòng đơn (`SELECT … FOR UPDATE`), kiểm đã nhận hoặc quá hạn khiếu nại và không có khiếu nại mở, rồi ghi `payout_locked_at`; gọi lại trả 200. Mở khiếu nại khóa cùng dòng và trả 409 khi đã khóa chuyển tiền.
 

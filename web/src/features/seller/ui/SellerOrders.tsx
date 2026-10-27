@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge, Tabs } f
 import { formatVnd } from '../../../shared/utils/money';
 import { customStepLabel, goods, inTab, orderStatusLabel, type OrderTab } from '../model/sellerModel';
 import { useSellerOrders, type SellerCustomOrder, type SellerReadyOrder } from '../model/useSeller';
+import styles from './SellerOrders.module.css';
 
 const TABS: { key: OrderTab; label: string }[] = [
   { key: 'todo', label: 'Cần làm' },
@@ -39,7 +40,7 @@ export function SellerOrders() {
       />
       {kind === 'ready' ? (
         <>
-          <div className="filter-row" role="group" aria-label="Lọc đơn">
+          <div className={styles.filterRow} role="group" aria-label="Lọc đơn">
             {TABS.map((t) => (
               <button key={t.key} type="button" className="mk-btn mk-btn--text" aria-pressed={tab === t.key} onClick={() => setTab(t.key)}>
                 {t.label} <span className="mk-num">({ready.filter((o) => inTab(o, t.key)).length})</span>
@@ -49,13 +50,13 @@ export function SellerOrders() {
           {list.length === 0 ? (
             <EmptyState title="Không có đơn nào ở đây" />
           ) : (
-            <table className="data-table">
+            <table className={styles.dataTable}>
               <thead>
                 <tr>
                   <th scope="col">Đơn</th>
                   <th scope="col">Người mua · giao tới</th>
                   <th scope="col">Trạng thái</th>
-                  <th scope="col" className="num">
+                  <th scope="col" className={styles.num}>
                     Tiền hàng
                   </th>
                   <th scope="col">
@@ -82,8 +83,8 @@ export function SellerOrders() {
                         {o.complaint && <StatusBadge tone="warn">Đang khiếu nại</StatusBadge>}
                       </div>
                     </td>
-                    <td className="num mk-num">{formatVnd(goods(o))}</td>
-                    <td className="actions">
+                    <td className={`${styles.num} mk-num`}>{formatVnd(goods(o))}</td>
+                    <td className={styles.actions}>
                       <Link to={routes.sellerOrder(o.id)} className={`mk-btn mk-btn--sm ${o.status === 'new' || (o.complaint && !o.complaint.proposal) ? 'mk-btn--primary' : 'mk-btn--quiet'}`}>
                         {o.complaint && !o.complaint.proposal ? 'Phản hồi' : o.status === 'new' ? 'Xử lý' : 'Xem'}
                       </Link>
@@ -95,13 +96,13 @@ export function SellerOrders() {
           )}
         </>
       ) : (
-        <table className="data-table">
+        <table className={styles.dataTable}>
           <thead>
             <tr>
               <th scope="col">Đơn</th>
               <th scope="col">Người mua</th>
               <th scope="col">Đang ở bước</th>
-              <th scope="col" className="num">
+              <th scope="col" className={styles.num}>
                 Giá trị
               </th>
               <th scope="col">
@@ -121,8 +122,8 @@ export function SellerOrders() {
                 <td>
                   <StatusBadge tone={o.feedback ? 'warn' : 'soft'}>{o.feedback ? 'Sửa maket theo góp ý' : customStepLabel[o.step]}</StatusBadge>
                 </td>
-                <td className="num mk-num">{formatVnd(o.value)}</td>
-                <td className="actions">
+                <td className={`${styles.num} mk-num`}>{formatVnd(o.value)}</td>
+                <td className={styles.actions}>
                   <Link to={routes.sellerOrder(o.id)} className="mk-btn mk-btn--primary mk-btn--sm">
                     Xử lý
                   </Link>

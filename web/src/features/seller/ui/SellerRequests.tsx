@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, FileDrop, KeyValue, LoadingState, PageHeader, S
 import { formatVnd } from '../../../shared/utils/money';
 import { tierPrice } from '../model/sellerModel';
 import { declineRequest, sendQuote, useIncomingRequests, withdrawQuote, type CustomTerms, type IncomingRequest } from '../model/useSeller';
+import styles from './SellerRequests.module.css';
 
 const timeLeft = (h: number) => (h <= 0 ? 'Hết hạn' : h < 24 ? `Còn ${h} giờ` : `Còn ${Math.round(h / 24)} ngày`);
 
@@ -31,7 +32,7 @@ export function SellerRequestList() {
       {list.length === 0 ? (
         <EmptyState title="Không có yêu cầu nào ở đây" />
       ) : (
-        <table className="data-table">
+        <table className={styles.dataTable}>
           <thead>
             <tr>
               <th scope="col">Yêu cầu</th>
@@ -64,7 +65,7 @@ export function SellerRequestList() {
                 <td>
                   <StatusBadge tone={r.hoursLeft > 0 && r.hoursLeft < 24 ? 'warn' : 'plain'}>{r.state === 'quoted' ? 'Đã gửi báo giá' : timeLeft(r.hoursLeft)}</StatusBadge>
                 </td>
-                <td className="actions">
+                <td className={styles.actions}>
                   <div className="row">
                     <Link to={routes.sellerRequest(r.id)} className="mk-btn mk-btn--quiet mk-btn--sm">
                       Xem
@@ -105,7 +106,7 @@ export function SellerRequestDetail({ request, onChanged }: { request: IncomingR
         }
         lead={`${request.buyer}${request.buyerVerified ? ' · người đặt đã xác minh danh tính' : ''}`}
       />
-      <div className="detail-layout">
+      <div className={styles.detailLayout}>
         <div className="stack">
           <section className="panel panel--wide" aria-labelledby="needs-heading">
             <h2 id="needs-heading" className="detail-heading">
@@ -148,7 +149,7 @@ export function SellerRequestDetail({ request, onChanged }: { request: IncomingR
             </section>
           )}
         </div>
-        <aside className="action-box" aria-labelledby="reply-heading">
+        <aside className={styles.actionBox} aria-labelledby="reply-heading">
           <h2 id="reply-heading" className="card-title-text">
             Phản hồi
           </h2>
@@ -206,11 +207,11 @@ export function QuoteComposer({ request, terms, onSent, onCancel }: { request: I
   return (
     <div className="page">
       <PageHeader title={`Báo giá cho ${request.id}`} lead={`${request.boxes} hộp × ${request.perBox} · ${request.summary.toLowerCase()} · giao trước ${request.deliverBy}`} />
-      <div className="form-layout">
-        <form className="form" onSubmit={submit} noValidate>
-          <fieldset className="form-section">
+      <div className={styles.formLayout}>
+        <form className={styles.form} onSubmit={submit} noValidate>
+          <fieldset className={styles.formSection}>
             <legend>1. Giá</legend>
-            <div className="field-row">
+            <div className={styles.fieldRow}>
               <div className={`mk-field${error ? ' mk-field--error' : ''}`}>
                 <label htmlFor="unit">Đơn giá mỗi hộp (đ)</label>
                 <input id="unit" className="mk-num" inputMode="numeric" value={unit} onChange={(e) => setUnit(e.target.value.replace(/\D/g, ''))} aria-invalid={error ? true : undefined} aria-describedby="unit-hint" />
@@ -227,9 +228,9 @@ export function QuoteComposer({ request, terms, onSent, onCancel }: { request: I
               </div>
             </div>
           </fieldset>
-          <fieldset className="form-section">
+          <fieldset className={styles.formSection}>
             <legend>2. Làm và giao</legend>
-            <div className="field-row">
+            <div className={styles.fieldRow}>
               <div className="mk-field">
                 <label htmlFor="by">Giao trước ngày</label>
                 <input id="by" type="date" value={deliverBy} onChange={(e) => setDeliverBy(e.target.value)} />
@@ -242,10 +243,10 @@ export function QuoteComposer({ request, terms, onSent, onCancel }: { request: I
             <FileDrop label="Maket mẫu (không bắt buộc)" hint="PDF, PNG" accept=".pdf,image/*" />
             <div className="mk-field">
               <label htmlFor="qnote">Ghi chú cho người mua</label>
-              <textarea id="qnote" className="textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Khắc laser logo trên nắp gỗ, gửi maket trong 24 giờ sau khi nhận cọc." />
+              <textarea id="qnote" className={styles.textarea} rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Khắc laser logo trên nắp gỗ, gửi maket trong 24 giờ sau khi nhận cọc." />
             </div>
           </fieldset>
-          <div className="form-actions">
+          <div className={styles.formActions}>
             <button type="button" className="mk-btn mk-btn--quiet" onClick={onCancel}>
               Hủy
             </button>
@@ -254,24 +255,24 @@ export function QuoteComposer({ request, terms, onSent, onCancel }: { request: I
             </button>
           </div>
         </form>
-        <aside className="side-note" aria-labelledby="buyer-sees">
+        <aside className={styles.sideNote} aria-labelledby="buyer-sees">
           <h2 id="buyer-sees" className="card-title-text">
             Người mua sẽ thấy
           </h2>
-          <ul className="lines">
-            <li className="lines__row">
+          <ul className={styles.lines}>
+            <li className={styles.lineRow}>
               <span className="mk-num">
                 {request.boxes} × {formatVnd(price)}
               </span>
               <span />
               <span className="mk-num">{formatVnd(total)}</span>
             </li>
-            <li className="lines__row lines__row--total">
+            <li className={`${styles.lineRow} ${styles.lineTotal}`}>
               <span>Tổng</span>
               <span />
               <span className="mk-num">{formatVnd(total)}</span>
             </li>
-            <li className="lines__row">
+            <li className={styles.lineRow}>
               <span>Cọc {deposit}%</span>
               <span />
               <span className="mk-num">{formatVnd(Math.round((total * deposit) / 100))}</span>

@@ -53,7 +53,14 @@ export function ProductListPage() {
         </section>
       )}
 
-      {all.kind === 'loading' && <LoadingState />}
+      {all.kind === 'loading' && (
+        <div className="listing" style={{ minHeight: 480 }}>
+          <div className="panel" style={{ height: 320, opacity: 0.5 }} />
+          <div className="listing__results">
+            <LoadingState />
+          </div>
+        </div>
+      )}
       {all.kind === 'error' && <ErrorState message={all.message} onRetry={all.reload} />}
       {all.kind === 'loaded' && (
         <div className="listing">

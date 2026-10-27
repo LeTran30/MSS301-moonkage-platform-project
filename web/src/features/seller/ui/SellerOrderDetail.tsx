@@ -15,6 +15,7 @@ import {
   type SellerCustomOrder,
   type SellerReadyOrder,
 } from '../model/useSeller';
+import styles from './SellerOrderDetail.module.css';
 
 const PROPOSALS = ['Hoàn một phần', 'Hoàn toàn bộ', 'Không hoàn, kèm lý do'];
 
@@ -49,7 +50,7 @@ export function SellerReadyOrderView({ order, onChanged }: { order: SellerReadyO
         }
         lead={`${order.buyer} · ${order.deliverTo} · đặt ${order.placedAt}`}
       />
-      <div className="detail-layout">
+      <div className={styles.detailLayout}>
         <div className="stack">
           {order.complaint && (
             <section className="panel panel--wide" aria-labelledby="complaint-heading">
@@ -62,7 +63,7 @@ export function SellerReadyOrderView({ order, onChanged }: { order: SellerReadyO
               <p>
                 {order.complaint.reason} <span className="muted">"{order.complaint.description}"</span>
               </p>
-              <div className="mockup__frame complaint-photo">Ảnh người mua</div>
+              <div className={`${styles.mockupFrame} ${styles.complaintPhoto}`}>Ảnh người mua</div>
               {order.complaint.proposal ? (
                 <p className="notice">
                   Bạn đã đề xuất: {order.complaint.proposal.kind}
@@ -76,7 +77,7 @@ export function SellerReadyOrderView({ order, onChanged }: { order: SellerReadyO
                     void run(() => proposeResolution(order.id, { kind: proposal, amount: proposal === PROPOSALS[2] ? 0 : Number(amount) || 0, note }));
                   }}
                 >
-                  <div className="field-row">
+                  <div className={styles.fieldRow}>
                     <div className="mk-field">
                       <label htmlFor="proposal">Đề xuất của bạn</label>
                       <select id="proposal" value={proposal} onChange={(e) => setProposal(e.target.value)}>
@@ -94,7 +95,7 @@ export function SellerReadyOrderView({ order, onChanged }: { order: SellerReadyO
                   </div>
                   <div className="mk-field">
                     <label htmlFor="proposal-note">Giải thích cho quản trị</label>
-                    <textarea id="proposal-note" className="textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Đồng ý 1 bánh bị dập do vận chuyển." />
+                    <textarea id="proposal-note" className={styles.textarea} rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Đồng ý 1 bánh bị dập do vận chuyển." />
                   </div>
                   <div className="row-between">
                     <span className="muted">Quản trị ra quyết định cuối cùng. Tiền đơn đang được giữ.</span>
@@ -110,9 +111,9 @@ export function SellerReadyOrderView({ order, onChanged }: { order: SellerReadyO
             <h2 id="items-heading" className="detail-heading">
               Món trong đơn
             </h2>
-            <ul className="lines">
+            <ul className={styles.lines}>
               {order.lines.map((l) => (
-                <li key={l.name} className="lines__row">
+                <li key={l.name} className={styles.lineRow}>
                   <span>
                     {l.name} × {l.quantity}
                   </span>
@@ -120,12 +121,12 @@ export function SellerReadyOrderView({ order, onChanged }: { order: SellerReadyO
                   <span className="mk-num">{formatVnd(l.price * l.quantity)}</span>
                 </li>
               ))}
-              <li className="lines__row lines__row--sub">
+              <li className={`${styles.lineRow} ${styles.lineSub}`}>
                 <span>{order.interProvince ? 'Phí giao liên tỉnh' : 'Phí giao'}</span>
                 <span />
                 <span className="mk-num">{formatVnd(order.shippingFee)}</span>
               </li>
-              <li className="lines__row lines__row--total">
+              <li className={`${styles.lineRow} ${styles.lineTotal}`}>
                 <span>Tiền hàng</span>
                 <span />
                 <span className="mk-num">{formatVnd(goods(order))}</span>
@@ -139,7 +140,7 @@ export function SellerReadyOrderView({ order, onChanged }: { order: SellerReadyO
             <KeyValue rows={order.history.map((h) => ({ label: h.at, value: h.label }))} />
           </section>
         </div>
-        <aside className="action-box" aria-labelledby="handle-heading">
+        <aside className={styles.actionBox} aria-labelledby="handle-heading">
           <h2 id="handle-heading" className="card-title-text">
             Xử lý đơn
           </h2>
@@ -210,7 +211,7 @@ export function SellerCustomOrderView({ order, onChanged }: { order: SellerCusto
         lead={`${order.buyer} · ${order.title} · giao trước ${order.deliverBy}`}
       />
       <Steps label="Tiến độ đơn" steps={CUSTOM_STEPS} current={stepIndex[order.step]} />
-      <div className="detail-layout">
+      <div className={styles.detailLayout}>
         <SectionTabs
           current={tab}
           onChange={setTab}
@@ -228,8 +229,8 @@ export function SellerCustomOrderView({ order, onChanged }: { order: SellerCusto
                   Góp ý của người mua: "{order.feedback.text}" · {order.feedback.at}
                 </p>
               )}
-              <div className="mockup">
-                <div className="mockup__frame">Maket lần {order.mockupsSent}</div>
+              <div className={styles.mockup}>
+                <div className={styles.mockupFrame}>Maket lần {order.mockupsSent}</div>
                 <p className="muted">Maket lần {order.mockupsSent} (đã gửi)</p>
               </div>
               <FileDrop label={`Tải maket lần ${nextMockup}`} hint="PDF, PNG" accept=".pdf,image/*" />
@@ -280,7 +281,7 @@ export function SellerCustomOrderView({ order, onChanged }: { order: SellerCusto
               </button>
             ))}
         </SectionTabs>
-        <aside className="action-box" aria-labelledby="now-heading">
+        <aside className={styles.actionBox} aria-labelledby="now-heading">
           <h2 id="now-heading" className="card-title-text">
             Việc của bạn bây giờ
           </h2>

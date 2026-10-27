@@ -1,5 +1,6 @@
-/* Moonkage v2 tokens: generated from tokens.json of "DS: Moonkage v2"
-   (https://claude.ai/artifact/GGUiHf9RjvveUzR3geFsCN). Do not edit values by hand; update from the design system. */
+/* [NGUYÊN TẮC 3: TẦNG TOÀN CỤC]
+   tokens.css — Khai báo CSS Variables theo Design System "DS: Moonkage v2"
+   (https://claude.ai/artifact/GGUiHf9RjvveUzR3geFsCN). */
 :root, [data-theme="light"] {
   --surface: #ffffff; /* Nền trang. Sáng: trắng tinh như Shopcart; tối: xanh than gần đen. */
   --surface-muted: #f5f6f6; /* Nền khung ảnh sản phẩm, ô danh mục chưa có màu, nền section xen kẽ. Đây là màu quan trọng nhất của hệ: mọi ảnh sản phẩm nằm trên đúng nền này. */
@@ -55,6 +56,13 @@
   --shadow-pop: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
 }
 :root {
+  /* Semantic Color Aliases */
+  --color-primary: var(--brand);
+  --color-primary-hover: var(--brand-hover);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+
+  /* Spacing Scale */
   --space-1: 4px; /* Icon với chữ, giá với ghi chú. */
   --space-2: 8px; /* Giữa các huy hiệu, giữa nhãn và ô nhập. */
   --space-3: 12px; /* Giữa dòng trong thẻ, padding dọc nút nhỏ. */
@@ -64,6 +72,8 @@
   --space-8: 32px; /* Giữa tiêu đề section và nội dung. */
   --space-12: 48px; /* Padding trong banner, khoảng cách section trên mobile. */
   --space-20: 80px; /* Khoảng cách giữa các section trên desktop. Khoảng thở lớn là một nửa vẻ đẹp kiểu Shopcart. */
+
+  /* Shape & Sizing */
   --radius-sm: 6px; /* Ô trong bảng, checkbox. */
   --radius-md: 10px; /* Thẻ, khung ảnh, ô danh mục, banner, bảng. Ngôn ngữ hình khối thứ nhất. */
   --radius-full: 999px; /* Nút, chip, ô tìm kiếm, ô nhập, huy hiệu, nút tim. Ngôn ngữ hình khối thứ hai. */
@@ -71,6 +81,8 @@
   --control-h-sm: 40px; /* Nút trên thẻ, chip lọc. */
   --border-thin: 1px; /* Viền nút viền, ô nhập, vách ngăn. */
   --border-thick: 2px; /* Viền focus, viền lỗi, đường nối timeline, gạch chân tab đang chọn. */
+
+  /* Typography */
   --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
   --text-display: 700 56px/64px var(--font-sans); /* Tiêu đề hero trang chủ. Mỗi trang một lần. Viết hoa chữ đầu câu. */
   --text-title: 700 40px/48px var(--font-sans); /* Tiêu đề banner (PromoBanner) và tiêu đề trang chi tiết. */
@@ -82,6 +94,20 @@
   --text-label: 600 14px/20px var(--font-sans); /* Chữ trên nút, chip, nhãn ô nhập, link điều hướng. */
   --text-price: 700 18px/24px var(--font-sans); /* Giá trên thẻ và trang chi tiết; đặt cùng hàng với tên bánh, căn phải. Dùng chữ số tabular. */
   --text-caption: 500 12px/16px var(--font-sans); /* Ghi chú dưới giá, chữ trong huy hiệu, thanh tiện ích trên cùng. */
+  --tracking-display: -0.02em;
+  --tracking-title: -0.01em;
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-spin: 800ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
 }
-:root { --tracking-display: -0.02em; }
-:root { --tracking-title: -0.01em; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-spin: 2400ms;
+  }
+}
