@@ -7,6 +7,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { SellerLayout } from './layouts/SellerLayout';
 import { ShopLayout } from './layouts/ShopLayout';
 import { page } from './lazyPage';
+import { RouteErrorBoundary } from './RouteErrorBoundary';
 
 const guarded = (element: ReactNode) => <RequireAuth>{element}</RequireAuth>;
 
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
   {
     path: routes.sellerChannel,
     element: guarded(<SellerLayout />),
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: SellerOverviewPage },
       { path: 'phi-mo-ban', element: SellerFeePage },
@@ -120,6 +122,7 @@ export const router = createBrowserRouter([
   {
     path: routes.admin,
     element: guarded(<AdminLayout />),
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: AdminOverviewPage },
       { path: 'nguoi-ban', element: AdminSellersPage },
@@ -141,6 +144,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <ShopLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: HomePage },
       { path: routes.products, element: ProductListPage },
