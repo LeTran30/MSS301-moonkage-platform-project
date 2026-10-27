@@ -127,6 +127,7 @@ src/
     ├── assets/                       # Font, icon, ảnh DÙNG CHUNG thực sự
     ├── config/
     │   ├── env.ts                    # Đọc và kiểm tra biến môi trường
+    │   ├── vite-env.d.ts             # Kiểu cho các biến VITE_* mà env.ts đọc
     │   └── theme.ts                  # Chỉ đọc giá trị từ CSS variables (không định nghĩa lại)
     ├── i18n/                         # Khởi tạo thư viện i18n, không chứa chuỗi nghiệp vụ
     ├── lib/                          # Hook và helper hạ tầng: useDebounce, cn()
