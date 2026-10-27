@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ComponentType } from 'react';
-import { LoadingState } from '../shared/ui';
+import { LoadingState } from '@/shared/ui';
 
 /** Element of a lazily loaded page: each page is its own chunk; `name` is the page's named export. */
 export function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {

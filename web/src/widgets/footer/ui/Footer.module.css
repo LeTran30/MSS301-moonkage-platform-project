@@ -1,0 +1,48 @@
+.footer {
+  background: var(--brand);
+  color: var(--on-brand);
+  margin-top: var(--space-20);
+}
+
+.footerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-inline: var(--space-6);
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-8);
+  padding-block: var(--space-12);
+}
+
+.footerBrand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.footerNote {
+  font: var(--text-body-sm);
+  max-width: 320px;
+  margin: 0;
+}
+
+.footerLogo {
+  width: 96px;
+  height: auto;
+  aspect-ratio: 360 / 441;
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.footerLinks a {
+  font: var(--text-label);
+  color: var(--on-brand);
+}

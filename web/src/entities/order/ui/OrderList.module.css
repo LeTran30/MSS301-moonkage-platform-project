@@ -1,0 +1,52 @@
+.filterRow {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.filterRow [aria-pressed="true"] {
+  text-decoration-thickness: var(--border-thick);
+  color: var(--ink);
+}
+
+.filterRow [aria-pressed="false"] {
+  text-decoration: none;
+  color: var(--ink-muted);
+}
+
+.paymentGroup {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.paymentHead {
+  padding-top: var(--space-2);
+}
+
+.rowList {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--border-thin) solid var(--line);
+}
+
+.rowItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: var(--border-thin) solid var(--line);
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.rowTitle {
+  font: var(--text-body-strong);
+  margin: 0;
+}

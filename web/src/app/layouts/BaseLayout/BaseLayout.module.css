@@ -1,0 +1,14 @@
+.base {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 109px);
+  min-height: calc(100dvh - 109px);
+}

@@ -1,0 +1,139 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { routes } from '@/shared/config/routes';
+import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge, Tabs } from '@/shared/ui';
+import { formatVnd } from '@/shared/utils/money';
+import { customStepLabel, goods, inTab, orderStatusLabel, type OrderTab } from '../model/vendorOrdersModel';
+import type { VendorCustomOrder, VendorReadyOrder } from '../model/vendorOrderTypes';
+import { useVendorOrders } from '../model/useVendorOrders';
+import styles from './VendorOrders.module.css';
+
+const TABS: { key: OrderTab; label: string }[] = [
+  { key: 'todo', label: 'Cần làm' },
+  { key: 'shipping', label: 'Đang giao' },
+  { key: 'delivered', label: 'Đã giao' },
+  { key: 'no-invoice', label: 'Chưa có hóa đơn' },
+  { key: 'complaint', label: 'Đang khiếu nại' },
+];
+
+/** B2.0: shop orders by what to do, custom orders as a table. */
+export function VendorOrders() {
+  const state = useVendorOrders();
+  const [kind, setKind] = useState<'ready' | 'custom'>('ready');
+  const [tab, setTab] = useState<OrderTab>('todo');
+  if (state.kind === 'loading') return <LoadingState />;
+  if (state.kind === 'error') return <ErrorState message={state.message} onRetry={state.reload} />;
+  const ready = state.data.filter((o): o is VendorReadyOrder => o.kind === 'ready');
+  const custom = state.data.filter((o): o is VendorCustomOrder => o.kind === 'custom');
+  const list = ready.filter((o) => inTab(o, tab));
+
+  return (
+    <div className="page">
+      <PageHeader title="Đơn hàng" />
+      <Tabs
+        label="Loại đơn"
+        current={kind}
+        onChange={setKind}
+        tabs={[
+          { key: 'ready', label: 'Đơn Shop', count: ready.length },
+          { key: 'custom', label: 'Đơn đặt hàng', count: custom.length },
+        ]}
+      />
+      {kind === 'ready' ? (
+        <>
+          <div className={styles.filterRow} role="group" aria-label="Lọc đơn">
+            {TABS.map((t) => (
+              <button key={t.key} type="button" className="mk-btn mk-btn--text" aria-pressed={tab === t.key} onClick={() => setTab(t.key)}>
+                {t.label} <span className="mk-num">({ready.filter((o) => inTab(o, t.key)).length})</span>
+              </button>
+            ))}
+          </div>
+          {list.length === 0 ? (
+            <EmptyState title="Không có đơn nào ở đây" />
+          ) : (
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th scope="col">Đơn</th>
+                  <th scope="col">Người mua · giao tới</th>
+                  <th scope="col">Trạng thái</th>
+                  <th scope="col" className={styles.num}>
+                    Tiền hàng
+                  </th>
+                  <th scope="col">
+                    <span className="mk-sr">Mở</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((o) => (
+                  <tr key={o.id}>
+                    <td>
+                      <strong>{o.id}</strong>
+                      <br />
+                      <span className="muted">
+                        {o.placedAt} · {o.lines.reduce((n, l) => n + l.quantity, 0)} món
+                      </span>
+                    </td>
+                    <td>
+                      {o.buyer} · {o.deliverTo}
+                    </td>
+                    <td>
+                      <div className="row">
+                        <StatusBadge tone={orderStatusLabel[o.status].tone}>{orderStatusLabel[o.status].label}</StatusBadge>
+                        {o.complaint && <StatusBadge tone="warn">Đang khiếu nại</StatusBadge>}
+                      </div>
+                    </td>
+                    <td className={`${styles.num} mk-num`}>{formatVnd(goods(o))}</td>
+                    <td className={styles.actions}>
+                      <Link to={routes.vendor.order(o.id)} className={`mk-btn mk-btn--sm ${o.status === 'new' || (o.complaint && !o.complaint.proposal) ? 'mk-btn--primary' : 'mk-btn--quiet'}`}>
+                        {o.complaint && !o.complaint.proposal ? 'Phản hồi' : o.status === 'new' ? 'Xử lý' : 'Xem'}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
+      ) : (
+        <table className={styles.dataTable}>
+          <thead>
+            <tr>
+              <th scope="col">Đơn</th>
+              <th scope="col">Người mua</th>
+              <th scope="col">Đang ở bước</th>
+              <th scope="col" className={styles.num}>
+                Giá trị
+              </th>
+              <th scope="col">
+                <span className="mk-sr">Mở</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {custom.map((o) => (
+              <tr key={o.id}>
+                <td>
+                  <strong>{o.id}</strong>
+                  <br />
+                  <span className="muted">{o.title}</span>
+                </td>
+                <td>{o.buyer}</td>
+                <td>
+                  <StatusBadge tone={o.feedback ? 'warn' : 'soft'}>{o.feedback ? 'Sửa maket theo góp ý' : customStepLabel[o.step]}</StatusBadge>
+                </td>
+                <td className={`${styles.num} mk-num`}>{formatVnd(o.value)}</td>
+                <td className={styles.actions}>
+                  <Link to={routes.vendor.order(o.id)} className="mk-btn mk-btn--primary mk-btn--sm">
+                    Xử lý
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}

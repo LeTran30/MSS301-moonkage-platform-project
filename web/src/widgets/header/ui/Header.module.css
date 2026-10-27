@@ -1,0 +1,71 @@
+.nav {
+  background: var(--surface);
+  border-bottom: var(--border-thin) solid var(--line);
+}
+
+.topbar {
+  background: var(--brand);
+  color: var(--on-brand);
+  font: var(--text-caption);
+  --focus: var(--focus-on-brand);
+}
+
+.topbarInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  min-height: 36px;
+}
+
+.topbarLinks {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.navInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: 72px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-heading);
+  font-size: 22px;
+  color: var(--brand);
+  text-decoration: none;
+  flex: none;
+}
+
+.brandLogo {
+  height: 40px;
+  width: auto;
+}
+
+.links {
+  display: flex;
+  gap: var(--space-6);
+  font: var(--text-label);
+  flex: none;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-5);
+  font: var(--text-label);
+  flex: none;
+  align-items: center;
+}

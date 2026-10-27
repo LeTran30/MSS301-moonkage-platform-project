@@ -1,0 +1,16 @@
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-inline: var(--space-6);
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: var(--space-12);
+  padding-block: var(--space-12) var(--space-20);
+  align-items: start;
+}
+
+.main {
+  min-width: 0;
+}

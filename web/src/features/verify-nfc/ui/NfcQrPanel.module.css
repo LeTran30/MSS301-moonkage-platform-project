@@ -1,0 +1,51 @@
+.panel {
+  grid-template-columns: 1fr auto;
+  gap: var(--space-8);
+  justify-items: stretch;
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+
+.qrContainer {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+}
+
+.qr {
+  width: 240px;
+  height: 240px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: var(--border-thin) solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.qr img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.qrEmpty {
+  background: var(--surface-muted);
+  border-color: var(--line);
+  padding: var(--space-4);
+  box-sizing: border-box;
+}
+
+.qrEmpty p {
+  font: var(--text-body-sm);
+  margin: 0;
+}
+
+.rejection {
+  max-width: 240px;
+}
