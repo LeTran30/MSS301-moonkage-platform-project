@@ -48,11 +48,15 @@ Payment chỉ được tạo qua root nghiệp vụ sở hữu nó (Checkout, Ac
 
 Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ngân, hoàn tiền, chuyển tiền.
 
+**Hoàn tiền.** Lệnh hoàn ghi `PENDING`; job gửi VNPay (`merchant_webapi`, command `refund`). VNPay nhận thì `SUCCEEDED` và sổ tiền ghi `REFUND` (khiếu nại: từ đơn; trả trễ, báo giá hết hạn: từ các đơn mà thanh toán đã được phân bổ; trả trùng: không ghi sổ). VNPay từ chối, lỗi mạng, hoặc số hoàn vượt số đang giữ (Q-01) thì `MANUAL_REQUIRED`, sổ không đổi.
+
+**Chuyển tiền.** Từ chối khi đơn còn lệnh hoàn `PENDING`/`MANUAL_REQUIRED` hoặc yêu cầu giải ngân đang chờ; sau đó gọi `payout-lock` (409 → `LEDGER_007`), rồi chuyển toàn bộ số đang giữ.
+
 ## Sự kiện và API nội bộ
 
 **Phát**
 
-- `payment.succeeded`, `payment.failed` (kèm `purpose`, `referenceId`) → order, quotation, vendor. `payment.succeeded` = `{eventId, paymentId, purpose, referenceId, amount, paidAt}` (vendor-service đọc đúng các trường này)
+- `payment.succeeded`, `payment.failed` (kèm `purpose`, `referenceId`) → order, quotation, vendor
 - `refund.completed`, `refund.manual_required`, `disbursement.requested`, `disbursement.reviewed`, `payout.completed` → order, orchestrator
 
 **Nghe**
@@ -61,7 +65,8 @@ Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ng�
 
 **API nội bộ**
 
-- Cung cấp `POST /internal/payments` cho order, quotation, vendor: `{purpose, referenceId, payerAccountId, amount, allocations[]?}` → `{paymentId, paymentUrl}`
+- Cung cấp `POST /internal/payments` cho order, quotation, vendor: `{purpose, referenceId, payerAccountId, amount, expiresAt?, allocations[]?}` → `{paymentId, paymentUrl}`. Chỉ `CHECKOUT` gửi `allocations[]` (tổng = `amount`, mỗi đơn một dòng). `DEPOSIT` phân bổ toàn bộ cho đơn có id = `acceptanceId` (order-service tạo đơn đặt hàng từ `quote.accepted` với chính id này), `REMAINDER` cho đơn `referenceId`, `REGISTRATION_FEE` không phân bổ. Đã có lần thành công cho cùng `(purpose, referenceId)` thì trả 409 `PAYMENT_002`
+- `payment.failed` = `{eventId, paymentId, purpose, referenceId, amount, reason (DECLINED | EXPIRED), gatewayResponseCode, failedAt}`. Thanh toán quá `expiresAt` mà chưa có IPN bị đánh FAILED (EXPIRED); IPN thành công đến sau vẫn được ghi SUCCEEDED và phát `payment.succeeded`, bên sở hữu tham chiếu tự quyết (P-01)
 - Cung cấp `POST /internal/refunds` cho quotation (`QUOTE_EXPIRED`), order (`LATE_PAYMENT`): `{paymentId, reason, amount}`
 - Gọi order: `POST /internal/orders/{orderId}/payout-lock` trước khi chuyển tiền (P-02)
 

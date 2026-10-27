@@ -348,6 +348,20 @@ services:
       - ORDER_DB_PORT=5432
       # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
       - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
+      - MINIO_INTERNAL_URL=http://minio:9000
+      - MINIO_API_PORT
+      - MINIO_BROWSER_URL
+      - MINIO_REGION
+      - MINIO_ORDER_ACCESS_KEY
+      - MINIO_ORDER_SECRET_KEY
+      - MINIO_PUBLIC_BUCKET
+      - MINIO_PRIVATE_BUCKET
+      - MINIO_UPLOAD_LINK_LIFETIME
+      - MINIO_DOWNLOAD_LINK_LIFETIME
     # readiness only (no DB/mail checks), so a slow SMTP does not mark the service unhealthy (RT-05)
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8084/actuator/health/readiness || exit 1"]
@@ -357,6 +371,8 @@ services:
       start_period: 30s
     depends_on:
       order-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
       discovery-server: { condition: service_healthy }
 
   vendor-service:
@@ -417,6 +433,15 @@ services:
       - PAYMENT_DB_PORT=5432
       # dev seed data: db/seed of the service, run by Flyway after the migrations (docs/guides/database.md)
       - SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME
+      - RABBITMQ_PASSWORD
+      # VNPay sandbox (A-11): merchant values from sandbox.vnpayment.vn
+      - VNPAY_TMN_CODE
+      - VNPAY_HASH_SECRET
+      - VNPAY_PAY_URL
+      - VNPAY_RETURN_URL
     # readiness only (no DB/mail checks), so a slow SMTP does not mark the service unhealthy (RT-05)
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8087/actuator/health/readiness || exit 1"]
@@ -426,6 +451,7 @@ services:
       start_period: 30s
     depends_on:
       payment-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
   orchestrator-service:

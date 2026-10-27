@@ -13,3 +13,7 @@ eureka:
 spring:
   jpa:
     show-sql: false
+RABBITMQ_HOST: localhost
+RABBITMQ_PORT: 5672
+RABBITMQ_USERNAME: test
+RABBITMQ_PASSWORD: test

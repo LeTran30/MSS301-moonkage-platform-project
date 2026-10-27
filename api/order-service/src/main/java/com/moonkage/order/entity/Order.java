@@ -7,13 +7,13 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,8 +33,9 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor
 public class Order {
 
+    /** Issued before the order exists: by the checkout (P-01) or the quote acceptance (D-12); else on persist. */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36)
     private String id;
 
     @Column(nullable = false)
@@ -139,4 +140,11 @@ public class Order {
 
     @UpdateTimestamp
     private Instant updatedAt;
+
+    @PrePersist
+    void assignId() {
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
+    }
 }

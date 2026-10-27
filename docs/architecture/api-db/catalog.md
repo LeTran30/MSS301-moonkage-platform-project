@@ -58,7 +58,7 @@ So với code: CRUD `/api/seller/products/...` cùng các bảng `products`, `pr
 
 **API nội bộ**
 
-- Cung cấp `POST /internal/products/snapshot` cho order: phí giao theo vendor và cờ liên tỉnh (D-14)
+- Cung cấp `POST /internal/products/snapshot` cho order: `{provinceCode?, productIds[]}` → `{products[{productId, vendorId, ownerAccountId, name, listPrice, stock, quoteThreshold, deliveryLabel, purchasable}], vendors[{vendorId, vendorName, deliverable, interprovince, shippingFee}]}`. Trong vùng giao của người bán: `local_delivery_fee`; ngoài vùng chỉ khi mọi sản phẩm của người bán là `NATIONWIDE`: phí liên tỉnh của tỉnh nhận (D-14, BR-30). Không có `provinceCode` thì không người bán nào `deliverable`
 
 ## Quyết định liên quan
 
