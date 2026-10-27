@@ -1,0 +1,7 @@
+.panel {
+  width: 100%;
+  max-width: 400px;
+  gap: var(--space-5);
+  justify-items: stretch;
+  box-sizing: border-box;
+}

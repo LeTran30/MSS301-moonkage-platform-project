@@ -28,3 +28,20 @@ export function formatCountdown(totalSeconds: number): string {
 export function secondsUntil(iso: string, now: number = Date.now()): number {
   return Math.max(0, Math.ceil((new Date(iso).getTime() - now) / 1000));
 }
+
+const dateFormat: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+
+/** Today as `DD/MM/YYYY`. */
+export function today(): string {
+  return new Date().toLocaleDateString('vi-VN', dateFormat);
+}
+
+/** `2026-10-19T10:10:13Z` → `19/10/2026`; no date → today. */
+export function formatDate(iso?: string | null): string {
+  return iso ? new Date(iso).toLocaleDateString('vi-VN', dateFormat) : today();
+}
+
+/** Now as `DD/MM/YYYY HH:mm`, for history entries. */
+export function nowStamp(): string {
+  return `${today()} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+}

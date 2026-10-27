@@ -15,7 +15,7 @@ export const interprovinceFeesApi = '/api/interprovince-fees';
 /** quotation-service endpoints through the gateway discovery locator. */
 export const quotationApi = '/quotation-service/api';
 export const quoteRequestsApi = `${quotationApi}/quote-requests`;
-export const suppliersApi = `${quotationApi}/suppliers`;
+export const vendorDirectoryApi = `${quotationApi}/vendors`;
 
 /** order-service, payment-service and orchestrator-service REST roots. */
 export const ordersApi = '/order-service/api';

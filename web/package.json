@@ -10,7 +10,8 @@
     "build:demo": "tsc -b && vite build --mode demo",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@stomp/stompjs": "^7.3.0",

@@ -1,0 +1,55 @@
+.vendor {
+  display: grid;
+  gap: var(--space-4);
+  border: var(--border-thin) solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+
+.vendorRow {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr) auto;
+  grid-template-areas: "id facts actions" "makes facts actions";
+  align-items: center;
+  column-gap: var(--space-6);
+}
+
+.identity {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  grid-area: id;
+}
+
+.name {
+  font: var(--text-card-title);
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.makes {
+  font: var(--text-body-sm);
+  color: var(--ink);
+  grid-area: makes;
+}
+
+.vendorRow .makes {
+  padding-left: 72px;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  grid-area: facts;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  grid-area: actions;
+}

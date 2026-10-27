@@ -1,0 +1,30 @@
+/** Sentences of the catalogue (Vietnamese; "bạn" for the user, no exclamation marks). */
+export const productStrings = {
+  listTitle: 'Mua hàng có sẵn',
+  listLead: (area: string) => `Bánh đã đóng hộp, giao được tới ${area}.`,
+  count: (n: number) => `${n} sản phẩm`,
+  searchEcho: (q: string) => `Kết quả cho "${q}"`,
+  emptyTitle: (area: string) => `Không có sản phẩm giao tới ${area} khớp bộ lọc`,
+  emptyBody: 'Thử bỏ bớt bộ lọc. Nếu cần hàng làm riêng, gửi yêu cầu để các đơn vị báo giá.',
+  removeAll: 'Bỏ hết bộ lọc',
+
+  homeSection: (area: string) => `Có sẵn giao tới ${area}`,
+  seeAll: 'Xem tất cả hàng có sẵn',
+
+  notFound: 'Không có sản phẩm này, hoặc sản phẩm đã ngừng bán.',
+  backToList: 'Về danh sách sản phẩm',
+  reviewsUnit: 'đánh giá',
+  stockArea: (stock: number, area: string) => `Còn ${stock} hộp · giao tới ${area}`,
+  notDelivered: (area: string) => `Shop không giao sản phẩm này tới ${area}`,
+  fee: (amount: string) => `Phí giao từ ${amount}, tính ở giỏ`,
+  quantity: 'Số lượng',
+  vat: 'Đã gồm VAT',
+  customTitle: 'Cần số lượng lớn hoặc in logo?',
+  customBody: 'Shop này nhận đặt theo yêu cầu.',
+  customCta: 'Gửi yêu cầu cho Shop này',
+  inBox: 'Trong hộp',
+  reviews: (n: number) => `Đánh giá (${n})`,
+  noReviews: 'Sản phẩm chưa có đánh giá.',
+  gallery: (n: number) => `Ảnh ${n}`,
+  mainPhoto: 'Ảnh sản phẩm chính',
+};
