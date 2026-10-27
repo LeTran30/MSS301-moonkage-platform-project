@@ -100,6 +100,15 @@ public class SecurityConfig {
                         .pathMatchers(
                                 HttpMethod.GET, "/catalog-service/api/products/**", "/order-service/api/reviews/**")
                         .permitAll()
+                        // BR-25: VNPay calls the IPN server to server and redirects the payer to the return page,
+                        // both without our token; payment-service checks vnp_SecureHash instead
+                        .pathMatchers(
+                                HttpMethod.GET,
+                                "/payment-service/api/payments/vnpay/ipn",
+                                "/payment-service/api/payments/vnpay/return",
+                                "/api/payments/vnpay/ipn",
+                                "/api/payments/vnpay/return")
+                        .permitAll()
                         // AC-26.9: the registration fee is shown before anyone registers
                         .pathMatchers(
                                 HttpMethod.GET,

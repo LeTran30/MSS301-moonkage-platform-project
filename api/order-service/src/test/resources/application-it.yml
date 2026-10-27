@@ -4,6 +4,10 @@ ORDER_DB_HOST: localhost
 ORDER_DB_PORT: 5432
 DB_USERNAME: test
 DB_PASSWORD: test
+RABBITMQ_HOST: localhost
+RABBITMQ_PORT: 5672
+RABBITMQ_USERNAME: test
+RABBITMQ_PASSWORD: test
 EUREKA_URL: http://localhost:8761/eureka/
 
 eureka:
