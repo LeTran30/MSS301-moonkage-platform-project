@@ -1,20 +1,26 @@
 import { useState, type FormEvent } from 'react';
-import { saveAddress, type Address } from '../api/addressesApi';
+import { ApiError } from '../../../shared/api/client';
+import { config } from '../../../shared/config/env';
+import { ALL_PROVINCE_NAMES } from '../../../shared/config/provinces';
+import { strings } from '../../../shared/config/strings';
+import { saveAddress, type Address } from '../model/useAddresses';
 
-const PROVINCES = ['Hà Nội', 'TP Hồ Chí Minh', 'Hải Phòng', 'Đà Nẵng', 'Cần Thơ'];
-const PHONE = /^0\d{9}$/;
+const DEMO_PROVINCES = ['Hà Nội', 'TP Hồ Chí Minh', 'Hải Phòng', 'Đà Nẵng', 'Cần Thơ'];
+const PHONE = /^0[35789]\d{8}$/;
 
 /** M6.3.1: add or edit one address. */
 export function AddressForm({ address, onSaved, onCancel }: { address?: Address | null; onSaved: () => void; onCancel: () => void }) {
+  const provinces = config.demoMode ? DEMO_PROVINCES : ALL_PROVINCE_NAMES;
   const [form, setForm] = useState({
     label: address?.label ?? '',
     name: address?.name ?? '',
     phone: address?.phone ?? '',
-    province: address?.province ?? PROVINCES[0],
+    province: address?.province ?? provinces[0],
     line: address?.line ?? '',
     isDefault: address?.isDefault ?? false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (key: keyof typeof form, value: string | boolean) => setForm({ ...form, [key]: value });
 
@@ -25,10 +31,17 @@ export function AddressForm({ address, onSaved, onCancel }: { address?: Address 
     if (!PHONE.test(form.phone.replace(/\s/g, ''))) next.phone = 'Số điện thoại có 10 chữ số, bắt đầu bằng 0.';
     if (!form.line.trim()) next.line = 'Nhập số nhà, đường, phường.';
     setErrors(next);
+    setServerError(null);
     if (Object.keys(next).length) return;
     setBusy(true);
-    await saveAddress({ ...form, label: form.label.trim() || 'Địa chỉ', id: address?.id });
-    onSaved();
+    try {
+      await saveAddress({ ...form, label: form.label.trim() || 'Địa chỉ', id: address?.id });
+      onSaved();
+    } catch (err) {
+      setServerError(err instanceof ApiError ? err.message : strings.errors.server);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const field = (key: 'name' | 'phone' | 'line' | 'label', label: string, hint?: string, type = 'text') => (
@@ -64,7 +77,7 @@ export function AddressForm({ address, onSaved, onCancel }: { address?: Address 
         <div className="mk-field">
           <label htmlFor="addr-province">Tỉnh / thành phố</label>
           <select id="addr-province" value={form.province} onChange={(e) => set('province', e.target.value)}>
-            {PROVINCES.map((p) => (
+            {provinces.map((p) => (
               <option key={p}>{p}</option>
             ))}
           </select>
@@ -75,6 +88,11 @@ export function AddressForm({ address, onSaved, onCancel }: { address?: Address 
           <input type="checkbox" checked={form.isDefault} onChange={(e) => set('isDefault', e.target.checked)} /> Đặt làm địa chỉ mặc định
         </label>
       </fieldset>
+      {serverError && (
+        <p className="error-text" role="alert">
+          {serverError}
+        </p>
+      )}
       <div className="form-actions">
         <button type="button" className="mk-btn mk-btn--quiet" onClick={onCancel}>
           Hủy

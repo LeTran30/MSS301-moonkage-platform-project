@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { Avatar, PhotoFrame } from '../../../shared/ui';
 import { formatRating, formatVnd } from '../../../shared/utils/money';
-import type { ProductDetail } from '../api/types';
+import type { ProductDetail } from '../model/useCatalog';
 import { catalogStrings } from '../strings';
 
 const GALLERY_SLOTS = 5;

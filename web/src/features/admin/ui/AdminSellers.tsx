@@ -3,10 +3,18 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, KeyValue, LoadingState, PageHeader, SectionTabs, StatusBadge, Tabs, TaskList } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { decideApplication, takeDownProduct } from '../api/adminApi';
-import type { ApplicationState, SellerApplication } from '../api/types';
 import { applicationLabel, ownerMatch } from '../model/adminModel';
-import { useAdminProducts, useApplications, useDisbursementRequests, useDisputes, usePayouts } from '../model/useAdmin';
+import {
+  decideApplication,
+  takeDownProduct,
+  useAdminProducts,
+  useApplications,
+  useDisbursementRequests,
+  useDisputes,
+  usePayouts,
+  type ApplicationState,
+  type SellerApplication,
+} from '../model/useAdmin';
 
 /** Q1.0: the queues, oldest first. */
 export function AdminOverview() {

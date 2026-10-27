@@ -44,7 +44,7 @@ Payment chỉ được tạo qua root nghiệp vụ sở hữu nó (Checkout, Ac
 | `PATCH /api/ledgers/{orderId}/disbursements/{requestId}` | A | `{status: APPROVED \| REJECTED, approvedAmount?, reason?}` → ghi sổ | FR-47 |
 | `PUT /api/ledgers/{orderId}/payout` | A | Duyệt chuyển tiền cho người bán (mỗi đơn một lần) | FR-48 |
 | `GET /api/ledgers/{orderId}/refunds` | S, A | Các lần hoàn tiền | AC-49.3 |
-| `GET /api/refunds?status=MANUAL_REQUIRED`, `PATCH /api/refunds/{refundId}` | A | Hoàn tiền VNPay từ chối, gồm cả lần không gắn đơn (trả trễ, trả trùng); PATCH = đã hoàn tay, sổ tiền ghi `REFUND` lúc này | AC-49.3 |
+| `PATCH /api/ledgers/{orderId}/refunds/{refundId}` | A | `{status: SUCCEEDED}` sau khi xử lý tay | AC-49.3 |
 
 Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ngân, hoàn tiền, chuyển tiền.
 
@@ -56,7 +56,7 @@ Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ng�
 
 **Phát**
 
-- `payment.succeeded`, `payment.failed` (kèm `purpose`, `referenceId`) → order, quotation, vendor. `payment.succeeded` = `{eventId, paymentId, purpose, referenceId, amount, paidAt}` (vendor-service đọc đúng các trường này)
+- `payment.succeeded`, `payment.failed` (kèm `purpose`, `referenceId`) → order, quotation, vendor
 - `refund.completed`, `refund.manual_required`, `disbursement.requested`, `disbursement.reviewed`, `payout.completed` → order, orchestrator
 
 **Nghe**

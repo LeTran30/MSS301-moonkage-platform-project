@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge, Tabs } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import type { SellerCustomOrder, SellerReadyOrder } from '../api/types';
 import { customStepLabel, goods, inTab, orderStatusLabel, type OrderTab } from '../model/sellerModel';
-import { useSellerOrders } from '../model/useSeller';
+import { useSellerOrders, type SellerCustomOrder, type SellerReadyOrder } from '../model/useSeller';
 
 const TABS: { key: OrderTab; label: string }[] = [
   { key: 'todo', label: 'Cần làm' },

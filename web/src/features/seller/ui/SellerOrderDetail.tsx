@@ -3,9 +3,18 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { FileDrop, KeyValue, PageHeader, SectionTabs, StatusBadge, Steps } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { addProgress, attachInvoice, confirmOrder, markDelivered, proposeResolution, sendMockup, shipOrder } from '../api/sellerApi';
-import type { SellerCustomOrder, SellerReadyOrder } from '../api/types';
 import { goods, orderStatusLabel } from '../model/sellerModel';
+import {
+  addProgress,
+  attachInvoice,
+  confirmOrder,
+  markDelivered,
+  proposeResolution,
+  sendMockup,
+  shipOrder,
+  type SellerCustomOrder,
+  type SellerReadyOrder,
+} from '../model/useSeller';
 
 const PROPOSALS = ['Hoàn một phần', 'Hoàn toàn bộ', 'Không hoàn, kèm lý do'];
 

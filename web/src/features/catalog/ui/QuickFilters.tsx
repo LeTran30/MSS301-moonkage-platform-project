@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { formatVnd } from '../../../shared/utils/money';
-import type { Crust, Filling } from '../api/types';
-import { crustLabels, fillingLabels, filterLink, type ProductFilters } from '../model/filters';
+import { crustLabels, fillingLabels, filterLink, type Crust, type Filling, type ProductFilters } from '../model/filters';
 import { catalogStrings } from '../strings';
 
 const UNDER_AMOUNT = 500000;

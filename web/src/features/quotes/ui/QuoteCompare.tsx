@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { KeyValue, PageHeader, StatusBadge } from '../../../shared/ui';
 import { formatRating, formatVnd } from '../../../shared/utils/money';
-import { closeRequest } from '../api/quotesApi';
-import type { QuoteRequest } from '../api/types';
 import { bestOf, deposit, perBox, requestStatusLabel } from '../model/quoteModel';
+import { closeRequest, type QuoteRequest } from '../model/useQuotes';
 
 /**
  * M6.2.1: the request and its quotes side by side (DS QuoteCompare). Money stays with Moonkage until accepted:

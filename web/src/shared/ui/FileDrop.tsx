@@ -1,7 +1,19 @@
 import { useId, useState } from 'react';
 
 /** File picker as a drop zone; shows the chosen file names (nothing is uploaded until the form is sent). */
-export function FileDrop({ label, hint, accept, multiple }: { label: string; hint?: string; accept?: string; multiple?: boolean }) {
+export function FileDrop({
+  label,
+  hint,
+  accept,
+  multiple,
+  onSelect,
+}: {
+  label: string;
+  hint?: string;
+  accept?: string;
+  multiple?: boolean;
+  onSelect?: (files: File[]) => void;
+}) {
   const id = useId();
   const [names, setNames] = useState<string[]>([]);
   return (
@@ -20,7 +32,11 @@ export function FileDrop({ label, hint, accept, multiple }: { label: string; hin
         className="mk-sr"
         accept={accept}
         multiple={multiple}
-        onChange={(e) => setNames([...(e.target.files ?? [])].map((f) => f.name))}
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          setNames(files.map((f) => f.name));
+          onSelect?.(files);
+        }}
       />
     </div>
   );

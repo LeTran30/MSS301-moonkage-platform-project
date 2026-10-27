@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { KeyValue, PageHeader, Steps } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import type { Quote, QuoteRequest } from '../api/types';
 import { deposit } from '../model/quoteModel';
+import type { Quote, QuoteRequest } from '../model/useQuotes';
 
 /** M6.2.2: the chosen quote, the binding agreement, and the deposit (paid on VNPay by the page). */
 export function AcceptQuote({

@@ -1,5 +1,7 @@
 import { useAsync } from '../../../shared/ui';
-import { fetchFeaturedSuppliers, fetchSupplier, fetchSuppliers, type Supplier } from '../api/suppliersApi';
+import { fetchFeaturedSuppliers, fetchSupplier, fetchSuppliers, type Supplier, type SupplierProfile } from '../api/suppliersApi';
+
+export type { Supplier, SupplierProfile };
 
 export type SupplierKind = 'all' | 'shop' | 'custom-only' | 'logo';
 

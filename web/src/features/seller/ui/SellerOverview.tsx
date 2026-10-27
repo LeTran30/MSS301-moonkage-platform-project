@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { PageHeader, StatusBadge, Steps, TaskList, type Task } from '../../../shared/ui';
-import { resubmitProfile } from '../api/sellerApi';
-import type { SellerOrder, SellerProfile } from '../api/types';
 import { sellerTodo } from '../model/sellerModel';
+import { resubmitProfile, type SellerOrder, type SellerProfile } from '../model/useSeller';
 
 const ONBOARDING = ['Nộp hồ sơ', 'Moonkage duyệt', 'Đóng phí 200.000đ', 'Cài vùng giao, đăng sản phẩm'];
 

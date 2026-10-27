@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { KeyValue, PageHeader, StatusBadge } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { resubmitProfile, saveTerms, saveZones } from '../api/sellerApi';
-import type { CustomTerms, DeliveryZones, SellerProfile } from '../api/types';
+import { resubmitProfile, saveTerms, saveZones, type CustomTerms, type DeliveryZones, type SellerProfile } from '../model/useSeller';
 
 /** B6.0 */
 export function SettingsHub({ profile }: { profile: SellerProfile }) {
