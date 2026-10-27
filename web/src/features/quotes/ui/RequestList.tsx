@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, LoadingState, StatusBadge, Tabs } from '../../../shared/ui';
-import type { RequestStatus } from '../api/types';
 import { requestStatusLabel, requestTitle } from '../model/quoteModel';
-import { useRequests } from '../model/useQuotes';
+import { useRequests, type RequestStatus } from '../model/useQuotes';
 
 const ORDER: RequestStatus[] = ['new-quotes', 'waiting', 'accepted', 'closed'];
 

@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge, Tabs } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { saveProduct, setProductVisible } from '../api/sellerApi';
-import type { SellerProduct } from '../api/types';
-import { useSellerProducts } from '../model/useSeller';
+import { saveProduct, setProductVisible, useSellerProducts, type SellerProduct } from '../model/useSeller';
 
 const LOW_STOCK = 5;
 

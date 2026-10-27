@@ -1,7 +1,7 @@
 import { PageHeader, Steps } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import type { SellerProfile } from '../api/types';
 import { SELLER_FEE } from '../model/sellerModel';
+import type { SellerProfile } from '../model/useSeller';
 
 /** B1.1: pay the one-off fee after approval (VNPay through the page). */
 export function SellerFee({ profile, onPay, onLater }: { profile: SellerProfile; onPay: () => void; onLater: () => void }) {

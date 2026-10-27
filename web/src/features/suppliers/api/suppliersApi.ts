@@ -1,4 +1,8 @@
+import { apiClient, type ApiResponse } from '../../../shared/api/client';
+import { suppliersApi } from '../../../shared/api/gateway';
 import { mockResponse } from '../../../shared/api/mock';
+import { config } from '../../../shared/config/env';
+import { provinceNameOf } from '../../../shared/config/provinces';
 
 export interface Supplier {
   id: string;
@@ -27,7 +31,81 @@ export interface SupplierProfile extends Supplier {
   boxOptions: string[];
 }
 
-/** Sample suppliers from the wireframe (m1-0, m3-2); the supplier endpoints do not exist yet. */
+interface SupplierResponseDto {
+  vendorId: string;
+  businessName: string;
+  ordersOnly: boolean;
+  supplySource: string | null;
+  minQty: number | null;
+  leadTimeDays: number | null;
+  customCapabilities: string[];
+  deliveryAreas: string[];
+  earlyBirdOffer: string | null;
+  refPriceTiers: unknown;
+  isOwn: boolean;
+}
+
+const CAPABILITY_LABELS: Record<string, string> = {
+  BAG: 'Túi riêng',
+  CARD: 'Thiệp kèm',
+  STICKER: 'Nhãn dán riêng',
+  TEMPLATE_BOX: 'In logo · hộp riêng',
+};
+
+function initialsOf(name: string): string {
+  const words = (name || 'X').trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'XB';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+}
+
+function shortNameOf(name: string): string {
+  return name.replace(/^(Xưởng Bánh|Bánh Cổ Truyền|Xưởng|Tiệm Bánh|Công ty)\s+/i, '').trim() || name;
+}
+
+function mapSupplierDto(dto: SupplierResponseDto): Supplier {
+  const areas = dto.deliveryAreas ?? [];
+  const city = areas.length > 0 ? provinceNameOf(areas[0]) : 'Hà Nội';
+  const reach = areas.length > 1 ? 'Giao toàn quốc' : `Giao ${city}`;
+  const caps = (dto.customCapabilities ?? []).map((c) => CAPABILITY_LABELS[c] || c);
+  const makes = caps.length > 0 ? caps.join(' · ') : 'In logo · hộp riêng';
+  return {
+    id: dto.vendorId,
+    name: dto.businessName,
+    shortName: shortNameOf(dto.businessName),
+    initials: initialsOf(dto.businessName),
+    district: dto.supplySource === 'RESELL' ? 'Nhà phân phối' : 'Xưởng sản xuất',
+    city,
+    makes,
+    minBoxes: dto.minQty ?? 20,
+    reach,
+    hasShop: !dto.ordersOnly,
+    rating: null,
+  };
+}
+
+function mapSupplierProfileDto(dto: SupplierResponseDto): SupplierProfile {
+  const base = mapSupplierDto(dto);
+  const leadHours = (dto.leadTimeDays ?? 1) * 24;
+  return {
+    ...base,
+    address: `${base.district}, ${base.city}`,
+    purchases: 0,
+    makesDetail: [
+      { label: 'Kiểu hộp', value: '2, 4, 6 bánh; hộp gỗ, hộp giấy cứng' },
+      { label: 'Làm riêng', value: base.makes },
+      ...(dto.earlyBirdOffer ? [{ label: 'Ưu đãi đặt sớm', value: dto.earlyBirdOffer }] : []),
+    ],
+    terms: [
+      { label: 'Tối thiểu', value: `${base.minBoxes} hộp` },
+      { label: 'Maket', value: `Gửi trong ${leadHours} giờ sau khi nhận cọc` },
+      { label: 'Giao', value: base.reach.replace(/^Giao\s+/i, '') },
+    ],
+    boxOptions: ['Hộp gỗ 4 bánh', 'Hộp giấy 6 bánh', 'Hộp 2 bánh'],
+  };
+}
+
+/** Sample suppliers from the wireframe (m1-0, m3-2). */
 const mockSuppliers: Supplier[] = [
   { id: 'nghe-nhan', name: 'Xưởng Bánh Nghệ Nhân', shortName: 'Nghệ Nhân', initials: 'NN', district: 'Ba Đình', city: 'Hà Nội', makes: 'In logo · hộp riêng', minBoxes: 20, reach: 'Giao toàn quốc', hasShop: true, rating: 4.9 },
   { id: 'trang-vang', name: 'Bánh Cổ Truyền Trăng Vàng', shortName: 'Trăng Vàng', initials: 'TV', district: 'Hoàn Kiếm', city: 'Hà Nội', makes: 'Hộp sơn mài · nhân theo yêu cầu', minBoxes: 10, reach: 'Giao Hà Nội', hasShop: true, rating: 4.8 },
@@ -102,19 +180,43 @@ const profiles: Record<string, Omit<SupplierProfile, keyof Supplier>> = {
   },
 };
 
-export function fetchSupplier(supplierId: string): Promise<SupplierProfile | null> {
-  const base = mockSuppliers.find((s) => s.id === supplierId);
-  const extra = profiles[supplierId];
-  return mockResponse(base && extra ? { ...base, ...extra } : null);
+export async function fetchSupplier(supplierId: string): Promise<SupplierProfile | null> {
+  if (config.demoMode) {
+    const base = mockSuppliers.find((s) => s.id === supplierId);
+    const extra = profiles[supplierId];
+    return mockResponse(base && extra ? { ...base, ...extra } : null);
+  }
+  try {
+    const res = await apiClient.get<ApiResponse<SupplierResponseDto>>(
+      `${suppliersApi}/${encodeURIComponent(supplierId)}`,
+    );
+    return res.data.data ? mapSupplierProfileDto(res.data.data) : null;
+  } catch {
+    const base = mockSuppliers.find((s) => s.id === supplierId);
+    const extra = profiles[supplierId];
+    return base && extra ? { ...base, ...extra } : null;
+  }
 }
 
 /** Suppliers shown on the home page, in this order. */
 const featuredIds = ['nghe-nhan', 'trang-vang', 'minh-hoa', 'moc-an'];
 
-export function fetchSuppliers(): Promise<Supplier[]> {
-  return mockResponse(mockSuppliers);
+export async function fetchSuppliers(): Promise<Supplier[]> {
+  if (config.demoMode) {
+    return mockResponse(mockSuppliers);
+  }
+  try {
+    const res = await apiClient.get<ApiResponse<SupplierResponseDto[]>>(suppliersApi);
+    return (res.data.data ?? []).map(mapSupplierDto);
+  } catch {
+    return mockSuppliers;
+  }
 }
 
-export function fetchFeaturedSuppliers(): Promise<Supplier[]> {
-  return mockResponse(featuredIds.map((id) => mockSuppliers.find((s) => s.id === id)).filter((s): s is Supplier => Boolean(s)));
+export async function fetchFeaturedSuppliers(): Promise<Supplier[]> {
+  if (config.demoMode) {
+    return mockResponse(featuredIds.map((id) => mockSuppliers.find((s) => s.id === id)).filter((s): s is Supplier => Boolean(s)));
+  }
+  const all = await fetchSuppliers();
+  return all.slice(0, 4);
 }

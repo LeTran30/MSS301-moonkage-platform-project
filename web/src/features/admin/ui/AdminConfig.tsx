@@ -3,10 +3,17 @@ import { Link } from 'react-router-dom';
 import { routes } from '../../../shared/config/routes';
 import { LoadingState, ErrorState, PageHeader, StatusBadge } from '../../../shared/ui';
 import { formatVnd } from '../../../shared/utils/money';
-import { saveProvinceFees, saveSellerFee, saveTaxonomy } from '../api/adminApi';
-import type { ProvinceFee, Taxonomy } from '../api/types';
 import { missingFees } from '../model/adminModel';
-import { useProvinceFees, useSellerFeeConfig, useTaxonomy } from '../model/useAdmin';
+import {
+  saveProvinceFees,
+  saveSellerFee,
+  saveTaxonomy,
+  useProvinceFees,
+  useSellerFeeConfig,
+  useTaxonomy,
+  type ProvinceFee,
+  type Taxonomy,
+} from '../model/useAdmin';
 
 /** Q6.0 */
 export function ConfigHub() {

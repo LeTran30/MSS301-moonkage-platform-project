@@ -1,7 +1,6 @@
-export { markFeePaid } from './api/sellerApi';
-export type { SellerProfile, SellerState } from './api/types';
 export { SELLER_FEE } from './model/sellerModel';
 export {
+  markFeePaid,
   useIncomingRequest,
   useIncomingRequests,
   useInterProvinceFees,
@@ -11,6 +10,8 @@ export {
   useSellerProfile,
   useTerms,
   useZones,
+  type SellerProfile,
+  type SellerState,
 } from './model/useSeller';
 export { SellerCustomOrderView, SellerReadyOrderView } from './ui/SellerOrderDetail';
 export { SellerFee } from './ui/SellerFee';

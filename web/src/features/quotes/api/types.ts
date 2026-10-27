@@ -1,6 +1,7 @@
 export type RequestStatus = 'waiting' | 'new-quotes' | 'accepted' | 'closed';
 
 export interface Quote {
+  id?: string;
   supplierId: string;
   supplierName: string;
   total: number;

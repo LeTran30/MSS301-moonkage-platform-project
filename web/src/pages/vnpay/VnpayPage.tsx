@@ -1,13 +1,13 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchPayment, finishPayment, VnpayGateway } from '../../features/payments';
+import { finishPayment, usePayment, VnpayGateway } from '../../features/payments';
 import { routes } from '../../shared/config/routes';
-import { EmptyState, LoadingState, useAsync } from '../../shared/ui';
+import { EmptyState, LoadingState } from '../../shared/ui';
 
 /** M4.2: the simulated VNPay page, outside the Moonkage frame. */
 export function VnpayPage() {
   const { paymentId = '' } = useParams();
   const navigate = useNavigate();
-  const payment = useAsync(() => fetchPayment(paymentId), [paymentId]);
+  const payment = usePayment(paymentId);
   return (
     <main className="vnpay-page">
       {payment.kind === 'loading' && <LoadingState />}

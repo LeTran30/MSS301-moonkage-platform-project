@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../../shared/api/client';
 import { strings } from '../../../shared/config/strings';
-import { getMyNfcStatus, type NfcStatusInfo } from '../api/nfc';
+import { getMyNfcStatus, NfcErrorCode, type NfcStatus, type NfcStatusInfo } from '../api/nfc';
+
+export { NfcErrorCode, type NfcStatus, type NfcStatusInfo };
 
 export type NfcStatusState =
   | { kind: 'loading' }

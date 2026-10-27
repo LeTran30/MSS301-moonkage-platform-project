@@ -2,7 +2,10 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAsync } from '../../../shared/ui';
 import { fetchFeaturedProducts, fetchProduct, fetchProducts, fetchProductsByIds, fetchShopProducts } from '../api/catalogApi';
+import type { ProductDetail, ProductSummary } from '../api/types';
 import { applyFilters, parseFilters, toSearchParams, type ProductFilters } from './filters';
+
+export type { ProductDetail, ProductSummary };
 
 export function useFeaturedProducts(area: string) {
   return useAsync(() => fetchFeaturedProducts(area), [area]);

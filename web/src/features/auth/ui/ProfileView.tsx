@@ -4,7 +4,7 @@ import { useAuth } from '../model/useAuth';
 
 /** M6.5: the account (editable name) and the verified identity (read-only, from the CCCD chip). */
 export function ProfileView({ identity }: { identity: { name: string; idMasked: string; verifiedAt: string } | null }) {
-  const { session } = useAuth();
+  const { session, updateDisplayName } = useAuth();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(session?.displayName ?? '');
   if (!session) return null;
@@ -26,6 +26,7 @@ export function ProfileView({ identity }: { identity: { name: string; idMasked: 
             className="row"
             onSubmit={(e) => {
               e.preventDefault();
+              if (name.trim()) updateDisplayName?.(name.trim());
               setEditing(false);
             }}
           >
@@ -40,8 +41,8 @@ export function ProfileView({ identity }: { identity: { name: string; idMasked: 
         ) : (
           <KeyValue
             rows={[
-              { label: 'Tên hiển thị', value: name },
-              { label: 'Email', value: session.accountId },
+              { label: 'Tên hiển thị', value: name || session.displayName },
+              { label: 'Email', value: session.email || session.accountId },
               { label: 'Mật khẩu', value: '••••••••' },
             ]}
           />

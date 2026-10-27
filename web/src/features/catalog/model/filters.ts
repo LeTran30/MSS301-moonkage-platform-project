@@ -1,5 +1,7 @@
 import type { Crust, Filling, ProductSummary } from '../api/types';
 
+export type { Crust, Filling };
+
 /**
  * The filters of "Mua hàng có sẵn" (M2.0), kept in the URL so a filtered list can be linked and the quick chips of
  * the home page are plain links. Several values in one group = OR; between groups = AND. The delivery area is
