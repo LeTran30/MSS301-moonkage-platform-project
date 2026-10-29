@@ -3,7 +3,7 @@ package com.moonkage.identity.address;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import com.moonkage.identity.address.dto.SaveAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressRequest;
 import com.moonkage.identity.auth.dto.RegisterAccountRequest;
 import com.moonkage.identity.common.config.LocaleConfig;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
@@ -54,7 +54,7 @@ class ValidationMessagesTest {
 
     @Test
     void addressNeedsNationalCodeOfProvince() {
-        SaveAddressRequest request = SaveAddressRequest.builder()
+        AddAddressRequest request = AddAddressRequest.builder()
                 .recipientName("Nguyễn Lan")
                 .recipientPhone("0212345678")
                 .provinceCode("HCM")
@@ -72,7 +72,7 @@ class ValidationMessagesTest {
 
     @Test
     void unknownProvinceCodeIsRejected() {
-        SaveAddressRequest request = SaveAddressRequest.builder()
+        AddAddressRequest request = AddAddressRequest.builder()
                 .recipientName("Nguyễn Lan")
                 .recipientPhone("0912345678")
                 .provinceCode("74")

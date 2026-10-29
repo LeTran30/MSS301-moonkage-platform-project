@@ -1,4 +1,4 @@
-package com.moonkage.identity.account.vo;
+package com.moonkage.identity.account.atom;
 
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;

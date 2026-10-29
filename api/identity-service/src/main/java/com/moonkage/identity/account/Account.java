@@ -1,9 +1,12 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.vo.Email;
-import com.moonkage.identity.account.vo.PasswordHash;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.Email;
+import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.atom.Role;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.common.BaseEntity;
+import com.moonkage.identity.common.DomainGuard;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,15 +17,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
- * Login credentials (FR-01, FR-02). Login identifier = email or phone number. Package-private: other components see
- * an {@link AccountView} through {@link AccountService}.
+ * How a person gets into the platform: login identifiers, password, role (FR-01, FR-02; docs/services/identity/
+ * db-identify.md). Package-private: other components see an {@link AccountView} through {@link AccountService}.
+ *
+ * <p>Keeps its own fields right (docs/services/identity/domain-model-plan.md, Account): created only by
+ * {@link #registerMember}, changed only by the named methods below. Email, phone number and role never change; no
+ * code path creates an ADMIN (admins come from the seed).
  */
 @Entity
 @Table(
@@ -32,10 +37,7 @@ import lombok.Setter;
             @UniqueConstraint(name = Account.PHONE_NUMBER_UNIQUE_KEY, columnNames = "phone_number")
         })
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 class Account extends BaseEntity {
 
     static final String EMAIL_UNIQUE_KEY = "uk_accounts_email";
@@ -46,123 +48,52 @@ class Account extends BaseEntity {
     @Column(name = "id", nullable = false, updatable = false)
     private String id;
 
-    @Column(name = "email", nullable = false)
+    @Column(name = "email", nullable = false, updatable = false)
     private Email email;
 
-    @Column(name = "phone_number", length = 20)
+    /** The 9 subscriber digits, as stored and as the API returns them (frontend adds the 0); null when not given. */
+    @Column(name = "phone_number", length = PhoneNumber.SUBSCRIBER_DIGITS, updatable = false)
     private PhoneNumber phoneNumber;
 
     @Column(name = "password_hash", nullable = false)
     private PasswordHash passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
-    @Builder.Default
-    private Role role = Role.MEMBER;
+    @Column(name = "role", nullable = false, length = Role.MAX_NAME_LENGTH, updatable = false)
+    private Role role;
 
+    /** Email confirmed by OTP (FR-01); only goes from false to true. */
     @Column(name = "account_verified", nullable = false)
-    @Builder.Default
-    private boolean accountVerified = false;
+    private boolean accountVerified;
 
-    /** Failed NFC card attempts since the last success or lockout (AC-04.9). */
-    @Column(name = "nfc_failed_attempts", nullable = false, columnDefinition = "integer default 0")
-    @Builder.Default
-    private int nfcFailedAttempts = 0;
-
-    /** NFC verification is locked until this moment; null = not locked. */
-    @Column(name = "nfc_locked_until")
-    private Instant nfcLockedUntil;
-
+    /** Null until the first change; tokens issued before it stop working (Q-04). */
     @Column(name = "password_changed_at")
     private Instant passwordChangedAt;
 
-    public void setEmail(Email email) {
-        this.email = email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email == null ? null : Email.of(email);
-    }
-
-    public Email email() {
-        return email;
-    }
-
-    public String getEmail() {
-        return email == null ? null : email.value();
-    }
-
-    public void setPhoneNumber(PhoneNumber phoneNumber) {
+    private Account(Email email, PhoneNumber phoneNumber, PasswordHash passwordHash, Role role) {
+        this.email = DomainGuard.requireNonNull(email, "email");
         this.phoneNumber = phoneNumber;
+        this.passwordHash = DomainGuard.requireNonNull(passwordHash, "passwordHash");
+        this.role = role;
+        this.accountVerified = false;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = (phoneNumber == null || phoneNumber.isBlank()) ? null : PhoneNumber.of(phoneNumber);
+    /** FR-01: a MEMBER whose email is not confirmed yet. Uniqueness of email and phone is the service's check. */
+    static Account registerMember(Email email, PhoneNumber phoneNumber, PasswordHash passwordHash) {
+        return new Account(email, phoneNumber, passwordHash, Role.MEMBER);
     }
 
-    public PhoneNumber phoneNumber() {
-        return phoneNumber;
+    /** FR-01: the OTP matched. Confirming again changes nothing. */
+    void confirmEmail() {
+        this.accountVerified = true;
     }
 
-    /** The 9 subscriber digits, as stored and as the API returns them (frontend adds the 0). */
-    public String getPhoneNumber() {
-        return phoneNumber == null ? null : phoneNumber.value();
-    }
-
-    public void setPasswordHash(PasswordHash passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash == null ? null : PasswordHash.of(passwordHash);
-    }
-
-    public PasswordHash passwordHash() {
-        return passwordHash;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash == null ? null : passwordHash.hash();
-    }
-
-    public NfcLockout getNfcLockout() {
-        return new NfcLockout(nfcFailedAttempts, nfcLockedUntil);
-    }
-
-    public void setNfcLockout(NfcLockout lockout) {
-        this.nfcFailedAttempts = lockout.failedAttempts();
-        this.nfcLockedUntil = lockout.lockedUntil();
-    }
-
-    public static class AccountBuilder {
-        public AccountBuilder email(String email) {
-            this.email = email == null ? null : Email.of(email);
-            return this;
-        }
-
-        public AccountBuilder email(Email email) {
-            this.email = email;
-            return this;
-        }
-
-        public AccountBuilder phoneNumber(String phoneNumber) {
-            this.phoneNumber = (phoneNumber == null || phoneNumber.isBlank()) ? null : PhoneNumber.of(phoneNumber);
-            return this;
-        }
-
-        public AccountBuilder phoneNumber(PhoneNumber phoneNumber) {
-            this.phoneNumber = phoneNumber;
-            return this;
-        }
-
-        public AccountBuilder passwordHash(String passwordHash) {
-            this.passwordHash = passwordHash == null ? null : PasswordHash.of(passwordHash);
-            return this;
-        }
-
-        public AccountBuilder passwordHash(PasswordHash passwordHash) {
-            this.passwordHash = passwordHash;
-            return this;
-        }
+    /** FR-02: tokens issued before {@code now} stop working (Q-04). */
+    void changePassword(PasswordHash newPasswordHash, Instant now) {
+        // both checked before either is written: a refused change leaves the account as it was
+        PasswordHash checkedHash = DomainGuard.requireNonNull(newPasswordHash, "passwordHash");
+        Instant changedAt = DomainGuard.requireNonNull(now, "passwordChangedAt");
+        this.passwordHash = checkedHash;
+        this.passwordChangedAt = changedAt;
     }
 }

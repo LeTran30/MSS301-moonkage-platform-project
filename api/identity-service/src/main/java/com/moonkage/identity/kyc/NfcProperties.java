@@ -23,4 +23,9 @@ class NfcProperties {
     private int maxAttempts = 5;
 
     private Duration lockoutDuration = Duration.ofMinutes(15);
+
+    /** The two limits above, checked. */
+    NfcLockoutPolicy lockoutPolicy() {
+        return new NfcLockoutPolicy(maxAttempts, lockoutDuration);
+    }
 }

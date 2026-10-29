@@ -10,8 +10,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.address.dto.AddressResponse;
-import com.moonkage.identity.address.dto.SaveAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressResponse;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import java.util.ArrayList;
@@ -21,7 +21,8 @@ import org.junit.jupiter.api.Test;
 
 class AddressServiceImplTest {
 
-    private static final String ACCOUNT_ID = "acc1";
+    private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
+    private static final String OTHER_ACCOUNT_ID = "0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55";
 
     private AddressRepository addressRepository;
     private AccountService accountService;
@@ -49,8 +50,8 @@ class AddressServiceImplTest {
         service = new AddressServiceImpl(addressRepository, accountService);
     }
 
-    private static SaveAddressRequest request(Boolean isDefault) {
-        return SaveAddressRequest.builder()
+    private static AddAddressRequest request(Boolean isDefault) {
+        return AddAddressRequest.builder()
                 .recipientName("  Nguyễn Lan  ")
                 .recipientPhone("+84912345678")
                 .provinceCode("79")
@@ -68,7 +69,7 @@ class AddressServiceImplTest {
 
     @Test
     void firstAddressBecomesDefaultAndIsNormalized() {
-        AddressResponse first = service.create(ACCOUNT_ID, request(null));
+        AddAddressResponse first = service.create(ACCOUNT_ID, request(null));
         assertTrue(first.isDefault());
         assertEquals("Nguyễn Lan", first.recipientName());
         assertEquals("912345678", first.recipientPhone());
@@ -79,7 +80,7 @@ class AddressServiceImplTest {
 
     @Test
     void deliveryAreaIsTheProvinceAndFullAddressReadsBottomUp() {
-        AddressResponse address = service.create(ACCOUNT_ID, request(null));
+        AddAddressResponse address = service.create(ACCOUNT_ID, request(null));
         assertEquals("79", address.areaCode());
         assertEquals("12 Lê Lợi, Phường Sài Gòn, Thành phố Hồ Chí Minh", address.fullAddress());
     }
@@ -87,7 +88,7 @@ class AddressServiceImplTest {
     @Test
     void newDefaultTakesOverFromOldOne() {
         service.create(ACCOUNT_ID, request(null));
-        AddressResponse second = service.create(ACCOUNT_ID, request(false));
+        AddAddressResponse second = service.create(ACCOUNT_ID, request(false));
         assertFalse(second.isDefault());
 
         service.create(ACCOUNT_ID, request(true));
@@ -114,10 +115,11 @@ class AddressServiceImplTest {
     @Test
     void addressOfAnotherUserIsNotFound() {
         service.create(ACCOUNT_ID, request(null));
-        AppException exUpdate = assertThrows(AppException.class, () -> service.update("other", "a1", request(null)));
+        AppException exUpdate =
+                assertThrows(AppException.class, () -> service.update(OTHER_ACCOUNT_ID, "a1", request(null)));
         assertEquals(ErrorCode.ADDRESS_NOT_FOUND, exUpdate.getErrorCode());
 
-        AppException exDelete = assertThrows(AppException.class, () -> service.delete("other", "a1"));
+        AppException exDelete = assertThrows(AppException.class, () -> service.delete(OTHER_ACCOUNT_ID, "a1"));
         assertEquals(ErrorCode.ADDRESS_NOT_FOUND, exDelete.getErrorCode());
     }
 }

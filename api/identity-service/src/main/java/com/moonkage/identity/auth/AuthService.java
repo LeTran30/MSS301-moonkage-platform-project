@@ -7,11 +7,6 @@ import com.moonkage.identity.auth.dto.RegisterAccountResponse;
 import com.moonkage.identity.auth.dto.VerifyAccountRequest;
 import com.moonkage.identity.auth.dto.VerifyAccountResponse;
 
-/**
- * Public Port for the Authentication component.
- *
- * <p>Handles member registration, account activation, credential login, token refreshing, and password reset flows.
- */
 public interface AuthService {
 
     RegisterAccountResponse register(RegisterAccountRequest request);

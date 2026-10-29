@@ -1,5 +1,9 @@
 package com.moonkage.identity.account;
 
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.dto.AccountCredentials;
+import com.moonkage.identity.account.dto.AccountView;
+
 /** Account → AccountView / response DTO. The only place that reads Account to build something other code sees. */
 final class AccountMapper {
 
@@ -8,24 +12,20 @@ final class AccountMapper {
     static AccountView toView(Account account) {
         return new AccountView(
                 account.getId(),
-                account.getEmail(),
-                account.getPhoneNumber(),
+                account.getEmail().value(),
+                phoneDigits(account),
                 account.getRole(),
                 account.isAccountVerified(),
                 account.getPasswordChangedAt());
     }
 
     static AccountCredentials toCredentials(Account account) {
-        return new AccountCredentials(toView(account), account.passwordHash());
+        return new AccountCredentials(toView(account), account.getPasswordHash());
     }
 
-    static AccountResponse toAccountResponse(Account account, String fullName) {
-        return AccountResponse.builder()
-                .accountId(account.getId())
-                .email(account.getEmail())
-                .phoneNumber(account.getPhoneNumber())
-                .fullName(fullName)
-                .role(account.getRole())
-                .build();
+    /** The 9 subscriber digits, null when the account has no phone number. */
+    private static String phoneDigits(Account account) {
+        PhoneNumber phoneNumber = account.getPhoneNumber();
+        return phoneNumber == null ? null : phoneNumber.value();
     }
 }

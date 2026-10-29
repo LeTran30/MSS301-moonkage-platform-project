@@ -1,8 +1,8 @@
 package com.moonkage.identity.web;
 
 import com.moonkage.identity.address.AddressService;
-import com.moonkage.identity.address.dto.AddressResponse;
-import com.moonkage.identity.address.dto.SaveAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressResponse;
 import com.moonkage.identity.common.exception.ApiResponse;
 import com.moonkage.identity.security.CurrentUser;
 import com.moonkage.identity.security.CurrentUserInfo;
@@ -29,22 +29,23 @@ public class AddressController {
     private final AddressService addressService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<AddressResponse>>> getMyAddresses(@CurrentUser CurrentUserInfo currentUser) {
+    public ResponseEntity<ApiResponse<List<AddAddressResponse>>> getMyAddresses(
+            @CurrentUser CurrentUserInfo currentUser) {
         return ResponseEntity.ok(ApiResponse.ok(addressService.getMyAddresses(currentUser.accountId())));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<AddressResponse>> create(
-            @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid SaveAddressRequest request) {
+    public ResponseEntity<ApiResponse<AddAddressResponse>> create(
+            @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid AddAddressRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(addressService.create(currentUser.accountId(), request)));
     }
 
     @PutMapping("/{addressId}")
-    public ResponseEntity<ApiResponse<AddressResponse>> update(
+    public ResponseEntity<ApiResponse<AddAddressResponse>> update(
             @CurrentUser CurrentUserInfo currentUser,
             @PathVariable String addressId,
-            @RequestBody @Valid SaveAddressRequest request) {
+            @RequestBody @Valid AddAddressRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(addressService.update(currentUser.accountId(), addressId, request)));
     }
 

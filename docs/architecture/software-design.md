@@ -684,7 +684,7 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 - **App mobile khi demo:** điện thoại phải gọi được gateway; dùng IP mạng LAN của máy chạy Docker hoặc chính tunnel ở trên.
 - **Migration & Quản lý Schema:** (Cập nhật 2026-10-20, D-22) mỗi service quản schema của mình bằng **Flyway**, file `db/migration/V*.sql` trong service, chạy lúc service khởi động ở mọi môi trường. Hibernate để `ddl-auto: validate`: chỉ kiểm entity khớp DB. Quy ước đặt tên và cách đổi schema: `docs/guides/database.md`.
 - **Dữ liệu mẫu (Seed Data):** (Cập nhật 2026-10-20, D-22)
-  - Backend chỉ tự tạo tài khoản quản trị viên (`ADMIN_EMAIL`, `ADMIN_PASSWORD` từ env) ở mọi môi trường.
+  - (Cập nhật 2026-10-29) Backend không tự tạo tài khoản nào lúc khởi động. Quản trị viên `admin@mk.com` nằm trong seed của identity-service, mật khẩu `SEED_PASSWORD` như mọi tài khoản mẫu; môi trường không chạy seed cần quy trình tạo admin riêng ([domain-model-plan.md](../services/identity/domain-model-plan.md#đã-chốt)).
   - Dữ liệu mẫu cho dev nằm trong từng service, file `db/seed/R__seed.sql` (Flyway repeatable migration). Chỉ docker-compose bật nó (`SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed`); test và production không bật. Không có runner script.
   - Seed dùng **ID cố định** ghi trong sổ ID của `docs/guides/database.md`, nên service khác tham chiếu được mà không phải trích ID lúc chạy. Mọi `INSERT` đều `ON CONFLICT DO NOTHING` (chạy lại an toàn).
   - Riêng hồ sơ NFC (`legal_profiles`) cần khóa PII của môi trường, nên do `NfcProfileSeeder` của identity-service nạp từ `db/seed/nfc-profiles.json`, chỉ khi `APP_SEED_ENABLED=true`.

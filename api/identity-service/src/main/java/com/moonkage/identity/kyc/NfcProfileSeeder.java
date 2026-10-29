@@ -68,10 +68,10 @@ class NfcProfileSeeder implements ApplicationRunner {
 
     /** The account was seeded (not taken by a hand-made one), is not verified yet, and its ID number is free. */
     private boolean isSeedable(SeedProfile seed) {
-        return !legalProfileRepository.existsById(seed.accountId())
+        return accountService.findAccount(seed.accountId()).isPresent()
+                && !legalProfileRepository.existsById(seed.accountId())
                 && !legalProfileRepository.existsByIdNumberHashAndIdHashKeyVer(
-                        idNumberHasher.hash(seed.idNumber()), IdNumberHasher.KEY_VERSION)
-                && accountService.findAccount(seed.accountId()).isPresent();
+                        idNumberHasher.hash(seed.idNumber()), IdNumberHasher.KEY_VERSION);
     }
 
     /** Same fields and protection as a real verification (NfcServiceImpl.saveLegalProfile). */

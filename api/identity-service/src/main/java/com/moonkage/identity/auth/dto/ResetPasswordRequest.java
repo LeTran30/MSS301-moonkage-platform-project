@@ -1,6 +1,6 @@
 package com.moonkage.identity.auth.dto;
 
-import com.moonkage.identity.account.AccountConstant;
+import com.moonkage.identity.account.atom.PasswordConstant;
 import com.moonkage.identity.security.SecurityConstant;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -14,8 +14,8 @@ public record ResetPasswordRequest(
 
         @NotBlank(message = "{validation.new_password.required}")
         @Size(
-                min = AccountConstant.PASSWORD_MIN_LENGTH,
-                max = AccountConstant.PASSWORD_MAX_LENGTH,
+                min = PasswordConstant.MIN_LENGTH,
+                max = PasswordConstant.MAX_LENGTH,
                 message = "{validation.password.size}")
         String newPassword) {
 

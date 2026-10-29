@@ -10,12 +10,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.NfcLockout;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.kyc.dto.response.NfcStatusResponse;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,25 +25,25 @@ import org.junit.jupiter.api.Test;
 /** Internal API for vendor-service / quotation-service: BR-23, BR-27, masked data only. */
 class LegalProfileServiceImplTest {
 
-    private static final String ACCOUNT_ID = "acc-1";
+    private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
     private static final String ID_NUMBER = "079123456789";
     private static final Instant VERIFIED_AT = Instant.parse("2026-10-19T03:00:00Z");
 
     private AccountService accountService;
     private LegalProfileRepository legalProfileRepository;
     private IdNumberHasher hasher;
+    private NfcAttemptTracker attemptTracker;
     private LegalProfileServiceImpl service;
-    private NfcLockout lockout = NfcLockout.NONE;
 
     @BeforeEach
     void setUp() {
         accountService = mock(AccountService.class);
         legalProfileRepository = mock(LegalProfileRepository.class);
         hasher = new IdNumberHasher("test-pepper");
-        service = new LegalProfileServiceImpl(accountService, legalProfileRepository, hasher);
+        attemptTracker = new NfcAttemptTracker(new NfcProperties());
+        service = new LegalProfileServiceImpl(
+                accountService, legalProfileRepository, hasher, attemptTracker, Clock.systemUTC());
 
-        when(accountService.getNfcLockout(ACCOUNT_ID)).thenAnswer(inv -> lockout);
-        when(accountService.getNfcLockout("ghost")).thenThrow(new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "ghost"));
         doThrow(new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "ghost"))
                 .when(accountService)
                 .requireAccountExists("ghost");
@@ -64,10 +65,12 @@ class LegalProfileServiceImplTest {
     void unverifiedAccountIsNotVerifiedOrLocked() {
         assertEquals(NfcStatus.NOT_VERIFIED, service.getNfcStatus(ACCOUNT_ID).nfcStatus());
 
-        lockout = new NfcLockout(0, Instant.now().plusSeconds(60));
+        lockAt(Instant.now());
         assertEquals(NfcStatus.LOCKED, service.getNfcStatus(ACCOUNT_ID).nfcStatus());
 
-        lockout = new NfcLockout(0, Instant.now().minusSeconds(60));
+        // a lockout of 15 minutes that started 16 minutes ago is over
+        attemptTracker.clear(ACCOUNT_ID);
+        lockAt(Instant.now().minus(Duration.ofMinutes(16)));
         assertEquals(NfcStatus.NOT_VERIFIED, service.getNfcStatus(ACCOUNT_ID).nfcStatus());
     }
 
@@ -123,6 +126,13 @@ class LegalProfileServiceImplTest {
         AppException unknown = assertThrows(
                 AppException.class, () -> service.checkIdNumber(new CheckIdNumberRequest("ghost", ID_NUMBER)));
         assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, unknown.getErrorCode());
+    }
+
+    /** As many failed cards as nfc.max-attempts allows, all at {@code at}. */
+    private void lockAt(Instant at) {
+        for (int i = 0; i < new NfcProperties().getMaxAttempts(); i++) {
+            attemptTracker.recordFailure(ACCOUNT_ID, at);
+        }
     }
 
     private void verifiedProfile() {

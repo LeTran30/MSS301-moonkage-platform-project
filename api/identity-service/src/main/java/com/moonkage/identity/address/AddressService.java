@@ -1,16 +1,16 @@
 package com.moonkage.identity.address;
 
-import com.moonkage.identity.address.dto.AddressResponse;
-import com.moonkage.identity.address.dto.SaveAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressResponse;
 import java.util.List;
 
 public interface AddressService {
 
-    List<AddressResponse> getMyAddresses(String accountId);
+    List<AddAddressResponse> getMyAddresses(String accountId);
 
-    AddressResponse create(String accountId, SaveAddressRequest request);
+    AddAddressResponse create(String accountId, AddAddressRequest request);
 
-    AddressResponse update(String accountId, String addressId, SaveAddressRequest request);
+    AddAddressResponse update(String accountId, String addressId, AddAddressRequest request);
 
     void delete(String accountId, String addressId);
 }

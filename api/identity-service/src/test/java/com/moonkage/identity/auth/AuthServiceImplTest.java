@@ -11,11 +11,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.AccountView;
-import com.moonkage.identity.account.Role;
-import com.moonkage.identity.account.vo.Email;
-import com.moonkage.identity.account.vo.PasswordHash;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.Email;
+import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.atom.Role;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.auth.dto.LoginRequest;
 import com.moonkage.identity.auth.dto.RegisterAccountRequest;
 import com.moonkage.identity.auth.dto.RegisterAccountResponse;

@@ -1,11 +1,11 @@
 package com.moonkage.identity.web;
 
-import com.moonkage.identity.account.AccountResponse;
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.dto.AccountResponse;
 import com.moonkage.identity.common.exception.ApiResponse;
 import com.moonkage.identity.kyc.LegalProfileService;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
+import com.moonkage.identity.profile.UserProfileService;
 import com.moonkage.identity.security.CurrentUser;
 import com.moonkage.identity.security.CurrentUserInfo;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -25,12 +25,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AccountController {
 
-    private final AccountService accountService;
+    private final UserProfileService userProfileService;
     private final LegalProfileService legalProfileService;
 
     @GetMapping("/api/accounts/me")
     public ResponseEntity<ApiResponse<AccountResponse>> getMyAccount(@CurrentUser CurrentUserInfo currentUser) {
-        return ResponseEntity.ok(ApiResponse.ok(accountService.getMyAccount(currentUser.accountId())));
+        return ResponseEntity.ok(ApiResponse.ok(userProfileService.getMyAccount(currentUser.accountId())));
     }
 
     /**

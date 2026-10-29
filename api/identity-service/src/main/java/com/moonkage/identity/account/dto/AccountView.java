@@ -1,5 +1,6 @@
-package com.moonkage.identity.account;
+package com.moonkage.identity.account.dto;
 
+import com.moonkage.identity.account.atom.Role;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -11,7 +12,7 @@ import java.time.temporal.ChronoUnit;
 public record AccountView(
         String id, String email, String phoneNumber, Role role, boolean verified, Instant passwordChangedAt) {
 
-    /** A token issued before the last password change must not work any more (Q-04). */
+    /** A token issued before the last password change must not work anymore (Q-04). */
     public boolean acceptsTokenIssuedAt(Instant issuedAt) {
         return passwordChangedAt == null
                 || (issuedAt != null && !issuedAt.isBefore(passwordChangedAt.truncatedTo(ChronoUnit.SECONDS)));

@@ -14,14 +14,14 @@
 
 | Method | Input | Output | ErrorCode có thể ném | Mục đích |
 | --- | --- | --- | --- | --- |
-| `create` | `accountId`, `SaveAddressRequest` | `AddressResponse` | `ACCOUNT_NOT_FOUND` | Tạo địa chỉ mới, tự xử lý cờ mặc định. |
+| `create` | `accountId`, `AddAddressRequest` | `AddAddressResponse` | `ACCOUNT_NOT_FOUND` | Tạo địa chỉ mới, tự xử lý cờ mặc định. |
 | `getMyAddresses` | `accountId` | `List<AddressResponse>` | — | Danh sách địa chỉ, mặc định lên đầu rồi mới nhất. |
-| `update` | `accountId`, `addressId`, `SaveAddressRequest` | `AddressResponse` | `ACCOUNT_NOT_FOUND`, `ADDRESS_NOT_FOUND` | Thay toàn bộ nội dung địa chỉ thuộc sở hữu. |
+| `update` | `accountId`, `addressId`, `AddAddressRequest` | `AddAddressResponse` | `ACCOUNT_NOT_FOUND`, `ADDRESS_NOT_FOUND` | Thay toàn bộ nội dung địa chỉ thuộc sở hữu. |
 | `delete` | `accountId`, `addressId` | `void` | `ADDRESS_NOT_FOUND` | Xóa địa chỉ; xóa địa chỉ mặc định thì không tự gán cái khác. |
 
 ## 2. Pseudocode chi tiết
 
-### Method: `create(accountId, request)` -> `AddressResponse`
+### Method: `create(accountId, request)` -> `AddAddressResponse`
 1. **[Guard & Lock]**
    - `AccountService.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
@@ -32,7 +32,7 @@
 3. **[Lưu trữ]** `saveAndFlush` để response có `createdAt`, `updatedAt`.
 4. **[Trả kết quả]** `AddressMapper.toResponse` (ghép `fullAddress = detail, wardName, provinceName`; `areaCode = provinceCode`).
 
-### Method: `update(accountId, addressId, request)` -> `AddressResponse`
+### Method: `update(accountId, addressId, request)` -> `AddAddressResponse`
 1. **[Guard & Lock]**
    - `AccountService.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
    - Tìm địa chỉ theo `(addressId, accountId)` -> NẾU không có `THROW ADDRESS_NOT_FOUND`.

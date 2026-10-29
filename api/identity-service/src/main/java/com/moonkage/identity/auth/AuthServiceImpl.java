@@ -1,10 +1,10 @@
 package com.moonkage.identity.auth;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.AccountView;
-import com.moonkage.identity.account.vo.Email;
-import com.moonkage.identity.account.vo.PasswordHash;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.Email;
+import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.auth.dto.LoginRequest;
 import com.moonkage.identity.auth.dto.LoginResponse;
 import com.moonkage.identity.auth.dto.RegisterAccountRequest;
@@ -31,11 +31,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Register and confirm an account (FR-01), log in and reset the password (FR-02). Flow and invariants:
- * docs/services/identity/classes/AuthServiceImpl.md. Reads and changes accounts only through AccountService and
- * UserProfileService.
- */
 @Service
 @RequiredArgsConstructor
 class AuthServiceImpl implements AuthService {
@@ -54,11 +49,8 @@ class AuthServiceImpl implements AuthService {
     @Transactional
     public RegisterAccountResponse register(RegisterAccountRequest request) {
         Email email = Email.of(request.email());
-        PhoneNumber phoneNumber =
-                (request.phoneNumber() == null || request.phoneNumber().isBlank())
-                        ? null
-                        : PhoneNumber.of(request.phoneNumber());
-        String fullName = request.fullName().trim();
+        PhoneNumber phoneNumber = request.phoneNumber() == null ? null : PhoneNumber.of(request.phoneNumber());
+        String fullName = request.fullName();
 
         AccountView account = accountService.createMember(
                 email, phoneNumber, PasswordHash.fromRawPassword(request.password(), passwordEncoder));
@@ -73,7 +65,7 @@ class AuthServiceImpl implements AuthService {
     public VerifyAccountResponse verifyAccount(VerifyAccountRequest request) {
         Email email = Email.of(request.email());
         otpService.verifyOtp(OtpPurpose.VERIFY_ACCOUNT, email, request.otp());
-        AccountView account = accountService.markVerified(getOtpOwner(email).id());
+        AccountView account = accountService.confirmEmail(getOtpOwner(email).id());
 
         return AuthMapper.toVerifyResponse(account);
     }
@@ -96,7 +88,7 @@ class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.username().trim(), request.password()));
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password()));
             return buildLoginResponse(((AccountPrincipal) authentication.getPrincipal()).account());
         } catch (BadCredentialsException e) {
             // same answer whether the identifier exists or not

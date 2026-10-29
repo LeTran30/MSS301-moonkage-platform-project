@@ -10,7 +10,7 @@
 git clone https://github.com/LeTran30/MSS301-moonkage-platform-project.git
 cd MSS301-moonkage-platform-project
 cp .env.example .env
-openssl rand -base64 48               # dán vào JWT_SECRET; đặt thêm ADMIN_PASSWORD và SEED_PASSWORD
+openssl rand -base64 48               # dán vào JWT_SECRET; SEED_PASSWORD mặc định 12345678
 git config core.hooksPath .githooks   # bật pre-commit kiểm tra format/style (mỗi lần clone)
 ```
 
@@ -55,8 +55,7 @@ npm run dev        # http://localhost:5173
 ```
 
 ## Tài khoản
-- **Admin:** identity-service tạo lúc khởi động từ `ADMIN_EMAIL` / `ADMIN_PASSWORD` trong `.env`.
-- **Tài khoản mẫu** `member1@mk.com` … `member5@mk.com`, mật khẩu `SEED_PASSWORD`: danh sách ở [database.md](database.md#4-tài-khoản-mẫu).
+- **Tài khoản mẫu** `admin@mk.com` (ADMIN) và `member1@mk.com` … `member5@mk.com`, cùng mật khẩu `SEED_PASSWORD` (mặc định `12345678`): danh sách ở [database.md](database.md#4-tài-khoản-mẫu).
 - Tài khoản khác đăng ký qua `/api/auth/register`. Mã OTP gửi bằng email qua orchestrator-service; khi `MAIL_HOST` để trống, email không được gửi (chỉ ghi một dòng log, không kèm mã), nên cần cấu hình Gmail SMTP để thử luồng đăng ký.
 
 ## Biến môi trường
@@ -74,8 +73,7 @@ Trong Docker, mỗi container chỉ nhận các biến nó đọc (danh sách `e
 | `OTP_EXPIRATION`, `OTP_MAX_ATTEMPTS` | Hạn và số lần nhập sai OTP | `5m`, `5` |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP gửi email (orchestrator-service). Để trống `MAIL_HOST` thì không gửi | `smtp.gmail.com`, `587` |
 | `NFC_TRANSPORT_PRIVATE_KEY_V1`, `PII_ENC_KEY_V1`, `ID_HASH_PEPPER_V1` | Khóa xác minh NFC, chỉ identity-service; cách tạo ghi trong `.env.example` | — |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Tài khoản admin tạo lúc khởi động | `admin@moonkage.vn` |
-| `SEED_PASSWORD` | Mật khẩu chung của tài khoản mẫu (chỉ dev) | — |
+| `SEED_PASSWORD` | Mật khẩu chung của mọi tài khoản mẫu, kể cả admin (chỉ dev) | `12345678` |
 | `CORS_ORIGINS` | Origin frontend được phép gọi gateway (phân cách bằng dấu phẩy) | `http://localhost:5173` |
 | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Tài khoản root MinIO, chỉ container `minio` và `minio-init` dùng | `minioadmin` |
 | `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` | Port MinIO (API, console) | `9000`, `9001` |

@@ -1,8 +1,8 @@
 package com.moonkage.identity.security;
 
-import com.moonkage.identity.account.AccountCredentials;
-import com.moonkage.identity.account.AccountView;
-import com.moonkage.identity.account.Role;
+import com.moonkage.identity.account.atom.Role;
+import com.moonkage.identity.account.dto.AccountCredentials;
+import com.moonkage.identity.account.dto.AccountView;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,7 +38,6 @@ public record AccountPrincipal(AccountCredentials credentials) implements UserDe
         return authoritiesOf(account().role());
     }
 
-    /** False until the e-mail is confirmed; checked only after the password matched (SecurityConfig). */
     @Override
     public boolean isEnabled() {
         return account().verified();

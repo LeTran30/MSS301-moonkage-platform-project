@@ -1,11 +1,14 @@
 # Bộ Quy Tắc Thiết Kế Package & Viết Class Chuẩn
 
+> **Trạng thái (2026-10-29):** với identity-service, file này đang được thay bởi [Plan v2](../services/identity/identity-service-refactor-plan.md) (mục 3.5, 5, 6). Khi hai bên khác nhau, Plan v2 thắng; file này được viết lại ở Phase 9 của plan.
+
 Dưới đây là **Bộ Quy Tắc Thiết Kế Package & Viết Class Chuẩn** được xây dựng theo đúng khung tư duy của bạn cho dự án Moonkage.
 
 > **Mức độ kiểm tra tự động:** Chỉ một phần quy tắc được máy kiểm tra.
 > - `checkstyle.xml` chặn: tên logger (`log`), viết tắt quá 4 chữ hoa liền nhau, `if` thiếu `{}`, `TODO` trơn, tiền tệ dùng `double/float`.
 > - `ArchitectureTest.java` (dùng chung) chặn **phụ thuộc giữa các layer** (controller ↛ repository/entity, dto ↛ entity, repository ↛ layer trên, service ↛ controller) và **vòng lặp package**.
 > - Service tổ chức theo component (identity-service) có thêm `ComponentArchitectureTest.java`: entity, repository, `*ServiceImpl` không được `public`; controller chỉ nằm ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security.
+> - identity-service có `DomainModelArchitectureTest.java` cho rich entity (mục 1.4): entity không có method ghi `public`, constructor `public` hay builder; constructor rỗng là `protected`; mapper không gọi method ghi của entity; entity chỉ phụ thuộc JDK, JPA, `common`, `account.atom`, `common-reference` và component của nó; không đọc đồng hồ hệ thống ngoài `ClockConfig`; `*ServiceImpl` không normalize chuỗi (mục 1.5). Code cũ còn vi phạm được ghi trong `src/test/resources/archunit_store` (`FreezingArchRule`); vi phạm mới làm đỏ build.
 > - Các quy tắc còn lại (DTO là `record`, Mapper là `final`, hậu tố tên class, thứ tự method...) là **quy ước nhóm**, kiểm tra bằng code review.
 
 ---
@@ -21,9 +24,9 @@ Mỗi package cấp một là một **component** gom mọi thứ của một kh
 - **Public = API của component:** interface `<Miền>Service`, DTO (`dto/`), value object, enum mà component khác cần.
 - **Package-private = chi tiết bên trong:** entity, repository, `*ServiceImpl`, mapper, class phụ trợ (`NfcCardValidator`, `PiiCipher`...). Component khác không bao giờ đọc entity hay gọi repository của nó.
 - **Liên kết giữa component bằng id, không bằng quan hệ JPA:** `Address` giữ `accountId` chứ không giữ `Account`. Khóa ngoại vẫn ở DB.
-- **Dữ liệu đi qua biên bằng bản chụp chỉ đọc hoặc value object** (`AccountView`, `NfcLockout`), không bằng entity.
+- **Dữ liệu đi qua biên bằng bản chụp chỉ đọc hoặc atom** (`AccountView`, `Email`), không bằng entity.
 - **Tầng HTTP `web` nằm ngoài mọi component**, chỉ gọi service public; không component nào phụ thuộc `web`.
-- **Không vòng phụ thuộc giữa các component** (ArchUnit `NO_PACKAGE_CYCLES`). Khi hai component cần nhau, đẩy phần dùng chung về phía component ở dưới (vd hằng số độ dài họ tên nằm ở `profile`, không ở `account`).
+- **Không vòng phụ thuộc giữa các component** (ArchUnit `NO_PACKAGE_CYCLES`). Phụ thuộc đi theo khóa ngoại: `profile`, `address`, `kyc` trỏ tới `accounts` nên phụ thuộc `account`, còn `account` không biết đến chúng. Việc ghép dữ liệu của hai component (vd `GET /api/accounts/me` = tài khoản + họ tên) đặt ở component phía trên (`UserProfileService.getMyAccount`).
 - Sơ đồ component của identity-service: [`docs/services/identity/README.md`](../services/identity/README.md#cấu-trúc-mã-package-by-component).
 
 ### 1.2. Package-by-layer (các service chưa chuyển)
@@ -39,7 +42,27 @@ Trong service, class cùng bản chất kỹ thuật gom vào một package laye
 ### 1.3. Áp dụng cho cả hai cách
 
 - **Entity và value object được chứa hành vi thuần trên chính dữ liệu của nó** (vd `NfcLockout.isLocked(now)`, `AccountView.acceptsTokenIssuedAt(iat)`, `PhoneNumber.toNational()`) để không lặp lại ở nhiều service; không gọi repository/service, không chứa luồng nghiệp vụ nhiều bước.
-- **Dữ liệu có luật định dạng dùng value object** (`Email`, `PhoneNumber`, `PasswordHash`): VO tự chuẩn hóa và tự kiểm trong constructor, nên không tồn tại giá trị sai; converter JPA chỉ ghi `value()` của VO.
+- **Dữ liệu có luật định dạng dùng atom** (value object bất biến, thành phần cấu tạo nên entity, nên nằm trong package `atom` của chính component sở hữu entity: `account/atom` có `Email`, `PhoneNumber`, `PasswordHash`; component khác dùng lại atom của component nằm dưới nó): atom tự chuẩn hóa và tự kiểm trong constructor, nên không tồn tại giá trị sai; converter JPA chỉ ghi `value()` của atom. Giá trị sai ném `AppException(ErrorCode.INVALID_INPUT)` (400), không ném `IllegalArgumentException` (500).
+
+### 1.4. Rich entity: entity tự giữ đúng thuộc tính của nó (identity-service; kế hoạch chi tiết ở [domain-model-plan.md](../services/identity/domain-model-plan.md))
+
+- **Không tồn tại một entity sai.** Factory `static` đặt tên theo nghiệp vụ và mọi method ghi đều kiểm giá trị trước khi gán (dùng `common.DomainGuard`). DTO validation chỉ để báo lỗi 400 rõ ràng theo field; entity mới là lớp kiểm có thẩm quyền; CHECK của database là lớp cuối.
+- **Không có đường ghi công khai.** Không `@Setter`, `@Builder`, `@AllArgsConstructor`, `@Data` trên entity. Constructor rỗng `protected` chỉ cho JPA. Method ghi để package-private, tên theo nghiệp vụ (`confirmEmail()`, `changePassword(hash, now)`), không đặt `setX`. Field không đổi sau khi tạo có `@Column(updatable = false)`.
+- **Đọc không mở đường ghi.** Getter trả value object hoặc kiểu bất biến, mỗi field một getter; `byte[]` được copy khi vào và ra. Mapper chỉ đọc entity, không có `toEntity`.
+- **Hỏi entity, không lấy field ra để tự quyết** (`account.ensureCanLogin()`, `legalProfile.matches(fingerprint)`).
+- **Luật trên nhiều dòng của cùng một chủ** đặt ở **đối tượng miền** của component (bảng tên ở mục 2.1), không ở service.
+- **Thời gian vào bằng tham số:** service tiêm `Clock` (`ClockConfig`), lấy `Instant.now(clock)` và truyền vào method của entity.
+
+### 1.5. Chuẩn hóa dữ liệu vào: request tự làm, service tuyệt đối không
+
+- **Request/DTO tự chuẩn hóa chính nó** trong compact constructor của `record`, trước khi Bean Validation đọc: cắt khoảng trắng, chuỗi rỗng của field tùy chọn thành `null`, bỏ dấu phân cách trong số (`common.RequestText`: `trim`, `trimToNull`, `digitsOnly`). Mật khẩu giữ nguyên như người dùng gõ.
+- **Atom tự chuẩn hóa trong constructor của nó** (`Email` về chữ thường, `PhoneNumber` về 9 chữ số thuê bao).
+- **`*ServiceImpl` không bao giờ normalize**: không gọi `trim`, `strip`, `toLowerCase`, `toUpperCase`, `replace*` của `String`, không dùng `java.text.Normalizer`. Service nhận giá trị đã sạch, chỉ chuyển sang atom (`PhoneNumber.of(...)`, `CitizenId.of(...)`). Máy kiểm: `DomainModelArchitectureTest.SERVICES_DO_NOT_NORMALIZE`.
+
+### 1.6. Validate nghiệp vụ trong service: luôn là method `private validate…`
+
+- Luật nghiệp vụ cần dữ liệu ngoài request (trùng email, đã KYC chưa, còn bị khóa không) nằm trong method `private` tên `validate<Điều kiện>` của service (`validateUniqueness`, `validateCanStartVerification`), ném `AppException` với `ErrorCode` riêng; method công khai gọi nó ở đầu, rồi mới làm việc chính.
+- Không viết `if (...) throw` nghiệp vụ rải rác trong thân method công khai. Định dạng của một giá trị không phải nghiệp vụ: nó thuộc request (mục 1.5) và atom.
 
 ---
 
@@ -59,8 +82,9 @@ Một class gồm 3 định danh cốt lõi: **Tên Class**, **Tên Method** và
 | Tình huống / Layer | Công thức đặt tên | Ví dụ chuẩn trong dự án | Lưu ý bắt buộc |
 | --- | --- | --- | --- |
 | **Entity (DB)** | `<DanhTừMiền>` (Số ít) | `Account`, `Address`, `LegalProfile` | Không thêm hậu tố `Entity` hay `Model`. |
-| **Request DTO** | `<HànhĐộng/MụcĐích> + Request` | `LoginRequest`, `SendOtpRequest`, `SaveAddressRequest` | Dùng Java `record`. Cụm `<HànhĐộng>` đóng vai trò bổ ngữ cho danh từ `Request`. |
-| **Response DTO** | Kết quả của một hành động: `<HànhĐộng> + <ĐốiTượng> + Response`<br>Biểu diễn một tài nguyên: `<DanhTừ> + Response` | Hành động: `RegisterAccountResponse`, `CreateNfcSessionResponse`, `CheckIdNumberResponse`, `SubmitCardResponse`, `LoginResponse`<br>Tài nguyên: `AddressResponse`, `NfcStatusResponse`, `NfcSessionStatusResponse`<br>Bao chung: `ApiResponse<T>` | Dùng Java `record`. Response của hành động đặt cùng cặp với Request (`RegisterAccountRequest` → `RegisterAccountResponse`). Response dùng chung cho nhiều endpoint (GET/POST/PUT cùng trả) thì đặt theo danh từ. |
+| **Đối tượng miền** (giữ luật trên nhiều entity của cùng một chủ) | `<DanhTừMiền>` gọi đúng tên của tập đó | `AddressBook` (mọi địa chỉ của một tài khoản) | `final class` package-private, không phải entity hay bean Spring; không gọi repository. Service tải dữ liệu rồi giao cho nó. |
+| **Request DTO** | `<HànhĐộng/MụcĐích> + Request` | `LoginRequest`, `SendOtpRequest`, `AddAddressRequest` | Dùng Java `record`. Cụm `<HànhĐộng>` đóng vai trò bổ ngữ cho danh từ `Request`. |
+| **Response DTO** | Kết quả của một hành động: `<HànhĐộng> + <ĐốiTượng> + Response`<br>Biểu diễn một tài nguyên: `<DanhTừ> + Response` | Hành động: `RegisterAccountResponse`, `CreateNfcSessionResponse`, `CheckIdNumberResponse`, `SubmitCardResponse`, `LoginResponse`<br>Tài nguyên: `AddAddressResponse`, `NfcStatusResponse`, `NfcSessionStatusResponse`<br>Bao chung: `ApiResponse<T>` | Dùng Java `record`. Response của hành động đặt cùng cặp với Request (`RegisterAccountRequest` → `RegisterAccountResponse`). Response dùng chung cho nhiều endpoint (GET/POST/PUT cùng trả) thì đặt theo danh từ. |
 | **Controller** | `<TàiNguyên> + Controller` | `AuthController`, `AccountController`, `AddressController`, `KycController`, `VendorController` | Mỗi endpoint chỉ đặt ở **một** controller, theo tài nguyên nó thao tác — kể cả endpoint nội bộ giữa các service (`/internal/...`): **không tách controller riêng, không dùng tiền tố `Int`/`Internal`**. Endpoint nội bộ đặt cạnh endpoint public của cùng tài nguyên, ghi path đầy đủ ở mức method và đánh `@Hidden` (vd `GET /internal/nfc/status/{accountId}` nằm ở `KycController`). Thuộc tính con của tài nguyên (vd số định danh của tài khoản) đặt trong controller của tài nguyên cha: `POST /internal/accounts/check` nằm ở `AccountController`. |
 | **Service** | Interface: `<Miền> + Service`<br>Class: `<Miền> + ServiceImpl` | `AddressService` → `AddressServiceImpl` | Interface là API của component (public); `ServiceImpl` package-private. Class phụ trợ chuyên biệt đặt theo vai trò: `NfcCardValidator`. |
 | **Repository** | `<Entity> + Repository` | `AccountRepository`, `AddressRepository` | Luôn là `interface`; package-private trong component sở hữu bảng. |
@@ -230,50 +254,54 @@ Mỗi file tài liệu của một class nặng thống nhất gồm **4 mục**
 - **Tham chiếu:** `FR-03` (Quản lý sổ địa chỉ), `AC-03.1`
 - **Dependencies:** `AddressRepository`, `AccountService` (`lockForUpdate`), `AddressMapper`
 - **Luật bất biến (Invariants):**
-  1. Mỗi tài khoản chỉ có **tối đa 1** địa chỉ mặc định tại mọi thời điểm.
-  2. Mọi thao tác thêm/sửa đổi cờ mặc định của một tài khoản phải khóa dòng tài khoản (`AccountService.lockForUpdate`, `FOR UPDATE`) để chống race condition.
-  3. Địa chỉ của tài khoản khác truy cập vào phải trả về lỗi `ADDRESS_NOT_FOUND` (như không tồn tại) để không lộ thông tin.
+    1. Mỗi tài khoản chỉ có **tối đa 1** địa chỉ mặc định tại mọi thời điểm.
+    2. Mọi thao tác thêm/sửa đổi cờ mặc định của một tài khoản phải khóa dòng tài khoản (`AccountService.lockForUpdate`,
+       `FOR UPDATE`) để chống race condition.
+    3. Địa chỉ của tài khoản khác truy cập vào phải trả về lỗi `ADDRESS_NOT_FOUND` (như không tồn tại) để không lộ thông
+       tin.
 
 ## 1. Danh mục Method
 
 | Method | Input | Output | ErrorCode có thể ném | Mục đích |
 | --- | --- | --- | --- | --- |
 | `getMyAddresses` | `accountId` | `List<AddressResponse>` | — | Lấy danh sách địa chỉ, xếp mặc định lên đầu. |
-| `create` | `accountId`, `SaveAddressRequest` | `AddressResponse` | `ACCOUNT_NOT_FOUND` | Tạo địa chỉ mới và tự động xử lý cờ mặc định. |
-| `update` | `accountId`, `addressId`, `SaveAddressRequest` | `AddressResponse` | `ACCOUNT_NOT_FOUND`, `ADDRESS_NOT_FOUND` | Cập nhật địa chỉ thuộc sở hữu của tài khoản. |
+| `create` | `accountId`, `AddAddressRequest` | `AddAddressResponse` | `ACCOUNT_NOT_FOUND` | Tạo địa chỉ mới và tự động xử lý cờ mặc định. |
+| `update` | `accountId`, `addressId`, `AddAddressRequest` | `AddAddressResponse` | `ACCOUNT_NOT_FOUND`, `ADDRESS_NOT_FOUND` | Cập nhật địa chỉ thuộc sở hữu của tài khoản. |
 | `delete` | `accountId`, `addressId` | `void` | `ADDRESS_NOT_FOUND` | Xóa địa chỉ (nếu xóa địa chỉ mặc định thì không tự gán cái khác). |
 
 ## 2. Pseudocode chi tiết các Method nặng
 
-### Method: `create(accountId, request)` -> `AddressResponse`
-1. **[Guard & Lock]**
-   - Khóa dòng tài khoản `accountId` (`AccountService.lockForUpdate`).
-   - NẾU không tồn tại tài khoản -> `THROW ACCOUNT_NOT_FOUND`.
-2. **[Xử lý nghiệp vụ]**
-   - Lấy danh sách địa chỉ hiện có `existing` của `accountId`.
-   - Khởi tạo `Address` mới, chuẩn hóa `detail` (`trim`) và `areaCode` (`trim + UPPERCASE`).
-   - Xác định `makeDefault = (existing rỗng) HOẶC (request.isDefault == true)`.
-   - NẾU `makeDefault == true`:
-     - Duyệt toàn bộ `existing` -> hạ cờ `isDefault = false`.
-   - Gán `address.isDefault = makeDefault`.
-3. **[Lưu trữ]**
-   - Lưu và đẩy xuống DB ngay (`saveAndFlush`) để nhận giá trị `createdAt`, `updatedAt`.
-4. **[Trả kết quả]**
-   - Chuyển sang `AddressResponse` qua `AddressMapper.toResponse` và trả về.
+### Method: `create(accountId, request)` -> `AddAddressResponse`
 
-### Method: `update(accountId, addressId, request)` -> `AddressResponse`
 1. **[Guard & Lock]**
-   - Khóa dòng tài khoản `accountId` (`AccountService.lockForUpdate`) -> NẾU không có `THROW ACCOUNT_NOT_FOUND`.
-   - Tìm địa chỉ theo `(addressId, accountId)` -> NẾU không có `THROW ADDRESS_NOT_FOUND`.
+    - Khóa dòng tài khoản `accountId` (`AccountService.lockForUpdate`).
+    - NẾU không tồn tại tài khoản -> `THROW ACCOUNT_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
-   - Cập nhật `detail` và `areaCode` đã chuẩn hóa vào `address`.
-   - NẾU `request.isDefault == true`:
-     - Hạ cờ `isDefault = false` của tất cả địa chỉ khác cùng `accountId`.
-     - Đặt `address.isDefault = true`.
-   - NGƯỢC LẠI NẾU `request.isDefault == false`:
-     - Đặt `address.isDefault = false`.
+    - Lấy danh sách địa chỉ hiện có `existing` của `accountId`.
+    - Khởi tạo `Address` mới, chuẩn hóa `detail` (`trim`) và `areaCode` (`trim + UPPERCASE`).
+    - Xác định `makeDefault = (existing rỗng) HOẶC (request.isDefault == true)`.
+    - NẾU `makeDefault == true`:
+        - Duyệt toàn bộ `existing` -> hạ cờ `isDefault = false`.
+    - Gán `address.isDefault = makeDefault`.
+3. **[Lưu trữ]**
+    - Lưu và đẩy xuống DB ngay (`saveAndFlush`) để nhận giá trị `createdAt`, `updatedAt`.
+4. **[Trả kết quả]**
+    - Chuyển sang `AddAddressResponse` qua `AddressMapper.toResponse` và trả về.
+
+### Method: `update(accountId, addressId, request)` -> `AddAddressResponse`
+
+1. **[Guard & Lock]**
+    - Khóa dòng tài khoản `accountId` (`AccountService.lockForUpdate`) -> NẾU không có `THROW ACCOUNT_NOT_FOUND`.
+    - Tìm địa chỉ theo `(addressId, accountId)` -> NẾU không có `THROW ADDRESS_NOT_FOUND`.
+2. **[Xử lý nghiệp vụ]**
+    - Cập nhật `detail` và `areaCode` đã chuẩn hóa vào `address`.
+    - NẾU `request.isDefault == true`:
+        - Hạ cờ `isDefault = false` của tất cả địa chỉ khác cùng `accountId`.
+        - Đặt `address.isDefault = true`.
+    - NGƯỢC LẠI NẾU `request.isDefault == false`:
+        - Đặt `address.isDefault = false`.
 3. **[Lưu trữ & Trả kết quả]**
-   - `saveAndFlush(address)` -> `RETURN AddressMapper.toResponse(saved)`.
+    - `saveAndFlush(address)` -> `RETURN AddressMapper.toResponse(saved)`.
 ```
 
 Lời khuyên kinh nghiệm: "Premature optimization is the root of all evil" (Tối ưu hóa sớm là nguồn gốc của mọi tội lỗi). Đừng hy sinh sự sạch sẽ, rõ ràng của mã nguồn để đổi lấy một lượng hiệu năng siêu nhỏ không đáng kể. Code chạy cho máy hiểu, nhưng trước hết phải viết cho con người đọc và bảo trì được.

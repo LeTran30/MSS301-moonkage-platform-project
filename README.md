@@ -104,7 +104,7 @@ Mọi request đi qua gateway với prefix là tên service, ví dụ `http://lo
 
 ## Chạy nhanh
 ```bash
-cp .env.example .env          # điền JWT_SECRET, ADMIN_PASSWORD, SEED_PASSWORD
+cp .env.example .env          # điền JWT_SECRET; SEED_PASSWORD mặc định 12345678
 docker compose up -d --build  # tạo bảng (Flyway) và nạp dữ liệu mẫu
 cd web && npm install && npm run dev   # http://localhost:5173
 ```

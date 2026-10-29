@@ -1,14 +1,14 @@
 package com.moonkage.identity.address;
 
-import com.moonkage.identity.address.dto.AddressResponse;
+import com.moonkage.identity.address.dto.AddAddressResponse;
 
 /** Address → response DTO. */
 final class AddressMapper {
 
     private AddressMapper() {}
 
-    public static AddressResponse toResponse(Address address) {
-        return AddressResponse.builder()
+    public static AddAddressResponse toResponse(Address address) {
+        return AddAddressResponse.builder()
                 .id(address.getId())
                 .recipientName(address.getRecipientName())
                 .recipientPhone(address.getRecipientPhone())

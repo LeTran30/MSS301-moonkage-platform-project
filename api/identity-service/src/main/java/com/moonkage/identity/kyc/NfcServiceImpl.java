@@ -1,7 +1,6 @@
 package com.moonkage.identity.kyc;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.NfcLockout;
 import com.moonkage.identity.common.TimeConstant;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
@@ -12,7 +11,7 @@ import com.moonkage.identity.kyc.dto.response.NfcSessionStatusResponse;
 import com.moonkage.identity.kyc.dto.response.SubmitCardResponse;
 import com.moonkage.identity.outbox.OutboxService;
 import java.security.SecureRandom;
-import java.time.Duration;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Base64;
@@ -39,8 +38,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * (until the lockout); a verified one marks it used. A used session is kept until it expires so the web can still
  * read VERIFIED from GET (fallback when the WebSocket push is missed).
  *
- * <p>Lockout state lives on the account row (D-21), taken with a row lock, so parallel cards of one account cannot
- * both pass the counter. A rejected card commits too: the counted attempt must stick.
+ * <p>Attempts and lockouts live in memory too ({@link NfcAttemptTracker}, db-identify.md). The account row lock still
+ * serialises the cards of one account, so two cannot both pass the counter or both save a profile.
  */
 @Slf4j
 @Service
@@ -62,13 +61,15 @@ class NfcServiceImpl implements NfcService {
     private final OutboxService outboxService;
     private final NfcProperties nfcProperties;
     private final TransactionTemplate transactionTemplate;
+    private final NfcAttemptTracker attemptTracker;
+    private final Clock clock;
 
     final Map<String, NfcSessionEntry> sessions = new ConcurrentHashMap<>();
 
     @Override
     public CreateNfcSessionResponse createSession(String accountId) {
         validateCanStartVerification(accountId);
-        Instant expiresAt = Instant.now().plus(nfcProperties.getSessionTtl());
+        Instant expiresAt = Instant.now(clock).plus(nfcProperties.getSessionTtl());
         NfcSessionEntry entry =
                 new NfcSessionEntry(newSessionId(), accountId, expiresAt, NfcSessionStatus.PENDING, false);
         replacePending(entry);
@@ -78,7 +79,7 @@ class NfcServiceImpl implements NfcService {
     @Override
     public NfcSessionStatusResponse getSession(String sessionId, String accountId) {
         NfcSessionEntry entry = sessionId == null ? null : sessions.get(sessionId);
-        if (entry == null || entry.isExpired(Instant.now())) {
+        if (entry == null || entry.isExpired(Instant.now(clock))) {
             throw new AppException(ErrorCode.NFC_SESSION_EXPIRED);
         }
         if (!entry.accountId().equals(accountId)) {
@@ -115,24 +116,21 @@ class NfcServiceImpl implements NfcService {
 
     @Scheduled(fixedDelayString = "${nfc.session-cleanup-interval}")
     void purgeExpiredSessions() {
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         // removeIf goes through the map's own conditional remove, so it never drops a concurrent update
         sessions.values().removeIf(e -> e.isExpired(now) && !e.inFlight());
+        attemptTracker.purgeFinished(now);
     }
 
     // ───────── session start ─────────
 
     void validateCanStartVerification(String accountId) {
-        NfcLockout lockout = accountService.getNfcLockout(accountId);
+        accountService.requireAccountExists(accountId);
         if (legalProfileRepository.existsById(accountId)) {
             throw new AppException(ErrorCode.NFC_ALREADY_VERIFIED);
         }
-        Instant now = Instant.now();
-        if (lockout.isLocked(now)) {
-            long minutes =
-                    Math.max(1, Duration.between(now, lockout.lockedUntil()).toMinutes() + 1);
-            throw new AppException(ErrorCode.NFC_LOCKED, minutes);
-        }
+        // NFC_LOCKED with the minutes left
+        attemptTracker.ensureNotLocked(accountId, Instant.now(clock));
     }
 
     private static String newSessionId() {
@@ -156,7 +154,7 @@ class NfcServiceImpl implements NfcService {
 
     /** Empty when the session is now claimed by this submit; otherwise why it was refused. */
     private Optional<NfcReasonCode> claimSession(String sessionId, String accountId) {
-        Instant now = Instant.now();
+        Instant now = Instant.now(clock);
         AtomicReference<NfcReasonCode> rejection = new AtomicReference<>(NfcReasonCode.SESSION_EXPIRED);
         NfcSessionEntry claimed = sessions.computeIfPresent(sessionId, (k, e) -> {
             // Software Design 4.2 order: exists and not expired, owned by the caller, not used yet
@@ -184,21 +182,21 @@ class NfcServiceImpl implements NfcService {
         if (legalProfileRepository.existsById(accountId)) {
             return SubmitCardResponse.rejected(NfcReasonCode.SESSION_USED);
         }
-        Instant now = Instant.now();
-        NfcLockout lockout = accountService.getNfcLockout(accountId).clearFinished(now);
+        Instant now = Instant.now(clock);
+        NfcLockout lockout = attemptTracker.lockoutOf(accountId);
         if (lockout.isLocked(now)) {
             return SubmitCardResponse.rejected(NfcReasonCode.LOCKED, 0, lockout.lockedUntil());
         }
 
         Optional<NfcCard> card = parseCard(request);
         Optional<NfcReasonCode> rejection =
-                card.isEmpty() ? Optional.of(NfcReasonCode.BAD_FORMAT) : findCardRejection(card.get());
+                card.isEmpty() ? Optional.of(NfcReasonCode.BAD_FORMAT) : findCardRejection(card.get(), now);
         if (rejection.isPresent()) {
-            return countFailedAttempt(accountId, lockout, sessionId, rejection.get(), now);
+            return countFailedAttempt(accountId, sessionId, rejection.get(), now);
         }
 
         LegalProfile profile = saveLegalProfile(accountId, card.get(), now);
-        accountService.saveNfcLockout(accountId, NfcLockout.NONE);
+        attemptTracker.clear(accountId);
         enqueueEvent(NfcVerificationEvent.verified(accountId, sessionId, profile.getIdNumberMasked(), now));
         return SubmitCardResponse.verified();
     }
@@ -211,8 +209,8 @@ class NfcServiceImpl implements NfcService {
     }
 
     /** The checks after the format, in Software Design 4.2 order; empty when the card passes them all. */
-    private Optional<NfcReasonCode> findCardRejection(NfcCard card) {
-        if (card.dateOfExpiry().isBefore(LocalDate.now(TimeConstant.VIETNAM_ZONE))) {
+    private Optional<NfcReasonCode> findCardRejection(NfcCard card, Instant now) {
+        if (card.dateOfExpiry().isBefore(LocalDate.ofInstant(now, TimeConstant.VIETNAM_ZONE))) {
             return Optional.of(NfcReasonCode.CARD_EXPIRED);
         }
         if (isLinkedElsewhere(card.idNumber())) {
@@ -221,14 +219,12 @@ class NfcServiceImpl implements NfcService {
         return Optional.empty();
     }
 
-    /** AC-04.9: counts the attempt; the last allowed one locks verification for nfc.lockout-duration. */
+    /** AC-04.9: the attempt is counted; the last allowed one locks verification for nfc.lockout-duration. */
     private SubmitCardResponse countFailedAttempt(
-            String accountId, NfcLockout lockout, String sessionId, NfcReasonCode reason, Instant now) {
-        int maxAttempts = nfcProperties.getMaxAttempts();
-        NfcLockout counted = lockout.recordFailure(maxAttempts, nfcProperties.getLockoutDuration(), now);
-        accountService.saveNfcLockout(accountId, counted);
+            String accountId, String sessionId, NfcReasonCode reason, Instant now) {
+        NfcLockout counted = attemptTracker.recordFailure(accountId, now);
         if (!counted.isLocked(now)) {
-            int attemptsLeft = counted.attemptsLeft(maxAttempts);
+            int attemptsLeft = counted.attemptsLeft(nfcProperties.lockoutPolicy());
             enqueueEvent(NfcVerificationEvent.failed(accountId, sessionId, reason, attemptsLeft, now));
             return SubmitCardResponse.rejected(reason, attemptsLeft, null);
         }

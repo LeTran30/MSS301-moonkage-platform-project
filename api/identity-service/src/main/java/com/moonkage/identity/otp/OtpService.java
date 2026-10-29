@@ -1,6 +1,6 @@
 package com.moonkage.identity.otp;
 
-import com.moonkage.identity.account.vo.Email;
+import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.common.exception.AppException;
 
 /** Codes, counters and lockouts are kept per (purpose, email): a code never works for another purpose. */

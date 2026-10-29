@@ -1,0 +1,3 @@
+Constructor <com.moonkage.identity.address.Address.<init>()> does not have modifier PROTECTED in (Address.java:23)
+Constructor <com.moonkage.identity.kyc.LegalProfile.<init>()> does not have modifier PROTECTED in (LegalProfile.java:32)
+Constructor <com.moonkage.identity.profile.UserProfile.<init>()> does not have modifier PROTECTED in (UserProfile.java:23)
