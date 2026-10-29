@@ -53,7 +53,7 @@ class AddressServiceImplTest {
     private static AddAddressRequest request(Boolean isDefault) {
         return AddAddressRequest.builder()
                 .recipientName("  Nguyễn Lan  ")
-                .recipientPhone("+84912345678")
+                .recipientPhone("0912345678")
                 .provinceCode("79")
                 .provinceName(" Thành phố Hồ Chí Minh ")
                 .wardName(" Phường Sài Gòn ")

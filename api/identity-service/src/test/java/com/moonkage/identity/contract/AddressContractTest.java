@@ -17,7 +17,7 @@ class AddressContractTest extends ContractTest {
             "provinceName":"Thành phố Hồ Chí Minh","wardName":"Phường Bến Nghé","detail":"12 Lê Lợi",
             "label":"Nhà riêng"}""";
     private static final String OFFICE = """
-            {"recipientName":"Tran Binh","recipientPhone":"+84910000031","provinceCode":"01",
+            {"recipientName":"Tran Binh","recipientPhone":"0910000031","provinceCode":"01",
             "provinceName":"Thành phố Hà Nội","wardName":"Phường Hoàn Kiếm","detail":"1 Tràng Tiền",
             "isDefault":%s}""";
 

@@ -13,7 +13,7 @@ import lombok.Builder;
  * FR-03: create or replace a delivery address. The client picks the province from the national list
  * and provides the ward as display text (L-15).
  *
- * @param recipientPhone Vietnamese mobile number in any accepted form (0912…, 84912…, +84912…)
+ * @param recipientPhone Vietnamese mobile number in the national form 0912345678 (decision C1)
  * @param provinceCode 2-digit national code, e.g. 79 for Thành phố Hồ Chí Minh
  * @param detail house number and street
  * @param isDefault true = make this the default. null on update keeps the current flag

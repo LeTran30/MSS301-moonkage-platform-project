@@ -20,7 +20,7 @@ public interface AccountService {
 
     Optional<AccountView> findByEmail(Email email);
 
-    /** FR-02: the identifier is an email or a phone number in any accepted form; empty when neither matches. */
+    /** FR-02: the identifier is an email or a national phone number (0912345678); empty when neither matches. */
     Optional<AccountCredentials> findCredentials(String loginIdentifier);
 
     /** Throws ACCOUNT_NOT_FOUND. */

@@ -947,6 +947,11 @@ Làm sau khi Phase 4 đến 7 đã xong (không còn code cũ nào đọc/ghi c�
 | P0-2 | (2026-10-29) Giữ index `ux_addresses_one_default_per_account` đã có, không tạo `ux_addresses_one_default` |
 | P0-4 | (2026-10-29) Làm trên nhánh `refactor/identity-v2`, tạo từ `develop` sau commit mốc của `domain-model-plan.md` giai đoạn 1–2 |
 | P0-5 | (2026-10-29) Test đặc tả dùng RabbitMQ thật (`org.testcontainers:rabbitmq`) |
+| C1 | (2026-10-29) Số điện thoại nhập vào chỉ nhận dạng trong nước `0` + 9 chữ số, ở mọi nơi (đăng ký, địa chỉ, đăng nhập). `+84`, `84`, 9 chữ số trơn bị từ chối. DB và response vẫn là 9 chữ số thuê bao |
+| C2 | (2026-10-29) Không nhận dấu cách, dấu chấm, gạch ngang trong số điện thoại (giữ như cũ) |
+| C3 | (2026-10-29) (a) `provinceName` của client vẫn nhận nhưng bỏ qua; tên lấy từ danh mục theo `provinceCode`. Hướng sau này: frontend gọi API bên thứ ba và chỉ gửi mã |
+| C4 | (2026-10-29) Giữ giới hạn đếm theo ký tự như hiện tại (b) |
+| C5 | (2026-10-29) Sửa B-1: đặt địa chỉ mặc định thứ hai trả đúng 200/201 thay vì 500 |
 
 Ngoài các điểm trên, dừng và hỏi khi:
 - Một test đặc tả buộc phải đổi mà không thuộc quyết định nào ở bảng trên.

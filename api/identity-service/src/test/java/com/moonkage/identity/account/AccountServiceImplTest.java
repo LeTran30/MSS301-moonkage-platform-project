@@ -143,7 +143,9 @@ class AccountServiceImplTest {
         when(accountRepository.findByPhoneNumber(PHONE)).thenReturn(Optional.of(account(true)));
 
         assertTrue(accountService.findCredentials("A@X.vn").isPresent());
-        assertTrue(accountService.findCredentials("+84912345678").isPresent());
+        assertTrue(accountService.findCredentials("0912345678").isPresent());
+        // decision C1: only the national form is a phone login
+        assertTrue(accountService.findCredentials("+84912345678").isEmpty());
         assertTrue(accountService.findCredentials("not-a-login").isEmpty());
     }
 

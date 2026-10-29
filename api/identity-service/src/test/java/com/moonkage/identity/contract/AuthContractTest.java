@@ -80,7 +80,15 @@ class AuthContractTest extends ContractTest {
         register(email("register-taken"), "0910000002");
 
         assertContract("auth/register-email-taken", register(email("register-taken"), "0910000003"));
-        assertContract("auth/register-phone-taken", register(email("register-taken-2"), "+84910000002"));
+        assertContract("auth/register-phone-taken", register(email("register-taken-2"), "0910000002"));
+    }
+
+    @Test
+    void registerTakesTheNationalFormOnly() throws Exception {
+        // decision C1: 0 then 9 digits; +84, 84 and the bare 9 digits are refused
+        for (String phone : new String[] {"+84910000004", "84910000004", "910000004"}) {
+            assertContract("auth/register-phone-not-national", register(email("register-intl"), phone));
+        }
     }
 
     @Test
@@ -186,14 +194,16 @@ class AuthContractTest extends ContractTest {
     // ───────── POST /api/auth/login ─────────
 
     @Test
-    void loginByEmailOrAnyPhoneForm() throws Exception {
+    void loginByEmailOrNationalPhone() throws Exception {
         String email = activeAccount("login-ok", "0910000010");
 
         assertContract("auth/login-ok", login(email, PASSWORD));
-        for (String phone : new String[] {"0910000010", "+84910000010", "84910000010", "910000010"}) {
-            Answer answer = login(phone, PASSWORD);
-            assertEquals(200, answer.status(), phone);
-            assertEquals(email, answer.read("$.data.email"), phone);
+        Answer byPhone = login("0910000010", PASSWORD);
+        assertEquals(200, byPhone.status());
+        assertEquals(email, byPhone.read("$.data.email"));
+        // decision C1: other forms of the same number are unknown logins
+        for (String phone : new String[] {"+84910000010", "84910000010", "910000010"}) {
+            assertContract("auth/login-rejected", login(phone, PASSWORD));
         }
         assertContract("auth/login-ok", login(email.toUpperCase(), PASSWORD));
     }

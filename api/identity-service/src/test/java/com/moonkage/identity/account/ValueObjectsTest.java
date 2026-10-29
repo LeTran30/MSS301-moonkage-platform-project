@@ -32,35 +32,33 @@ class ValueObjectsTest {
     }
 
     @Test
-    void phoneNumberNormalizesAndValidatesCorrectly() {
-        // every accepted form becomes the 9 subscriber digits: the one form stored, returned and compared (AC-01.3)
+    void phoneNumberTakesTheNationalFormAndStoresTheSubscriberDigits() {
+        // decision C1: people type 0 then 9 digits; the 9 subscriber digits are stored, returned and compared
         PhoneNumber phone1 = PhoneNumber.of("0912345678");
         assertEquals("912345678", phone1.value());
         assertEquals("0912345678", phone1.toNational());
-        assertEquals("+84912345678", phone1.toInternational());
         assertEquals("091****678", phone1.masked());
-
-        assertEquals(phone1, PhoneNumber.of("+84912345678"));
-        assertEquals(phone1, PhoneNumber.of("84912345678"));
-        assertEquals(phone1, PhoneNumber.of(" 912345678 "));
         assertEquals(phone1, PhoneNumber.of(" 0912345678 "));
-        // a stored number that itself starts with 84 is not mistaken for a country code
-        assertEquals("841234567", PhoneNumber.of("841234567").value());
+        // the stored form, as read from the database
+        assertEquals(phone1, new PhoneNumber("912345678"));
+        assertThrows(AppException.class, () -> new PhoneNumber("0912345678"));
 
         assertTrue("0912345678".matches(PhoneNumber.REGEX));
-        assertTrue("84912345678".matches(PhoneNumber.REGEX));
-        assertTrue("+84312345678".matches(PhoneNumber.REGEX));
-        assertFalse("8491234567".matches(PhoneNumber.REGEX));
+        assertTrue("0312345678".matches(PhoneNumber.REGEX));
+        assertFalse("84912345678".matches(PhoneNumber.REGEX));
+        assertFalse("+84912345678".matches(PhoneNumber.REGEX));
         assertFalse("0212345678".matches(PhoneNumber.REGEX));
         assertFalse("091234567".matches(PhoneNumber.REGEX));
 
         assertTrue(PhoneNumber.isValid("0912345678"));
-        assertTrue(PhoneNumber.isValid("+84912345678"));
-        assertTrue(PhoneNumber.isValid("84912345678"));
-        assertTrue(PhoneNumber.isValid("912345678"));
+        assertFalse(PhoneNumber.isValid("+84912345678"));
+        assertFalse(PhoneNumber.isValid("84912345678"));
+        assertFalse(PhoneNumber.isValid("912345678"));
         assertFalse(PhoneNumber.isValid("0212345678"));
         assertFalse(PhoneNumber.isValid(null));
 
+        assertThrows(AppException.class, () -> PhoneNumber.of("+84912345678"));
+        assertThrows(AppException.class, () -> PhoneNumber.of("912345678"));
         assertThrows(AppException.class, () -> PhoneNumber.of("12345"));
         assertThrows(AppException.class, () -> PhoneNumber.of("0123456789"));
         assertThrows(AppException.class, () -> PhoneNumber.of("091234567"));

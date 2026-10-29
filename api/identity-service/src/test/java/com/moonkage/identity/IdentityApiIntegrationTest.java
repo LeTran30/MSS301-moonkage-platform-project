@@ -97,7 +97,7 @@ class IdentityApiIntegrationTest {
     // ───────── FR-01, FR-02 ─────────
 
     @Test
-    void registerVerifyLoginWithAnyPhoneFormatThenMe() throws Exception {
+    void registerVerifyLoginWithPhoneThenMe() throws Exception {
         int n = SEQ.incrementAndGet();
         String email = "lan" + n + "@x.vn";
         String phoneDigits = String.format("9120000%02d", n);
@@ -105,7 +105,7 @@ class IdentityApiIntegrationTest {
         mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"email":"%s","phoneNumber":"+84%s","fullName":"Nguyen Lan","password":"%s"}
+                                {"email":"%s","phoneNumber":"0%s","fullName":"Nguyen Lan","password":"%s"}
                                 """.formatted(email, phoneDigits, PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
@@ -131,7 +131,7 @@ class IdentityApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.verified").value(true));
 
-        // registered as +84…, logs in as 0…: one stored form (AC-01.3)
+        // stored as the 9 subscriber digits, typed with the leading 0 (decision C1)
         String token = token(login("0" + phoneDigits, PASSWORD));
 
         mvc.perform(get("/api/accounts/me").header("Authorization", "Bearer " + token))
