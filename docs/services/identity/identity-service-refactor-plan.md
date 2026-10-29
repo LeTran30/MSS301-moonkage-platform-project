@@ -477,7 +477,7 @@ Hiện tại `@GeneratedValue(strategy = UUID)` sinh id **khi lưu**, nên từ 
 | `AccountId` | Định danh thực thể | Duy nhất; có thứ tự thời gian | `IdGenerator` (UUID v7) |
 | `AddressId` | Định danh thực thể | Duy nhất; có thứ tự thời gian | `IdGenerator` (UUID v7) |
 | `EventId` (outbox, `eventId` trong payload) | Định danh thực thể; phía nhận dùng chống xử lý trùng | Duy nhất; có thứ tự để relay đọc theo thứ tự | `IdGenerator` (UUID v7) |
-| `NfcSessionId` | **Năng lực / bí mật**: có id là bước được vào phiên | **Không đoán được** | `UUID.randomUUID()` (v4, `SecureRandom`). **Không** dùng `IdGenerator` |
+| `NfcSessionId` | **Năng lực / bí mật**: có id là bước được vào phiên | **Không đoán được** | 24 byte `SecureRandom`, base64url không padding: chuỗi 32 ký tự, 192 bit, **giữ định dạng hiện tại** (quyết định B-2). Không phải UUID, **không** dùng `IdGenerator` |
 | `profiles` | Không có id riêng: khóa chính là `account_id` | — | Dùng `AccountId` của tài khoản |
 
 UUID v7 = 48 bit thời gian mili giây + 74 bit ngẫu nhiên. Đánh đổi: id lộ thời điểm tạo. Với địa chỉ và sự kiện không đáng kể (API đã trả `createdAt`); với tài khoản là lộ thời điểm đăng ký. **Đã chốt (I1): dùng v7 cho mọi id thực thể, kể cả `AccountId`, chấp nhận đánh đổi này.**
@@ -516,7 +516,7 @@ class UuidV7Generator implements IdGenerator {
 #### 5.5.4. Id có kiểu
 
 ```java
-// shared/AccountId.java (AddressId, NfcSessionId, EventId cùng khuôn, nằm trong module sở hữu)
+// shared/AccountId.java (AddressId, EventId cùng khuôn, nằm trong module sở hữu; NfcSessionId bọc String, xem B-2)
 public record AccountId(UUID value) {
 
     public AccountId {
@@ -602,7 +602,7 @@ Không đổi: chuỗi id **bên trong** payload JSON của outbox (`eventId`, `
 | Biên | Xử lý |
 |---|---|
 | URL `/api/addresses/{id}` | Controller nhận `String`, `AddressId.tryParse`. Empty thì `ADDRESS_NOT_FOUND`. Có id thì use case kiểm quyền sở hữu: địa chỉ của tài khoản khác cũng trả `ADDRESS_NOT_FOUND` (không 403, chống dò) |
-| URL `/api/nfc/sessions/{id}` | `NfcSessionId.tryParse` empty thì trả như phiên không tồn tại (theo hành vi hiện tại, test đặc tả xác nhận mã lỗi) |
+| URL `/api/nfc/sessions/{id}` | `NfcSessionId.tryParse` (đúng 32 ký tự base64url) empty thì trả như phiên không tồn tại: `NFC_003` khi đọc phiên, `REJECTED`/`SESSION_EXPIRED` khi gửi thẻ (snapshot `kyc/session-unknown`, `kyc/card-session-unknown`) |
 | JWT | Claim chủ thể là chuỗi UUID. `JwtBearerAuthenticator` dùng `AccountId.tryParse`, empty thì `TOKEN_INVALID`. `CurrentUserInfo` mang `AccountId` |
 | `/internal/**`, `identity-client`, payload sự kiện | Luôn là `String`. Hợp đồng giữa các service không dùng kiểu Java của identity |
 
@@ -787,7 +787,7 @@ Quy tắc:
 - Chỉ `kyc.infrastructure.web.internal` được import `com.moonkage.identity.client`.
 - Mọi `ErrorCode` có mã không trùng nhau, và message key tồn tại trong mọi file `messages*.properties`.
 - Không entity nào dùng `@GeneratedValue`.
-- `UUID.randomUUID()` chỉ được gọi trong `NfcSessionId`. Id thực thể chỉ sinh qua `IdGenerator`, và chỉ trong tầng `application`.
+- Không gọi `UUID.randomUUID()` trong code production. `SecureRandom` cho id chỉ trong `NfcSessionId`. Id thực thể chỉ sinh qua `IdGenerator`, và chỉ trong tầng `application`.
 - Sau Phase 8b: không còn lời gọi `fromStored(String)`; mọi field `@Id` và cột tham chiếu id có kiểu `UUID`.
 - Không gọi `JpaRepository.save(...)` / `saveAndFlush(...)` từ adapter cho entity có id gán trước; tạo mới dùng `EntityManager.persist`.
 - Entity của module A không có quan hệ JPA tới entity của module B.
@@ -872,7 +872,7 @@ Ghi chú C4: dù chọn (a), mật khẩu **đã lưu** không bị ảnh hưở
     - Chép dữ liệu đã xác minh từ `legal_profiles`; bỏ `legal_profiles`.
     - `accounts`: bỏ `nfc_failed_attempts`, `nfc_locked_until`: **đã làm** ở `V2026_10_29_1500__accounts_invariants.sql`, bỏ bước này.
     - **Không** đổi kiểu cột id ở phase này (để Phase 8b).
-2. Dựng `profile` theo mục 4.3, `kyc` theo mục 4.6. `Profile` tạo mới qua `add` (`persist`), không `save`; khóa chính ở dạng chuyển tiếp (`String`). `NfcSessionId` sinh bằng `UUID.randomUUID()`.
+2. Dựng `profile` theo mục 4.3, `kyc` theo mục 4.6. `Profile` tạo mới qua `add` (`persist`), không `save`; khóa chính ở dạng chuyển tiếp (`String`). `NfcSessionId` sinh như hiện tại (24 byte `SecureRandom`, base64url, 32 ký tự: B-2).
 3. Xóa `LegalProfile*`, `PiiCipher`, `NfcServiceImpl`, `UserProfile*` cũ. Biến môi trường `PII_ENC_KEY_V1` không còn dùng: ghi vào báo cáo, không tự sửa file môi trường.
 4. Cập nhật test đặc tả cho phần schema (DB assertions) theo schema mới; JSON response giữ nguyên trừ quyết định ở ĐIỂM DỪNG G.
 
@@ -940,7 +940,8 @@ Làm sau khi Phase 4 đến 7 đã xong (không còn code cũ nào đọc/ghi c�
 
 | Mã | Quyết định |
 |---|---|
-| I1 | Mọi id thực thể (`AccountId`, `AddressId`, `EventId`) dùng **UUID v7**, sinh qua `IdGenerator`. `NfcSessionId` dùng UUID v4 vì là bí mật |
+| I1 | Mọi id thực thể (`AccountId`, `AddressId`, `EventId`) dùng **UUID v7**, sinh qua `IdGenerator`. `NfcSessionId` là bí mật, sinh riêng (B-2) |
+| B-2 | (2026-10-29) `NfcSessionId` giữ định dạng hiện tại: 24 byte `SecureRandom`, base64url không padding, 32 ký tự. App và web đã thấy định dạng này |
 | I2 | Cột id và cột tham chiếu id dùng kiểu **`uuid` của PostgreSQL**, chuyển một lần ở Phase 8b; cập nhật `db-identify.md` |
 | G1 | (2026-10-29) Thêm trường `kycVerified` (boolean) vào response của `POST /internal/accounts/check`, `GET /internal/nfc/status/{id}` và `GET /api/nfc/status` (chỉ thêm, theo mục 7 "Tiến hóa"). Bên gọi (vendor đang coi `nfcVerifiedAt == null` là chưa KYC) chuyển sang `kycVerified` **trước** khi Phase 6 làm `nfcVerifiedAt` mất nguồn; thời điểm sửa vendor duyệt ở ĐIỂM DỪNG H hoặc sớm hơn nếu Phase 6 tới trước. Sau đó `nfcVerifiedAt` trả `null` |
 | P0-2 | (2026-10-29) Giữ index `ux_addresses_one_default_per_account` đã có, không tạo `ux_addresses_one_default` |
