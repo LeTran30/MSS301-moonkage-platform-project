@@ -43,7 +43,7 @@ class VendorOwnerCheck {
     @Column(nullable = false, length = 12)
     private String ownerIdMasked;
 
-    @Column(nullable = false)
+    /** Null for checks made since identity stopped recording when the card was verified (decision G1). */
     private Instant nfcVerifiedAt;
 
     /** The declared ID number is the owner's card (BR-27); a submission without a match is refused, never stored. */

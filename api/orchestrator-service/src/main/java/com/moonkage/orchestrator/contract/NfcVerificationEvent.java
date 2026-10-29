@@ -3,7 +3,7 @@ package com.moonkage.orchestrator.contract;
 import java.time.Instant;
 
 /**
- * Outcome of one NFC card attempt from identity-service ({@code account.nfc_verified / nfc_failed / nfc_locked}).
+ * Outcome of one NFC card attempt from identity-service ({@code account.kyc_verified / kyc_failed / kyc_locked}).
  * Mirror of identity-service {@code NfcVerificationEvent}: keep them in sync until the services share a contracts
  * module. Masked data only (Software Design 8).
  *

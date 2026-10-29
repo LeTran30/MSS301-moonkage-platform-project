@@ -1,5 +1,5 @@
 {
-  "routingKey" : "account.nfc_locked",
+  "routingKey" : "account.kyc_locked",
   "contentType" : "application/json",
   "body" : {
     "eventId" : "<masked>",

@@ -36,7 +36,7 @@ public class RabbitConfig {
     public static final String NFC_QUEUE = "orchestrator.nfc";
 
     public static final List<String> NFC_ROUTING_KEYS =
-            List.of("account.nfc_verified", "account.nfc_failed", "account.nfc_locked");
+            List.of("account.kyc_verified", "account.kyc_failed", "account.kyc_locked");
 
     @Bean
     TopicExchange eventsExchange() {

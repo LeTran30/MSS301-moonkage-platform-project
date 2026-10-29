@@ -4,6 +4,6 @@ public enum EventType {
     EMAIL,
     IN_APP,
     AUDIT,
-    /** identity-service account.nfc_*: pushed to the web and audited. */
+    /** identity-service account.kyc_*: pushed to the web and audited. */
     NFC_VERIFICATION
 }

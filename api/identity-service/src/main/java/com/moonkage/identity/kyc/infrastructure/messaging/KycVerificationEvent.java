@@ -4,7 +4,7 @@ import com.moonkage.identity.kyc.domain.KycReasonCode;
 import java.time.Instant;
 
 /**
- * Outcome of one card, published as {@code account.nfc_verified / nfc_failed / nfc_locked}. Masked data only (Software
+ * Outcome of one card, published as {@code account.kyc_verified / kyc_failed / kyc_locked}. Masked data only (Software
  * Design 8); {@code sessionId} lets the web match the push to the QR it shows (AC-04.5), {@code attemptsLeft} lets it
  * say how many tries remain. orchestrator-service keeps a mirror of this record: the payload does not change.
  */

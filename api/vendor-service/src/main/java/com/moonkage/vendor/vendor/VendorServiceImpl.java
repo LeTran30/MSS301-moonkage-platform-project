@@ -364,7 +364,7 @@ class VendorServiceImpl implements VendorService {
     private OwnerCard getOwnerCard(String accountId, IdNumber idNumber) {
         CheckIdNumberResponse check =
                 identityClient.checkIdNumber(new CheckIdNumberRequest(accountId, idNumber.value()));
-        if (check.nfcVerifiedAt() == null) {
+        if (!check.kycVerified()) {
             throw new AppException(ErrorCode.NFC_NOT_VERIFIED);
         }
         if (!check.matchesAccount()) {

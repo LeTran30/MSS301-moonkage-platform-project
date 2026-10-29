@@ -29,7 +29,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 /** Q-22: an event is marked sent only after the broker confirmed it, and order is kept on failure. */
 class OutboxRelayTest {
 
-    private static final String ROUTING_KEY = "account.nfc_verified";
+    private static final String ROUTING_KEY = "account.kyc_verified";
     private static final Instant NOW = Instant.parse("2026-10-29T08:00:00Z");
 
     private OutboxEventRepository repository;

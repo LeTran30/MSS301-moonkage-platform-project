@@ -1,5 +1,5 @@
 {
-  "routingKey" : "account.nfc_failed",
+  "routingKey" : "account.kyc_failed",
   "contentType" : "application/json",
   "body" : {
     "eventId" : "<masked>",

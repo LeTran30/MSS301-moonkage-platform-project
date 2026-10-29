@@ -421,8 +421,8 @@ Một topic exchange `moonkage.events`. Routing key dạng `<miền>.<sự_kiệ
 
 | Routing key | Phát bởi | Nghe bởi | Ý nghĩa |
 |---|---|---|---|
-| `account.nfc_verified` | identity | notification | Đẩy kết quả về web, audit |
-| `account.nfc_failed`, `account.nfc_locked` | identity | notification | Audit (NFR-07) |
+| `account.kyc_verified` | identity | notification | Đẩy kết quả về web, audit |
+| `account.kyc_failed`, `account.kyc_locked` | identity | notification | Audit (NFR-07) |
 | `vendor.updated` | vendor | catalog, quotation, order | Cập nhật bản sao người bán (mục 4.3) |
 | `vendor.submitted` | vendor | notification | Audit lần nộp / nộp lại kèm `owner_check` (dạng đã che) |
 | `vendor.onboarding_recorded` | vendor | notification | Audit ghi nhận buổi làm việc và file thỏa thuận (BR-26, NFR-07) |
@@ -455,7 +455,7 @@ Một topic exchange `moonkage.events`. Routing key dạng `<miền>.<sự_kiệ
 
 ### 5.5 Outbox
 
-Các service phát sự kiện liên quan đến tiền, trạng thái đơn, tồn kho, phí hoặc audit ghi sự kiện vào bảng `outbox` **trong cùng transaction** với dữ liệu nghiệp vụ. Một tác vụ định kỳ đọc `outbox` và đẩy lên RabbitMQ (publisher confirm bật), đẩy xong thì đánh dấu đã gửi. Mục đích: không mất sự kiện khi lỗi giữa chừng (NFR-05). Áp dụng cả cho `vendor.submitted`, `vendor.onboarding_recorded`, `vendor.reviewed`, `vendor.updated`, `quote.accepted`, `account.nfc_verified`.
+Các service phát sự kiện liên quan đến tiền, trạng thái đơn, tồn kho, phí hoặc audit ghi sự kiện vào bảng `outbox` **trong cùng transaction** với dữ liệu nghiệp vụ. Một tác vụ định kỳ đọc `outbox` và đẩy lên RabbitMQ (publisher confirm bật), đẩy xong thì đánh dấu đã gửi. Mục đích: không mất sự kiện khi lỗi giữa chừng (NFR-05). Áp dụng cả cho `vendor.submitted`, `vendor.onboarding_recorded`, `vendor.reviewed`, `vendor.updated`, `quote.accepted`, `account.kyc_verified`.
 
 ---
 
@@ -586,7 +586,7 @@ sequenceDiagram
     I->>I: Kiểm phiên, chủ phiên, khóa; giải mã; kiểm định dạng, hạn CCCD; băm HMAC; kiểm trùng
     I->>I: Ghi 5 trường (mã hóa số định danh, ngày sinh); bỏ các trường còn lại; nfc_status = đã xác minh; outbox
     I-->>A: VERIFIED
-    I--)N: account.nfc_verified
+    I--)N: account.kyc_verified
     N--)W: Đẩy qua WebSocket, web quay lại bước đang làm
 ```
 

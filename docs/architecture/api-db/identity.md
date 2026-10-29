@@ -56,7 +56,7 @@ So với code: `/api/addresses` → `/api/accounts/me/addresses`; `/api/nfc/sess
 
 **Phát**
 
-- `account.nfc_verified`, `account.nfc_failed`, `account.nfc_locked` → orchestrator
+- `account.kyc_verified`, `account.kyc_failed`, `account.kyc_locked` → orchestrator
 - Email OTP → orchestrator
 
 **Nghe**

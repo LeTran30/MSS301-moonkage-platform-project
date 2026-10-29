@@ -55,7 +55,7 @@ class OutboxRepositoryIntegrationTest {
     }
 
     private void add(long n, boolean published) {
-        OutboxEvent event = OutboxEvent.record(new EventId(new UUID(0, n)), "account.nfc_verified", "{}");
+        OutboxEvent event = OutboxEvent.record(new EventId(new UUID(0, n)), "account.kyc_verified", "{}");
         if (published) {
             event.markPublished(Instant.parse("2026-10-29T08:00:00Z"));
         }

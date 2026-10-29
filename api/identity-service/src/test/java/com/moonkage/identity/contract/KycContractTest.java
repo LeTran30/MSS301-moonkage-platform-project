@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** FR-04 identity check by NFC: {@code /api/nfc/**}, {@code /internal/**} and the {@code account.nfc_*} events. */
+/** FR-04 identity check by NFC: {@code /api/nfc/**}, {@code /internal/**} and the {@code account.kyc_*} events. */
 class KycContractTest extends ContractTest {
 
     private static final String BAD_CARD = "{\"fullName\":\"NGUYEN VAN AN\",\"encryptedFields\":\"not-a-jwe\"}";
@@ -46,9 +46,9 @@ class KycContractTest extends ContractTest {
         Golden.assertEvent(
                 "kyc/event-verified",
                 inbox().awaitLast(
-                                e -> "account.nfc_verified".equals(e.routingKey())
+                                e -> "account.kyc_verified".equals(e.routingKey())
                                         && e.body().contains(accountId),
-                                "nfc_verified"));
+                                "kyc_verified"));
 
         assertContract("kyc/session-verified", getWith("/api/nfc/sessions/" + sessionId, token));
         assertContract("kyc/card-session-used", submitCard(token, sessionId, validCard("079190000002")));
@@ -67,9 +67,9 @@ class KycContractTest extends ContractTest {
         Golden.assertEvent(
                 "kyc/event-failed",
                 inbox().awaitLast(
-                                e -> "account.nfc_failed".equals(e.routingKey())
+                                e -> "account.kyc_failed".equals(e.routingKey())
                                         && e.body().contains(accountId),
-                                "nfc_failed"));
+                                "kyc_failed"));
         assertContract(
                 "kyc/card-expired",
                 submitCard(token, createNfcSession(token), cardBody("079190000003", LocalDate.of(2020, 1, 1))));
@@ -81,9 +81,9 @@ class KycContractTest extends ContractTest {
         Golden.assertEvent(
                 "kyc/event-locked",
                 inbox().awaitLast(
-                                e -> "account.nfc_locked".equals(e.routingKey())
+                                e -> "account.kyc_locked".equals(e.routingKey())
                                         && e.body().contains(accountId),
-                                "nfc_locked"));
+                                "kyc_locked"));
         assertContract("kyc/session-locked", call(post("/api/nfc/sessions").header("Authorization", bearer(token))));
         assertContract("kyc/status-locked", getWith("/api/nfc/status", token));
     }

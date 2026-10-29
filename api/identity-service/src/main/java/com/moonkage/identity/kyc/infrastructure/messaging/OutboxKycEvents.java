@@ -18,9 +18,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 class OutboxKycEvents implements KycEvents {
 
-    static final String VERIFIED = "account.nfc_verified";
-    static final String FAILED = "account.nfc_failed";
-    static final String LOCKED = "account.nfc_locked";
+    static final String VERIFIED = "account.kyc_verified";
+    static final String FAILED = "account.kyc_failed";
+    static final String LOCKED = "account.kyc_locked";
 
     private final Outbox outbox;
 

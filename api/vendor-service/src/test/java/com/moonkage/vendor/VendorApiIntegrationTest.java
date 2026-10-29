@@ -180,7 +180,7 @@ class VendorApiIntegrationTest {
     @Test
     void anAccountWithoutNfcVerificationCannotSubmit() throws Exception {
         when(identityClient.checkIdNumber(any()))
-                .thenReturn(new CheckIdNumberResponse("h", 1, "********1234", false, null, null, null));
+                .thenReturn(new CheckIdNumberResponse("h", 1, "********1234", false, null, null, null, false));
 
         submit(submission())
                 .andExpect(status().isForbidden())
@@ -456,7 +456,7 @@ class VendorApiIntegrationTest {
     private void ownerCardIs(String legalName, boolean matchesAccount) {
         when(identityClient.checkIdNumber(any()))
                 .thenReturn(new CheckIdNumberResponse(
-                        "a".repeat(64), 1, "********1234", matchesAccount, legalName, "********1234", NFC_VERIFIED_AT));
+                        "a".repeat(64), 1, "********1234", matchesAccount, legalName, "********1234", null, true));
     }
 
     private static Map<String, Object> submission() {

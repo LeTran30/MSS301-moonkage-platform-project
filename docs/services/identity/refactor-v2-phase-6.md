@@ -6,7 +6,7 @@ Ngày: 2026-10-30. Plan: [identity-service-refactor-plan.md](identity-service-re
 - ĐIỂM DỪNG F: mọi DB hiện đều là dữ liệu seed, được phép drop, không cần chuyển dữ liệu.
 - Quyết định G1: thêm `kycVerified` vào các response trạng thái; `nfcVerifiedAt` thành `null`.
 
-ĐIỂM DỪNG G2 (tên sự kiện `nfc_*`) còn chờ trả lời, xem mục 7.
+ĐIỂM DỪNG G2 đã chốt sau commit đầu của phase: đổi tên sự kiện ngay, không phát song song. Cùng lúc sửa vendor-service sang đọc `kycVerified`. Xem mục 8.
 
 ## 1. Schema
 
@@ -110,7 +110,7 @@ Seed:
 1. Gọi `/internal/accounts/check` với `idNumber` như `" - "` (không rỗng nhưng không có chữ số): trước trả `COMMON_400`, giờ trả `NFC_005`.
 2. Gửi thẻ cho tài khoản không có hồ sơ: trả 404 `USER_002`. Thực tế không xảy ra, vì hồ sơ được tạo cùng lúc đăng ký.
 3. `POST /api/nfc/sessions` không còn kiểm tài khoản có tồn tại không: token đã bảo đảm điều đó.
-4. Một thẻ bị từ chối trong lúc tài khoản đang khóa không được đếm thêm. Hai thẻ song song cùng chạm ngưỡng (hiếm) có thể gửi hai sự kiện `nfc_locked`.
+4. Một thẻ bị từ chối trong lúc tài khoản đang khóa không được đếm thêm. Hai thẻ song song cùng chạm ngưỡng (hiếm) có thể gửi hai sự kiện `kyc_locked`.
 
 ## 7. Việc cần làm ngoài code identity
 
@@ -119,9 +119,25 @@ Seed:
   - `docker-compose.yml:239` `APP_SEED_ENABLED=true`;
   - `docker-compose.yml:257` `PII_ENC_KEY_V1`;
   - `.env.example:65` `PII_ENC_KEY_V1=`.
-- **vendor-service** (`VendorServiceImpl.java:367`) coi `check.nfcVerifiedAt() == null` là "chưa xác minh". Từ Phase 6, identity luôn trả `null`, nên trên nhánh này vendor sẽ coi mọi chủ cửa hàng là chưa xác minh, cho tới khi vendor đọc `kycVerified`.
-- **ĐIỂM DỪNG G2:** sự kiện vẫn mang tên `account.nfc_verified`, `nfc_failed`, `nfc_locked`.
+- **RabbitMQ:** queue `orchestrator.nfc` là durable, nên vẫn giữ binding cũ `account.nfc_*`. Các binding này vô hại vì không còn ai phát lên đó; muốn gọn thì xóa tay trong RabbitMQ UI, hoặc xóa queue để orchestrator khai báo lại.
 
 ## 8. Kết quả build
 
 `./mvnw -pl identity-service -am clean verify`: BUILD SUCCESS, **372 test xanh**, 0 skip, checkstyle và spotless qua (2026-10-30).
+
+## 8. Bổ sung sau quyết định G2 và sửa vendor
+
+**G2, đổi tên sự kiện ngay:**
+- Routing key mới: `account.kyc_verified`, `account.kyc_failed`, `account.kyc_locked`. Payload giữ nguyên.
+- Đã đổi ở cả bên phát và bên nhận:
+  - identity: `OutboxKycEvents`, ba snapshot `kyc/event-*.json`;
+  - orchestrator: `RabbitConfig.NFC_ROUTING_KEYS`;
+  - docs kiến trúc: `software-design.md`, `api-db/identity.md`, `api-db/integration.md`.
+- Không phát song song tên cũ: orchestrator là bên nhận duy nhất, và được đổi cùng commit.
+
+**vendor-service đọc `kycVerified`:**
+- `CheckIdNumberResponse` có thêm `kycVerified`. `VendorServiceImpl` từ chối khi `!kycVerified` (`NFC_NOT_VERIFIED`, như trước).
+- Migration `V2026_10_30_1000__owner_check_nfc_time_optional.sql` cho phép `vendor_owner_checks.nfc_verified_at` null:
+  - identity không còn trả thời điểm này, nên lần kiểm mới lưu null;
+  - các dòng cũ giữ nguyên giá trị.
+- Response admin `OwnerCheckResponse.nfcVerifiedAt` vẫn giữ trường, nhưng sẽ null với lần kiểm mới. Web (`applicationApi.ts`) đang khai báo trường này là `string`, nhưng không màn hình nào hiển thị nó.

@@ -21,7 +21,7 @@ Gọi đồng bộ chỉ khi bên gọi cần câu trả lời ngay để quyế
 
 | Bên phát | Routing key | Bên nghe |
 | --- | --- | --- |
-| identity | `account.nfc_verified`, `account.nfc_failed`, `account.nfc_locked`; email OTP | orchestrator |
+| identity | `account.kyc_verified`, `account.kyc_failed`, `account.kyc_locked`; email OTP | orchestrator |
 | vendor | `vendor.updated`, `vendor.locked` | catalog, quotation, order (+ orchestrator) |
 | vendor | `vendor.submitted`, `vendor.onboarding_recorded`, `vendor.reviewed`, `vendor.registration_fee_paid`, `registration_fee.changed`, `vendor.bank_account_changed` | orchestrator |
 | vendor | `product.upserted, product.removed` | catalog, order, orchestrator |
