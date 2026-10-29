@@ -1,0 +1,11 @@
+{
+  "status" : 401,
+  "body" : {
+    "status" : 401,
+    "code" : "AUTH_001",
+    "message" : "Email/số điện thoại hoặc mật khẩu không chính xác.",
+    "data" : null,
+    "path" : "/api/auth/login",
+    "timestamp" : "<masked>"
+  }
+}

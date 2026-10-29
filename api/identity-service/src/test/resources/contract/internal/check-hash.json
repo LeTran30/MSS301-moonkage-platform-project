@@ -1,0 +1,12 @@
+{
+  "status" : 200,
+  "body" : {
+    "idHash" : "0d36e1703a1358fb13b2a437d6f47f209bce98f1c323efc7d3a4d45edb53e28c",
+    "idHashKeyVer" : 1,
+    "idMasked" : "********0009",
+    "matchesAccount" : true,
+    "ownerLegalName" : "NGUYEN VAN AN",
+    "ownerIdMasked" : "********0009",
+    "nfcVerifiedAt" : "<masked>"
+  }
+}

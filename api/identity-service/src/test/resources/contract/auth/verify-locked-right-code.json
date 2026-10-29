@@ -1,0 +1,11 @@
+{
+  "status" : 429,
+  "body" : {
+    "status" : 429,
+    "code" : "AUTH_015",
+    "message" : "Bạn đã nhập sai mã quá 5 lần. Vui lòng thử lại sau <masked> phút.",
+    "data" : null,
+    "path" : "/api/auth/verify-account",
+    "timestamp" : "<masked>"
+  }
+}

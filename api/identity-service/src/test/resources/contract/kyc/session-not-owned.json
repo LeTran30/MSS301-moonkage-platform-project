@@ -1,0 +1,11 @@
+{
+  "status" : 403,
+  "body" : {
+    "status" : 403,
+    "code" : "NFC_004",
+    "message" : "Phiên xác minh không thuộc tài khoản đang đăng nhập.",
+    "data" : null,
+    "path" : "/api/nfc/sessions/<masked>",
+    "timestamp" : "<masked>"
+  }
+}

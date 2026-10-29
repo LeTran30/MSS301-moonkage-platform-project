@@ -1,0 +1,15 @@
+{
+  "routingKey" : "orchestrator.email.identity",
+  "contentType" : "application/json",
+  "body" : {
+    "eventId" : "<masked>",
+    "to" : "reset-ok@contract.vn",
+    "subject" : "MoonKage - Đặt lại mật khẩu",
+    "templateCode" : "FORGOT_PASSWORD",
+    "params" : {
+      "minutes" : 5,
+      "otp" : "<masked>",
+      "name" : "Nguyen Lan"
+    }
+  }
+}

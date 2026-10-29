@@ -1,0 +1,3 @@
+
+# contract tests: actual answer kept next to a failed snapshot
+*.actual.json

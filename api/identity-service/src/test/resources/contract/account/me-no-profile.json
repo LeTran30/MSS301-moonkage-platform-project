@@ -1,0 +1,11 @@
+{
+  "status" : 404,
+  "body" : {
+    "status" : 404,
+    "code" : "USER_002",
+    "message" : "Không tìm thấy hồ sơ người dùng.",
+    "data" : null,
+    "path" : "/api/accounts/me",
+    "timestamp" : "<masked>"
+  }
+}

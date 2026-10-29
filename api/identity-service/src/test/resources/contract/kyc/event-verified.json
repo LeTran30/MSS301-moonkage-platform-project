@@ -1,0 +1,15 @@
+{
+  "routingKey" : "account.nfc_verified",
+  "contentType" : "application/json",
+  "body" : {
+    "eventId" : "<masked>",
+    "type" : "VERIFIED",
+    "accountId" : "<masked>",
+    "sessionId" : "<masked>",
+    "reasonCode" : null,
+    "attemptsLeft" : null,
+    "idNumberMasked" : "********0002",
+    "lockedUntil" : null,
+    "occurredAt" : "<masked>"
+  }
+}

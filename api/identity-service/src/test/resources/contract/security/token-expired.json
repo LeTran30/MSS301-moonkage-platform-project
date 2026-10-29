@@ -1,0 +1,11 @@
+{
+  "status" : 401,
+  "body" : {
+    "status" : 401,
+    "code" : "AUTH_011",
+    "message" : "Token xác thực đã hết hạn.",
+    "data" : null,
+    "path" : "/api/accounts/me",
+    "timestamp" : "<masked>"
+  }
+}

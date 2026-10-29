@@ -1,0 +1,18 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400",
+    "message" : "Dữ liệu đầu vào không hợp lệ.",
+    "data" : null,
+    "errors" : [ {
+      "field" : "accountId",
+      "message" : "must not be blank"
+    }, {
+      "field" : "idNumber",
+      "message" : "must not be blank"
+    } ],
+    "path" : "/internal/accounts/check",
+    "timestamp" : "<masked>"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400",
+    "message" : "Dữ liệu đầu vào không hợp lệ.",
+    "data" : null,
+    "errors" : [ {
+      "field" : "refreshToken",
+      "message" : "Refresh token không được để trống"
+    } ],
+    "path" : "/api/auth/refresh-token",
+    "timestamp" : "<masked>"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "routingKey" : "orchestrator.email.identity",
+  "contentType" : "application/json",
+  "body" : {
+    "eventId" : "<masked>",
+    "to" : "register-ok@contract.vn",
+    "subject" : "MoonKage - Mã xác nhận tài khoản",
+    "templateCode" : "REGISTRATION",
+    "params" : {
+      "minutes" : 5,
+      "otp" : "<masked>",
+      "name" : "Nguyen Lan"
+    }
+  }
+}

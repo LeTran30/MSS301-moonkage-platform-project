@@ -1,0 +1,15 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "status" : "REJECTED",
+      "reasonCode" : "SESSION_USED",
+      "attemptsLeft" : null,
+      "lockedUntil" : null
+    },
+    "timestamp" : "<masked>"
+  }
+}

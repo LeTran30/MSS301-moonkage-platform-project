@@ -1,0 +1,11 @@
+{
+  "status" : 409,
+  "body" : {
+    "status" : 409,
+    "code" : "AUTH_007",
+    "message" : "Email register-taken@contract.vn đã được sử dụng.",
+    "data" : null,
+    "path" : "/api/auth/register",
+    "timestamp" : "<masked>"
+  }
+}

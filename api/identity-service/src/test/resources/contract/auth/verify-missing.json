@@ -1,0 +1,18 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400",
+    "message" : "Dữ liệu đầu vào không hợp lệ.",
+    "data" : null,
+    "errors" : [ {
+      "field" : "email",
+      "message" : "Email không được để trống"
+    }, {
+      "field" : "otp",
+      "message" : "OTP không được để trống"
+    } ],
+    "path" : "/api/auth/verify-account",
+    "timestamp" : "<masked>"
+  }
+}

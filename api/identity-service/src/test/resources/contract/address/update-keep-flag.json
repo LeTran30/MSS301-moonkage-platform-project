@@ -1,0 +1,24 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "id" : "<masked>",
+      "recipientName" : "Tran Binh",
+      "recipientPhone" : "910000031",
+      "provinceCode" : "01",
+      "provinceName" : "Thành phố Hà Nội",
+      "wardName" : "Phường Cửa Nam",
+      "detail" : "2 Tràng Tiền",
+      "fullAddress" : "2 Tràng Tiền, Phường Cửa Nam, Thành phố Hà Nội",
+      "areaCode" : "01",
+      "label" : null,
+      "isDefault" : true,
+      "createdAt" : "<masked>",
+      "updatedAt" : "<masked>"
+    },
+    "timestamp" : "<masked>"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "status" : 200,
+  "body" : {
+    "nfcStatus" : "NOT_VERIFIED",
+    "legalName" : null,
+    "idNumberMasked" : null,
+    "nfcVerifiedAt" : null
+  }
+}

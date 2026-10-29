@@ -1,0 +1,11 @@
+{
+  "status" : 401,
+  "body" : {
+    "status" : 401,
+    "code" : "AUTH_010",
+    "message" : "Yêu cầu thiếu Authorization Bearer token.",
+    "data" : null,
+    "path" : "/api/addresses",
+    "timestamp" : "<masked>"
+  }
+}

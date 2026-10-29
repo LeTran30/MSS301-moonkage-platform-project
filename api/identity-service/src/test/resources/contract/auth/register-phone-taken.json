@@ -1,0 +1,11 @@
+{
+  "status" : 409,
+  "body" : {
+    "status" : 409,
+    "code" : "AUTH_008",
+    "message" : "Số điện thoại 910000002 đã được sử dụng.",
+    "data" : null,
+    "path" : "/api/auth/register",
+    "timestamp" : "<masked>"
+  }
+}

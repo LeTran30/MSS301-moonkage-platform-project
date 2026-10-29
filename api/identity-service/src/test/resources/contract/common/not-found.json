@@ -1,0 +1,11 @@
+{
+  "status" : 404,
+  "body" : {
+    "status" : 404,
+    "code" : "COMMON_404",
+    "message" : "Không tìm thấy đường dẫn yêu cầu.",
+    "data" : null,
+    "path" : "/api/nothing-here",
+    "timestamp" : "<masked>"
+  }
+}

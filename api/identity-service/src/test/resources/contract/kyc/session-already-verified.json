@@ -1,0 +1,11 @@
+{
+  "status" : 409,
+  "body" : {
+    "status" : 409,
+    "code" : "NFC_001",
+    "message" : "Tài khoản đã xác minh NFC.",
+    "data" : null,
+    "path" : "/api/nfc/sessions",
+    "timestamp" : "<masked>"
+  }
+}

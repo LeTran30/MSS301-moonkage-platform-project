@@ -1,0 +1,11 @@
+{
+  "status" : 410,
+  "body" : {
+    "status" : 410,
+    "code" : "NFC_003",
+    "message" : "Phiên xác minh không tồn tại hoặc đã hết hạn. Vui lòng tạo phiên mới.",
+    "data" : null,
+    "path" : "/api/nfc/sessions/<masked>",
+    "timestamp" : "<masked>"
+  }
+}

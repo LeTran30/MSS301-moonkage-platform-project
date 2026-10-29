@@ -1,0 +1,12 @@
+{
+  "status" : 200,
+  "body" : {
+    "idHash" : "c6d23ffbe046c9e84a030660cd37d0dcf1ec3b2b2fb2f806397db7af46439492",
+    "idHashKeyVer" : 1,
+    "idMasked" : "********0006",
+    "matchesAccount" : false,
+    "ownerLegalName" : null,
+    "ownerIdMasked" : null,
+    "nfcVerifiedAt" : null
+  }
+}

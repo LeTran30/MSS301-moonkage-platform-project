@@ -1,0 +1,11 @@
+{
+  "status" : 429,
+  "body" : {
+    "status" : 429,
+    "code" : "AUTH_014",
+    "message" : "Vui lòng đợi <masked> giây trước khi yêu cầu gửi lại mã.",
+    "data" : null,
+    "path" : "/api/auth/send-reset-password-otp",
+    "timestamp" : "<masked>"
+  }
+}

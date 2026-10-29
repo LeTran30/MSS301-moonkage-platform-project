@@ -1,0 +1,30 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400",
+    "message" : "Dữ liệu đầu vào không hợp lệ.",
+    "data" : null,
+    "errors" : [ {
+      "field" : "detail",
+      "message" : "Số nhà, tên đường không được để trống"
+    }, {
+      "field" : "provinceCode",
+      "message" : "Vui lòng chọn tỉnh/thành phố"
+    }, {
+      "field" : "provinceName",
+      "message" : "Tên tỉnh/thành phố không được để trống"
+    }, {
+      "field" : "recipientName",
+      "message" : "Tên người nhận không được để trống"
+    }, {
+      "field" : "recipientPhone",
+      "message" : "Số điện thoại người nhận không được để trống"
+    }, {
+      "field" : "wardName",
+      "message" : "Tên phường/xã không được để trống"
+    } ],
+    "path" : "/api/addresses",
+    "timestamp" : "<masked>"
+  }
+}

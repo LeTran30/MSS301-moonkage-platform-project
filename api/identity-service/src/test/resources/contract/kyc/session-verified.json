@@ -1,0 +1,14 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "sessionId" : "<masked>",
+      "status" : "VERIFIED",
+      "expiresAt" : "<masked>"
+    },
+    "timestamp" : "<masked>"
+  }
+}

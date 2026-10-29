@@ -1,0 +1,9 @@
+{
+  "status" : 200,
+  "body" : {
+    "nfcStatus" : "VERIFIED",
+    "legalName" : "NGUYEN VAN AN",
+    "idNumberMasked" : "********0005",
+    "nfcVerifiedAt" : "<masked>"
+  }
+}

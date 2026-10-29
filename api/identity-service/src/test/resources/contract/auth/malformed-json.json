@@ -1,0 +1,11 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400_JSON",
+    "message" : "Định dạng dữ liệu gửi lên không đúng.",
+    "data" : null,
+    "path" : "/api/auth/register",
+    "timestamp" : "<masked>"
+  }
+}

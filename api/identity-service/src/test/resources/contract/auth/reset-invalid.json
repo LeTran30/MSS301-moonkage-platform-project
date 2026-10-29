@@ -1,0 +1,21 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400",
+    "message" : "Dữ liệu đầu vào không hợp lệ.",
+    "data" : null,
+    "errors" : [ {
+      "field" : "email",
+      "message" : "Email không đúng định dạng"
+    }, {
+      "field" : "newPassword",
+      "message" : "Mật khẩu từ 8 đến 72 ký tự"
+    }, {
+      "field" : "otp",
+      "message" : "OTP không được để trống"
+    } ],
+    "path" : "/api/auth/reset-password",
+    "timestamp" : "<masked>"
+  }
+}

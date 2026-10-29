@@ -1,0 +1,11 @@
+{
+  "status" : 403,
+  "body" : {
+    "status" : 403,
+    "code" : "AUTH_002",
+    "message" : "Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email và xác thực OTP.",
+    "data" : null,
+    "path" : "/api/accounts/me",
+    "timestamp" : "<masked>"
+  }
+}

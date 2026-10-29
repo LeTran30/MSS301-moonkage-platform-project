@@ -1,0 +1,33 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400",
+    "message" : "Dữ liệu đầu vào không hợp lệ.",
+    "data" : null,
+    "errors" : [ {
+      "field" : "detail",
+      "message" : "Số nhà, tên đường tối đa 255 ký tự"
+    }, {
+      "field" : "label",
+      "message" : "Nhãn địa chỉ tối đa 30 ký tự"
+    }, {
+      "field" : "provinceCode",
+      "message" : "Mã tỉnh/thành phố không hợp lệ"
+    }, {
+      "field" : "provinceName",
+      "message" : "Tên tỉnh/thành phố tối đa 100 ký tự"
+    }, {
+      "field" : "recipientName",
+      "message" : "Tên người nhận tối đa 100 ký tự"
+    }, {
+      "field" : "recipientPhone",
+      "message" : "Số điện thoại người nhận không hợp lệ"
+    }, {
+      "field" : "wardName",
+      "message" : "Tên phường/xã tối đa 100 ký tự"
+    } ],
+    "path" : "/api/addresses",
+    "timestamp" : "<masked>"
+  }
+}

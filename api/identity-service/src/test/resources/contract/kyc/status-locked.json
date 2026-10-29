@@ -1,0 +1,15 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "nfcStatus" : "LOCKED",
+      "legalName" : null,
+      "idNumberMasked" : null,
+      "nfcVerifiedAt" : null
+    },
+    "timestamp" : "<masked>"
+  }
+}

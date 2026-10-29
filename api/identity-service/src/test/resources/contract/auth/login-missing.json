@@ -1,0 +1,18 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "COMMON_400",
+    "message" : "Dữ liệu đầu vào không hợp lệ.",
+    "data" : null,
+    "errors" : [ {
+      "field" : "password",
+      "message" : "Mật khẩu không được để trống"
+    }, {
+      "field" : "username",
+      "message" : "Vui lòng nhập email hoặc số điện thoại"
+    } ],
+    "path" : "/api/auth/login",
+    "timestamp" : "<masked>"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status" : 401,
+  "body" : {
+    "status" : 401,
+    "code" : "AUTH_006",
+    "message" : "Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.",
+    "data" : null,
+    "path" : "/api/auth/refresh-token",
+    "timestamp" : "<masked>"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status" : 500,
+  "body" : {
+    "status" : 500,
+    "code" : "COMMON_500",
+    "message" : "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
+    "data" : null,
+    "path" : "/api/addresses/<masked>",
+    "timestamp" : "<masked>"
+  }
+}

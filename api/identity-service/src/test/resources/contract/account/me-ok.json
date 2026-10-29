@@ -1,0 +1,16 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "accountId" : "<masked>",
+      "email" : "me-ok@contract.vn",
+      "phoneNumber" : "910000020",
+      "fullName" : "Nguyen Lan",
+      "role" : "MEMBER"
+    },
+    "timestamp" : "<masked>"
+  }
+}

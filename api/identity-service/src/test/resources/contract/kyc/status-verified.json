@@ -1,0 +1,15 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "nfcStatus" : "VERIFIED",
+      "legalName" : "NGUYEN VAN AN",
+      "idNumberMasked" : "********0002",
+      "nfcVerifiedAt" : "<masked>"
+    },
+    "timestamp" : "<masked>"
+  }
+}

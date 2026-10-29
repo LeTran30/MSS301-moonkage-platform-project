@@ -1,0 +1,15 @@
+{
+  "routingKey" : "account.nfc_locked",
+  "contentType" : "application/json",
+  "body" : {
+    "eventId" : "<masked>",
+    "type" : "LOCKED",
+    "accountId" : "<masked>",
+    "sessionId" : "<masked>",
+    "reasonCode" : "BAD_FORMAT",
+    "attemptsLeft" : 0,
+    "idNumberMasked" : null,
+    "lockedUntil" : "<masked>",
+    "occurredAt" : "<masked>"
+  }
+}

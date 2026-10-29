@@ -1,0 +1,15 @@
+{
+  "routingKey" : "account.nfc_failed",
+  "contentType" : "application/json",
+  "body" : {
+    "eventId" : "<masked>",
+    "type" : "FAILED",
+    "accountId" : "<masked>",
+    "sessionId" : "<masked>",
+    "reasonCode" : "BAD_FORMAT",
+    "attemptsLeft" : 4,
+    "idNumberMasked" : null,
+    "lockedUntil" : null,
+    "occurredAt" : "<masked>"
+  }
+}

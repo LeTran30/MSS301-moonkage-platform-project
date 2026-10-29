@@ -1,0 +1,15 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "id" : "<masked>",
+      "email" : "verify-ok@contract.vn",
+      "phoneNumber" : null,
+      "verified" : true
+    },
+    "timestamp" : "<masked>"
+  }
+}

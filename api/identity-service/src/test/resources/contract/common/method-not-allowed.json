@@ -1,0 +1,11 @@
+{
+  "status" : 405,
+  "body" : {
+    "status" : 405,
+    "code" : "COMMON_405",
+    "message" : "Phương thức HTTP không được hỗ trợ cho đường dẫn này.",
+    "data" : null,
+    "path" : "/api/auth/login",
+    "timestamp" : "<masked>"
+  }
+}

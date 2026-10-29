@@ -1,0 +1,24 @@
+{
+  "status" : 201,
+  "body" : {
+    "status" : 201,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "id" : "<masked>",
+      "recipientName" : "Tran Binh",
+      "recipientPhone" : "910000031",
+      "provinceCode" : "01",
+      "provinceName" : "Thành phố Hà Nội",
+      "wardName" : "Phường Hoàn Kiếm",
+      "detail" : "1 Tràng Tiền",
+      "fullAddress" : "1 Tràng Tiền, Phường Hoàn Kiếm, Thành phố Hà Nội",
+      "areaCode" : "01",
+      "label" : null,
+      "isDefault" : false,
+      "createdAt" : "<masked>",
+      "updatedAt" : "<masked>"
+    },
+    "timestamp" : "<masked>"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "status" : 401,
+  "body" : {
+    "status" : 401,
+    "code" : "AUTH_012",
+    "message" : "Token xác thực không hợp lệ.",
+    "data" : null,
+    "path" : "/api/accounts/me",
+    "timestamp" : "<masked>"
+  }
+}

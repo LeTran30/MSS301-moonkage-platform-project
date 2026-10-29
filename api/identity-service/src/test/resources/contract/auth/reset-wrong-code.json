@@ -1,0 +1,11 @@
+{
+  "status" : 400,
+  "body" : {
+    "status" : 400,
+    "code" : "AUTH_005",
+    "message" : "Mã OTP không đúng hoặc đã hết hạn.",
+    "data" : null,
+    "path" : "/api/auth/reset-password",
+    "timestamp" : "<masked>"
+  }
+}

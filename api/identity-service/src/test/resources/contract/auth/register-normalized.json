@@ -1,0 +1,16 @@
+{
+  "status" : 200,
+  "body" : {
+    "status" : 200,
+    "code" : "SUCCESS",
+    "message" : "OK",
+    "data" : {
+      "id" : "<masked>",
+      "email" : "register-case@contract.vn",
+      "phoneNumber" : null,
+      "verified" : false,
+      "otpSent" : true
+    },
+    "timestamp" : "<masked>"
+  }
+}
