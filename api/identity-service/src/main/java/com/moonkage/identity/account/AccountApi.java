@@ -34,13 +34,6 @@ public interface AccountApi {
      */
     CredentialCheck verifyCredentials(LoginIdentifier identifier, RawPassword password);
 
-    /**
-     * Transitional, for the Spring Security login until phase 5 wires {@link #verifyCredentials} (ĐIỂM DỪNG E). Same
-     * lookup as before: an identifier with '@' must be a valid email (INVALID_INPUT otherwise), any other text that
-     * is no national phone number finds nothing.
-     */
-    Optional<LegacyLoginRecord> findLoginRecord(String identifier);
-
     /** Transitional until kyc is rebuilt (phase 6). Throws NOT_FOUND, also for an id that is no UUID. */
     void requireExists(String accountId);
 

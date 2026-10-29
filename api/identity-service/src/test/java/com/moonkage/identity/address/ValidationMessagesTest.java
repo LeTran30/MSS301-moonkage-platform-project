@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.moonkage.identity.address.dto.AddAddressRequest;
-import com.moonkage.identity.auth.dto.RegisterAccountRequest;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.platform.config.LocaleConfig;
 import jakarta.validation.ConstraintViolation;
@@ -33,23 +32,6 @@ class ValidationMessagesTest {
     static void tearDown() {
         validator.close();
         LocaleContextHolder.resetLocaleContext();
-    }
-
-    @Test
-    void ourKeysAreTranslatedAndFilled() {
-        RegisterAccountRequest request = RegisterAccountRequest.builder()
-                .email("not-an-email")
-                .fullName("A".repeat(101))
-                .password("short")
-                .build();
-
-        Set<String> messages = validator.validate(request).stream()
-                .map(ConstraintViolation::getMessage)
-                .collect(Collectors.toSet());
-
-        assertEquals(
-                Set.of("Email không đúng định dạng", "Họ tên tối đa 100 ký tự", "Mật khẩu từ 8 đến 72 ký tự"),
-                messages);
     }
 
     @Test

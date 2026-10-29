@@ -52,7 +52,8 @@ class OtpFacadeTest {
             new IssueOtp(store, rules, clock),
             new ThrottleOtpSend(store, rules, clock),
             new VerifyOtp(store, rules, clock),
-            new DiscardOtp(store, rules));
+            new DiscardOtp(store, rules),
+            rules);
 
     @Test
     void issuedCodeIsSixDigitsAndAcceptedOnce() {

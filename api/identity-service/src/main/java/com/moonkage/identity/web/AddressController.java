@@ -31,14 +31,16 @@ public class AddressController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<AddAddressResponse>>> getMyAddresses(
             @CurrentUser CurrentUserInfo currentUser) {
-        return ResponseEntity.ok(ApiResponse.ok(addressService.getMyAddresses(currentUser.accountId())));
+        return ResponseEntity.ok(ApiResponse.ok(
+                addressService.getMyAddresses(currentUser.accountId().toString())));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<AddAddressResponse>> create(
             @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid AddAddressRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(addressService.create(currentUser.accountId(), request)));
+                .body(ApiResponse.created(
+                        addressService.create(currentUser.accountId().toString(), request)));
     }
 
     @PutMapping("/{addressId}")
@@ -46,13 +48,14 @@ public class AddressController {
             @CurrentUser CurrentUserInfo currentUser,
             @PathVariable String addressId,
             @RequestBody @Valid AddAddressRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(addressService.update(currentUser.accountId(), addressId, request)));
+        return ResponseEntity.ok(
+                ApiResponse.ok(addressService.update(currentUser.accountId().toString(), addressId, request)));
     }
 
     /** 204: nothing to wrap. */
     @DeleteMapping("/{addressId}")
     public ResponseEntity<Void> delete(@CurrentUser CurrentUserInfo currentUser, @PathVariable String addressId) {
-        addressService.delete(currentUser.accountId(), addressId);
+        addressService.delete(currentUser.accountId().toString(), addressId);
         return ResponseEntity.noContent().build();
     }
 }

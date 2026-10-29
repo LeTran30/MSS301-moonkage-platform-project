@@ -3,7 +3,9 @@ package com.moonkage.identity.otp.application;
 import com.moonkage.identity.otp.OtpApi;
 import com.moonkage.identity.otp.OtpCode;
 import com.moonkage.identity.otp.OtpPurpose;
+import com.moonkage.identity.otp.domain.OtpRules;
 import com.moonkage.identity.shared.Email;
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ class OtpFacade implements OtpApi {
     private final ThrottleOtpSend throttleOtpSend;
     private final VerifyOtp verifyOtp;
     private final DiscardOtp discardOtp;
+    private final OtpRules rules;
 
     @Override
     public OtpCode issue(OtpPurpose purpose, Email email) {
@@ -35,5 +38,10 @@ class OtpFacade implements OtpApi {
     @Override
     public void discard(OtpPurpose purpose, Email email) {
         discardOtp.handle(purpose, email);
+    }
+
+    @Override
+    public Duration codeLifetime() {
+        return rules.codeLifetime();
     }
 }

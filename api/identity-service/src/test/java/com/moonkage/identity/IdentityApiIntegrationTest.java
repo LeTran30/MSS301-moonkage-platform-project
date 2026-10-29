@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
-import com.moonkage.identity.email.EmailNotificationEvent;
+import com.moonkage.identity.auth.infrastructure.messaging.EmailNotificationEvent;
 import com.moonkage.identity.platform.messaging.RabbitConfig;
 import com.moonkage.identity.shared.VietnamTime;
 import com.nimbusds.jose.EncryptionMethod;

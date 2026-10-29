@@ -6,11 +6,11 @@
 - **Hiện thực:** `application.AccountFacade` chuyển mỗi lời gọi tới use case `RegisterMember`, `ConfirmEmail`, `ChangePassword`, `VerifyCredentials`, hoặc tới `AccountQueries`.
 - **Port:** `AccountRepository` (adapter `JpaAccountRepository`), `PasswordHasher` (adapter `BCryptPasswordHasher`).
 - **Tham chiếu:** `FR-01`, `FR-02`, `AC-01.3`, `Q-04`; plan v2 mục 4.2.
-- **Người gọi:** `AuthServiceImpl`, `UserProfileServiceImpl`, `JwtBearerAuthenticator`, `LoginSecurityConfig`. Chuyển tiếp tới Phase 6–7: `AddressServiceImpl`, `NfcServiceImpl`, `LegalProfileServiceImpl`, `NfcProfileSeeder`.
+- **Người gọi:** module `auth` ([Auth.md](Auth.md)), `UserProfileServiceImpl`. Chuyển tiếp tới Phase 6–7: `AddressServiceImpl`, `NfcServiceImpl`, `LegalProfileServiceImpl`, `NfcProfileSeeder`.
 
 ## 0. Luật bất biến
 
-1. **Mật khẩu không rời module.** API nhận `RawPassword`, tự băm và tự so khớp. Module khác không thấy `PasswordHash`. Ngoại lệ chuyển tiếp: `findLoginRecord` cho luồng đăng nhập Spring Security, bỏ ở Phase 5.
+1. **Mật khẩu không rời module.** API nhận `RawPassword`, tự băm và tự so khớp. Module khác không thấy `PasswordHash`.
 2. **Một email, một số điện thoại chỉ thuộc một tài khoản** (AC-01.3). `RegisterMember` kiểm trước. Hai người đăng ký trùng đúng cùng lúc thì khóa duy nhất của DB chặn người sau, và `JpaAccountRepository.add` dịch tên khóa thành `EMAIL_ALREADY_EXISTS` / `PHONE_ALREADY_EXISTS`: vẫn 409, không ra 500.
 3. **Id có từ lúc tạo.** `RegisterMember` xin `AccountId` (UUID v7) từ `IdGenerator`. Tài khoản mới được `persist` rồi `flush`, không `save`/`merge`. Cột vẫn là `varchar` tới Phase 8b.
 4. **Thay đổi tham gia transaction của người gọi:** đăng ký tạo tài khoản và hồ sơ trong cùng một transaction.
@@ -25,7 +25,6 @@
 | `confirmEmail(id)` | `AccountView` | `NOT_FOUND` | OTP khớp: bật `verified` |
 | `changePassword(id, password)` | `void` | `NOT_FOUND` | Đổi mật khẩu; token cũ hết hiệu lực (Q-04) |
 | `verifyCredentials(identifier, password)` | `CredentialCheck` | — | Kiểm đăng nhập (xem mục 2) |
-| `findLoginRecord(identifier)` | `Optional<LegacyLoginRecord>` | `INVALID_INPUT` | Chuyển tiếp, bỏ ở Phase 5 |
 | `requireExists(accountId)` | `void` | `NOT_FOUND` | Chuyển tiếp, bỏ ở Phase 6 |
 | `lockForUpdate(accountId)` | `void` | `NOT_FOUND` | Chuyển tiếp: `SELECT … FOR UPDATE`, bỏ ở Phase 7 |
 

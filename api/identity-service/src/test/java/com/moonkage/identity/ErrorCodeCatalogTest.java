@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.moonkage.identity.account.AccountError;
+import com.moonkage.identity.auth.AuthError;
 import com.moonkage.identity.otp.OtpError;
+import com.moonkage.identity.platform.security.BearerTokenError;
 import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.error.ErrorCode;
 import com.moonkage.identity.shared.error.LegacyError;
@@ -26,7 +28,12 @@ class ErrorCodeCatalogTest {
 
     /** Each module's {@code <Module>Error} enum joins this list when it is created. */
     private static final List<ErrorCode> ALL = Stream.of(
-                    CommonError.values(), LegacyError.values(), AccountError.values(), OtpError.values())
+                    CommonError.values(),
+                    LegacyError.values(),
+                    AccountError.values(),
+                    OtpError.values(),
+                    AuthError.values(),
+                    BearerTokenError.values())
             .flatMap(Stream::of)
             .map(ErrorCode.class::cast)
             .toList();

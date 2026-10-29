@@ -30,7 +30,8 @@ public class AccountController {
 
     @GetMapping("/api/accounts/me")
     public ResponseEntity<ApiResponse<AccountResponse>> getMyAccount(@CurrentUser CurrentUserInfo currentUser) {
-        return ResponseEntity.ok(ApiResponse.ok(userProfileService.getMyAccount(currentUser.accountId())));
+        return ResponseEntity.ok(ApiResponse.ok(
+                userProfileService.getMyAccount(currentUser.accountId().toString())));
     }
 
     /**

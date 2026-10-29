@@ -1,11 +1,11 @@
 package com.moonkage.identity.platform.web;
 
+import com.moonkage.identity.platform.security.BearerTokenError;
 import com.moonkage.identity.platform.web.validation.FieldParser;
 import com.moonkage.identity.platform.web.validation.InvalidFields;
 import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.error.ErrorCode;
-import com.moonkage.identity.shared.error.LegacyError;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AccountStatusException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,7 +27,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Turns every error into {@link ApiResponse} with {@code data = null}. Token errors arrive here already as
- * AppException (JwtTokenProvider converts them), so there is no handler for the JWT library's own exceptions.
+ * AppException (the token adapter converts them), so there is no handler for the JWT library's own exceptions.
  */
 @Slf4j
 @RestControllerAdvice
@@ -87,22 +84,11 @@ public class GlobalExceptionHandler {
         return build(CommonError.METHOD_NOT_ALLOWED, request);
     }
 
-    @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
-    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(Exception ex, HttpServletRequest request) {
-        return build(LegacyError.INVALID_CREDENTIALS, request);
-    }
-
-    /** The only account state Spring Security can refuse is "e-mail not confirmed" (Account.isEnabled). */
-    @ExceptionHandler(AccountStatusException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccountStatus(
-            AccountStatusException ex, HttpServletRequest request) {
-        return build(LegacyError.ACCOUNT_NOT_ACTIVATED, request);
-    }
-
+    /** Spring Security refusing the caller inside MVC; logins never get here, they answer with AppException. */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthException(
             AuthenticationException ex, HttpServletRequest request) {
-        return build(LegacyError.TOKEN_INVALID, request);
+        return build(BearerTokenError.TOKEN_INVALID, request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

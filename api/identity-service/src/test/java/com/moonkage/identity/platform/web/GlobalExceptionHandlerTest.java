@@ -10,12 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.moonkage.identity.account.AccountError;
+import com.moonkage.identity.auth.AuthError;
 import com.moonkage.identity.platform.config.LocaleConfig;
 import com.moonkage.identity.platform.web.validation.FieldParser;
 import com.moonkage.identity.platform.web.validation.InvalidFields;
 import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.error.CommonError;
-import com.moonkage.identity.shared.error.LegacyError;
 import com.moonkage.identity.shared.value.Text;
 import com.moonkage.identity.shared.value.ValueRejected;
 import java.util.List;
@@ -72,7 +72,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleAppExceptionAccountNotActivated() {
-        AppException ex = new AppException(LegacyError.ACCOUNT_NOT_ACTIVATED);
+        AppException ex = new AppException(AuthError.ACCOUNT_NOT_ACTIVATED);
         ResponseEntity<ApiResponse<Void>> response = handler.handleAppException(ex, request);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());

@@ -1,12 +1,14 @@
 package com.moonkage.identity.platform.security;
 
+import com.moonkage.identity.shared.AccountId;
+import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.Role;
 import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /** Injected into controllers via @CurrentUser; built once per request by {@link BearerTokenFilter}. */
-public record CurrentUserInfo(String accountId, String email, Role role) {
+public record CurrentUserInfo(AccountId accountId, Email email, Role role) {
 
     private static final String ROLE_PREFIX = "ROLE_";
 

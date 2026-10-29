@@ -3,7 +3,6 @@ package com.moonkage.identity.account.application;
 import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.account.AccountView;
 import com.moonkage.identity.account.CredentialCheck;
-import com.moonkage.identity.account.LegacyLoginRecord;
 import com.moonkage.identity.account.LoginIdentifier;
 import com.moonkage.identity.account.RawPassword;
 import com.moonkage.identity.account.application.port.AccountRepository;
@@ -55,11 +54,6 @@ class AccountFacade implements AccountApi {
     @Override
     public CredentialCheck verifyCredentials(LoginIdentifier identifier, RawPassword password) {
         return verifyCredentials.handle(identifier, password);
-    }
-
-    @Override
-    public Optional<LegacyLoginRecord> findLoginRecord(String identifier) {
-        return queries.findLoginRecord(identifier);
     }
 
     @Override

@@ -13,18 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Package-by-component rules of the components not rebuilt yet (plan v2 replaces them module by module). Each
- * top-level package (account, profile, address, kyc, auth, otp, email) is a component: other code uses its public
+ * top-level package (profile, address, kyc) is a component: other code uses its public
  * service interface and DTOs; its entities, repositories and implementations are package-private. {@code web} is the
  * only HTTP entry point and nothing depends on it. Cycles are checked by the shared ArchitectureTest
  * (NO_PACKAGE_CYCLES); the foundation modules by FoundationArchitectureTest, the rebuilt modules by
  * ModuleArchitectureTest (their entities are public inside the module, and only the module root is used outside).
  *
  * <pre>
- * web ──▶ auth ──▶ account ──▶ profile
- *  │        │         ▲
- *  │        ├──▶ otp, email
- *  │        └──▶ security ──▶ account
- *  └──▶ address, kyc ──▶ account        (all ──▶ shared, platform)
+ * web ──▶ profile, address, kyc ──▶ account        (all ──▶ shared, platform)
  * </pre>
  */
 @AnalyzeClasses(
@@ -62,6 +58,8 @@ class ComponentArchitectureTest {
     static final ArchRule CONTROLLERS_LIVE_IN_WEB = classes()
             .that()
             .areAnnotatedWith(RestController.class)
+            .and()
+            .resideOutsideOfPackages(RebuiltModules.packagePatterns())
             .should()
             .resideInAPackage("com.moonkage.identity.web..")
             .because("web is the HTTP layer outside every component");
@@ -82,5 +80,5 @@ class ComponentArchitectureTest {
             .should()
             .dependOnClassesThat()
             .resideInAPackage("org.springframework.security..")
-            .because("the login principal is security's AccountPrincipal, not the Account entity");
+            .because("an entity is data of the domain, not a Spring Security principal");
 }

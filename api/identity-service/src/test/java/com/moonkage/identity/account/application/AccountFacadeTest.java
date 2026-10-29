@@ -2,21 +2,18 @@ package com.moonkage.identity.account.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.account.AccountError;
 import com.moonkage.identity.account.AccountView;
-import com.moonkage.identity.account.LegacyLoginRecord;
 import com.moonkage.identity.account.RawPassword;
 import com.moonkage.identity.shared.AccountId;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.Role;
 import com.moonkage.identity.shared.error.AppException;
-import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.error.ErrorCode;
 import com.moonkage.identity.shared.id.SequentialIdGenerator;
 import java.time.Clock;
@@ -126,9 +123,6 @@ class AccountFacadeTest {
         assertEquals(NOW, changed.passwordChangedAt());
         assertFalse(changed.acceptsTokenIssuedAt(NOW.minusSeconds(60)));
         assertTrue(changed.acceptsTokenIssuedAt(NOW));
-        assertEquals(
-                new LegacyLoginRecord(changed, "hashed:new-secret-1"),
-                api.findLoginRecord("lan@x.vn").get());
     }
 
     @Test
@@ -154,27 +148,6 @@ class AccountFacadeTest {
 
         api.requireExists(FIRST_ID.toString());
         api.lockForUpdate(FIRST_ID.toString());
-    }
-
-    @Test
-    void legacyLoginLookupKeepsItsOldAnswers() {
-        api.registerMember(EMAIL, PHONE, PASSWORD);
-
-        assertTrue(api.findLoginRecord("Lan@X.vn").isPresent());
-        assertTrue(api.findLoginRecord("0912345678").isPresent());
-        // decision C1: only the national form is a phone login
-        assertTrue(api.findLoginRecord("+84912345678").isEmpty());
-        assertTrue(api.findLoginRecord("not-a-login").isEmpty());
-        // an identifier with '@' must be an email
-        assertError(CommonError.INVALID_INPUT, () -> api.findLoginRecord("lan@"));
-        assertNull(api.findLoginRecord("0912345678").get().account().passwordChangedAt());
-    }
-
-    @Test
-    void legacyLoginRecordNeverPrintsTheHash() {
-        api.registerMember(EMAIL, null, PASSWORD);
-
-        assertFalse(api.findLoginRecord("lan@x.vn").get().toString().contains("hashed"));
     }
 
     private static void assertError(ErrorCode expected, Executable call) {

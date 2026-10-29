@@ -1,7 +1,6 @@
 package com.moonkage.identity.platform.security;
 
 import com.moonkage.identity.shared.error.AppException;
-import com.moonkage.identity.shared.error.LegacyError;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,7 +54,8 @@ public class BearerTokenFilter extends OncePerRequestFilter {
             if (isPublic) {
                 filterChain.doFilter(request, response);
             } else {
-                resolver.resolveException(request, response, null, new AppException(LegacyError.MISSING_BEARER_TOKEN));
+                resolver.resolveException(
+                        request, response, null, new AppException(BearerTokenError.MISSING_BEARER_TOKEN));
             }
             return;
         }

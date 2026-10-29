@@ -1,6 +1,7 @@
 package com.moonkage.identity.otp;
 
 import com.moonkage.identity.shared.Email;
+import java.time.Duration;
 
 /**
  * One-time codes of registration and password reset (FR-01, FR-02; plan v2, 4.5). Codes, counters and lockouts are
@@ -29,4 +30,7 @@ public interface OtpApi {
 
     /** Drops the pending code, e.g. it could not be delivered. The counters stay, so a lockout or quota holds. */
     void discard(OtpPurpose purpose, Email email);
+
+    /** How long an issued code stays valid, e.g. for the mail that carries it. */
+    Duration codeLifetime();
 }

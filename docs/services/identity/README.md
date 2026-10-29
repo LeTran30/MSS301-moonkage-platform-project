@@ -23,21 +23,19 @@ Không có bảng refresh token và không có bảng mã OTP.
 
 ## Cấu trúc mã (package-by-component)
 
-Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): module đã dựng lại (`account`, `otp`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Module chưa dựng lại vẫn là **component** cũ: bên ngoài chỉ thấy interface `*Service` và DTO / value object; entity, repository, `*ServiceImpl`, mapper đều package-private. `web` là tầng HTTP nằm ngoài mọi component.
+Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): module đã dựng lại (`account`, `otp`, `auth`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Module chưa dựng lại vẫn là **component** cũ: bên ngoài chỉ thấy interface `*Service` và DTO / value object; entity, repository, `*ServiceImpl`, mapper đều package-private. `web` là tầng HTTP nằm ngoài mọi component.
 
 | Package | Sở hữu (bảng / dữ liệu) | Public | Phụ thuộc |
 |---|---|---|---|
-| `web` | — | Controller: `AuthController`, `AccountController`, `AddressController`, `KycController` | mọi service public |
-| `auth` | — (luồng đăng ký, OTP, đăng nhập) | `AuthService`, `auth.dto` | `account`, `profile`, `otp`, `email`, `security` |
+| `web` | — | Controller của component cũ: `AccountController`, `AddressController`, `KycController` | mọi service public |
+| `auth` | — (đăng ký, xác nhận email, đăng nhập, làm mới phiên, đặt lại mật khẩu) | `AuthError`; controller `/api/auth/**` nằm trong module ([Auth.md](classes/Auth.md)) | `account`, `profile`, `otp` |
 | `account` | `accounts` | `AccountApi`, `AccountView`, `CredentialCheck`, `LoginIdentifier`, `RawPassword`, `AccountError` ([AccountApi.md](classes/AccountApi.md)) | — |
 | `profile` | `user_profiles`; ghép `GET /api/accounts/me` | `UserProfileService`, `ProfileConstant`, `profile.dto.AccountResponse` | `account` |
 | `address` | `addresses` | `AddressService`, `address.dto` | `account` |
 | `kyc` | `legal_profiles`, phiên NFC và bộ đếm/khóa NFC (RAM) | `NfcService`, `LegalProfileService`, `kyc.dto`, enum NFC | `account` |
 | `otp` | mã OTP (RAM) | `OtpApi`, `OtpCode`, `OtpPurpose`, `OtpError` ([OtpApi.md](classes/OtpApi.md)) | — |
-| `email` | — (sự kiện RabbitMQ) | `EmailService` | — |
-| `security` | — | `JwtTokenProvider`, `AccountPrincipal`, `CurrentUser(Info)` | `account` |
 | `shared` | — (ngôn ngữ chung, Java thuần) | `Email`, `PhoneNumber`, `Role`, `AccountId`, `IdGenerator`, `ValueRejected`, `ErrorCode`, `AppException`, `CommonError` | — |
-| `platform` | `outbox_events` | cấu hình, `ApiResponse`, `GlobalExceptionHandler`, `FieldParser`, `BearerTokenFilter`, `BaseEntity`, `ExpiringMap`, `Outbox` ([Outbox.md](classes/Outbox.md)) | `shared` |
+| `platform` | `outbox_events` | cấu hình, `ApiResponse`, `GlobalExceptionHandler`, `FieldParser`, `BearerTokenFilter` + SPI `BearerTokenAuthenticator`, `CurrentUser(Info)`, `BearerTokenError`, `BaseEntity`, `ExpiringMap`, `Outbox` ([Outbox.md](classes/Outbox.md)) | `shared` |
 
 Mọi module đều dùng `shared` và `platform`; hai module này không phụ thuộc module nghiệp vụ nào. Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ModuleArchitectureTest` (module đã dựng lại: ngoài module chỉ dùng gốc package; tầng `domain`/`application`/`infrastructure`; không `*Impl`/`*Service`/`*Mapper`/`*Constant`; id không do JPA sinh), `FoundationArchitectureTest` (`shared`, `platform`), `ComponentArchitectureTest` (component cũ: entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [domain-model-plan.md](domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
 

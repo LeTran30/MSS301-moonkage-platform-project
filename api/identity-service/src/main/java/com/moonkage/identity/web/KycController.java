@@ -38,14 +38,16 @@ public class KycController {
     public ResponseEntity<ApiResponse<CreateNfcSessionResponse>> createSession(
             @CurrentUser CurrentUserInfo currentUser) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(nfcService.createSession(currentUser.accountId())));
+                .body(ApiResponse.created(
+                        nfcService.createSession(currentUser.accountId().toString())));
     }
 
     /** Web (fallback when the WebSocket push is missed) and app (before the tap). 410 expired, 403 not owned. */
     @GetMapping("/api/nfc/sessions/{sessionId}")
     public ResponseEntity<ApiResponse<NfcSessionStatusResponse>> getSession(
             @CurrentUser CurrentUserInfo currentUser, @PathVariable String sessionId) {
-        return ResponseEntity.ok(ApiResponse.ok(nfcService.getSession(sessionId, currentUser.accountId())));
+        return ResponseEntity.ok(ApiResponse.ok(
+                nfcService.getSession(sessionId, currentUser.accountId().toString())));
     }
 
     /**
@@ -57,13 +59,15 @@ public class KycController {
             @CurrentUser CurrentUserInfo currentUser,
             @PathVariable String sessionId,
             @RequestBody SubmitCardRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(nfcService.submitCard(sessionId, currentUser.accountId(), request)));
+        return ResponseEntity.ok(ApiResponse.ok(
+                nfcService.submitCard(sessionId, currentUser.accountId().toString(), request)));
     }
 
     /** NFC status of the caller's own account, masked data only. */
     @GetMapping("/api/nfc/status")
     public ResponseEntity<ApiResponse<NfcStatusResponse>> getMyNfcStatus(@CurrentUser CurrentUserInfo currentUser) {
-        return ResponseEntity.ok(ApiResponse.ok(legalProfileService.getNfcStatus(currentUser.accountId())));
+        return ResponseEntity.ok(ApiResponse.ok(
+                legalProfileService.getNfcStatus(currentUser.accountId().toString())));
     }
 
     /** BR-23 for vendor-service and quotation-service; AC-45.1. Masked data only, 404 when the account is unknown. */

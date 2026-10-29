@@ -230,7 +230,7 @@ abstract class ContractTest {
                 .compact();
     }
 
-    // jjwt's builder only accepts java.util.Date; keep it confined here, as JwtTokenProvider does
+    // jjwt's builder only accepts java.util.Date; keep it confined here, as JwtSessionTokens does
     @SuppressWarnings("JavaUtilDate")
     private static java.util.Date toDate(Instant instant) {
         return java.util.Date.from(instant);

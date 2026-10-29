@@ -31,8 +31,6 @@ class FoundationArchitectureTest {
         "com.moonkage.identity.otp..",
         "com.moonkage.identity.kyc..",
         "com.moonkage.identity.auth..",
-        "com.moonkage.identity.email..",
-        "com.moonkage.identity.security..",
         "com.moonkage.identity.web.."
     };
 

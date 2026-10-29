@@ -64,6 +64,8 @@ class ModuleArchitectureTest {
                     .dependOnClassesThat()
                     .resideInAnyPackage(root + ".application..", root + ".infrastructure..", "org.springframework..")
                     .because("the domain holds the rules; JPA annotations are its only framework (3.4, ADR-1)")
+                    // a module without rules of its own (auth) has no domain layer (3.4: empty layers are left out)
+                    .allowEmptyShould(true)
                     .check(classes);
         }
     }

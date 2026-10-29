@@ -6,15 +6,6 @@ package com.moonkage.identity.shared.error;
  */
 public enum LegacyError implements ErrorCode {
 
-    // Auth
-    INVALID_CREDENTIALS("AUTH_001", 401, "error.auth.invalid_credentials"),
-    ACCOUNT_NOT_ACTIVATED("AUTH_002", 403, "error.auth.account_not_activated"),
-    REFRESH_TOKEN_INVALID("AUTH_006", 401, "error.auth.refresh_token_invalid"),
-    MISSING_BEARER_TOKEN("AUTH_010", 401, "error.auth.missing_bearer_token"),
-    TOKEN_EXPIRED("AUTH_011", 401, "error.auth.token_expired"),
-    TOKEN_INVALID("AUTH_012", 401, "error.auth.token_invalid"),
-    EMAIL_DELIVERY_FAILED("AUTH_013", 503, "error.auth.email_delivery_failed"),
-
     // User & Address
     USER_PROFILE_NOT_FOUND("USER_002", 404, "error.user.profile_not_found"),
     ADDRESS_NOT_FOUND("ADDRESS_001", 404, "error.address.not_found"),
