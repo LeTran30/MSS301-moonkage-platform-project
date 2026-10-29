@@ -29,6 +29,8 @@ spring:
     # only db/seed uses it (dev): password of the seed accounts member#@mk.com; brackets keep the underscore
     placeholders:
       "[seed_password]": ${SEED_PASSWORD:}
+      # and the pepper, so the seeded KYC results hash their ID numbers as the service does
+      "[id_hash_pepper]": ${ID_HASH_PEPPER_V1:}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -60,15 +62,14 @@ otp:
   lockout-duration: ${OTP_LOCKOUT_DURATION:15m}
   cleanup-interval: 5m
 
-# FR-04 NFC verification (Software Design 4.2): sessions live in memory, lockout is kept on the account
+# FR-04 KYC by NFC (Software Design 4.2): sessions, attempts and lockouts live in memory
 nfc:
   session-ttl: ${NFC_SESSION_TTL:5m}
   max-attempts: ${NFC_MAX_ATTEMPTS:5}
   lockout-duration: ${NFC_LOCKOUT_DURATION:15m}
   session-cleanup-interval: 60s
-  # secrets, identity-service only (D-08, D-17); stored rows record key version 1
+  # secrets, identity-service only (D-08, D-17); stored hashes record key version 1
   transport-private-key: ${NFC_TRANSPORT_PRIVATE_KEY_V1:}
-  pii-key: ${PII_ENC_KEY_V1:}
   id-hash-pepper: ${ID_HASH_PEPPER_V1:}
 
 # domain events go through the outbox_events table (Software Design 6)
@@ -92,11 +93,6 @@ security:
     - /api/auth/refresh-token
     - /api/auth/send-reset-password-otp
     - /api/auth/reset-password
-
-app:
-  # dev seed data (db/seed, docs/guides/database.md); true only in docker-compose
-  seed:
-    enabled: ${APP_SEED_ENABLED:false}
 
 # only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
 management:

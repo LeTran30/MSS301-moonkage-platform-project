@@ -1,3 +1,2 @@
-Method <com.moonkage.identity.kyc.NfcProfileSeeder.toLegalProfile(com.moonkage.identity.kyc.NfcProfileSeeder$SeedProfile)> calls method <java.time.Instant.now()> in (NfcProfileSeeder.java:90)
 Method <com.moonkage.identity.platform.web.ApiResponse.error(org.springframework.http.HttpStatus, java.lang.String, java.lang.String, java.util.List, java.lang.String)> calls method <java.time.Instant.now()> in (ApiResponse.java:48)
 Method <com.moonkage.identity.platform.web.ApiResponse.success(org.springframework.http.HttpStatus, java.lang.Object)> calls method <java.time.Instant.now()> in (ApiResponse.java:52)

@@ -25,11 +25,4 @@ class AccountQueries {
     Optional<AccountView> findByEmail(Email email) {
         return accounts.findByEmail(email).map(Account::view);
     }
-
-    /** Transitional (phase 6). Throws NOT_FOUND, also for an id that is no UUID. */
-    void requireExists(String accountId) {
-        if (AccountId.tryParse(accountId).flatMap(accounts::find).isEmpty()) {
-            throw AccountNotFound.of(accountId);
-        }
-    }
 }

@@ -7,6 +7,7 @@
     "matchesAccount" : false,
     "ownerLegalName" : "NGUYEN VAN AN",
     "ownerIdMasked" : "********0006",
-    "nfcVerifiedAt" : "<masked>"
+    "nfcVerifiedAt" : null,
+    "kycVerified" : true
   }
 }

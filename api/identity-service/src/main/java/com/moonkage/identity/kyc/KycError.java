@@ -1,0 +1,40 @@
+package com.moonkage.identity.kyc;
+
+import com.moonkage.identity.shared.error.ErrorCode;
+
+/**
+ * Business rules of KYC that fail. A rejected card is not one of them: it comes back as a result (AC-04.9). Codes and
+ * message keys are the ones clients already know.
+ */
+public enum KycError implements ErrorCode {
+    ALREADY_VERIFIED("NFC_001", 409, "error.nfc.already_verified"),
+    LOCKED("NFC_002", 429, "error.nfc.locked"),
+    SESSION_EXPIRED("NFC_003", 410, "error.nfc.session_expired"),
+    SESSION_NOT_OWNED("NFC_004", 403, "error.nfc.session_not_owned"),
+    ID_NUMBER_INVALID("NFC_005", 400, "error.nfc.id_number_invalid");
+
+    private final String code;
+    private final int httpStatus;
+    private final String messageKey;
+
+    KycError(String code, int httpStatus, String messageKey) {
+        this.code = code;
+        this.httpStatus = httpStatus;
+        this.messageKey = messageKey;
+    }
+
+    @Override
+    public String code() {
+        return code;
+    }
+
+    @Override
+    public int httpStatus() {
+        return httpStatus;
+    }
+
+    @Override
+    public String messageKey() {
+        return messageKey;
+    }
+}

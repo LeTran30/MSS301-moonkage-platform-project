@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -25,7 +24,8 @@ import com.moonkage.identity.otp.OtpApi;
 import com.moonkage.identity.otp.OtpCode;
 import com.moonkage.identity.otp.OtpError;
 import com.moonkage.identity.otp.OtpPurpose;
-import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.FullName;
+import com.moonkage.identity.profile.ProfileApi;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.Role;
@@ -46,7 +46,7 @@ class OtpUseCasesTest {
     private static final AccountView UNCONFIRMED =
             new AccountView(CONFIRMED.id(), CONFIRMED.email(), null, Role.MEMBER, false, null);
     private static final Email EMAIL = CONFIRMED.email();
-    private static final String ID = CONFIRMED.id().toString();
+    private static final FullName NAME = LoginTest.NAME;
     private static final OtpCode CODE = new OtpCode("123456");
     private static final Duration LIFETIME = Duration.ofMinutes(5);
     private static final RawPassword PASSWORD = RawPassword.parse("secret-123");
@@ -54,7 +54,7 @@ class OtpUseCasesTest {
     private final AccountApi accountApi = mock(AccountApi.class);
     private final OtpApi otpApi = mock(OtpApi.class);
     private final OtpMailer mailer = mock(OtpMailer.class);
-    private final UserProfileService profiles = mock(UserProfileService.class);
+    private final ProfileApi profiles = mock(ProfileApi.class);
     private final OtpDelivery delivery = new OtpDelivery(otpApi, mailer, profiles);
 
     @BeforeEach
@@ -72,7 +72,7 @@ class OtpUseCasesTest {
 
         Registration registration = register(phone);
 
-        verify(profiles).createProfile(ID, "Nguyen Lan");
+        verify(profiles).create(CONFIRMED.id(), NAME);
         verify(mailer).send(OtpMail.ACCOUNT_CONFIRMATION, EMAIL, "Nguyen Lan", CODE, LIFETIME);
         assertEquals(new Registration(UNCONFIRMED, true), registration);
     }
@@ -92,7 +92,7 @@ class OtpUseCasesTest {
                 .thenThrow(new AppException(AccountError.EMAIL_ALREADY_EXISTS, EMAIL.value()));
 
         assertError(AccountError.EMAIL_ALREADY_EXISTS, () -> register(null));
-        verify(profiles, never()).createProfile(anyString(), anyString());
+        verify(profiles, never()).create(any(), any());
     }
 
     // ───────── ResendVerifyOtp ─────────
@@ -100,7 +100,7 @@ class OtpUseCasesTest {
     @Test
     void resendMailsAnUnconfirmedAccountUnderItsName() {
         when(accountApi.findByEmail(EMAIL)).thenReturn(Optional.of(UNCONFIRMED));
-        when(profiles.findFullName(ID)).thenReturn(Optional.of("Nguyen Lan"));
+        when(profiles.findFullName(CONFIRMED.id())).thenReturn(Optional.of(NAME));
 
         resend().handle(EMAIL);
 
@@ -122,7 +122,7 @@ class OtpUseCasesTest {
     @Test
     void resendReportsAFailedMail() {
         when(accountApi.findByEmail(EMAIL)).thenReturn(Optional.of(UNCONFIRMED));
-        when(profiles.findFullName(ID)).thenReturn(Optional.empty());
+        when(profiles.findFullName(CONFIRMED.id())).thenReturn(Optional.empty());
         mailFails(OtpMail.ACCOUNT_CONFIRMATION);
 
         assertError(AuthError.EMAIL_DELIVERY_FAILED, () -> resend().handle(EMAIL));
@@ -134,7 +134,7 @@ class OtpUseCasesTest {
     @Test
     void resetCodeGoesToAConfirmedAccountNamedByEmailWithoutProfile() {
         when(accountApi.findByEmail(EMAIL)).thenReturn(Optional.of(CONFIRMED));
-        when(profiles.findFullName(ID)).thenReturn(Optional.empty());
+        when(profiles.findFullName(CONFIRMED.id())).thenReturn(Optional.empty());
 
         sendReset().handle(EMAIL);
 
@@ -156,7 +156,7 @@ class OtpUseCasesTest {
     @Test
     void failedResetMailIsSilent() {
         when(accountApi.findByEmail(EMAIL)).thenReturn(Optional.of(CONFIRMED));
-        when(profiles.findFullName(ID)).thenReturn(Optional.empty());
+        when(profiles.findFullName(CONFIRMED.id())).thenReturn(Optional.empty());
         mailFails(OtpMail.PASSWORD_RESET);
 
         sendReset().handle(EMAIL);
@@ -209,7 +209,7 @@ class OtpUseCasesTest {
 
     private Registration register(PhoneNumber phone) {
         return new RegisterAccount(accountApi, profiles, delivery)
-                .handle(new RegisterAccount.Command(EMAIL, phone, "Nguyen Lan", PASSWORD));
+                .handle(new RegisterAccount.Command(EMAIL, phone, NAME, PASSWORD));
     }
 
     private ResendVerifyOtp resend() {

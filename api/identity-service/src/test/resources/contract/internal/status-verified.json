@@ -4,6 +4,7 @@
     "nfcStatus" : "VERIFIED",
     "legalName" : "NGUYEN VAN AN",
     "idNumberMasked" : "********0005",
-    "nfcVerifiedAt" : "<masked>"
+    "nfcVerifiedAt" : null,
+    "kycVerified" : true
   }
 }

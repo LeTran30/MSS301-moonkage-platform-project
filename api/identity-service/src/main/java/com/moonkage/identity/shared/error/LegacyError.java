@@ -5,17 +5,7 @@ package com.moonkage.identity.shared.error;
  * {@code <Module>Error} enum and deletes them here; phase 9 deletes this enum.
  */
 public enum LegacyError implements ErrorCode {
-
-    // User & Address
-    USER_PROFILE_NOT_FOUND("USER_002", 404, "error.user.profile_not_found"),
-    ADDRESS_NOT_FOUND("ADDRESS_001", 404, "error.address.not_found"),
-
-    // NFC verification (FR-04). Card rejections are not errors: they come back as SubmitCardResponse.
-    NFC_ALREADY_VERIFIED("NFC_001", 409, "error.nfc.already_verified"),
-    NFC_LOCKED("NFC_002", 429, "error.nfc.locked"),
-    NFC_SESSION_EXPIRED("NFC_003", 410, "error.nfc.session_expired"),
-    NFC_SESSION_NOT_OWNED("NFC_004", 403, "error.nfc.session_not_owned"),
-    ID_NUMBER_INVALID("NFC_005", 400, "error.nfc.id_number_invalid");
+    ADDRESS_NOT_FOUND("ADDRESS_001", 404, "error.address.not_found");
 
     private final String code;
     private final int httpStatus;

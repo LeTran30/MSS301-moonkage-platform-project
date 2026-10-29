@@ -23,7 +23,7 @@ public interface AccountRepository {
     Optional<Account> findByPhoneNumber(PhoneNumber phoneNumber);
 
     /**
-     * Transitional until kyc and address are rebuilt (phases 6, 7): row lock until the transaction ends.
+     * Transitional until address is rebuilt (phase 7): row lock until the transaction ends.
      *
      * @return false when there is no such account
      */

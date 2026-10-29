@@ -8,7 +8,8 @@
       "nfcStatus" : "VERIFIED",
       "legalName" : "NGUYEN VAN AN",
       "idNumberMasked" : "********0002",
-      "nfcVerifiedAt" : "<masked>"
+      "nfcVerifiedAt" : null,
+      "kycVerified" : true
     },
     "timestamp" : "<masked>"
   }

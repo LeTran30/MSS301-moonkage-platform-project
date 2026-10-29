@@ -24,7 +24,6 @@ import com.nimbusds.jose.crypto.RSAEncrypter;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.time.LocalDate;
 import java.util.Base64;
@@ -82,10 +81,7 @@ class IdentityApiIntegrationTest {
         Base64.Encoder base64 = Base64.getEncoder();
         String privateKey =
                 base64.encodeToString(NFC_TRANSPORT_KEYS.getPrivate().getEncoded());
-        byte[] piiKey = new byte[32];
-        new SecureRandom().nextBytes(piiKey);
         registry.add("nfc.transport-private-key", () -> privateKey);
-        registry.add("nfc.pii-key", () -> base64.encodeToString(piiKey));
         registry.add("nfc.id-hash-pepper", () -> "it-pepper");
     }
 

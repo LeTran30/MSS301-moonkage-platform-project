@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.moonkage.identity.account.AccountError;
 import com.moonkage.identity.auth.AuthError;
+import com.moonkage.identity.kyc.KycError;
 import com.moonkage.identity.otp.OtpError;
 import com.moonkage.identity.platform.security.BearerTokenError;
+import com.moonkage.identity.profile.ProfileError;
 import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.error.ErrorCode;
 import com.moonkage.identity.shared.error.LegacyError;
@@ -33,7 +35,9 @@ class ErrorCodeCatalogTest {
                     AccountError.values(),
                     OtpError.values(),
                     AuthError.values(),
-                    BearerTokenError.values())
+                    BearerTokenError.values(),
+                    ProfileError.values(),
+                    KycError.values())
             .flatMap(Stream::of)
             .map(ErrorCode.class::cast)
             .toList();

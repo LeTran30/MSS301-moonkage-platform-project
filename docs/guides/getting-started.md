@@ -72,7 +72,7 @@ Trong Docker, mỗi container chỉ nhận các biến nó đọc (danh sách `e
 | `JWT_EXPIRATION`, `JWT_REFRESH_EXPIRATION` | Hạn token (ms) | `43200000` (12h), `604800000` (7 ngày) |
 | `OTP_EXPIRATION`, `OTP_MAX_ATTEMPTS` | Hạn và số lần nhập sai OTP | `5m`, `5` |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP gửi email (orchestrator-service). Để trống `MAIL_HOST` thì không gửi | `smtp.gmail.com`, `587` |
-| `NFC_TRANSPORT_PRIVATE_KEY_V1`, `PII_ENC_KEY_V1`, `ID_HASH_PEPPER_V1` | Khóa xác minh NFC, chỉ identity-service; cách tạo ghi trong `.env.example` | — |
+| `NFC_TRANSPORT_PRIVATE_KEY_V1`, `ID_HASH_PEPPER_V1` | Khóa xác minh NFC, chỉ identity-service; cách tạo ghi trong `.env.example` | — |
 | `SEED_PASSWORD` | Mật khẩu chung của mọi tài khoản mẫu, kể cả admin (chỉ dev) | `12345678` |
 | `CORS_ORIGINS` | Origin frontend được phép gọi gateway (phân cách bằng dấu phẩy) | `http://localhost:5173` |
 | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | Tài khoản root MinIO, chỉ container `minio` và `minio-init` dùng | `minioadmin` |

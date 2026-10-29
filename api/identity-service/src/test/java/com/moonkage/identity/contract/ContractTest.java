@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -93,12 +92,9 @@ abstract class ContractTest {
         registry.add("outbox.relay-interval", () -> "100ms");
 
         Base64.Encoder base64 = Base64.getEncoder();
-        byte[] piiKey = new byte[32];
-        new SecureRandom().nextBytes(piiKey);
         registry.add(
                 "nfc.transport-private-key",
                 () -> base64.encodeToString(NFC_TRANSPORT_KEYS.getPrivate().getEncoded()));
-        registry.add("nfc.pii-key", () -> base64.encodeToString(piiKey));
         // fixed pepper: the id hash in /internal/accounts/check is part of the contract (vendor stores it)
         registry.add("nfc.id-hash-pepper", () -> "contract-pepper");
     }

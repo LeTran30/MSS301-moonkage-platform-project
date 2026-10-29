@@ -1,5 +1,1 @@
 Constructor <com.moonkage.identity.address.Address.<init>()> has modifier PUBLIC in (Address.java:23)
-Constructor <com.moonkage.identity.kyc.LegalProfile.<init>()> has modifier PUBLIC in (LegalProfile.java:32)
-Constructor <com.moonkage.identity.kyc.LegalProfile.<init>(java.lang.String, java.lang.String, com.moonkage.identity.kyc.Gender, java.lang.String, java.lang.String, java.lang.Integer, java.lang.String, [B, [B, java.lang.Integer, java.time.Instant)> has modifier PUBLIC in (LegalProfile.java:38)
-Constructor <com.moonkage.identity.profile.UserProfile.<init>()> has modifier PUBLIC in (UserProfile.java:23)
-Constructor <com.moonkage.identity.profile.UserProfile.<init>(java.lang.String, java.lang.String, java.lang.String)> has modifier PUBLIC in (UserProfile.java:29)

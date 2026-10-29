@@ -2,7 +2,7 @@ package com.moonkage.identity.auth.infrastructure.web;
 
 import com.moonkage.identity.auth.application.RegisterAccount;
 import com.moonkage.identity.platform.web.validation.FieldParser;
-import com.moonkage.identity.profile.ProfileConstant;
+import com.moonkage.identity.profile.FullName;
 import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.value.Text;
 
@@ -14,11 +14,7 @@ public record RegisterAccountRequest(String email, String phoneNumber, String fu
         FieldParser parser = new FieldParser();
         var parsedEmail = AuthFields.email(parser, email);
         var parsedPhoneNumber = parser.optional("phoneNumber", "validation.phone", phoneNumber, PhoneNumber::parse);
-        var parsedFullName = parser.required(
-                "fullName",
-                "validation.full_name",
-                fullName,
-                raw -> Text.bounded(raw, ProfileConstant.MAX_FULL_NAME_LENGTH));
+        var parsedFullName = parser.required("fullName", "validation.full_name", fullName, FullName::parse);
         var parsedPassword = AuthFields.newPassword(parser, "password", "validation.password", password);
         parser.throwIfRejected();
         return new RegisterAccount.Command(parsedEmail, parsedPhoneNumber, parsedFullName, parsedPassword);

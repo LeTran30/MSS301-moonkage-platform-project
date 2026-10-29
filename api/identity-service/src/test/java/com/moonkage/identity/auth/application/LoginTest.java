@@ -15,11 +15,13 @@ import com.moonkage.identity.account.LoginIdentifier;
 import com.moonkage.identity.account.RawPassword;
 import com.moonkage.identity.auth.AuthError;
 import com.moonkage.identity.auth.application.port.SessionTokens;
-import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.FullName;
+import com.moonkage.identity.profile.ProfileApi;
 import com.moonkage.identity.shared.AccountId;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.Role;
 import com.moonkage.identity.shared.error.AppException;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -35,12 +37,13 @@ class LoginTest {
             true,
             null);
     static final SessionTokens.Pair TOKENS = new SessionTokens.Pair("access", "refresh");
+    static final FullName NAME = new FullName("Nguyen Lan");
 
     private static final RawPassword PASSWORD = RawPassword.forLogin("secret-123");
 
     private final AccountApi accountApi = mock(AccountApi.class);
     private final SessionTokens sessionTokens = mock(SessionTokens.class);
-    private final UserProfileService profiles = mock(UserProfileService.class);
+    private final ProfileApi profiles = mock(ProfileApi.class);
     private final Login login = new Login(accountApi, new SessionOpener(sessionTokens, profiles));
 
     @Test
@@ -48,9 +51,9 @@ class LoginTest {
         when(accountApi.verifyCredentials(LoginIdentifier.parse("lan@x.vn"), PASSWORD))
                 .thenReturn(new CredentialCheck.Accepted(ACCOUNT));
         when(sessionTokens.issue(ACCOUNT)).thenReturn(TOKENS);
-        when(profiles.getFullName(ACCOUNT.id().toString())).thenReturn("Nguyen Lan");
+        when(profiles.findFullName(ACCOUNT.id())).thenReturn(Optional.of(NAME));
 
-        assertEquals(new Session(ACCOUNT, "Nguyen Lan", TOKENS), login.handle(new Login.Command("lan@x.vn", PASSWORD)));
+        assertEquals(new Session(ACCOUNT, NAME, TOKENS), login.handle(new Login.Command("lan@x.vn", PASSWORD)));
     }
 
     @Test

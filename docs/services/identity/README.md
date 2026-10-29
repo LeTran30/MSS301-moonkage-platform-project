@@ -12,10 +12,10 @@ Kế hoạch đưa entity về hướng rich entity (entity tự giữ đúng th
 |---|---|
 | `accounts` | Thông tin đăng nhập: email (bắt buộc), phone_number, password_hash (BCrypt), `account_verified` (đã xác nhận email bằng OTP), `role` (`MEMBER` / `ADMIN`, D-19; không có bảng role), `password_changed_at`, bộ đếm khóa xác minh NFC |
 
-**Trạng thái của một tài khoản** (Requirement 7.1) chỉ có hai chiều độc lập: **xác nhận email** (`account_verified`: chưa thì không đăng nhập được, nên cũng không mua, không gửi yêu cầu, không nhận mã đặt lại mật khẩu) và **xác minh NFC** (chưa / đã / tạm khóa 15 phút; suy ra từ `legal_profiles` và `nfc_locked_until`). Không có trạng thái "bị quản trị khóa": requirement không có chức năng này (FR-46 khóa *người bán* ở vendor-service, không khóa tài khoản).
-| `user_profiles` | Thông tin hiển thị trong hệ thống (full_name do người dùng nhập, avatar). Khóa chính là `account_id`. Không chứa email/số điện thoại: hai trường này chỉ nằm ở `accounts` |
+**Trạng thái của một tài khoản** (Requirement 7.1) chỉ có hai chiều độc lập: **xác nhận email** (`account_verified`: chưa thì không đăng nhập được, nên cũng không mua, không gửi yêu cầu, không nhận mã đặt lại mật khẩu) và **xác minh NFC** (chưa / đã / tạm khóa 15 phút; `profiles.kyc_verified`, cùng bộ đếm khóa trong RAM). Không có trạng thái "bị quản trị khóa": requirement không có chức năng này (FR-46 khóa *người bán* ở vendor-service, không khóa tài khoản).
+| `profiles` | Họ tên hiển thị (full_name do người dùng nhập) và danh tính pháp lý sau KYC (`kyc_verified`, `legal_name`, mã băm và dạng che của số CCCD). Khóa chính là `account_id`. Không chứa email/số điện thoại: hai trường này chỉ nằm ở `accounts` |
 
-Mỗi người chỉ có **một id là `accountId`** (= `sub` trong JWT). `addresses.account_id` và `vendors.owner_account_id` trỏ vào `accounts`. Thông tin pháp lý từ thẻ NFC sẽ nằm ở bảng `legal_profiles` (FR-04), cũng lấy `account_id` làm khóa chính (Software Design D-21).
+Mỗi người chỉ có **một id là `accountId`** (= `sub` trong JWT). `addresses.account_id` và `vendors.owner_account_id` trỏ vào `accounts`. Thông tin pháp lý từ thẻ NFC (FR-04) nằm ngay trong `profiles`; số CCCD chỉ lưu dạng băm và dạng che.
 
 Schema do Flyway quản lý (`db/migration`), dữ liệu mẫu ở `db/seed`; xem [`docs/guides/database.md`](../../guides/database.md).
 
@@ -23,23 +23,23 @@ Không có bảng refresh token và không có bảng mã OTP.
 
 ## Cấu trúc mã (package-by-component)
 
-Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): module đã dựng lại (`account`, `otp`, `auth`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Module chưa dựng lại vẫn là **component** cũ: bên ngoài chỉ thấy interface `*Service` và DTO / value object; entity, repository, `*ServiceImpl`, mapper đều package-private. `web` là tầng HTTP nằm ngoài mọi component.
+Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): module đã dựng lại (`account`, `otp`, `auth`, `profile`, `kyc`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Module chưa dựng lại vẫn là **component** cũ: bên ngoài chỉ thấy interface `*Service` và DTO / value object; entity, repository, `*ServiceImpl`, mapper đều package-private. `web` là tầng HTTP nằm ngoài mọi component.
 
 | Package | Sở hữu (bảng / dữ liệu) | Public | Phụ thuộc |
 |---|---|---|---|
-| `web` | — | Controller của component cũ: `AccountController`, `AddressController`, `KycController` | mọi service public |
+| `web` | — | Controller của component cũ: `AddressController` | mọi service public |
 | `auth` | — (đăng ký, xác nhận email, đăng nhập, làm mới phiên, đặt lại mật khẩu) | `AuthError`; controller `/api/auth/**` nằm trong module ([Auth.md](classes/Auth.md)) | `account`, `profile`, `otp` |
 | `account` | `accounts` | `AccountApi`, `AccountView`, `CredentialCheck`, `LoginIdentifier`, `RawPassword`, `AccountError` ([AccountApi.md](classes/AccountApi.md)) | — |
-| `profile` | `user_profiles`; ghép `GET /api/accounts/me` | `UserProfileService`, `ProfileConstant`, `profile.dto.AccountResponse` | `account` |
+| `profile` | `profiles`; ghép `GET /api/accounts/me` | `ProfileApi`, `FullName`, `LegalIdentity` và các value object của nó, `KycCompletion`, `ProfileError` | `account` |
 | `address` | `addresses` | `AddressService`, `address.dto` | `account` |
-| `kyc` | `legal_profiles`, phiên NFC và bộ đếm/khóa NFC (RAM) | `NfcService`, `LegalProfileService`, `kyc.dto`, enum NFC | `account` |
+| `kyc` | phiên NFC và bộ đếm/khóa NFC (RAM); ghi KYC qua `ProfileApi` | `KycError`; controller `/api/nfc/**`, `/internal/nfc/**`, `/internal/accounts/check` nằm trong module | `account`, `profile` |
 | `otp` | mã OTP (RAM) | `OtpApi`, `OtpCode`, `OtpPurpose`, `OtpError` ([OtpApi.md](classes/OtpApi.md)) | — |
 | `shared` | — (ngôn ngữ chung, Java thuần) | `Email`, `PhoneNumber`, `Role`, `AccountId`, `IdGenerator`, `ValueRejected`, `ErrorCode`, `AppException`, `CommonError` | — |
 | `platform` | `outbox_events` | cấu hình, `ApiResponse`, `GlobalExceptionHandler`, `FieldParser`, `BearerTokenFilter` + SPI `BearerTokenAuthenticator`, `CurrentUser(Info)`, `BearerTokenError`, `BaseEntity`, `ExpiringMap`, `Outbox` ([Outbox.md](classes/Outbox.md)) | `shared` |
 
-Mọi module đều dùng `shared` và `platform`; hai module này không phụ thuộc module nghiệp vụ nào. Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ModuleArchitectureTest` (module đã dựng lại: ngoài module chỉ dùng gốc package; tầng `domain`/`application`/`infrastructure`; không `*Impl`/`*Service`/`*Mapper`/`*Constant`; id không do JPA sinh), `FoundationArchitectureTest` (`shared`, `platform`), `ComponentArchitectureTest` (component cũ: entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [domain-model-plan.md](domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
+Mọi module đều dùng `shared` và `platform`; hai module này không phụ thuộc module nghiệp vụ nào. Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ModuleArchitectureTest` (module đã dựng lại: ngoài module chỉ dùng gốc package; tầng `domain`/`application`/`infrastructure`; không `*Impl`/`*Service`/`*Mapper`/`*Constant`; id không do JPA sinh), `FoundationArchitectureTest` (`shared`, `platform`), `ComponentArchitectureTest` (component cũ: entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [domain-model-plan.md](domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
 
-Endpoint nội bộ `/internal/**` nằm trong controller của chính tài nguyên đó (vd `POST /internal/accounts/check` ở `AccountController`), đánh `@Hidden`; không tách controller riêng cho đường nội bộ.
+Endpoint nội bộ `/internal/**` nằm trong module sở hữu dữ liệu, ở `infrastructure/web/internal/` (vd `InternalKycController`), đánh `@Hidden`.
 
 ## Token
 

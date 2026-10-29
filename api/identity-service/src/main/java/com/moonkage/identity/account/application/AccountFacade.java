@@ -57,11 +57,6 @@ class AccountFacade implements AccountApi {
     }
 
     @Override
-    public void requireExists(String accountId) {
-        queries.requireExists(accountId);
-    }
-
-    @Override
     @Transactional
     public void lockForUpdate(String accountId) {
         if (!AccountId.tryParse(accountId).map(accounts::lock).orElse(false)) {

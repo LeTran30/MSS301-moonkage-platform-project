@@ -24,7 +24,7 @@ class AccessContractTest extends ContractTest {
     void accountWithoutProfileIsReported() throws Exception {
         String email = activeAccount("me-no-profile");
         String token = accessToken(email);
-        jdbc.update("DELETE FROM user_profiles WHERE account_id = ?", accountIdOf(email));
+        jdbc.update("DELETE FROM profiles WHERE account_id = ?", accountIdOf(email));
 
         assertContract("account/me-no-profile", getWith("/api/accounts/me", token));
     }

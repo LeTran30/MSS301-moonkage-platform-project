@@ -25,7 +25,7 @@ public record LoginResponse(
                 account.id().toString(),
                 account.email().value(),
                 account.phoneNumber() == null ? null : account.phoneNumber().value(),
-                session.fullName(),
+                session.fullName().value(),
                 account.role());
     }
 

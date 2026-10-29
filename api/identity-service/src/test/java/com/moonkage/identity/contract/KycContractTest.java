@@ -118,7 +118,7 @@ class KycContractTest extends ContractTest {
         assertContract("internal/check-match", check(owner, "079190000006"));
         assertContract("internal/check-match", check(owner, " 0791 9000 0006 "));
         assertContract("internal/check-other-number", check(owner, "079190000007"));
-        // no verified card: nfcVerifiedAt is null, which vendor-service reads as "not verified" (decision G1)
+        // no verified card: kycVerified is false; nfcVerifiedAt is null for every account since G1
         assertContract("internal/check-not-verified", check(waiting, "079190000006"));
     }
 

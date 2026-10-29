@@ -34,13 +34,10 @@ public interface AccountApi {
      */
     CredentialCheck verifyCredentials(LoginIdentifier identifier, RawPassword password);
 
-    /** Transitional until kyc is rebuilt (phase 6). Throws NOT_FOUND, also for an id that is no UUID. */
-    void requireExists(String accountId);
-
     /**
-     * Transitional until kyc and address are rebuilt (phases 6, 7): row lock on the account until the caller's
-     * transaction ends, which serialises two requests setting a default address (FR-03) or submitting an NFC card
-     * (FR-04). Throws NOT_FOUND, also for an id that is no UUID.
+     * Transitional until address is rebuilt (phase 7): row lock on the account until the caller's transaction ends,
+     * which serialises two requests setting a default address (FR-03). Throws NOT_FOUND, also for an id that is no
+     * UUID.
      */
     void lockForUpdate(String accountId);
 }

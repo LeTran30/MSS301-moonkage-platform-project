@@ -3,7 +3,8 @@ package com.moonkage.identity.auth.application;
 import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.account.AccountView;
 import com.moonkage.identity.account.RawPassword;
-import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.FullName;
+import com.moonkage.identity.profile.ProfileApi;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.error.AppException;
@@ -17,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegisterAccount {
 
     private final AccountApi accountApi;
-    private final UserProfileService userProfileService;
+    private final ProfileApi profileApi;
     private final OtpDelivery otpDelivery;
 
     /**
@@ -27,13 +28,13 @@ public class RegisterAccount {
     @Transactional
     public Registration handle(Command command) {
         AccountView account = accountApi.registerMember(command.email(), command.phoneNumber(), command.password());
-        userProfileService.createProfile(account.id().toString(), command.fullName());
+        profileApi.create(account.id(), command.fullName());
         return new Registration(account, trySendConfirmationCode(command.email(), command.fullName()));
     }
 
-    private boolean trySendConfirmationCode(Email email, String fullName) {
+    private boolean trySendConfirmationCode(Email email, FullName fullName) {
         try {
-            otpDelivery.sendConfirmationCode(email, fullName);
+            otpDelivery.sendConfirmationCode(email, fullName.value());
             return true;
         } catch (AppException e) {
             return false;
@@ -44,7 +45,6 @@ public class RegisterAccount {
      * A registration, every field already parsed.
      *
      * @param phoneNumber null when none was given
-     * @param fullName trimmed, not blank, within the profile limit
      */
-    public record Command(Email email, PhoneNumber phoneNumber, String fullName, RawPassword password) {}
+    public record Command(Email email, PhoneNumber phoneNumber, FullName fullName, RawPassword password) {}
 }

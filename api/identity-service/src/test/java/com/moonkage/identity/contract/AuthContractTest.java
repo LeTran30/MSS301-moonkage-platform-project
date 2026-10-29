@@ -22,7 +22,7 @@ class AuthContractTest extends ContractTest {
         assertContract("auth/register-ok", answer);
         Map<String, Object> row = jdbc.queryForMap(
                 "SELECT a.phone_number, a.role, a.account_verified, a.password_changed_at, p.full_name "
-                        + "FROM accounts a JOIN user_profiles p ON p.account_id = a.id WHERE a.email = ?",
+                        + "FROM accounts a JOIN profiles p ON p.account_id = a.id WHERE a.email = ?",
                 email);
         assertEquals("910000001", row.get("phone_number"));
         assertEquals("MEMBER", row.get("role"));
@@ -47,7 +47,7 @@ class AuthContractTest extends ContractTest {
 
         assertContract("auth/register-normalized", answer);
         Map<String, Object> row = jdbc.queryForMap(
-                "SELECT a.phone_number, p.full_name FROM accounts a JOIN user_profiles p ON p.account_id = a.id "
+                "SELECT a.phone_number, p.full_name FROM accounts a JOIN profiles p ON p.account_id = a.id "
                         + "WHERE a.email = ?",
                 email("register-case"));
         assertNull(row.get("phone_number"));

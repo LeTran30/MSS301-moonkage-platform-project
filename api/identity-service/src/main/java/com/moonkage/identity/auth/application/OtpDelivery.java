@@ -6,7 +6,8 @@ import com.moonkage.identity.auth.application.port.OtpMailer.OtpMail;
 import com.moonkage.identity.otp.OtpApi;
 import com.moonkage.identity.otp.OtpCode;
 import com.moonkage.identity.otp.OtpPurpose;
-import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.FullName;
+import com.moonkage.identity.profile.ProfileApi;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.error.AppException;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ class OtpDelivery {
 
     private final OtpApi otpApi;
     private final OtpMailer otpMailer;
-    private final UserProfileService userProfileService;
+    private final ProfileApi profileApi;
 
     /** Throws when the mail cannot be sent, after dropping the code the user never received. */
     void sendConfirmationCode(Email email, String name) {
@@ -48,8 +49,9 @@ class OtpDelivery {
 
     /** Falls back to the email when the profile is missing: the mail still goes out. */
     private String nameOf(AccountView account) {
-        return userProfileService
-                .findFullName(account.id().toString())
+        return profileApi
+                .findFullName(account.id())
+                .map(FullName::value)
                 .orElse(account.email().value());
     }
 }

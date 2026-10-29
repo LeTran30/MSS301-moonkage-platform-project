@@ -1,10 +1,8 @@
 package com.moonkage.identity.address;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.moonkage.identity.address.dto.AddAddressRequest;
-import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.platform.config.LocaleConfig;
 import jakarta.validation.ConstraintViolation;
 import java.util.Locale;
@@ -68,15 +66,5 @@ class ValidationMessagesTest {
                 .collect(Collectors.toSet());
 
         assertEquals(Set.of("Mã tỉnh/thành phố không hợp lệ"), messages);
-    }
-
-    @Test
-    void constraintWithoutOurKeyKeepsTheDefaultText() {
-        Set<ConstraintViolation<CheckIdNumberRequest>> violations =
-                validator.validate(new CheckIdNumberRequest("acc-1", " "));
-
-        // not the raw key "{jakarta.validation.constraints.NotBlank.message}"
-        assertEquals(1, violations.size());
-        assertFalse(violations.iterator().next().getMessage().startsWith("{"));
     }
 }

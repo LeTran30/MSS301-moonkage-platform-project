@@ -12,7 +12,7 @@ import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.account.AccountView;
 import com.moonkage.identity.auth.AuthError;
 import com.moonkage.identity.auth.application.port.SessionTokens;
-import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.ProfileApi;
 import com.moonkage.identity.shared.Role;
 import com.moonkage.identity.shared.error.AppException;
 import java.time.Instant;
@@ -26,7 +26,7 @@ class RefreshSessionTest {
 
     private final AccountApi accountApi = mock(AccountApi.class);
     private final SessionTokens sessionTokens = mock(SessionTokens.class);
-    private final UserProfileService profiles = mock(UserProfileService.class);
+    private final ProfileApi profiles = mock(ProfileApi.class);
     private final RefreshSession refresh =
             new RefreshSession(sessionTokens, accountApi, new SessionOpener(sessionTokens, profiles));
 
@@ -35,9 +35,9 @@ class RefreshSessionTest {
         claims(ACCOUNT.id().toString());
         when(accountApi.find(ACCOUNT.id())).thenReturn(Optional.of(ACCOUNT));
         when(sessionTokens.issue(ACCOUNT)).thenReturn(LoginTest.TOKENS);
-        when(profiles.getFullName(ACCOUNT.id().toString())).thenReturn("Nguyen Lan");
+        when(profiles.findFullName(ACCOUNT.id())).thenReturn(Optional.of(LoginTest.NAME));
 
-        assertEquals(new Session(ACCOUNT, "Nguyen Lan", LoginTest.TOKENS), refresh.handle("rt"));
+        assertEquals(new Session(ACCOUNT, LoginTest.NAME, LoginTest.TOKENS), refresh.handle("rt"));
     }
 
     @Test

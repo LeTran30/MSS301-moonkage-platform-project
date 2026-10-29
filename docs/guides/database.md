@@ -38,7 +38,7 @@ Lệnh này tạo bảng, nạp dữ liệu mẫu, và tạo tài khoản admin.
 - Mỗi service một file `db/seed/R__seed.sql`, do người phụ trách service đó viết.
 - Mọi `INSERT` đều có `ON CONFLICT DO NOTHING`: file chạy lại nhiều lần không sinh trùng.
 - Dùng **ID cố định** trong sổ ở mục 5. Cần ID mới thì ghi vào sổ trước. Service khác tham chiếu tới thì tra sổ, không phải chạy gì để lấy ID.
-- Riêng hồ sơ NFC (`legal_profiles`) nằm ở `identity-service/…/db/seed/nfc-profiles.json`. Số CCCD phải mã hóa bằng khóa của từng máy nên SQL không làm được; `NfcProfileSeeder` đọc file này lúc identity khởi động. Máy chưa đặt `PII_ENC_KEY_V1` / `ID_HASH_PEPPER_V1` thì bỏ qua phần này và chỉ ghi cảnh báo.
+- KYC mẫu (các cột `legal_name`, `id_number_*` của `profiles`) cũng nằm trong `R__seed.sql` của identity. Số CCCD được băm bằng `hmac(…, '${id_hash_pepper}', 'sha256')` của pgcrypto. Flyway điền placeholder này từ `ID_HASH_PEPPER_V1`; máy chưa đặt biến này thì các tài khoản mẫu chưa KYC. Đổi cách băm của `HmacIdNumberHasher` thì phải đổi seed cùng lúc.
 
 ## 4. Tài khoản mẫu
 
