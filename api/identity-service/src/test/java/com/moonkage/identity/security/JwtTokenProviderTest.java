@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountView;
+import com.moonkage.identity.shared.AccountId;
+import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.Role;
 import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.error.LegacyError;
@@ -21,7 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class JwtTokenProviderTest {
 
     private static final String BASE64_SECRET = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
-    private static final String ACCOUNT_ID = "acc-001";
+    private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
 
     private JwtTokenProvider jwtTokenProvider;
     private AccountView account;
@@ -34,7 +36,8 @@ class JwtTokenProviderTest {
         ReflectionTestUtils.setField(jwtTokenProvider, "expirationMs", 3600000L); // 1 hour
         ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationMs", 604800000L); // 7 days
 
-        account = new AccountView(ACCOUNT_ID, "user@moonkage.vn", null, Role.MEMBER, true, null);
+        account = new AccountView(
+                AccountId.fromStored(ACCOUNT_ID), Email.parse("user@moonkage.vn"), null, Role.MEMBER, true, null);
     }
 
     @Test

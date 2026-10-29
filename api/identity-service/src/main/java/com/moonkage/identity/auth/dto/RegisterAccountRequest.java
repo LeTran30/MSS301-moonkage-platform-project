@@ -1,6 +1,6 @@
 package com.moonkage.identity.auth.dto;
 
-import com.moonkage.identity.account.atom.PasswordConstant;
+import com.moonkage.identity.account.RawPassword;
 import com.moonkage.identity.platform.web.validation.RequestText;
 import com.moonkage.identity.profile.ProfileConstant;
 import com.moonkage.identity.security.SecurityConstant;
@@ -25,10 +25,7 @@ public record RegisterAccountRequest(
         String fullName,
 
         @NotBlank(message = "{validation.password.required}")
-        @Size(
-                min = PasswordConstant.MIN_LENGTH,
-                max = PasswordConstant.MAX_LENGTH,
-                message = "{validation.password.size}")
+        @Size(min = RawPassword.MIN_LENGTH, max = RawPassword.MAX_LENGTH, message = "{validation.password.size}")
         String password) {
 
     /** Cleans itself before validation; the password is kept as typed. A blank phone means none. */

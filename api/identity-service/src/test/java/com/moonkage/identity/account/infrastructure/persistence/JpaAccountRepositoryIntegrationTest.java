@@ -1,0 +1,158 @@
+package com.moonkage.identity.account.infrastructure.persistence;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.moonkage.identity.account.AccountError;
+import com.moonkage.identity.account.AccountFixtures;
+import com.moonkage.identity.account.domain.Account;
+import com.moonkage.identity.account.domain.PasswordHash;
+import com.moonkage.identity.shared.AccountId;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.error.AppException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
+import java.time.Instant;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.transaction.TestTransaction;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+/**
+ * What only the real database can show: unique keys and their translation, the queries over converted columns, the
+ * row lock and the CHECKs, on the same PostgreSQL image as docker-compose. Skipped when Docker is not running.
+ */
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("it")
+@Testcontainers(disabledWithoutDocker = true)
+@Import(JpaAccountRepository.class)
+class JpaAccountRepositoryIntegrationTest {
+
+    @Container
+    @ServiceConnection
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
+
+    private final JpaAccountRepository repository;
+    private final EntityManager entityManager;
+
+    @Autowired
+    JpaAccountRepositoryIntegrationTest(JpaAccountRepository repository, EntityManager entityManager) {
+        this.repository = repository;
+        this.entityManager = entityManager;
+    }
+
+    @Test
+    void newAccountIsPersistedWithTheIdItWasGiven() {
+        Account account = AccountFixtures.verifiedMember("lan@x.vn", "0912345678");
+        AccountId id = account.id();
+
+        repository.add(account);
+        entityManager.clear();
+
+        Account loaded = repository.find(id).orElseThrow();
+        assertNotSame(account, loaded);
+        assertEquals(id, loaded.id());
+        assertEquals(account.view(), loaded.view());
+    }
+
+    @Test
+    void findsByEmailAndByPhoneNumber() {
+        Account account = AccountFixtures.verifiedMember("lan@x.vn", "0912345678");
+        repository.add(account);
+
+        assertSame(account, repository.findByEmail(Email.parse("lan@x.vn")).orElseThrow());
+        assertSame(
+                account,
+                repository.findByPhoneNumber(PhoneNumber.parse("0912345678")).orElseThrow());
+        assertTrue(repository.findByEmail(Email.parse("mai@x.vn")).isEmpty());
+        assertTrue(repository.findByPhoneNumber(PhoneNumber.parse("0987654321")).isEmpty());
+    }
+
+    @Test
+    void takenEmailFailsInAddWith409NotAtCommit() {
+        repository.add(AccountFixtures.verifiedMember("lan@x.vn", "0912345678"));
+
+        AppException error =
+                assertThrows(AppException.class, () -> repository.add(AccountFixtures.member("lan@x.vn", null)));
+        assertEquals(AccountError.EMAIL_ALREADY_EXISTS, error.getErrorCode());
+    }
+
+    @Test
+    void takenPhoneNumberFailsInAddWith409NotAtCommit() {
+        repository.add(AccountFixtures.verifiedMember("lan@x.vn", "0912345678"));
+
+        AppException error = assertThrows(
+                AppException.class, () -> repository.add(AccountFixtures.member("mai@x.vn", "0912345678")));
+        assertEquals(AccountError.PHONE_ALREADY_EXISTS, error.getErrorCode());
+    }
+
+    @Test
+    void rowLockRunsOnPostgres() {
+        Account account = AccountFixtures.verifiedMember("lan@x.vn", null);
+        repository.add(account);
+
+        // SELECT ... FOR UPDATE, used by addresses (FR-03) and the NFC attempt counter (FR-04)
+        assertTrue(repository.lock(account.id()));
+        assertFalse(repository.lock(AccountId.fromStored("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55")));
+    }
+
+    @Test
+    void loadedAccountIsUpdatedByItsTransactionNotInsertedAgain() {
+        Account account = AccountFixtures.verifiedMember("lan@x.vn", null);
+        repository.add(account);
+        entityManager.clear();
+
+        Instant changedAt = Instant.parse("2026-10-29T08:00:00Z");
+        repository.find(account.id()).orElseThrow().changePassword(new PasswordHash("new-hash"), changedAt);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(
+                1L, entityManager.createQuery("SELECT count(a) FROM Account a").getSingleResult());
+        assertEquals(changedAt, repository.find(account.id()).orElseThrow().passwordChangedAt());
+    }
+
+    @Test
+    void databaseRefusesWhatTheEntityWouldNeverWrite() {
+        // control: the same statement with valid values goes through, so a refusal below is the CHECK's doing
+        assertEquals(1, insertRaw("lan@x.vn", "'912345678'"));
+        TestTransaction.flagForRollback();
+        TestTransaction.end();
+
+        // each CHECK repeats a rule of Email or PhoneNumber (V2026_10_29_1500)
+        assertRefused("mai@x.vn", "'0912345678'");
+        assertRefused("mai@x.vn", "'123456789'");
+        assertRefused("Mai@X.vn", "NULL");
+    }
+
+    /** One complete row per check: a failed statement aborts the transaction, so each runs in its own. */
+    private void assertRefused(String email, String phoneSql) {
+        TestTransaction.start();
+        assertThrows(PersistenceException.class, () -> insertRaw(email, phoneSql));
+        TestTransaction.flagForRollback();
+        TestTransaction.end();
+    }
+
+    private int insertRaw(String email, String phoneSql) {
+        return entityManager
+                .createNativeQuery("INSERT INTO accounts (id, email, phone_number, password_hash, role,"
+                        + " account_verified, created_at, updated_at)"
+                        + " VALUES (gen_random_uuid()::text, ?1, " + phoneSql + ", ?2, 'MEMBER', true, now(), now())")
+                .setParameter(1, email)
+                .setParameter(2, AccountFixtures.PASSWORD_HASH)
+                .executeUpdate();
+    }
+}

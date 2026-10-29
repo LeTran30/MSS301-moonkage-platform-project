@@ -9,7 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.address.dto.AddAddressRequest;
 import com.moonkage.identity.address.dto.AddAddressResponse;
 import com.moonkage.identity.shared.error.AppException;
@@ -25,14 +25,14 @@ class AddressServiceImplTest {
     private static final String OTHER_ACCOUNT_ID = "0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55";
 
     private AddressRepository addressRepository;
-    private AccountService accountService;
+    private AccountApi accountApi;
     private AddressServiceImpl service;
     private final List<Address> stored = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         addressRepository = mock(AddressRepository.class);
-        accountService = mock(AccountService.class);
+        accountApi = mock(AccountApi.class);
         when(addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(ACCOUNT_ID))
                 .thenAnswer(inv -> List.copyOf(stored));
         when(addressRepository.saveAndFlush(any(Address.class))).thenAnswer(inv -> {
@@ -47,7 +47,7 @@ class AddressServiceImplTest {
                 .thenAnswer(inv -> stored.stream()
                         .filter(a -> a.getId().equals(inv.getArgument(0)) && ACCOUNT_ID.equals(inv.getArgument(1)))
                         .findFirst());
-        service = new AddressServiceImpl(addressRepository, accountService);
+        service = new AddressServiceImpl(addressRepository, accountApi);
     }
 
     private static AddAddressRequest request(Boolean isDefault) {

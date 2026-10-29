@@ -1,8 +1,10 @@
 package com.moonkage.identity.profile;
 
-import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.dto.AccountResponse;
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountApi;
+import com.moonkage.identity.account.AccountError;
+import com.moonkage.identity.account.AccountView;
+import com.moonkage.identity.profile.dto.AccountResponse;
+import com.moonkage.identity.shared.AccountId;
 import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.error.LegacyError;
 import java.util.Optional;
@@ -15,12 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 class UserProfileServiceImpl implements UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
-    private final AccountService accountService;
+    private final AccountApi accountApi;
 
     @Override
     @Transactional(readOnly = true)
     public AccountResponse getMyAccount(String accountId) {
-        AccountView account = accountService.getAccount(accountId);
+        AccountView account = AccountId.tryParse(accountId)
+                .flatMap(accountApi::find)
+                .orElseThrow(() -> new AppException(AccountError.NOT_FOUND, accountId));
         return UserProfileMapper.toAccountResponse(account, getFullName(accountId));
     }
 

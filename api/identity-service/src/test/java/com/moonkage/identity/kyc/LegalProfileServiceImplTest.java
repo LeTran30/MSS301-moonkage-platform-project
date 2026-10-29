@@ -9,7 +9,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
+import com.moonkage.identity.account.AccountError;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.kyc.dto.response.NfcStatusResponse;
@@ -29,7 +30,7 @@ class LegalProfileServiceImplTest {
     private static final String ID_NUMBER = "079123456789";
     private static final Instant VERIFIED_AT = Instant.parse("2026-10-19T03:00:00Z");
 
-    private AccountService accountService;
+    private AccountApi accountApi;
     private LegalProfileRepository legalProfileRepository;
     private IdNumberHasher hasher;
     private NfcAttemptTracker attemptTracker;
@@ -37,16 +38,16 @@ class LegalProfileServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        accountService = mock(AccountService.class);
+        accountApi = mock(AccountApi.class);
         legalProfileRepository = mock(LegalProfileRepository.class);
         hasher = new IdNumberHasher("test-pepper");
         attemptTracker = new NfcAttemptTracker(new NfcProperties());
         service = new LegalProfileServiceImpl(
-                accountService, legalProfileRepository, hasher, attemptTracker, Clock.systemUTC());
+                accountApi, legalProfileRepository, hasher, attemptTracker, Clock.systemUTC());
 
-        doThrow(new AppException(LegacyError.ACCOUNT_NOT_FOUND, "ghost"))
-                .when(accountService)
-                .requireAccountExists("ghost");
+        doThrow(new AppException(AccountError.NOT_FOUND, "ghost"))
+                .when(accountApi)
+                .requireExists("ghost");
     }
 
     @Test
@@ -77,7 +78,7 @@ class LegalProfileServiceImplTest {
     @Test
     void statusOfUnknownAccountIsNotFound() {
         AppException ex = assertThrows(AppException.class, () -> service.getNfcStatus("ghost"));
-        assertEquals(LegacyError.ACCOUNT_NOT_FOUND, ex.getErrorCode());
+        assertEquals(AccountError.NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
@@ -125,7 +126,7 @@ class LegalProfileServiceImplTest {
 
         AppException unknown = assertThrows(
                 AppException.class, () -> service.checkIdNumber(new CheckIdNumberRequest("ghost", ID_NUMBER)));
-        assertEquals(LegacyError.ACCOUNT_NOT_FOUND, unknown.getErrorCode());
+        assertEquals(AccountError.NOT_FOUND, unknown.getErrorCode());
     }
 
     /** As many failed cards as nfc.max-attempts allows, all at {@code at}. */

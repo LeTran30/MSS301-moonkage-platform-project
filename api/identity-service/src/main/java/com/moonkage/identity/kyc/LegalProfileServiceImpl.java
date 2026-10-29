@@ -1,6 +1,6 @@
 package com.moonkage.identity.kyc;
 
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.kyc.dto.response.NfcStatusResponse;
@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 class LegalProfileServiceImpl implements LegalProfileService {
 
-    private final AccountService accountService;
+    private final AccountApi accountApi;
     private final LegalProfileRepository legalProfileRepository;
     private final IdNumberHasher idNumberHasher;
     private final NfcAttemptTracker attemptTracker;
@@ -30,7 +30,7 @@ class LegalProfileServiceImpl implements LegalProfileService {
     @Override
     @Transactional(readOnly = true)
     public NfcStatusResponse getNfcStatus(String accountId) {
-        accountService.requireAccountExists(accountId);
+        accountApi.requireExists(accountId);
         Optional<LegalProfile> profile = legalProfileRepository.findById(accountId);
         if (profile.isPresent()) {
             return LegalProfileMapper.toVerifiedStatus(profile.get());
@@ -46,7 +46,7 @@ class LegalProfileServiceImpl implements LegalProfileService {
     public CheckIdNumberResponse checkIdNumber(CheckIdNumberRequest request) {
         // ID_NUMBER_INVALID unless exactly 12 digits remain after the request dropped the separators
         CitizenId idNumber = CitizenId.of(request.idNumber());
-        accountService.requireAccountExists(request.accountId());
+        accountApi.requireExists(request.accountId());
         String idHash = idNumberHasher.hash(idNumber.value());
         String idMasked = IdNumberHasher.mask(idNumber.value());
 

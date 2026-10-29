@@ -1,8 +1,8 @@
 package com.moonkage.identity.auth;
 
-import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountApi;
+import com.moonkage.identity.account.AccountView;
+import com.moonkage.identity.account.RawPassword;
 import com.moonkage.identity.auth.dto.LoginRequest;
 import com.moonkage.identity.auth.dto.LoginResponse;
 import com.moonkage.identity.auth.dto.RegisterAccountRequest;
@@ -10,12 +10,15 @@ import com.moonkage.identity.auth.dto.RegisterAccountResponse;
 import com.moonkage.identity.auth.dto.VerifyAccountRequest;
 import com.moonkage.identity.auth.dto.VerifyAccountResponse;
 import com.moonkage.identity.email.EmailService;
+import com.moonkage.identity.otp.OtpApi;
+import com.moonkage.identity.otp.OtpCode;
+import com.moonkage.identity.otp.OtpError;
 import com.moonkage.identity.otp.OtpPurpose;
-import com.moonkage.identity.otp.OtpService;
 import com.moonkage.identity.profile.UserProfileService;
 import com.moonkage.identity.security.AccountPrincipal;
 import com.moonkage.identity.security.JwtClaims;
 import com.moonkage.identity.security.JwtTokenProvider;
+import com.moonkage.identity.shared.AccountId;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.error.AppException;
@@ -27,7 +30,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,13 +37,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 class AuthServiceImpl implements AuthService {
 
-    private final PasswordEncoder passwordEncoder;
-    private final AccountService accountService;
+    private final AccountApi accountApi;
     private final UserProfileService userProfileService;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
-    private final OtpService otpService;
+    private final OtpApi otpApi;
 
     // ───────── FR-01: register and confirm the email ─────────
 
@@ -52,9 +53,8 @@ class AuthServiceImpl implements AuthService {
         PhoneNumber phoneNumber = request.phoneNumber() == null ? null : PhoneNumber.of(request.phoneNumber());
         String fullName = request.fullName();
 
-        AccountView account = accountService.createMember(
-                email, phoneNumber, PasswordHash.fromRawPassword(request.password(), passwordEncoder));
-        userProfileService.createProfile(account.id(), fullName);
+        AccountView account = accountApi.registerMember(email, phoneNumber, RawPassword.parse(request.password()));
+        userProfileService.createProfile(account.id().toString(), fullName);
         boolean otpSent = trySendVerifyOtp(email, fullName);
 
         return AuthMapper.toRegisterResponse(account, otpSent);
@@ -64,8 +64,8 @@ class AuthServiceImpl implements AuthService {
     @Transactional
     public VerifyAccountResponse verifyAccount(VerifyAccountRequest request) {
         Email email = Email.of(request.email());
-        otpService.verifyOtp(OtpPurpose.VERIFY_ACCOUNT, email, request.otp());
-        AccountView account = accountService.confirmEmail(getOtpOwner(email).id());
+        otpApi.verify(OtpPurpose.VERIFY_ACCOUNT, email, OtpCode.parse(request.otp()));
+        AccountView account = accountApi.confirmEmail(getOtpOwner(email).id());
 
         return AuthMapper.toVerifyResponse(account);
     }
@@ -74,9 +74,9 @@ class AuthServiceImpl implements AuthService {
     @Override
     public void sendVerifyAccountOtp(String emailStr) {
         Email email = Email.of(emailStr);
-        Optional<AccountView> unconfirmed = accountService.findByEmail(email).filter(account -> !account.verified());
+        Optional<AccountView> unconfirmed = accountApi.findByEmail(email).filter(account -> !account.verified());
         if (unconfirmed.isEmpty()) {
-            otpService.throttleSend(OtpPurpose.VERIFY_ACCOUNT, email);
+            otpApi.throttle(OtpPurpose.VERIFY_ACCOUNT, email);
             return;
         }
         issueAndSendVerifyOtp(email, getFullName(unconfirmed.get()));
@@ -103,8 +103,8 @@ class AuthServiceImpl implements AuthService {
     public LoginResponse refreshToken(String refreshToken) {
         JwtClaims claims = jwtTokenProvider.parseRefreshToken(refreshToken);
         // a deleted account makes the token invalid, as JwtFilter does for access tokens
-        AccountView account = accountService
-                .findAccount(claims.accountId())
+        AccountView account = AccountId.tryParse(claims.accountId())
+                .flatMap(accountApi::find)
                 .orElseThrow(() -> new AppException(LegacyError.REFRESH_TOKEN_INVALID));
         if (!account.verified()) {
             throw new AppException(LegacyError.ACCOUNT_NOT_ACTIVATED);
@@ -121,9 +121,9 @@ class AuthServiceImpl implements AuthService {
     @Override
     public void sendResetPasswordOtp(String emailStr) {
         Email email = Email.of(emailStr);
-        Optional<AccountView> confirmed = accountService.findByEmail(email).filter(AccountView::verified);
+        Optional<AccountView> confirmed = accountApi.findByEmail(email).filter(AccountView::verified);
         if (confirmed.isEmpty()) {
-            otpService.throttleSend(OtpPurpose.RESET_PASSWORD, email);
+            otpApi.throttle(OtpPurpose.RESET_PASSWORD, email);
             return;
         }
         issueAndSendResetOtp(email, getFullName(confirmed.get()));
@@ -134,10 +134,10 @@ class AuthServiceImpl implements AuthService {
     public void resetPassword(String emailStr, String otp, String newPassword) {
         Email email = Email.of(emailStr);
         // only a code sent by sendResetPasswordOtp works here, not a registration code (Q-05)
-        otpService.verifyOtp(OtpPurpose.RESET_PASSWORD, email, otp);
+        otpApi.verify(OtpPurpose.RESET_PASSWORD, email, OtpCode.parse(otp));
         AccountView account = getOtpOwner(email);
 
-        accountService.changePassword(account.id(), PasswordHash.fromRawPassword(newPassword, passwordEncoder));
+        accountApi.changePassword(account.id(), RawPassword.parse(newPassword));
     }
 
     // ───────── helpers, in the order the methods above call them ─────────
@@ -157,38 +157,38 @@ class AuthServiceImpl implements AuthService {
 
     /** Throws when the email cannot be sent, after dropping the code the user never received. */
     private void issueAndSendVerifyOtp(Email email, String name) {
-        String otp = otpService.issueOtp(OtpPurpose.VERIFY_ACCOUNT, email);
+        OtpCode otp = otpApi.issue(OtpPurpose.VERIFY_ACCOUNT, email);
         try {
-            emailService.sendVerifyAccountOtp(email, name, otp);
+            emailService.sendVerifyAccountOtp(email, name, otp.value());
         } catch (AppException e) {
-            otpService.clearOtp(OtpPurpose.VERIFY_ACCOUNT, email);
+            otpApi.discard(OtpPurpose.VERIFY_ACCOUNT, email);
             throw e;
         }
     }
 
     /** A matching code whose account is gone answers like a wrong code. */
     private AccountView getOtpOwner(Email email) {
-        return accountService
-                .findByEmail(email)
-                .orElseThrow(() -> new AppException(LegacyError.OTP_INVALID_OR_EXPIRED));
+        return accountApi.findByEmail(email).orElseThrow(() -> new AppException(OtpError.INVALID_OR_EXPIRED));
     }
 
     /** Falls back to the email when the profile is missing: the OTP mail still goes out. */
     private String getFullName(AccountView account) {
-        return userProfileService.findFullName(account.id()).orElse(account.email());
+        return userProfileService
+                .findFullName(account.id().toString())
+                .orElse(account.email().value());
     }
 
     private LoginResponse buildLoginResponse(AccountView account) {
         return AuthMapper.toLoginResponse(
                 account,
-                userProfileService.getFullName(account.id()),
+                userProfileService.getFullName(account.id().toString()),
                 jwtTokenProvider.createAccessToken(account),
                 jwtTokenProvider.createRefreshToken(account));
     }
 
     /** Silent on a send failure (see EmailService): the reply must not reveal whether the email has an account. */
     private void issueAndSendResetOtp(Email email, String name) {
-        String otp = otpService.issueOtp(OtpPurpose.RESET_PASSWORD, email);
-        emailService.sendResetPasswordOtp(email, name, otp);
+        OtpCode otp = otpApi.issue(OtpPurpose.RESET_PASSWORD, email);
+        emailService.sendResetPasswordOtp(email, name, otp.value());
     }
 }

@@ -1,9 +1,10 @@
 package com.moonkage.identity.auth;
 
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountView;
 import com.moonkage.identity.auth.dto.LoginResponse;
 import com.moonkage.identity.auth.dto.RegisterAccountResponse;
 import com.moonkage.identity.auth.dto.VerifyAccountResponse;
+import com.moonkage.identity.shared.PhoneNumber;
 
 /** AccountView → auth response DTOs. */
 final class AuthMapper {
@@ -12,9 +13,9 @@ final class AuthMapper {
 
     static RegisterAccountResponse toRegisterResponse(AccountView account, boolean otpSent) {
         return RegisterAccountResponse.builder()
-                .id(account.id())
-                .email(account.email())
-                .phoneNumber(account.phoneNumber())
+                .id(account.id().toString())
+                .email(account.email().value())
+                .phoneNumber(phoneDigits(account))
                 .verified(account.verified())
                 .otpSent(otpSent)
                 .build();
@@ -22,9 +23,9 @@ final class AuthMapper {
 
     static VerifyAccountResponse toVerifyResponse(AccountView account) {
         return VerifyAccountResponse.builder()
-                .id(account.id())
-                .email(account.email())
-                .phoneNumber(account.phoneNumber())
+                .id(account.id().toString())
+                .email(account.email().value())
+                .phoneNumber(phoneDigits(account))
                 .verified(account.verified())
                 .build();
     }
@@ -33,11 +34,17 @@ final class AuthMapper {
         return LoginResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
-                .accountId(account.id())
-                .email(account.email())
-                .phoneNumber(account.phoneNumber())
+                .accountId(account.id().toString())
+                .email(account.email().value())
+                .phoneNumber(phoneDigits(account))
                 .fullName(fullName)
                 .role(account.role())
                 .build();
+    }
+
+    /** The 9 subscriber digits, as the API has always returned them; null when the account has no phone number. */
+    static String phoneDigits(AccountView account) {
+        PhoneNumber phoneNumber = account.phoneNumber();
+        return phoneNumber == null ? null : phoneNumber.value();
     }
 }

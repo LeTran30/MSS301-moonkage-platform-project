@@ -19,7 +19,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
+import com.moonkage.identity.account.AccountError;
 import com.moonkage.identity.kyc.dto.request.SubmitCardRequest;
 import com.moonkage.identity.kyc.dto.response.SubmitCardResponse;
 import com.moonkage.identity.platform.messaging.outbox.EventId;
@@ -60,7 +61,7 @@ class NfcServiceImplTest {
         private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
         private static final String SESSION_ID = "session-1";
 
-        private AccountService accountService;
+        private AccountApi accountApi;
         private LegalProfileRepository legalProfileRepository;
         private NfcTransportDecryptor decryptor;
         private Outbox outbox;
@@ -71,7 +72,7 @@ class NfcServiceImplTest {
 
         @BeforeEach
         void setUp() {
-            accountService = mock(AccountService.class);
+            accountApi = mock(AccountApi.class);
             legalProfileRepository = mock(LegalProfileRepository.class);
             decryptor = mock(NfcTransportDecryptor.class);
             outbox = mock(Outbox.class);
@@ -80,7 +81,7 @@ class NfcServiceImplTest {
             NfcProperties nfcProperties = new NfcProperties();
             attemptTracker = new NfcAttemptTracker(nfcProperties);
             service = new NfcServiceImpl(
-                    accountService,
+                    accountApi,
                     legalProfileRepository,
                     decryptor,
                     hasher,
@@ -240,10 +241,10 @@ class NfcServiceImplTest {
             assertEquals(LegacyError.NFC_LOCKED, startError(ACCOUNT_ID));
 
             // the account is checked first: an unknown id never reaches the uuid column
-            doThrow(new AppException(LegacyError.ACCOUNT_NOT_FOUND, "ghost"))
-                    .when(accountService)
-                    .requireAccountExists("ghost");
-            assertEquals(LegacyError.ACCOUNT_NOT_FOUND, startError("ghost"));
+            doThrow(new AppException(AccountError.NOT_FOUND, "ghost"))
+                    .when(accountApi)
+                    .requireExists("ghost");
+            assertEquals(AccountError.NOT_FOUND, startError("ghost"));
         }
 
         @Test
@@ -306,7 +307,7 @@ class NfcServiceImplTest {
             nfcProperties = new NfcProperties();
             // the card check is stubbed: these tests are about the session around it
             service = spy(new NfcServiceImpl(
-                    mock(AccountService.class),
+                    mock(AccountApi.class),
                     mock(LegalProfileRepository.class),
                     mock(NfcTransportDecryptor.class),
                     mock(IdNumberHasher.class),

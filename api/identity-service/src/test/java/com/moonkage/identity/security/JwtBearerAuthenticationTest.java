@@ -12,11 +12,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountApi;
+import com.moonkage.identity.account.AccountView;
 import com.moonkage.identity.platform.security.BearerTokenFilter;
 import com.moonkage.identity.platform.security.CurrentUserInfo;
 import com.moonkage.identity.platform.security.SecurityProperties;
+import com.moonkage.identity.shared.AccountId;
+import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.Role;
 import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.error.LegacyError;
@@ -38,10 +40,12 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 class JwtBearerAuthenticationTest {
 
     private static final String TOKEN = "access-token";
-    private static final String ACCOUNT_ID = "acc-1";
+    private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
+    private static final AccountId ID = AccountId.fromStored(ACCOUNT_ID);
+    private static final Email EMAIL = Email.parse("a@x.vn");
 
     private JwtTokenProvider jwtTokenProvider;
-    private AccountService accountService;
+    private AccountApi accountApi;
     private HandlerExceptionResolver resolver;
     private FilterChain chain;
     private BearerTokenFilter filter;
@@ -50,13 +54,12 @@ class JwtBearerAuthenticationTest {
     @BeforeEach
     void setUp() {
         jwtTokenProvider = mock(JwtTokenProvider.class);
-        accountService = mock(AccountService.class);
+        accountApi = mock(AccountApi.class);
         resolver = mock(HandlerExceptionResolver.class);
         chain = mock(FilterChain.class);
         SecurityProperties properties = new SecurityProperties();
         properties.setPublicEndpoints(List.of("/api/auth/login"));
-        filter = new BearerTokenFilter(
-                new JwtBearerAuthenticator(jwtTokenProvider, accountService), resolver, properties);
+        filter = new BearerTokenFilter(new JwtBearerAuthenticator(jwtTokenProvider, accountApi), resolver, properties);
         response = new MockHttpServletResponse();
     }
 
@@ -89,10 +92,10 @@ class JwtBearerAuthenticationTest {
 
     @Test
     void tokenFromBeforeAPasswordResetIsRefused() throws Exception {
-        AccountView account = new AccountView(ACCOUNT_ID, "a@x.vn", null, Role.MEMBER, true, Instant.now());
+        AccountView account = new AccountView(ID, EMAIL, null, Role.MEMBER, true, Instant.now());
         when(jwtTokenProvider.parseAccessToken(TOKEN))
                 .thenReturn(new JwtClaims(ACCOUNT_ID, Instant.now().minusSeconds(3600)));
-        when(accountService.findAccount(ACCOUNT_ID)).thenReturn(Optional.of(account));
+        when(accountApi.find(ID)).thenReturn(Optional.of(account));
 
         filter.doFilter(request("/api/addresses", TOKEN), response, chain);
 
@@ -103,7 +106,7 @@ class JwtBearerAuthenticationTest {
     @Test
     void tokenOfADeletedAccountIsInvalid() throws Exception {
         when(jwtTokenProvider.parseAccessToken(TOKEN)).thenReturn(new JwtClaims(ACCOUNT_ID, Instant.now()));
-        when(accountService.findAccount(ACCOUNT_ID)).thenReturn(Optional.empty());
+        when(accountApi.find(ID)).thenReturn(Optional.empty());
 
         filter.doFilter(request("/api/addresses", TOKEN), response, chain);
 
@@ -157,7 +160,7 @@ class JwtBearerAuthenticationTest {
 
     private void tokenOf(AccountView account) {
         when(jwtTokenProvider.parseAccessToken(TOKEN)).thenReturn(new JwtClaims(ACCOUNT_ID, Instant.now()));
-        when(accountService.findAccount(ACCOUNT_ID)).thenReturn(Optional.of(account));
+        when(accountApi.find(ID)).thenReturn(Optional.of(account));
     }
 
     private AppException resolvedError() {
@@ -176,6 +179,6 @@ class JwtBearerAuthenticationTest {
     }
 
     private static AccountView account(boolean emailConfirmed) {
-        return new AccountView(ACCOUNT_ID, "a@x.vn", null, Role.MEMBER, emailConfirmed, null);
+        return new AccountView(ID, EMAIL, null, Role.MEMBER, emailConfirmed, null);
     }
 }

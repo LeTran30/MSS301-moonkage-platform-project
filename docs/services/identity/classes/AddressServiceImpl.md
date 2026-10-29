@@ -2,11 +2,11 @@
 
 - **Package:** `com.moonkage.identity.address` (component `address`: chỉ `AddressService` và `dto/` là public)
 - **Tham chiếu:** `FR-03` (Quản lý sổ địa chỉ), `AC-03.1`, `AC-03.2`, `Q-12` (vùng giao = tỉnh/thành)
-- **Dependencies:** `AddressRepository`, `AccountService` (`lockForUpdate`), `AddressMapper`
+- **Dependencies:** `AddressRepository`, `AccountApi` (`lockForUpdate`), `AddressMapper`
 - **Mô hình địa chỉ:** hai cấp hành chính áp dụng từ 01/07/2025 — **tỉnh/thành → phường/xã/đặc khu**, không còn cấp huyện. Mỗi cấp lưu **mã quốc gia** (tỉnh 2 số, xã 5 số) để so khớp và **tên** người dùng đã chọn để địa chỉ vẫn đọc đúng nếu sau này đơn vị đổi tên. Kèm người nhận (`recipientName`, `recipientPhone`), `detail` (số nhà, đường) và `label` tùy chọn.
 - **Luật bất biến (Invariants):**
   1. Mỗi tài khoản có **tối đa 1** địa chỉ mặc định tại mọi thời điểm.
-  2. Mọi thao tác thêm/sửa đổi cờ mặc định phải khóa dòng tài khoản qua `AccountService.lockForUpdate` (`FOR UPDATE` trên `accounts`) để chống race condition. `address` không đụng vào entity `Account`: `Address` chỉ giữ `accountId`.
+  2. Mọi thao tác thêm/sửa đổi cờ mặc định phải khóa dòng tài khoản qua `AccountApi.lockForUpdate` (`FOR UPDATE` trên `accounts`) để chống race condition. `address` không đụng vào entity `Account`: `Address` chỉ giữ `accountId`.
   3. Địa chỉ của tài khoản khác trả về `ADDRESS_NOT_FOUND` (như không tồn tại) để không lộ thông tin.
   4. `areaCode` không do client gửi: luôn bằng `provinceCode` (`Address.getAreaCode()`), nên không thể lệch với tỉnh.
 
@@ -23,7 +23,7 @@
 
 ### Method: `create(accountId, request)` -> `AddAddressResponse`
 1. **[Guard & Lock]**
-   - `AccountService.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
+   - `AccountApi.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
    - Lấy danh sách địa chỉ hiện có `existing`.
    - Tạo `Address` mới với `accountId`, gán qua `apply` (xem dưới).
@@ -34,7 +34,7 @@
 
 ### Method: `update(accountId, addressId, request)` -> `AddAddressResponse`
 1. **[Guard & Lock]**
-   - `AccountService.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
+   - `AccountApi.lockForUpdate(accountId)` -> NẾU không có tài khoản `THROW ACCOUNT_NOT_FOUND`.
    - Tìm địa chỉ theo `(addressId, accountId)` -> NẾU không có `THROW ADDRESS_NOT_FOUND`.
 2. **[Xử lý nghiệp vụ]**
    - `apply(address, request)`.

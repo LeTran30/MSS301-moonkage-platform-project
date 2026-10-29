@@ -3,11 +3,9 @@ package com.moonkage.identity.platform.memory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Clock;
+import com.moonkage.identity.platform.config.MovableClock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -58,32 +56,5 @@ class ExpiringMapTest {
 
         assertEquals(1, map.size());
         assertEquals(Optional.of(2), map.get("new"));
-    }
-
-    private static final class MovableClock extends Clock {
-        private Instant now;
-
-        MovableClock(Instant now) {
-            this.now = now;
-        }
-
-        void advance(Duration duration) {
-            now = now.plus(duration);
-        }
-
-        @Override
-        public Instant instant() {
-            return now;
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneOffset.UTC;
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return this;
-        }
     }
 }

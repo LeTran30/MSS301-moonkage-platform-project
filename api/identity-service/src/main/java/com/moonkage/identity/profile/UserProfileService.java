@@ -1,6 +1,6 @@
 package com.moonkage.identity.profile;
 
-import com.moonkage.identity.account.dto.AccountResponse;
+import com.moonkage.identity.profile.dto.AccountResponse;
 import java.util.Optional;
 
 /** Public API of the profile component: what a person shows inside the platform (FR-01). */

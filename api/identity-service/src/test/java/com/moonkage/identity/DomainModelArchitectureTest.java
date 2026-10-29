@@ -52,11 +52,13 @@ class DomainModelArchitectureTest {
             // the common language and the mapped superclass of every table (plan v2 4.1, 6)
             BASE_PACKAGE + ".shared",
             BASE_PACKAGE + ".platform.persistence",
-            // PasswordHash until account is rebuilt (phase 4)
-            BASE_PACKAGE + ".account.atom",
             "com.moonkage.reference");
 
-    /** Public methods of an entity only read: getters and the questions it answers about itself. */
+    /**
+     * Public methods of an entity only read: getters and the questions it answers about itself. Not for the rebuilt
+     * modules: their domain package is apart from the use cases, so write methods are public, and
+     * ModuleArchitectureTest keeps everything outside the module away from them.
+     */
     private static final String READ_ONLY_METHOD_NAME = "^(get|is|ensure|accepts|matches).*";
 
     private static final DescribedPredicate<CanBeAnnotated> ENTITY_TYPE =
@@ -66,6 +68,9 @@ class DomainModelArchitectureTest {
     static final ArchRule ENTITIES_HAVE_NO_PUBLIC_WRITE_METHODS = FreezingArchRule.freeze(methods()
             .that()
             .areDeclaredInClassesThat(ENTITY_TYPE)
+            .and()
+            .areDeclaredInClassesThat()
+            .resideOutsideOfPackages(RebuiltModules.packagePatterns())
             .and()
             .arePublic()
             .should()

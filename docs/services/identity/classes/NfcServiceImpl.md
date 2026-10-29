@@ -4,7 +4,7 @@
 
 - **Package:** `com.moonkage.identity.kyc`
 - **Tham chiếu:** `FR-04` (`AC-04.1` → `AC-04.12`), `BR-23`, `D-21`, Software Design 4.2 (thứ tự kiểm)
-- **Dependencies:** `AccountService` (`requireAccountExists`, `lockForUpdate`), `NfcAttemptTracker` (bộ đếm sai và khóa), `LegalProfileRepository`, `NfcTransportDecryptor` (mở JWE), `NfcCardValidator` (kiểm định dạng), `IdNumberHasher` (băm có khóa), `PiiCipher` (mã hóa AES), `OutboxService` (sự kiện), `NfcProperties`, `TransactionTemplate`
+- **Dependencies:** `AccountApi` (`requireExists`, `lockForUpdate`), `NfcAttemptTracker` (bộ đếm sai và khóa), `LegalProfileRepository`, `NfcTransportDecryptor` (mở JWE), `NfcCardValidator` (kiểm định dạng), `IdNumberHasher` (băm có khóa), `PiiCipher` (mã hóa AES), `OutboxService` (sự kiện), `NfcProperties`, `TransactionTemplate`
 
 ## 0. Hình dung
 
@@ -42,7 +42,7 @@ Thẻ bị từ chối **không phải lỗi HTTP**: luôn trả 200, lý do n�
 ## 3. Luồng chi tiết
 
 ### `createSession(accountId)`
-1. `validateCanStartVerification`: `requireAccountExists` → `ACCOUNT_NOT_FOUND`. Đã xác minh → `NFC_ALREADY_VERIFIED`. `NfcAttemptTracker.ensureNotLocked` → `NFC_LOCKED` (kèm số phút).
+1. `validateCanStartVerification`: `requireExists` → `ACCOUNT_NOT_FOUND`. Đã xác minh → `NFC_ALREADY_VERIFIED`. `NfcAttemptTracker.ensureNotLocked` → `NFC_LOCKED` (kèm số phút).
 2. Tạo mã phiên ngẫu nhiên 192 bit (32 ký tự base64url), hạn `nfc.session-ttl`.
 3. Xóa phiên PENDING cũ của tài khoản, thêm phiên mới (khóa `synchronized` để hai lần tạo song song không cùng sống sót).
 
@@ -53,7 +53,7 @@ Thẻ bị từ chối **không phải lỗi HTTP**: luôn trả 200, lý do n�
    - đã dùng hoặc đang có thẻ khác xử lý → `SESSION_USED`;
    - hợp lệ → đặt `inFlight = true`.
 2. **[Kiểm thẻ, trong một transaction]** `saveCardResult`:
-   1. Khóa dòng tài khoản: `AccountService.lockForUpdate` (`FOR UPDATE`).
+   1. Khóa dòng tài khoản: `AccountApi.lockForUpdate` (`FOR UPDATE`).
    2. Đã xác minh rồi → `SESSION_USED`.
    3. `NfcAttemptTracker.lockoutOf(accountId)` còn đang khóa → `LOCKED`. Khóa đã hết hạn được xóa khi đếm lần sai kế tiếp.
    4. `parseCard`: mở JWE và kiểm định dạng 9 trường. Không đạt → `BAD_FORMAT`.

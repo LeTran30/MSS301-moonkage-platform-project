@@ -3,6 +3,8 @@ package com.moonkage.identity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.moonkage.identity.account.AccountError;
+import com.moonkage.identity.otp.OtpError;
 import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.error.ErrorCode;
 import com.moonkage.identity.shared.error.LegacyError;
@@ -23,7 +25,8 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 class ErrorCodeCatalogTest {
 
     /** Each module's {@code <Module>Error} enum joins this list when it is created. */
-    private static final List<ErrorCode> ALL = Stream.of(CommonError.values(), LegacyError.values())
+    private static final List<ErrorCode> ALL = Stream.of(
+                    CommonError.values(), LegacyError.values(), AccountError.values(), OtpError.values())
             .flatMap(Stream::of)
             .map(ErrorCode.class::cast)
             .toList();

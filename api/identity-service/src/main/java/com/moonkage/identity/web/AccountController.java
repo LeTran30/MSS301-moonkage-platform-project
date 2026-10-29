@@ -1,6 +1,5 @@
 package com.moonkage.identity.web;
 
-import com.moonkage.identity.account.dto.AccountResponse;
 import com.moonkage.identity.kyc.LegalProfileService;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
@@ -8,6 +7,7 @@ import com.moonkage.identity.platform.security.CurrentUser;
 import com.moonkage.identity.platform.security.CurrentUserInfo;
 import com.moonkage.identity.platform.web.ApiResponse;
 import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.dto.AccountResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

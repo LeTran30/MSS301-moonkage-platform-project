@@ -1,4 +1,4 @@
-package com.moonkage.identity.common;
+package com.moonkage.identity.platform.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -9,9 +9,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.moonkage.identity.account.AccountError;
 import com.moonkage.identity.platform.config.LocaleConfig;
-import com.moonkage.identity.platform.web.ApiResponse;
-import com.moonkage.identity.platform.web.GlobalExceptionHandler;
 import com.moonkage.identity.platform.web.validation.FieldParser;
 import com.moonkage.identity.platform.web.validation.InvalidFields;
 import com.moonkage.identity.shared.error.AppException;
@@ -56,7 +55,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleAppExceptionWithDynamicArgs() {
-        AppException ex = new AppException(LegacyError.ACCOUNT_NOT_FOUND, "acc-123");
+        AppException ex = new AppException(AccountError.NOT_FOUND, "acc-123");
         ResponseEntity<ApiResponse<Void>> response = handler.handleAppException(ex, request);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

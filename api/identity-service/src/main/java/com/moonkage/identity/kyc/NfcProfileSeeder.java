@@ -2,7 +2,8 @@ package com.moonkage.identity.kyc;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
+import com.moonkage.identity.shared.AccountId;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -30,7 +31,7 @@ class NfcProfileSeeder implements ApplicationRunner {
 
     private static final String PROFILES_FILE = "db/seed/nfc-profiles.json";
 
-    private final AccountService accountService;
+    private final AccountApi accountApi;
     private final LegalProfileRepository legalProfileRepository;
     private final IdNumberHasher idNumberHasher;
     private final PiiCipher piiCipher;
@@ -68,7 +69,7 @@ class NfcProfileSeeder implements ApplicationRunner {
 
     /** The account was seeded (not taken by a hand-made one), is not verified yet, and its ID number is free. */
     private boolean isSeedable(SeedProfile seed) {
-        return accountService.findAccount(seed.accountId()).isPresent()
+        return AccountId.tryParse(seed.accountId()).flatMap(accountApi::find).isPresent()
                 && !legalProfileRepository.existsById(seed.accountId())
                 && !legalProfileRepository.existsByIdNumberHashAndIdHashKeyVer(
                         idNumberHasher.hash(seed.idNumber()), IdNumberHasher.KEY_VERSION);

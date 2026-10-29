@@ -55,8 +55,6 @@ jwt:
 otp:
   expiration: ${OTP_EXPIRATION}
   max-attempts: ${OTP_MAX_ATTEMPTS}
-  min: 100000
-  range: 900000
   resend-cooldown: ${OTP_RESEND_COOLDOWN:60s}
   max-resend-per-hour: ${OTP_MAX_RESEND_PER_HOUR:5}
   lockout-duration: ${OTP_LOCKOUT_DURATION:15m}

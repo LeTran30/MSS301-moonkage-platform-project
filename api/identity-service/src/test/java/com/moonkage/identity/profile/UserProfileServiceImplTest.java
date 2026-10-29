@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.dto.AccountResponse;
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountApi;
+import com.moonkage.identity.account.AccountView;
+import com.moonkage.identity.profile.dto.AccountResponse;
+import com.moonkage.identity.shared.AccountId;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.Role;
 import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.error.LegacyError;
@@ -26,15 +29,21 @@ class UserProfileServiceImplTest {
     private UserProfileRepository userProfileRepository;
 
     @Mock
-    private AccountService accountService;
+    private AccountApi accountApi;
 
     @InjectMocks
     private UserProfileServiceImpl service;
 
     @Test
     void myAccountCarriesTheProfileName() {
-        when(accountService.getAccount(ACCOUNT_ID))
-                .thenReturn(new AccountView(ACCOUNT_ID, "a@x.vn", "912345678", Role.MEMBER, true, null));
+        when(accountApi.find(AccountId.fromStored(ACCOUNT_ID)))
+                .thenReturn(Optional.of(new AccountView(
+                        AccountId.fromStored(ACCOUNT_ID),
+                        Email.parse("a@x.vn"),
+                        PhoneNumber.parse("0912345678"),
+                        Role.MEMBER,
+                        true,
+                        null)));
         when(userProfileRepository.findById(ACCOUNT_ID))
                 .thenReturn(Optional.of(UserProfile.builder()
                         .accountId(ACCOUNT_ID)

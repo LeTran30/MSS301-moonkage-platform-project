@@ -6,6 +6,9 @@ package com.moonkage.identity.shared.value;
  */
 public final class Text {
 
+    /** What {@code toString()} prints for a secret: a password, its hash, a one-time code (plan v2, 5.2). */
+    public static final String HIDDEN = "[PROTECTED]";
+
     private Text() {}
 
     /** Trimmed; missing or blank is {@code REQUIRED}. */

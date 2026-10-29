@@ -1,6 +1,6 @@
 package com.moonkage.identity.security;
 
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,13 +22,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @RequiredArgsConstructor
 public class LoginSecurityConfig {
 
-    private final AccountService accountService;
+    private final AccountApi accountApi;
 
     /** FR-02: log in with email or phone number. */
     @Bean
     public UserDetailsService userDetailsService() {
-        return identifier -> accountService
-                .findCredentials(identifier)
+        return identifier -> accountApi
+                .findLoginRecord(identifier)
                 .map(AccountPrincipal::new)
                 .orElseThrow(() -> new UsernameNotFoundException(identifier));
     }

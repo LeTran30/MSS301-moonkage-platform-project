@@ -1,20 +1,23 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.domain.Account;
+import com.moonkage.identity.account.domain.PasswordHash;
+import com.moonkage.identity.shared.AccountId;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.id.SequentialIdGenerator;
 import jakarta.persistence.EntityManager;
-import org.springframework.test.util.ReflectionTestUtils;
 
 /**
- * Test-only door into the account component: repository tests of other components need a real accounts row for
- * their foreign key, but the Account entity is package-private. Accounts are built the one way production builds
- * them, through {@link Account#registerMember}.
+ * Accounts for tests, built the one way production builds them, through {@link Account#registerMember}. Repository
+ * tests of other modules need a real accounts row for their foreign key.
  */
 public final class AccountFixtures {
 
     /** A valid BCrypt shape; no test logs in with it. */
     public static final String PASSWORD_HASH = "$2a$10$abcdefghijklmnopqrstuuJ8r6b0qkF3U9e5R1yW2Hn0mDxv3pL7a";
+
+    private static final SequentialIdGenerator IDS = new SequentialIdGenerator();
 
     private AccountFixtures() {}
 
@@ -23,20 +26,22 @@ public final class AccountFixtures {
         Account account = verifiedMember(email, null);
         entityManager.persist(account);
         entityManager.flush();
-        return account.getId().toString();
+        return account.id().toString();
     }
 
-    /** A MEMBER whose email is confirmed, as after FR-01; phone may be null. */
-    static Account verifiedMember(String email, String phone) {
-        Account account = Account.registerMember(
-                Email.of(email), phone == null ? null : PhoneNumber.of(phone), PasswordHash.of(PASSWORD_HASH));
+    /** A MEMBER whose email is confirmed, as after FR-01; phone may be null. A new id on every call. */
+    public static Account verifiedMember(String email, String phone) {
+        Account account = member(email, phone);
         account.confirmEmail();
         return account;
     }
 
-    /** For unit tests that need a known id: the factory always draws a new one. */
-    static Account withId(Account account, String id) {
-        ReflectionTestUtils.setField(account, "id", id);
-        return account;
+    /** A MEMBER whose email is not confirmed yet; phone may be null. A new id on every call. */
+    public static Account member(String email, String phone) {
+        return Account.registerMember(
+                new AccountId(IDS.next()),
+                Email.parse(email),
+                phone == null ? null : PhoneNumber.parse(phone),
+                new PasswordHash(PASSWORD_HASH));
     }
 }

@@ -1,17 +1,17 @@
 package com.moonkage.identity.security;
 
-import com.moonkage.identity.account.dto.AccountCredentials;
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountView;
+import com.moonkage.identity.account.LegacyLoginRecord;
 import com.moonkage.identity.platform.security.CurrentUserInfo;
 import java.util.Collection;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * The account as Spring Security sees it during login (FR-02). Built from {@link AccountCredentials}, so the Account
- * entity does not depend on Spring Security.
+ * The account as Spring Security sees it during login (FR-02), until phase 5 replaces this login (ĐIỂM DỪNG E). Built
+ * from {@link LegacyLoginRecord}, so the account module does not depend on Spring Security.
  */
-public record AccountPrincipal(AccountCredentials credentials) implements UserDetails {
+public record AccountPrincipal(LegacyLoginRecord credentials) implements UserDetails {
 
     public AccountView account() {
         return credentials.account();
@@ -19,12 +19,12 @@ public record AccountPrincipal(AccountCredentials credentials) implements UserDe
 
     @Override
     public String getUsername() {
-        return account().email();
+        return account().email().value();
     }
 
     @Override
     public String getPassword() {
-        return credentials.passwordHash().hash();
+        return credentials.passwordHash();
     }
 
     @Override

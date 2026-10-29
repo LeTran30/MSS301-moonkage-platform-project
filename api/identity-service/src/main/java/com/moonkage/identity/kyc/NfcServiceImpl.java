@@ -1,6 +1,6 @@
 package com.moonkage.identity.kyc;
 
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.kyc.NfcCardValidator.NfcCard;
 import com.moonkage.identity.kyc.dto.request.SubmitCardRequest;
 import com.moonkage.identity.kyc.dto.response.CreateNfcSessionResponse;
@@ -54,7 +54,7 @@ class NfcServiceImpl implements NfcService {
     private static final Base64.Encoder SESSION_ID_ENCODER =
             Base64.getUrlEncoder().withoutPadding();
 
-    private final AccountService accountService;
+    private final AccountApi accountApi;
     private final LegalProfileRepository legalProfileRepository;
     private final NfcTransportDecryptor transportDecryptor;
     private final IdNumberHasher idNumberHasher;
@@ -126,7 +126,7 @@ class NfcServiceImpl implements NfcService {
     // ───────── session start ─────────
 
     void validateCanStartVerification(String accountId) {
-        accountService.requireAccountExists(accountId);
+        accountApi.requireExists(accountId);
         if (legalProfileRepository.existsById(accountId)) {
             throw new AppException(LegacyError.NFC_ALREADY_VERIFIED);
         }
@@ -179,7 +179,7 @@ class NfcServiceImpl implements NfcService {
     /** Runs inside the transaction of submitCard: every outcome (profile or counted attempt) is saved. */
     SubmitCardResponse saveCardResult(String sessionId, String accountId, SubmitCardRequest request) {
         // row lock: two parallel submits cannot both pass the attempt counter
-        accountService.lockForUpdate(accountId);
+        accountApi.lockForUpdate(accountId);
         if (legalProfileRepository.existsById(accountId)) {
             return SubmitCardResponse.rejected(NfcReasonCode.SESSION_USED);
         }

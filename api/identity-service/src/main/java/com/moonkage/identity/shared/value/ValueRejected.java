@@ -1,5 +1,6 @@
 package com.moonkage.identity.shared.value;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -55,6 +56,16 @@ public final class ValueRejected extends RuntimeException {
 
     public static ValueRejected tooShort(int min) {
         return new ValueRejected(Reason.TOO_SHORT, Map.of(MIN, min));
+    }
+
+    /**
+     * The same rejection with one more message argument, for a message that names both limits, e.g. "từ {min} đến
+     * {max} ký tự".
+     */
+    public ValueRejected with(String name, Object value) {
+        Map<String, Object> more = new HashMap<>(args);
+        more.put(name, value);
+        return new ValueRejected(reason, more);
     }
 
     public Reason reason() {

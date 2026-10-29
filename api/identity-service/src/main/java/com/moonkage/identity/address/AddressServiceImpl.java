@@ -1,6 +1,6 @@
 package com.moonkage.identity.address;
 
-import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.AccountApi;
 import com.moonkage.identity.address.dto.AddAddressRequest;
 import com.moonkage.identity.address.dto.AddAddressResponse;
 import com.moonkage.identity.shared.PhoneNumber;
@@ -23,13 +23,13 @@ import org.springframework.transaction.annotation.Transactional;
 class AddressServiceImpl implements AddressService {
 
     private final AddressRepository addressRepository;
-    private final AccountService accountService;
+    private final AccountApi accountApi;
 
     @Override
     @Transactional
     public AddAddressResponse create(String accountId, AddAddressRequest request) {
         // row lock on the account: two parallel requests cannot both leave a default (AC-03.1)
-        accountService.lockForUpdate(accountId);
+        accountApi.lockForUpdate(accountId);
         List<Address> existingAddresses = addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId);
 
         Address address = new Address();
@@ -57,7 +57,7 @@ class AddressServiceImpl implements AddressService {
     @Override
     @Transactional
     public AddAddressResponse update(String accountId, String addressId, AddAddressRequest request) {
-        accountService.lockForUpdate(accountId);
+        accountApi.lockForUpdate(accountId);
         Address address = getOwned(accountId, addressId);
 
         apply(address, request);

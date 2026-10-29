@@ -1,6 +1,6 @@
 package com.moonkage.identity.security;
 
-import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.account.AccountView;
 import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.error.LegacyError;
 import io.jsonwebtoken.Claims;
@@ -44,7 +44,7 @@ public class JwtTokenProvider {
     public String createAccessToken(AccountView account) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .subject(account.id())
+                .subject(account.id().toString())
                 .issuedAt(toDate(now))
                 .claim(SecurityConstant.CLAIM_TYPE, SecurityConstant.TOKEN_TYPE_ACCESS)
                 .claim(SecurityConstant.CLAIM_ROLE, account.role().name())
@@ -56,7 +56,7 @@ public class JwtTokenProvider {
     public String createRefreshToken(AccountView account) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .subject(account.id())
+                .subject(account.id().toString())
                 .claim(SecurityConstant.CLAIM_TYPE, SecurityConstant.TOKEN_TYPE_REFRESH)
                 .issuedAt(toDate(now))
                 .expiration(toDate(now.plusMillis(refreshExpirationMs)))

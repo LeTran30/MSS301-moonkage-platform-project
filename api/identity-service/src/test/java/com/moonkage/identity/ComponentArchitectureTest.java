@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
  * top-level package (account, profile, address, kyc, auth, otp, email) is a component: other code uses its public
  * service interface and DTOs; its entities, repositories and implementations are package-private. {@code web} is the
  * only HTTP entry point and nothing depends on it. Cycles are checked by the shared ArchitectureTest
- * (NO_PACKAGE_CYCLES); the foundation modules by FoundationArchitectureTest.
+ * (NO_PACKAGE_CYCLES); the foundation modules by FoundationArchitectureTest, the rebuilt modules by
+ * ModuleArchitectureTest (their entities are public inside the module, and only the module root is used outside).
  *
  * <pre>
  * web ──▶ auth ──▶ account ──▶ profile
@@ -35,6 +36,8 @@ class ComponentArchitectureTest {
     static final ArchRule ENTITIES_STAY_INSIDE_THEIR_COMPONENT = classes()
             .that()
             .areAnnotatedWith(Entity.class)
+            .and()
+            .resideOutsideOfPackages(RebuiltModules.packagePatterns())
             .should()
             .notBePublic()
             .because("other components read an entity through its component's service, never directly");
