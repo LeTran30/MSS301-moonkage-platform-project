@@ -8,7 +8,7 @@
 
 ## 0. Luật bất biến (không bao giờ được vi phạm)
 
-1. **Một email, một số điện thoại chỉ thuộc một tài khoản.** Email được value object `Email` chuẩn hóa về chữ thường, số điện thoại được `PhoneNumber` chuẩn hóa về 9 số cuối, nên `0912…`, `84912…`, `+84912…` là cùng một số. Việc kiểm trùng nằm ở `AccountService.createMember` (xem [`AccountServiceImpl.md`](AccountServiceImpl.md)).
+1. **Một email, một số điện thoại chỉ thuộc một tài khoản.** Email được value object `Email` chuẩn hóa về chữ thường, số điện thoại chỉ nhận dạng trong nước `0912…` và được `PhoneNumber` lưu dưới dạng 9 số cuối (quyết định C1). Việc kiểm trùng nằm ở `AccountService.createMember` (xem [`AccountServiceImpl.md`](AccountServiceImpl.md)).
 2. **Chưa xác nhận email thì chưa đăng nhập được.** Tài khoản mới luôn có `accountVerified = false`.
 3. **Không để lộ email nào đã đăng ký.** Các API gửi mã (`sendVerifyAccountOtp`, `sendResetPasswordOtp`) trả lời giống hệt nhau dù email có tài khoản hay không. Email lạ vẫn bị tính lượt gửi (`throttleSend`), nên cả thông báo "đợi 60 giây" cũng không tiết lộ gì.
 4. **Mã của luồng này không dùng được cho luồng kia.** Mã đăng ký (`VERIFY_ACCOUNT`) không đặt lại mật khẩu được, và ngược lại.

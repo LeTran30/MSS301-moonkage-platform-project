@@ -14,7 +14,7 @@
 |---|---|
 | Tiền | VND, số nguyên không có số lẻ, dấu chấm phân cách hàng nghìn, hậu tố `đ`: `245.000đ`. Mọi giá hiển thị đã gồm thuế GTGT (NFR-06, BR-06) |
 | Ngày giờ | Ngày `DD/MM/YYYY`, giờ `HH:mm`, múi giờ Việt Nam (`UTC+7`, `timestamptz`) |
-| Số điện thoại | Di động Việt Nam 10 chữ số, đầu số `03/05/07/08/09` (`^(\+?84\|0)[35789]\d{8}$`); chấp nhận `0901000001`, `84901000001`, `+84901000001`. Hiển thị `0901 000 001` |
+| Số điện thoại | Di động Việt Nam 10 chữ số, đầu số `03/05/07/08/09` (`^0[35789]\d{8}$`); chỉ nhận dạng trong nước `0901000001` (quyết định C1). Hiển thị `0901 000 001` |
 | Địa chỉ & Vùng giao | Hai cấp hành chính: **Tỉnh/thành phố** (34 đơn vị theo Quyết định 19/2025/QĐ-TTg, mã 2 chữ số trong `R__provinces.sql`, ví dụ `79` = TP. Hồ Chí Minh, `01` = TP. Hà Nội) và **Phường/xã** (văn bản hiển thị, không còn quận/huyện – L-15) |
 | File tải lên | JPG, PNG, PDF; file logo nhận thêm SVG, AI. Tối đa `20 MB/file` theo NFR-08 *(lưu ý: `catalog-service` đang để mặc định `PRODUCT_IMAGE_MAX_SIZE: 5MB`, xem mục 19)* |
 | Đánh dấu trường | Trường bắt buộc có dấu `*` đỏ sau nhãn. Trường tùy chọn ghi thêm `(không bắt buộc)` sau nhãn |

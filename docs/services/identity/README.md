@@ -78,7 +78,7 @@ Cả hai đều là JWT HS256, ký bằng `jwt.secret` (dạng Base64). Mỗi l�
   "role": "MEMBER" }
 ```
 
-**Số điện thoại** nhận `0912345678`, `84912345678` hoặc `+84912345678` (đầu số di động 3/5/7/8/9) và luôn được chuẩn hoá về **9 số cuối** (`912345678`) bởi value object `PhoneNumber` — dạng duy nhất được lưu (cả `accounts.phone_number` lẫn `addresses.recipient_phone`), so sánh và trả về. Vì vậy ba dạng trên là cùng một số khi kiểm trùng (AC-01.3) và khi đăng nhập. API trả `phoneNumber` / `recipientPhone` dạng 9 số; frontend tự thêm `0` khi hiển thị.
+**Số điện thoại** chỉ nhận dạng trong nước `0912345678` (đầu số di động 3/5/7/8/9; quyết định C1, `+84…`/`84…` bị từ chối) và luôn được lưu dưới dạng **9 số cuối** (`912345678`) bởi value object `PhoneNumber` — dạng duy nhất được lưu (cả `accounts.phone_number` lẫn `addresses.recipient_phone`), so sánh và trả về. Kiểm trùng (AC-01.3) và đăng nhập so theo dạng 9 số này. API trả `phoneNumber` / `recipientPhone` dạng 9 số; frontend tự thêm `0` khi hiển thị.
 
 **Gửi email thất bại (FR-01):** `/register` vẫn tạo tài khoản nhưng trả `"otpSent": false`; frontend hiện thông báo và nút "Gửi lại mã" (gọi `/resend-otp`), không bắt đăng ký lại (sẽ bị 409). `/resend-otp` thất bại thì trả 503. Riêng `/send-reset-password-otp` vẫn luôn trả 200 để không lộ email nào đã đăng ký.
 
@@ -148,7 +148,7 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
 ```
 
 - **Hai cấp hành chính** (từ 01/07/2025): tỉnh/thành → phường/xã/đặc khu, không có quận/huyện. Client chọn từ danh mục quốc gia và gửi cả mã lẫn tên: `provinceCode` 2 chữ số, `wardCode` 5 chữ số. Server mới kiểm định dạng mã, chưa kiểm mã có thật hay xã có thuộc tỉnh không.
-- `recipientPhone`: nhận `0912…`, `84912…`, `+84912…`; luôn lưu và trả về dạng 9 số `912…` như `phoneNumber` của tài khoản. `label` tùy chọn, tối đa 30 ký tự.
+- `recipientPhone`: chỉ nhận dạng `0912…` (C1); luôn lưu và trả về dạng 9 số `912…` như `phoneNumber` của tài khoản. `label` tùy chọn, tối đa 30 ký tự.
 - `areaCode`: chỉ có trong response, luôn bằng `provinceCode` (vùng giao là tỉnh/thành, Q-12). Cùng bộ mã với vùng giao của người bán.
 - **Mặc định (AC-03.1):** luôn có tối đa một. Địa chỉ đầu tiên tự thành mặc định. Gửi `isDefault: true` thì địa chỉ đó thành mặc định, địa chỉ mặc định cũ bị bỏ cờ. Khi PUT, bỏ trống `isDefault` thì giữ nguyên cờ hiện tại. Xóa địa chỉ mặc định thì tài khoản không còn địa chỉ mặc định.
 - **Địa chỉ "đang chọn" (AC-03.2)** do frontend giữ (mặc định là địa chỉ `isDefault`), không lưu ở server. Frontend truyền `areaCode` của địa chỉ đang chọn khi gọi danh sách sản phẩm / người bán.
