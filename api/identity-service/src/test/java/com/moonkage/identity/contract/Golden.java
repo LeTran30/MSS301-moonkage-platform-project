@@ -91,6 +91,12 @@ final class Golden {
         Path file = ROOT.resolve(name + ".json");
         try {
             if (RECORD) {
+                // an unchanged contract keeps its file: map key order or line endings are no change
+                if (Files.exists(file)
+                        && JSON.readTree(Files.readString(file, StandardCharsets.UTF_8))
+                                .equals(actual)) {
+                    return;
+                }
                 Files.createDirectories(file.getParent());
                 Files.writeString(file, JSON.writeValueAsString(actual) + "\n", StandardCharsets.UTF_8);
                 return;

@@ -15,9 +15,6 @@
       "field" : "provinceCode",
       "message" : "Mã tỉnh/thành phố không hợp lệ"
     }, {
-      "field" : "provinceName",
-      "message" : "Tên tỉnh/thành phố tối đa 100 ký tự"
-    }, {
       "field" : "recipientName",
       "message" : "Tên người nhận tối đa 100 ký tự"
     }, {

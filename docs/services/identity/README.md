@@ -134,7 +134,7 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
 ```json
 // SaveAddressRequest
 { "recipientName": "Nguyễn Lan", "recipientPhone": "0912345678",
-  "provinceCode": "79", "provinceName": "Thành phố Hồ Chí Minh",
+  "provinceCode": "79",
   "wardCode": "26734", "wardName": "Phường Sài Gòn",
   "detail": "12 Lê Lợi", "label": "Văn phòng", "isDefault": true }
 
@@ -147,7 +147,7 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
   "createdAt": "2026-10-17T11:30:17Z", "updatedAt": "2026-10-17T11:30:17Z" }
 ```
 
-- **Hai cấp hành chính** (từ 01/07/2025): tỉnh/thành → phường/xã/đặc khu, không có quận/huyện. Client chọn từ danh mục quốc gia và gửi cả mã lẫn tên: `provinceCode` 2 chữ số, `wardCode` 5 chữ số. Server mới kiểm định dạng mã, chưa kiểm mã có thật hay xã có thuộc tỉnh không.
+- **Hai cấp hành chính** (từ 01/07/2025): tỉnh/thành → phường/xã/đặc khu, không có quận/huyện. Client gửi `provinceCode` 2 chữ số (phải có trong danh mục quốc gia) và tên phường/xã. Server đặt `provinceName` theo mã từ danh mục; `provinceName` client gửi vẫn được nhận nhưng bị bỏ qua (quyết định C3). Server chưa kiểm phường/xã có thuộc tỉnh không.
 - `recipientPhone`: chỉ nhận dạng `0912…` (C1); luôn lưu và trả về dạng 9 số `912…` như `phoneNumber` của tài khoản. `label` tùy chọn, tối đa 30 ký tự.
 - `areaCode`: chỉ có trong response, luôn bằng `provinceCode` (vùng giao là tỉnh/thành, Q-12). Cùng bộ mã với vùng giao của người bán.
 - **Mặc định (AC-03.1):** luôn có tối đa một. Địa chỉ đầu tiên tự thành mặc định. Gửi `isDefault: true` thì địa chỉ đó thành mặc định, địa chỉ mặc định cũ bị bỏ cờ. Khi PUT, bỏ trống `isDefault` thì giữ nguyên cờ hiện tại. Xóa địa chỉ mặc định thì tài khoản không còn địa chỉ mặc định.

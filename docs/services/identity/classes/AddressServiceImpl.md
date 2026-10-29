@@ -44,7 +44,8 @@
 3. **[Lưu trữ & Trả kết quả]** `saveAndFlush` -> `AddressMapper.toResponse`.
 
 ### Helper: `apply(address, request)`
-- `recipientName`, `provinceName`, `wardName`, `detail`: `trim`.
+- `recipientName`, `wardName`, `detail`: `trim`.
+- `provinceName`: lấy từ danh mục `Province` theo `provinceCode`; giá trị client gửi bị bỏ qua (quyết định C3).
 - `recipientPhone`: dạng trong nước `0912…` (quyết định C1) -> `PhoneNumber` 9 số `912…` (cùng dạng với số của tài khoản; `toNational()` cho số để gọi).
 - `provinceCode`, `wardCode`: giữ nguyên (đã qua regex 2 số / 5 số ở DTO).
 - `label`: rỗng hoặc toàn khoảng trắng -> `null`.

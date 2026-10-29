@@ -30,25 +30,21 @@ class AddressContractTest extends ContractTest {
         assertContract("address/list-one", getWith("/api/addresses", token));
     }
 
-    /**
-     * BUG (phase 1 report, B-1): asking for a second default answers 500. Hibernate writes the new flag before
-     * clearing the old one and hits {@code ux_addresses_one_default_per_account}. Locked as it is today so that a fix
-     * is a visible, approved change of this snapshot.
-     */
+    /** AC-03.1: a new default takes the flag from the old one (fixed in phase 2, decision C5 / B-1). */
     @Test
-    void secondDefaultFailsToday() throws Exception {
+    void newDefaultTakesTheFlagFromTheOldOne() throws Exception {
         String token = accessToken(activeAccount("address-default"));
         postJson("/api/addresses", HOME, token);
 
         assertContract("address/create-not-default", postJson("/api/addresses", OFFICE.formatted("false"), token));
         assertContract("address/create-new-default", postJson("/api/addresses", OFFICE.formatted("true"), token));
+        assertEquals(1, defaults(token));
         String office =
                 postJson("/api/addresses", OFFICE.formatted("false"), token).read("$.data.id");
         assertContract(
                 "address/update-make-default", putJson("/api/addresses/" + office, OFFICE.formatted("true"), token));
-        // nothing changed: the first address is still the only default
-        assertContract("address/list-after-failed-default", getWith("/api/addresses", token));
         assertEquals(1, defaults(token));
+        assertEquals(office, getWith("/api/addresses", token).read("$.data[0].id"));
     }
 
     @Test
@@ -117,13 +113,16 @@ class AddressContractTest extends ContractTest {
     }
 
     @Test
-    void providedProvinceNameIsStoredAsSent() throws Exception {
+    void provinceNameComesFromTheCode() throws Exception {
         String token = accessToken(activeAccount("address-province-name"));
 
-        // today the server keeps the client's name even when it does not match the code (decision C3 changes this)
-        assertContract("address/create-mismatched-province-name", postJson("/api/addresses", """
+        // decision C3: the client's provinceName is ignored, whatever it says or whether it is sent at all
+        assertContract("address/create-province-name-from-code", postJson("/api/addresses", """
                 {"recipientName":"Nguyen Lan","recipientPhone":"0910000032","provinceCode":"79",
                 "provinceName":"Ten Tu Dat","wardName":"Phường Bến Nghé","detail":"12 Lê Lợi"}""", token));
+        assertContract("address/create-province-name-left-out", postJson("/api/addresses", """
+                {"recipientName":"Nguyen Lan","recipientPhone":"0910000032","provinceCode":"79",
+                "wardName":"Phường Bến Nghé","detail":"12 Lê Lợi","isDefault":false}""", token));
     }
 
     private Answer putJson(String path, String json, String token) throws Exception {

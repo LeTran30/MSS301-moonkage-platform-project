@@ -49,7 +49,7 @@ Lý do chưa phủ:
 
 | Mã | Phát hiện | Đề xuất |
 |---|---|---|
-| **B-1** | **Bug**: tạo địa chỉ mặc định thứ hai (`POST` với `isDefault: true`) hoặc đặt địa chỉ khác làm mặc định (`PUT` với `isDefault: true`) trả **500**. Hibernate ghi cờ mới trước khi bỏ cờ cũ, chạm `ux_addresses_one_default_per_account`. Test cũ dùng mock nên không thấy. Snapshot đang khóa đúng hành vi 500 (`address/create-new-default`, `address/update-make-default`) | Sửa ở Phase 2 như một thay đổi hành vi có chủ đích (thêm mục C5): bỏ cờ cũ và flush trước khi đặt cờ mới. Snapshot đổi thành 201/200 |
+| **B-1** | **Bug**: tạo địa chỉ mặc định thứ hai (`POST` với `isDefault: true`) hoặc đặt địa chỉ khác làm mặc định (`PUT` với `isDefault: true`) trả **500**. Hibernate ghi cờ mới trước khi bỏ cờ cũ, chạm `ux_addresses_one_default_per_account`. Test cũ dùng mock nên không thấy. Snapshot đang khóa đúng hành vi 500 (`address/create-new-default`, `address/update-make-default`) | **Đã sửa ở Phase 2 (C5)**: bỏ cờ cũ và flush trước khi đặt cờ mới. Snapshot đổi thành 201/200 |
 | B-2 | `NfcSessionId` hiện là chuỗi ngẫu nhiên 32 ký tự (không phải UUID). Plan mục 5.5.2 dùng `UUID.randomUUID()`: đổi định dạng id mà app/web thấy | **Đã chốt (2026-10-29): giữ nguyên 32 ký tự**; plan cập nhật mục 5.5.2, 5.5.7, 8.2, Phase 6 |
 | B-3 | `/internal/accounts/check` thiếu trường trả message tiếng Anh mặc định ("must not be blank"), không có khóa riêng | Giữ nguyên (hợp đồng nội bộ); `FieldParser` cần bảng ghi đè trả đúng chuỗi này, hoặc duyệt thêm khóa |
 | B-4 | `USER_001` lặp lại nguyên id người gọi gửi trong message ("…người dùng not-a-uuid.") | Giữ nguyên (hợp đồng) |

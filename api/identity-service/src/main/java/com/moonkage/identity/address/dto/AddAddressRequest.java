@@ -15,6 +15,8 @@ import lombok.Builder;
  *
  * @param recipientPhone Vietnamese mobile number in the national form 0912345678 (decision C1)
  * @param provinceCode 2-digit national code, e.g. 79 for Thành phố Hồ Chí Minh
+ * @param provinceName ignored: the server names the province from {@code provinceCode} (decision C3). Still
+ *     accepted so older clients keep working
  * @param detail house number and street
  * @param isDefault true = make this the default. null on update keeps the current flag
  */
@@ -32,10 +34,6 @@ public record AddAddressRequest(
         @ProvinceCode(message = "{validation.address.province_code.invalid}")
         String provinceCode,
 
-        @NotBlank(message = "{validation.address.province_name.required}")
-        @Size(
-                max = AddressConstant.MAX_ADMINISTRATIVE_UNIT_NAME_LENGTH,
-                message = "{validation.address.province_name.too_long}")
         String provinceName,
 
         @NotBlank(message = "{validation.address.ward_name.required}")
@@ -58,7 +56,6 @@ public record AddAddressRequest(
         recipientName = RequestText.trim(recipientName);
         recipientPhone = RequestText.trim(recipientPhone);
         provinceCode = RequestText.trim(provinceCode);
-        provinceName = RequestText.trim(provinceName);
         wardName = RequestText.trim(wardName);
         detail = RequestText.trim(detail);
         label = RequestText.trimToNull(label);

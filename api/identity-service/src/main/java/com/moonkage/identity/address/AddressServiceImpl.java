@@ -6,6 +6,7 @@ import com.moonkage.identity.address.dto.AddAddressRequest;
 import com.moonkage.identity.address.dto.AddAddressResponse;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.reference.Province;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -80,14 +81,26 @@ class AddressServiceImpl implements AddressService {
         address.setRecipientName(request.recipientName());
         address.setRecipientPhone(PhoneNumber.of(request.recipientPhone()));
         address.setProvinceCode(request.provinceCode());
-        address.setProvinceName(request.provinceName());
+        address.setProvinceName(officialProvinceName(request.provinceCode()));
         address.setWardName(request.wardName());
         address.setDetail(request.detail());
         address.setLabel(request.label());
     }
 
-    private static void clearDefaults(List<Address> addresses) {
+    /** Decision C3: the name comes from the national list, never from the client. */
+    private static String officialProvinceName(String provinceCode) {
+        return Province.fromCode(provinceCode)
+                .map(Province::getOfficialName)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_INPUT));
+    }
+
+    /**
+     * Writes the cleared flags at once: Hibernate would otherwise flush the new default first and break
+     * {@code ux_addresses_one_default_per_account} (B-1).
+     */
+    private void clearDefaults(List<Address> addresses) {
         addresses.forEach(a -> a.setDefault(false));
+        addressRepository.flush();
     }
 
     /** Another account's address answers like a missing one. */

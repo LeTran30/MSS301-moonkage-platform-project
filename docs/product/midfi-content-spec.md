@@ -215,7 +215,7 @@ Dùng thống nhất các nhân vật và con số dưới đây trên toàn b�
 |---|---|---|---|---|---|
 | 1 | Tên người nhận | Text Input | Bắt buộc | 1–100 ký tự (`MAX_RECIPIENT_NAME_LENGTH = 100`) | `Ví dụ: Nguyễn Thị Lan` *(điền sẵn tên tài khoản khi thêm mới)* |
 | 2 | Số điện thoại người nhận | Text Input (`type="tel"`) | Bắt buộc | SĐT di động VN (`^(\+?84\|0)[35789]\d{8}$`) | `Ví dụ: 0901 000 001` |
-| 3 | Tỉnh/thành phố | Searchable Dropdown | Bắt buộc | Chọn từ 34 tỉnh/thành; gửi cả `provinceCode` (2 số) và `provinceName` (≤ 100 ký tự) | `Chọn tỉnh/thành phố` |
+| 3 | Tỉnh/thành phố | Searchable Dropdown | Bắt buộc | Chọn từ 34 tỉnh/thành; gửi `provinceCode` (2 số); server lấy tên tỉnh theo mã, `provinceName` nếu gửi sẽ bị bỏ qua (quyết định C3) | `Chọn tỉnh/thành phố` |
 | 4 | Phường/xã | Text Input / Combobox | Bắt buộc | 1–100 ký tự (`MAX_ADMINISTRATIVE_UNIT_NAME_LENGTH = 100`) | `Ví dụ: Phường Sài Gòn` |
 | 5 | Số nhà, tên đường | Text Input | Bắt buộc | 1–255 ký tự (`MAX_DETAIL_LENGTH = 255`) | `Ví dụ: 12 Lê Lợi` |
 | 6 | Nhãn địa chỉ | Text Input + Chip chọn nhanh (`Nhà riêng`, `Văn phòng`) | Tùy chọn | Tối đa 30 ký tự (`MAX_LABEL_LENGTH = 30`) | `Ví dụ: Nhà riêng, Văn phòng` |

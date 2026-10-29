@@ -12,9 +12,6 @@
       "field" : "provinceCode",
       "message" : "Vui lòng chọn tỉnh/thành phố"
     }, {
-      "field" : "provinceName",
-      "message" : "Tên tỉnh/thành phố không được để trống"
-    }, {
       "field" : "recipientName",
       "message" : "Tên người nhận không được để trống"
     }, {
