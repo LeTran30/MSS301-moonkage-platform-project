@@ -1,8 +1,8 @@
 package com.moonkage.identity.otp;
 
-import com.moonkage.identity.account.atom.Email;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -63,7 +63,7 @@ class OtpServiceImpl implements OtpService {
     @Override
     public void verifyOtp(OtpPurpose purpose, Email email, String otp) {
         if (email == null) {
-            throw new AppException(ErrorCode.OTP_INVALID_OR_EXPIRED);
+            throw new AppException(LegacyError.OTP_INVALID_OR_EXPIRED);
         }
         Instant now = Instant.now();
         AtomicReference<Outcome> outcome = new AtomicReference<>();
@@ -74,7 +74,7 @@ class OtpServiceImpl implements OtpService {
             throw toLockedException(result, now);
         }
         if (outcome.get() == Outcome.MISMATCH) {
-            throw new AppException(ErrorCode.OTP_INVALID_OR_EXPIRED);
+            throw new AppException(LegacyError.OTP_INVALID_OR_EXPIRED);
         }
     }
 
@@ -101,14 +101,14 @@ class OtpServiceImpl implements OtpService {
         }
         boolean inWindow = entry.isInSendWindow(now);
         if (inWindow && entry.sendCount() >= properties.getMaxResendPerHour()) {
-            throw new AppException(ErrorCode.OTP_SEND_LIMIT_EXCEEDED);
+            throw new AppException(LegacyError.OTP_SEND_LIMIT_EXCEEDED);
         }
         Instant cooldownEnd =
                 entry.lastSentAt() == null ? null : entry.lastSentAt().plus(properties.getResendCooldown());
         if (cooldownEnd != null && now.isBefore(cooldownEnd)) {
             long remainingSeconds =
                     Math.max(1, Duration.between(now, cooldownEnd).toSeconds());
-            throw new AppException(ErrorCode.OTP_TOO_FREQUENT, remainingSeconds);
+            throw new AppException(LegacyError.OTP_TOO_FREQUENT, remainingSeconds);
         }
         return inWindow
                 ? entry.withSend(now, entry.sendCount() + 1, entry.sendWindowStart())
@@ -149,7 +149,7 @@ class OtpServiceImpl implements OtpService {
     private AppException toLockedException(OtpEntry entry, Instant now) {
         long remainingMinutes =
                 Math.max(1, Duration.between(now, entry.lockedUntil()).toMinutes() + 1);
-        return new AppException(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, properties.getMaxAttempts(), remainingMinutes);
+        return new AppException(LegacyError.OTP_MAX_ATTEMPTS_EXCEEDED, properties.getMaxAttempts(), remainingMinutes);
     }
 
     private enum Outcome {

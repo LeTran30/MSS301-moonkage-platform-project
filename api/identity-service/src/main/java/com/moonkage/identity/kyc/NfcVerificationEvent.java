@@ -1,8 +1,6 @@
 package com.moonkage.identity.kyc;
 
-import com.moonkage.identity.common.config.RabbitConfig;
 import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Outcome of one NFC card attempt, published as {@code account.nfc_verified / nfc_failed / nfc_locked}. Masked data
@@ -21,9 +19,10 @@ public record NfcVerificationEvent(
         Instant occurredAt) {
 
     public enum Type {
-        VERIFIED(RabbitConfig.NFC_VERIFIED_ROUTING_KEY),
-        FAILED(RabbitConfig.NFC_FAILED_ROUTING_KEY),
-        LOCKED(RabbitConfig.NFC_LOCKED_ROUTING_KEY);
+        // FR-04 (Software Design 5.4): web push and audit, consumed by orchestrator-service
+        VERIFIED("account.nfc_verified"),
+        FAILED("account.nfc_failed"),
+        LOCKED("account.nfc_locked");
 
         private final String routingKey;
 
@@ -36,23 +35,20 @@ public record NfcVerificationEvent(
         }
     }
 
-    public static NfcVerificationEvent verified(String accountId, String sessionId, String idNumberMasked, Instant at) {
+    public static NfcVerificationEvent verified(
+            String eventId, String accountId, String sessionId, String idNumberMasked, Instant at) {
         return new NfcVerificationEvent(
-                newId(), Type.VERIFIED, accountId, sessionId, null, null, idNumberMasked, null, at);
+                eventId, Type.VERIFIED, accountId, sessionId, null, null, idNumberMasked, null, at);
     }
 
     public static NfcVerificationEvent failed(
-            String accountId, String sessionId, NfcReasonCode reason, int attemptsLeft, Instant at) {
+            String eventId, String accountId, String sessionId, NfcReasonCode reason, int attemptsLeft, Instant at) {
         return new NfcVerificationEvent(
-                newId(), Type.FAILED, accountId, sessionId, reason, attemptsLeft, null, null, at);
+                eventId, Type.FAILED, accountId, sessionId, reason, attemptsLeft, null, null, at);
     }
 
     public static NfcVerificationEvent locked(
-            String accountId, String sessionId, NfcReasonCode reason, Instant lockedUntil, Instant at) {
-        return new NfcVerificationEvent(newId(), Type.LOCKED, accountId, sessionId, reason, 0, null, lockedUntil, at);
-    }
-
-    private static String newId() {
-        return UUID.randomUUID().toString();
+            String eventId, String accountId, String sessionId, NfcReasonCode reason, Instant lockedUntil, Instant at) {
+        return new NfcVerificationEvent(eventId, Type.LOCKED, accountId, sessionId, reason, 0, null, lockedUntil, at);
     }
 }

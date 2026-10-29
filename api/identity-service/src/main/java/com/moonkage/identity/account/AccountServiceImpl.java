@@ -1,12 +1,12 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.account.dto.AccountCredentials;
 import com.moonkage.identity.account.dto.AccountView;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -96,16 +96,16 @@ class AccountServiceImpl implements AccountService {
     }
 
     private static AppException notFound(String accountId) {
-        return new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId);
+        return new AppException(LegacyError.ACCOUNT_NOT_FOUND, accountId);
     }
 
     /** AC-01.3: an email or phone already bound to an account cannot register again. */
     private void validateUniqueness(Email email, PhoneNumber phoneNumber) {
         if (accountRepository.existsByEmail(email)) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, email.value());
+            throw new AppException(LegacyError.EMAIL_ALREADY_EXISTS, email.value());
         }
         if (phoneNumber != null && accountRepository.existsByPhoneNumber(phoneNumber)) {
-            throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS, phoneNumber.value());
+            throw new AppException(LegacyError.PHONE_ALREADY_EXISTS, phoneNumber.value());
         }
     }
 
@@ -127,11 +127,11 @@ class AccountServiceImpl implements AccountService {
                 exception.getCause() instanceof ConstraintViolationException cause ? cause.getConstraintName() : null;
         if (Account.EMAIL_UNIQUE_KEY.equalsIgnoreCase(violatedKey)) {
             return new AppException(
-                    ErrorCode.EMAIL_ALREADY_EXISTS, account.getEmail().value());
+                    LegacyError.EMAIL_ALREADY_EXISTS, account.getEmail().value());
         }
         if (Account.PHONE_NUMBER_UNIQUE_KEY.equalsIgnoreCase(violatedKey)) {
             return new AppException(
-                    ErrorCode.PHONE_ALREADY_EXISTS, account.getPhoneNumber().value());
+                    LegacyError.PHONE_ALREADY_EXISTS, account.getPhoneNumber().value());
         }
         return exception;
     }

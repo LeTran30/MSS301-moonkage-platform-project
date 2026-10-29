@@ -1,6 +1,6 @@
 package com.moonkage.identity.kyc.dto.request;
 
-import com.moonkage.identity.common.RequestText;
+import com.moonkage.identity.platform.web.validation.RequestText;
 import jakarta.validation.constraints.NotBlank;
 
 /**

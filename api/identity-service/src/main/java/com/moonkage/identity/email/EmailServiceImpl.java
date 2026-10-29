@@ -1,11 +1,11 @@
 package com.moonkage.identity.email;
 
-import com.moonkage.identity.account.atom.Email;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
+import com.moonkage.identity.shared.id.IdGenerator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
@@ -30,6 +30,7 @@ class EmailServiceImpl implements EmailService {
     private final EmailNotificationPublisher emailNotificationPublisher;
     private final EmailProperties emailProperties;
     private final MessageSource messageSource;
+    private final IdGenerator idGenerator;
 
     /** Synchronous broker publish so a broker failure reaches the user, who can then ask for a new code (FR-01). */
     @Override
@@ -50,7 +51,7 @@ class EmailServiceImpl implements EmailService {
     private void send(Email email, String name, String otp, String template, String subjectKey) {
         Objects.requireNonNull(email, "email must not be null");
         EmailNotificationEvent event = new EmailNotificationEvent(
-                UUID.randomUUID().toString(),
+                idGenerator.next().toString(),
                 email.value(),
                 messageSource.getMessage(subjectKey, null, LocaleContextHolder.getLocale()),
                 template,
@@ -64,8 +65,8 @@ class EmailServiceImpl implements EmailService {
         try {
             emailNotificationPublisher.publish(event);
         } catch (AmqpException e) {
-            log.error("Failed to publish {} email event to {}: {}", template, email.value(), e.getMessage());
-            throw new AppException(ErrorCode.EMAIL_DELIVERY_FAILED, email.value());
+            log.error("Failed to publish {} email event to {}: {}", template, email.masked(), e.getMessage());
+            throw new AppException(LegacyError.EMAIL_DELIVERY_FAILED, email.value());
         }
     }
 }

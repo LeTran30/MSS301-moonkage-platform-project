@@ -1,8 +1,7 @@
 package com.moonkage.identity.kyc;
 
-import com.moonkage.identity.common.DomainGuard;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -19,12 +18,13 @@ record NfcLockout(int failedAttempts, Instant lockedUntil) {
 
     static final NfcLockout NONE = new NfcLockout(0, null);
 
-    private static final String FAILED_ATTEMPTS_FIELD = "nfcFailedAttempts";
-
+    /** Invariants only the tracker can break: a violation is a bug (plan v2, 5.4). */
     NfcLockout {
-        DomainGuard.requireAtLeast(failedAttempts, 0, FAILED_ATTEMPTS_FIELD);
+        if (failedAttempts < 0) {
+            throw new IllegalArgumentException("failed attempts < 0: " + failedAttempts);
+        }
         if (lockedUntil != null && failedAttempts != 0) {
-            throw new AppException(ErrorCode.INVALID_INPUT, FAILED_ATTEMPTS_FIELD);
+            throw new IllegalArgumentException("a lockout restarts the count, got " + failedAttempts);
         }
     }
 
@@ -35,7 +35,7 @@ record NfcLockout(int failedAttempts, Instant lockedUntil) {
     /** Throws NFC_LOCKED with the minutes left, rounded up so the user never sees 0. */
     void ensureNotLocked(Instant now) {
         if (isLocked(now)) {
-            throw new AppException(ErrorCode.NFC_LOCKED, minutesLeft(now));
+            throw new AppException(LegacyError.NFC_LOCKED, minutesLeft(now));
         }
     }
 

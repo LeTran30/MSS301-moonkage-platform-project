@@ -1,7 +1,7 @@
 package com.moonkage.identity.account.atom;
 
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.CommonError;
 import java.io.Serializable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -16,11 +16,11 @@ public record PasswordHash(String hash) implements Serializable {
 
     public PasswordHash {
         if (hash == null || hash.isBlank()) {
-            throw new AppException(ErrorCode.INVALID_INPUT);
+            throw new AppException(CommonError.INVALID_INPUT);
         }
         hash = hash.trim();
         if (!hash.startsWith("$2a$") && !hash.startsWith("$2b$") && !hash.startsWith("$2y$")) {
-            throw new AppException(ErrorCode.INVALID_INPUT);
+            throw new AppException(CommonError.INVALID_INPUT);
         }
     }
 
@@ -34,7 +34,7 @@ public record PasswordHash(String hash) implements Serializable {
                 || rawPassword.isBlank()
                 || rawPassword.length() < PasswordConstant.MIN_LENGTH
                 || rawPassword.length() > PasswordConstant.MAX_LENGTH) {
-            throw new AppException(ErrorCode.INVALID_INPUT, PASSWORD_FIELD);
+            throw new AppException(CommonError.INVALID_INPUT, PASSWORD_FIELD);
         }
         return new PasswordHash(encoder.encode(rawPassword));
     }

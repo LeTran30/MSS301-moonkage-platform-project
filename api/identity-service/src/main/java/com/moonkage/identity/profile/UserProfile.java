@@ -1,6 +1,6 @@
 package com.moonkage.identity.profile;
 
-import com.moonkage.identity.common.BaseEntity;
+import com.moonkage.identity.platform.persistence.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

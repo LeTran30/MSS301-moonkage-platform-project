@@ -12,17 +12,18 @@ import org.springframework.data.repository.Repository;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Package-by-component rules of identity-service. Each top-level package (account, profile, address, kyc, auth, otp,
- * email, outbox) is a component: other code uses its public service interface and DTOs; its entities, repositories
- * and implementations are package-private. {@code web} is the only HTTP entry point and nothing depends on it.
- * Cycles between components are checked by the shared ArchitectureTest (NO_PACKAGE_CYCLES).
+ * Package-by-component rules of the components not rebuilt yet (plan v2 replaces them module by module). Each
+ * top-level package (account, profile, address, kyc, auth, otp, email) is a component: other code uses its public
+ * service interface and DTOs; its entities, repositories and implementations are package-private. {@code web} is the
+ * only HTTP entry point and nothing depends on it. Cycles are checked by the shared ArchitectureTest
+ * (NO_PACKAGE_CYCLES); the foundation modules by FoundationArchitectureTest.
  *
  * <pre>
  * web ──▶ auth ──▶ account ──▶ profile
  *  │        │         ▲
  *  │        ├──▶ otp, email
  *  │        └──▶ security ──▶ account
- *  └──▶ address, kyc ──▶ account        (all ──▶ common)
+ *  └──▶ address, kyc ──▶ account        (all ──▶ shared, platform)
  * </pre>
  */
 @AnalyzeClasses(

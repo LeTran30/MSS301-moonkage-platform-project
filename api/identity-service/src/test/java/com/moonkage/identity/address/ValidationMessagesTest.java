@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.moonkage.identity.address.dto.AddAddressRequest;
 import com.moonkage.identity.auth.dto.RegisterAccountRequest;
-import com.moonkage.identity.common.config.LocaleConfig;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
+import com.moonkage.identity.platform.config.LocaleConfig;
 import jakarta.validation.ConstraintViolation;
 import java.util.Locale;
 import java.util.Set;

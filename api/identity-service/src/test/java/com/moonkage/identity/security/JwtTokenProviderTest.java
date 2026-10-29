@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.moonkage.identity.account.atom.Role;
 import com.moonkage.identity.account.dto.AccountView;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Role;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashSet;
@@ -81,21 +81,21 @@ class JwtTokenProviderTest {
     void parseAccessTokenUsingRefreshMethodFails() {
         String accessToken = jwtTokenProvider.createAccessToken(account);
         AppException ex = assertThrows(AppException.class, () -> jwtTokenProvider.parseRefreshToken(accessToken));
-        assertEquals(ErrorCode.REFRESH_TOKEN_INVALID, ex.getErrorCode());
+        assertEquals(LegacyError.REFRESH_TOKEN_INVALID, ex.getErrorCode());
     }
 
     @Test
     void parseRefreshTokenUsingAccessMethodFails() {
         String refreshToken = jwtTokenProvider.createRefreshToken(account);
         AppException ex = assertThrows(AppException.class, () -> jwtTokenProvider.parseAccessToken(refreshToken));
-        assertEquals(ErrorCode.TOKEN_INVALID, ex.getErrorCode());
+        assertEquals(LegacyError.TOKEN_INVALID, ex.getErrorCode());
     }
 
     @Test
     void parseMalformedTokenThrowsTokenInvalid() {
         AppException ex =
                 assertThrows(AppException.class, () -> jwtTokenProvider.parseAccessToken("invalid.token.structure"));
-        assertEquals(ErrorCode.TOKEN_INVALID, ex.getErrorCode());
+        assertEquals(LegacyError.TOKEN_INVALID, ex.getErrorCode());
     }
 
     @Test
@@ -104,7 +104,7 @@ class JwtTokenProviderTest {
         String expiredToken = jwtTokenProvider.createAccessToken(account);
 
         AppException ex = assertThrows(AppException.class, () -> jwtTokenProvider.parseAccessToken(expiredToken));
-        assertEquals(ErrorCode.TOKEN_EXPIRED, ex.getErrorCode());
+        assertEquals(LegacyError.TOKEN_EXPIRED, ex.getErrorCode());
     }
 
     @Test
@@ -114,7 +114,7 @@ class JwtTokenProviderTest {
 
         AppException ex =
                 assertThrows(AppException.class, () -> jwtTokenProvider.parseRefreshToken(expiredRefreshToken));
-        assertEquals(ErrorCode.REFRESH_TOKEN_INVALID, ex.getErrorCode());
+        assertEquals(LegacyError.REFRESH_TOKEN_INVALID, ex.getErrorCode());
     }
 
     @Test
@@ -124,6 +124,6 @@ class JwtTokenProviderTest {
                 jwtTokenProvider, "secretKey", "5A7134743777217A25432A462D4A614E645267556B58703273357638792F423F");
 
         AppException ex = assertThrows(AppException.class, () -> jwtTokenProvider.parseAccessToken(token));
-        assertEquals(ErrorCode.TOKEN_INVALID, ex.getErrorCode());
+        assertEquals(LegacyError.TOKEN_INVALID, ex.getErrorCode());
     }
 }

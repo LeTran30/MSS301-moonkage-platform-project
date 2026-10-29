@@ -1,7 +1,7 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.atom.Email;
-import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -11,22 +11,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
-import com.moonkage.identity.account.atom.Role;
 import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.auth.dto.LoginRequest;
 import com.moonkage.identity.auth.dto.RegisterAccountRequest;
 import com.moonkage.identity.auth.dto.RegisterAccountResponse;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.email.EmailService;
 import com.moonkage.identity.otp.OtpPurpose;
 import com.moonkage.identity.otp.OtpService;
 import com.moonkage.identity.profile.UserProfileService;
 import com.moonkage.identity.security.JwtClaims;
 import com.moonkage.identity.security.JwtTokenProvider;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.Role;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -90,11 +90,11 @@ class AuthServiceImplTest {
     void takenIdentifierStopsRegistrationBeforeTheProfile() {
         when(passwordEncoder.encode(anyString())).thenReturn(ENCODED_PASSWORD);
         when(accountService.createMember(any(), any(), any()))
-                .thenThrow(new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, EMAIL));
+                .thenThrow(new AppException(LegacyError.EMAIL_ALREADY_EXISTS, EMAIL));
 
         AppException ex = assertThrows(AppException.class, () -> authService.register(registerRequest()));
 
-        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+        assertEquals(LegacyError.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
         verify(userProfileService, never()).createProfile(anyString(), anyString());
     }
 
@@ -115,7 +115,7 @@ class AuthServiceImplTest {
         AppException ex =
                 assertThrows(AppException.class, () -> authService.login(new LoginRequest(EMAIL, "secret-123")));
 
-        assertEquals(ErrorCode.ACCOUNT_NOT_ACTIVATED, ex.getErrorCode());
+        assertEquals(LegacyError.ACCOUNT_NOT_ACTIVATED, ex.getErrorCode());
     }
 
     @Test
@@ -154,12 +154,12 @@ class AuthServiceImplTest {
     @Test
     void sendResetPasswordOtpPassesCooldownThroughForUnknownEmail() {
         when(accountService.findByEmail(EMAIL_VO)).thenReturn(Optional.empty());
-        doThrow(new AppException(ErrorCode.OTP_TOO_FREQUENT, 30L))
+        doThrow(new AppException(LegacyError.OTP_TOO_FREQUENT, 30L))
                 .when(otpService)
                 .throttleSend(OtpPurpose.RESET_PASSWORD, EMAIL_VO);
 
         AppException ex = assertThrows(AppException.class, () -> authService.sendResetPasswordOtp(EMAIL));
-        assertEquals(ErrorCode.OTP_TOO_FREQUENT, ex.getErrorCode());
+        assertEquals(LegacyError.OTP_TOO_FREQUENT, ex.getErrorCode());
     }
 
     @Test
@@ -200,7 +200,7 @@ class AuthServiceImplTest {
         when(accountService.findAccount(ACCOUNT_ID)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class, () -> authService.refreshToken("rt"));
-        assertEquals(ErrorCode.REFRESH_TOKEN_INVALID, ex.getErrorCode());
+        assertEquals(LegacyError.REFRESH_TOKEN_INVALID, ex.getErrorCode());
     }
 
     @Test
@@ -209,7 +209,7 @@ class AuthServiceImplTest {
         when(accountService.findAccount(ACCOUNT_ID)).thenReturn(Optional.of(account(false)));
 
         AppException ex = assertThrows(AppException.class, () -> authService.refreshToken("rt"));
-        assertEquals(ErrorCode.ACCOUNT_NOT_ACTIVATED, ex.getErrorCode());
+        assertEquals(LegacyError.ACCOUNT_NOT_ACTIVATED, ex.getErrorCode());
         verify(jwtTokenProvider, never()).createAccessToken(any());
     }
 
@@ -221,7 +221,7 @@ class AuthServiceImplTest {
         when(accountService.findAccount(ACCOUNT_ID)).thenReturn(Optional.of(account));
 
         AppException ex = assertThrows(AppException.class, () -> authService.refreshToken("rt"));
-        assertEquals(ErrorCode.REFRESH_TOKEN_INVALID, ex.getErrorCode());
+        assertEquals(LegacyError.REFRESH_TOKEN_INVALID, ex.getErrorCode());
         verify(jwtTokenProvider, never()).createAccessToken(any());
     }
 

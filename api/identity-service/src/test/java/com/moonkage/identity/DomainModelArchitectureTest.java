@@ -49,8 +49,10 @@ class DomainModelArchitectureTest {
             "jakarta.persistence",
             "org.hibernate.annotations",
             "lombok",
-            BASE_PACKAGE + ".common",
-            // value objects shared by every component (docs/services/identity/README.md)
+            // the common language and the mapped superclass of every table (plan v2 4.1, 6)
+            BASE_PACKAGE + ".shared",
+            BASE_PACKAGE + ".platform.persistence",
+            // PasswordHash until account is rebuilt (phase 4)
             BASE_PACKAGE + ".account.atom",
             "com.moonkage.reference");
 

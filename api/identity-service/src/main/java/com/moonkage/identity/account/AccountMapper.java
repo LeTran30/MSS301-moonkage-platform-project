@@ -1,8 +1,8 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.account.dto.AccountCredentials;
 import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.shared.PhoneNumber;
 
 /** Account → AccountView / response DTO. The only place that reads Account to build something other code sees. */
 final class AccountMapper {

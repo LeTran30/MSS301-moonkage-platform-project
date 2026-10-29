@@ -1,6 +1,6 @@
 package com.moonkage.identity.account.dto;
 
-import com.moonkage.identity.account.atom.Role;
+import com.moonkage.identity.shared.Role;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 

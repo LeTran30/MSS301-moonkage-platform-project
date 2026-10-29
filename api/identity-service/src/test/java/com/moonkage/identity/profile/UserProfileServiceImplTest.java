@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.atom.Role;
 import com.moonkage.identity.account.dto.AccountResponse;
 import com.moonkage.identity.account.dto.AccountView;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Role;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +56,6 @@ class UserProfileServiceImplTest {
 
         AppException ex = assertThrows(AppException.class, () -> service.getFullName(ACCOUNT_ID));
 
-        assertEquals(ErrorCode.USER_PROFILE_NOT_FOUND, ex.getErrorCode());
+        assertEquals(LegacyError.USER_PROFILE_NOT_FOUND, ex.getErrorCode());
     }
 }

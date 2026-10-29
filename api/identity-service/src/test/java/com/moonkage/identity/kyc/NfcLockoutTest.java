@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class NfcLockoutTest {
 
         // while locked nothing is counted; after the lockout a fresh round starts at 1
         AppException ex = assertThrows(AppException.class, () -> locked.recordFailure(policy, now));
-        assertEquals(ErrorCode.NFC_LOCKED, ex.getErrorCode());
+        assertEquals(LegacyError.NFC_LOCKED, ex.getErrorCode());
         assertEquals(new NfcLockout(1, null), locked.recordFailure(policy, now.plus(Duration.ofMinutes(16))));
     }
 
@@ -53,9 +53,9 @@ class NfcLockoutTest {
     void nfcLockoutCannotHoldAnImpossibleState() {
         Instant now = Instant.now();
 
-        assertThrows(AppException.class, () -> new NfcLockout(-1, null));
+        assertThrows(IllegalArgumentException.class, () -> new NfcLockout(-1, null));
         // a lockout restarts the count, so a locked value has no failed attempts
-        assertThrows(AppException.class, () -> new NfcLockout(2, now));
+        assertThrows(IllegalArgumentException.class, () -> new NfcLockout(2, now));
     }
 
     @Test
@@ -65,7 +65,7 @@ class NfcLockoutTest {
 
         AppException ex = assertThrows(AppException.class, () -> locked.ensureNotLocked(now));
 
-        assertEquals(ErrorCode.NFC_LOCKED, ex.getErrorCode());
+        assertEquals(LegacyError.NFC_LOCKED, ex.getErrorCode());
         assertArrayEquals(new Object[] {2L}, ex.getArgs());
         locked.ensureNotLocked(now.plus(Duration.ofSeconds(90)));
     }

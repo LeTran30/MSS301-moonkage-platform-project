@@ -1,8 +1,8 @@
 package com.moonkage.identity.security;
 
 import com.moonkage.identity.account.dto.AccountView;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -90,20 +90,20 @@ public class JwtTokenProvider {
         } catch (ExpiredJwtException e) {
             throw new AppException(
                     SecurityConstant.TOKEN_TYPE_REFRESH.equals(expectedType)
-                            ? ErrorCode.REFRESH_TOKEN_INVALID
-                            : ErrorCode.TOKEN_EXPIRED);
+                            ? LegacyError.REFRESH_TOKEN_INVALID
+                            : LegacyError.TOKEN_EXPIRED);
         } catch (JwtException | IllegalArgumentException e) {
             throw new AppException(
                     SecurityConstant.TOKEN_TYPE_REFRESH.equals(expectedType)
-                            ? ErrorCode.REFRESH_TOKEN_INVALID
-                            : ErrorCode.TOKEN_INVALID);
+                            ? LegacyError.REFRESH_TOKEN_INVALID
+                            : LegacyError.TOKEN_INVALID);
         }
         // a 7-day refresh token must never work as an access token (and vice versa)
         if (!expectedType.equals(claims.get(SecurityConstant.CLAIM_TYPE, String.class))) {
             throw new AppException(
                     SecurityConstant.TOKEN_TYPE_REFRESH.equals(expectedType)
-                            ? ErrorCode.REFRESH_TOKEN_INVALID
-                            : ErrorCode.TOKEN_INVALID);
+                            ? LegacyError.REFRESH_TOKEN_INVALID
+                            : LegacyError.TOKEN_INVALID);
         }
         return new JwtClaims(claims.getSubject(), issuedAt(claims));
     }

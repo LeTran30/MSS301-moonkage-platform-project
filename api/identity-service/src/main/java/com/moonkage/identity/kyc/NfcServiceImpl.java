@@ -1,15 +1,15 @@
 package com.moonkage.identity.kyc;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.common.TimeConstant;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.kyc.NfcCardValidator.NfcCard;
 import com.moonkage.identity.kyc.dto.request.SubmitCardRequest;
 import com.moonkage.identity.kyc.dto.response.CreateNfcSessionResponse;
 import com.moonkage.identity.kyc.dto.response.NfcSessionStatusResponse;
 import com.moonkage.identity.kyc.dto.response.SubmitCardResponse;
-import com.moonkage.identity.outbox.OutboxService;
+import com.moonkage.identity.platform.messaging.outbox.Outbox;
+import com.moonkage.identity.shared.VietnamTime;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -58,7 +59,7 @@ class NfcServiceImpl implements NfcService {
     private final NfcTransportDecryptor transportDecryptor;
     private final IdNumberHasher idNumberHasher;
     private final PiiCipher piiCipher;
-    private final OutboxService outboxService;
+    private final Outbox outbox;
     private final NfcProperties nfcProperties;
     private final TransactionTemplate transactionTemplate;
     private final NfcAttemptTracker attemptTracker;
@@ -80,10 +81,10 @@ class NfcServiceImpl implements NfcService {
     public NfcSessionStatusResponse getSession(String sessionId, String accountId) {
         NfcSessionEntry entry = sessionId == null ? null : sessions.get(sessionId);
         if (entry == null || entry.isExpired(Instant.now(clock))) {
-            throw new AppException(ErrorCode.NFC_SESSION_EXPIRED);
+            throw new AppException(LegacyError.NFC_SESSION_EXPIRED);
         }
         if (!entry.accountId().equals(accountId)) {
-            throw new AppException(ErrorCode.NFC_SESSION_NOT_OWNED);
+            throw new AppException(LegacyError.NFC_SESSION_NOT_OWNED);
         }
         return new NfcSessionStatusResponse(entry.sessionId(), entry.status(), entry.expiresAt());
     }
@@ -127,7 +128,7 @@ class NfcServiceImpl implements NfcService {
     void validateCanStartVerification(String accountId) {
         accountService.requireAccountExists(accountId);
         if (legalProfileRepository.existsById(accountId)) {
-            throw new AppException(ErrorCode.NFC_ALREADY_VERIFIED);
+            throw new AppException(LegacyError.NFC_ALREADY_VERIFIED);
         }
         // NFC_LOCKED with the minutes left
         attemptTracker.ensureNotLocked(accountId, Instant.now(clock));
@@ -197,7 +198,10 @@ class NfcServiceImpl implements NfcService {
 
         LegalProfile profile = saveLegalProfile(accountId, card.get(), now);
         attemptTracker.clear(accountId);
-        enqueueEvent(NfcVerificationEvent.verified(accountId, sessionId, profile.getIdNumberMasked(), now));
+        enqueueEvent(
+                NfcVerificationEvent.Type.VERIFIED,
+                eventId ->
+                        NfcVerificationEvent.verified(eventId, accountId, sessionId, profile.getIdNumberMasked(), now));
         return SubmitCardResponse.verified();
     }
 
@@ -210,7 +214,7 @@ class NfcServiceImpl implements NfcService {
 
     /** The checks after the format, in Software Design 4.2 order; empty when the card passes them all. */
     private Optional<NfcReasonCode> findCardRejection(NfcCard card, Instant now) {
-        if (card.dateOfExpiry().isBefore(LocalDate.ofInstant(now, TimeConstant.VIETNAM_ZONE))) {
+        if (card.dateOfExpiry().isBefore(LocalDate.ofInstant(now, VietnamTime.ZONE))) {
             return Optional.of(NfcReasonCode.CARD_EXPIRED);
         }
         if (isLinkedElsewhere(card.idNumber())) {
@@ -225,10 +229,15 @@ class NfcServiceImpl implements NfcService {
         NfcLockout counted = attemptTracker.recordFailure(accountId, now);
         if (!counted.isLocked(now)) {
             int attemptsLeft = counted.attemptsLeft(nfcProperties.lockoutPolicy());
-            enqueueEvent(NfcVerificationEvent.failed(accountId, sessionId, reason, attemptsLeft, now));
+            enqueueEvent(
+                    NfcVerificationEvent.Type.FAILED,
+                    eventId -> NfcVerificationEvent.failed(eventId, accountId, sessionId, reason, attemptsLeft, now));
             return SubmitCardResponse.rejected(reason, attemptsLeft, null);
         }
-        enqueueEvent(NfcVerificationEvent.locked(accountId, sessionId, reason, counted.lockedUntil(), now));
+        enqueueEvent(
+                NfcVerificationEvent.Type.LOCKED,
+                eventId ->
+                        NfcVerificationEvent.locked(eventId, accountId, sessionId, reason, counted.lockedUntil(), now));
         return SubmitCardResponse.rejected(reason, 0, counted.lockedUntil());
     }
 
@@ -258,8 +267,8 @@ class NfcServiceImpl implements NfcService {
     }
 
     /** Same transaction as the LegalProfile / counter change, so the event is never lost or sent for a rollback. */
-    private void enqueueEvent(NfcVerificationEvent event) {
-        outboxService.enqueue(event.eventId(), event.type().routingKey(), event);
+    private void enqueueEvent(NfcVerificationEvent.Type type, Function<String, NfcVerificationEvent> event) {
+        outbox.enqueue(type.routingKey(), eventId -> event.apply(eventId.toString()));
     }
 
     /** A rejected card frees the session for another try; a verified one marks it used. */

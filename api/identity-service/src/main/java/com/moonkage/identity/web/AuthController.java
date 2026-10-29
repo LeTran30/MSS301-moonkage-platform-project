@@ -10,7 +10,7 @@ import com.moonkage.identity.auth.dto.ResetPasswordRequest;
 import com.moonkage.identity.auth.dto.SendOtpRequest;
 import com.moonkage.identity.auth.dto.VerifyAccountRequest;
 import com.moonkage.identity.auth.dto.VerifyAccountResponse;
-import com.moonkage.identity.common.exception.ApiResponse;
+import com.moonkage.identity.platform.web.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

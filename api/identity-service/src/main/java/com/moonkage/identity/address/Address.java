@@ -1,7 +1,7 @@
 package com.moonkage.identity.address;
 
-import com.moonkage.identity.account.atom.PhoneNumber;
-import com.moonkage.identity.common.BaseEntity;
+import com.moonkage.identity.platform.persistence.BaseEntity;
+import com.moonkage.identity.shared.PhoneNumber;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

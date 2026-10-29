@@ -1,6 +1,5 @@
 package com.moonkage.identity.web;
 
-import com.moonkage.identity.common.exception.ApiResponse;
 import com.moonkage.identity.kyc.LegalProfileService;
 import com.moonkage.identity.kyc.NfcService;
 import com.moonkage.identity.kyc.dto.request.SubmitCardRequest;
@@ -8,8 +7,9 @@ import com.moonkage.identity.kyc.dto.response.CreateNfcSessionResponse;
 import com.moonkage.identity.kyc.dto.response.NfcSessionStatusResponse;
 import com.moonkage.identity.kyc.dto.response.NfcStatusResponse;
 import com.moonkage.identity.kyc.dto.response.SubmitCardResponse;
-import com.moonkage.identity.security.CurrentUser;
-import com.moonkage.identity.security.CurrentUserInfo;
+import com.moonkage.identity.platform.security.CurrentUser;
+import com.moonkage.identity.platform.security.CurrentUserInfo;
+import com.moonkage.identity.platform.web.ApiResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -1,7 +1,7 @@
 package com.moonkage.identity.kyc;
 
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.io.Serializable;
 import java.util.regex.Pattern;
 
@@ -18,11 +18,11 @@ public record CitizenId(String value) implements Serializable {
 
     public CitizenId {
         if (value == null || value.isBlank()) {
-            throw new AppException(ErrorCode.ID_NUMBER_INVALID);
+            throw new AppException(LegacyError.ID_NUMBER_INVALID);
         }
         value = value.trim();
         if (!PATTERN.matcher(value).matches()) {
-            throw new AppException(ErrorCode.ID_NUMBER_INVALID);
+            throw new AppException(LegacyError.ID_NUMBER_INVALID);
         }
     }
 

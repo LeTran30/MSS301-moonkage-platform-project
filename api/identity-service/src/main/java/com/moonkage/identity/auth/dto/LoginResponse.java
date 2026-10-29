@@ -1,8 +1,8 @@
 package com.moonkage.identity.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.moonkage.identity.account.atom.Role;
 import com.moonkage.identity.security.SecurityConstant;
+import com.moonkage.identity.shared.Role;
 import lombok.Builder;
 
 @Builder

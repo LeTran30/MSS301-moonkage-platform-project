@@ -13,11 +13,22 @@
     <name>Identity Service</name>
     <description>Accounts, addresses and vendor profiles</description>
 
+    <properties>
+        <!-- 1.4.x is the line for Spring Boot 3.5 -->
+        <spring-modulith.version>1.4.14</spring-modulith.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.moonkage</groupId>
             <artifactId>common-reference</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <!-- annotations only: marks shared and platform as open modules (plan v2 3.1) -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+            <version>${spring-modulith.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -125,6 +136,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>rabbitmq</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- module boundaries (plan v2 3.1): ModulithStructureTest -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-core</artifactId>
+            <version>${spring-modulith.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

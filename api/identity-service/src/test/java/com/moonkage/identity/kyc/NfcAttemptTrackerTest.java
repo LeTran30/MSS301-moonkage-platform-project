@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
@@ -38,7 +38,7 @@ class NfcAttemptTrackerTest {
         lock(LAN, NOW);
 
         AppException ex = assertThrows(AppException.class, () -> tracker.ensureNotLocked(LAN, NOW));
-        assertEquals(ErrorCode.NFC_LOCKED, ex.getErrorCode());
+        assertEquals(LegacyError.NFC_LOCKED, ex.getErrorCode());
         tracker.ensureNotLocked(LAN, NOW.plus(nfcProperties.getLockoutDuration()));
     }
 

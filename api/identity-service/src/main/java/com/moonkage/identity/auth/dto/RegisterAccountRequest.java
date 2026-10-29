@@ -1,10 +1,10 @@
 package com.moonkage.identity.auth.dto;
 
 import com.moonkage.identity.account.atom.PasswordConstant;
-import com.moonkage.identity.account.atom.PhoneNumber;
-import com.moonkage.identity.common.RequestText;
+import com.moonkage.identity.platform.web.validation.RequestText;
 import com.moonkage.identity.profile.ProfileConstant;
 import com.moonkage.identity.security.SecurityConstant;
+import com.moonkage.identity.shared.PhoneNumber;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

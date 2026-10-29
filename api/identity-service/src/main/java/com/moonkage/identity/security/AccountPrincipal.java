@@ -1,12 +1,10 @@
 package com.moonkage.identity.security;
 
-import com.moonkage.identity.account.atom.Role;
 import com.moonkage.identity.account.dto.AccountCredentials;
 import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.platform.security.CurrentUserInfo;
 import java.util.Collection;
-import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -14,10 +12,6 @@ import org.springframework.security.core.userdetails.UserDetails;
  * entity does not depend on Spring Security.
  */
 public record AccountPrincipal(AccountCredentials credentials) implements UserDetails {
-
-    public static List<GrantedAuthority> authoritiesOf(Role role) {
-        return List.of(new SimpleGrantedAuthority(SecurityConstant.ROLE_PREFIX + role.name()));
-    }
 
     public AccountView account() {
         return credentials.account();
@@ -35,7 +29,7 @@ public record AccountPrincipal(AccountCredentials credentials) implements UserDe
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return authoritiesOf(account().role());
+        return CurrentUserInfo.authoritiesOf(account().role());
     }
 
     @Override

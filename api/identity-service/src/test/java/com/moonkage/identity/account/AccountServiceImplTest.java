@@ -9,13 +9,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
-import com.moonkage.identity.account.atom.Role;
 import com.moonkage.identity.account.dto.AccountView;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.Role;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
@@ -57,7 +57,7 @@ class AccountServiceImplTest {
 
         AppException ex = assertThrows(AppException.class, () -> accountService.getAccount(UNKNOWN_ID));
 
-        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
+        assertEquals(LegacyError.ACCOUNT_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
@@ -90,7 +90,7 @@ class AccountServiceImplTest {
 
         AppException ex = assertThrows(AppException.class, () -> accountService.createMember(EMAIL, PHONE, HASH));
 
-        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+        assertEquals(LegacyError.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
         verify(accountRepository, never()).saveAndFlush(any());
     }
 
@@ -101,7 +101,7 @@ class AccountServiceImplTest {
 
         AppException ex = assertThrows(AppException.class, () -> accountService.createMember(EMAIL, PHONE, HASH));
 
-        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+        assertEquals(LegacyError.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
     }
 
     @Test
@@ -111,7 +111,7 @@ class AccountServiceImplTest {
 
         AppException ex = assertThrows(AppException.class, () -> accountService.createMember(EMAIL, PHONE, HASH));
 
-        assertEquals(ErrorCode.PHONE_ALREADY_EXISTS, ex.getErrorCode());
+        assertEquals(LegacyError.PHONE_ALREADY_EXISTS, ex.getErrorCode());
     }
 
     @Test
@@ -134,7 +134,7 @@ class AccountServiceImplTest {
 
         AppException ex = assertThrows(AppException.class, () -> accountService.lockForUpdate(UNKNOWN_ID));
 
-        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
+        assertEquals(LegacyError.ACCOUNT_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test

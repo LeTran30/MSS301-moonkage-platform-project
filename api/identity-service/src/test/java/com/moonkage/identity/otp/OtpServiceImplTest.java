@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.moonkage.identity.account.atom.Email;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ class OtpServiceImplTest {
         service.issueOtp(PURPOSE, TEST_EMAIL);
 
         AppException ex = assertThrows(AppException.class, () -> service.issueOtp(PURPOSE, TEST_EMAIL));
-        assertEquals(ErrorCode.OTP_TOO_FREQUENT, ex.getErrorCode());
+        assertEquals(LegacyError.OTP_TOO_FREQUENT, ex.getErrorCode());
     }
 
     @Test
@@ -119,7 +119,7 @@ class OtpServiceImplTest {
                         null));
 
         AppException ex = assertThrows(AppException.class, () -> service.issueOtp(PURPOSE, TEST_EMAIL));
-        assertEquals(ErrorCode.OTP_SEND_LIMIT_EXCEEDED, ex.getErrorCode());
+        assertEquals(LegacyError.OTP_SEND_LIMIT_EXCEEDED, ex.getErrorCode());
     }
 
     @Test
@@ -132,15 +132,15 @@ class OtpServiceImplTest {
 
         // Lần thứ 3 vi phạm maxAttempts -> ném OTP_MAX_ATTEMPTS_EXCEEDED
         AppException ex = assertThrows(AppException.class, () -> service.verifyOtp(PURPOSE, TEST_EMAIL, "222222"));
-        assertEquals(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, ex.getErrorCode());
+        assertEquals(LegacyError.OTP_MAX_ATTEMPTS_EXCEEDED, ex.getErrorCode());
 
         // Trong thời gian bị khóa, cố gắng issueOtp cũng bị từ chối
         AppException issueEx = assertThrows(AppException.class, () -> service.issueOtp(PURPOSE, TEST_EMAIL));
-        assertEquals(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, issueEx.getErrorCode());
+        assertEquals(LegacyError.OTP_MAX_ATTEMPTS_EXCEEDED, issueEx.getErrorCode());
 
         // Và cố gắng verifyOtp tiếp cũng bị từ chối
         AppException verifyEx = assertThrows(AppException.class, () -> service.verifyOtp(PURPOSE, TEST_EMAIL, otp));
-        assertEquals(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, verifyEx.getErrorCode());
+        assertEquals(LegacyError.OTP_MAX_ATTEMPTS_EXCEEDED, verifyEx.getErrorCode());
     }
 
     @Test
@@ -158,7 +158,7 @@ class OtpServiceImplTest {
         service.clearOtp(PURPOSE, TEST_EMAIL);
 
         AppException ex = assertThrows(AppException.class, () -> service.issueOtp(PURPOSE, TEST_EMAIL));
-        assertEquals(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, ex.getErrorCode());
+        assertEquals(LegacyError.OTP_MAX_ATTEMPTS_EXCEEDED, ex.getErrorCode());
     }
 
     @Test
@@ -198,7 +198,7 @@ class OtpServiceImplTest {
 
         long plainFailures = results.stream().filter(Boolean.FALSE::equals).count();
         long lockouts = results.stream()
-                .filter(r -> r instanceof AppException e && e.getErrorCode() == ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED)
+                .filter(r -> r instanceof AppException e && e.getErrorCode() == LegacyError.OTP_MAX_ATTEMPTS_EXCEEDED)
                 .count();
         assertEquals(2, plainFailures, "only maxAttempts - 1 guesses may get a plain 'wrong code'");
         assertEquals(62, lockouts);
@@ -230,7 +230,7 @@ class OtpServiceImplTest {
 
         assertNull(service.otpEntries.get(KEY).otp());
         AppException ex = assertThrows(AppException.class, () -> service.throttleSend(PURPOSE, TEST_EMAIL));
-        assertEquals(ErrorCode.OTP_TOO_FREQUENT, ex.getErrorCode());
+        assertEquals(LegacyError.OTP_TOO_FREQUENT, ex.getErrorCode());
     }
 
     @Test
@@ -238,7 +238,7 @@ class OtpServiceImplTest {
         lockOut(TEST_EMAIL);
 
         AppException ex = assertThrows(AppException.class, () -> service.throttleSend(PURPOSE, TEST_EMAIL));
-        assertEquals(ErrorCode.OTP_MAX_ATTEMPTS_EXCEEDED, ex.getErrorCode());
+        assertEquals(LegacyError.OTP_MAX_ATTEMPTS_EXCEEDED, ex.getErrorCode());
     }
 
     @Test
@@ -285,7 +285,7 @@ class OtpServiceImplTest {
             service.verifyOtp(purpose, email, otp);
             return true;
         } catch (AppException e) {
-            if (e.getErrorCode() == ErrorCode.OTP_INVALID_OR_EXPIRED) {
+            if (e.getErrorCode() == LegacyError.OTP_INVALID_OR_EXPIRED) {
                 return false;
             }
             throw e;

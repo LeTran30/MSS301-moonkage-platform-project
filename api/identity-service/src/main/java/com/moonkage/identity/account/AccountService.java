@@ -1,10 +1,10 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.account.dto.AccountCredentials;
 import com.moonkage.identity.account.dto.AccountView;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
 import java.util.Optional;
 
 /**

@@ -12,8 +12,8 @@ import static org.mockito.Mockito.when;
 import com.moonkage.identity.account.AccountService;
 import com.moonkage.identity.address.dto.AddAddressRequest;
 import com.moonkage.identity.address.dto.AddAddressResponse;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,9 +117,9 @@ class AddressServiceImplTest {
         service.create(ACCOUNT_ID, request(null));
         AppException exUpdate =
                 assertThrows(AppException.class, () -> service.update(OTHER_ACCOUNT_ID, "a1", request(null)));
-        assertEquals(ErrorCode.ADDRESS_NOT_FOUND, exUpdate.getErrorCode());
+        assertEquals(LegacyError.ADDRESS_NOT_FOUND, exUpdate.getErrorCode());
 
         AppException exDelete = assertThrows(AppException.class, () -> service.delete(OTHER_ACCOUNT_ID, "a1"));
-        assertEquals(ErrorCode.ADDRESS_NOT_FOUND, exDelete.getErrorCode());
+        assertEquals(LegacyError.ADDRESS_NOT_FOUND, exDelete.getErrorCode());
     }
 }

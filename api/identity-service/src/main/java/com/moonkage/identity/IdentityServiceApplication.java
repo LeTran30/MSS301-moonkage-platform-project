@@ -1,6 +1,6 @@
 package com.moonkage.identity;
 
-import com.moonkage.identity.common.config.DotEnvConfig;
+import com.moonkage.identity.platform.config.DotEnvConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;

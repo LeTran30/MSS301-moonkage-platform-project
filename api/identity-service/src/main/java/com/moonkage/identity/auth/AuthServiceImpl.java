@@ -1,9 +1,7 @@
 package com.moonkage.identity.auth;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.auth.dto.LoginRequest;
 import com.moonkage.identity.auth.dto.LoginResponse;
@@ -11,8 +9,6 @@ import com.moonkage.identity.auth.dto.RegisterAccountRequest;
 import com.moonkage.identity.auth.dto.RegisterAccountResponse;
 import com.moonkage.identity.auth.dto.VerifyAccountRequest;
 import com.moonkage.identity.auth.dto.VerifyAccountResponse;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.email.EmailService;
 import com.moonkage.identity.otp.OtpPurpose;
 import com.moonkage.identity.otp.OtpService;
@@ -20,6 +16,10 @@ import com.moonkage.identity.profile.UserProfileService;
 import com.moonkage.identity.security.AccountPrincipal;
 import com.moonkage.identity.security.JwtClaims;
 import com.moonkage.identity.security.JwtTokenProvider;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -92,10 +92,10 @@ class AuthServiceImpl implements AuthService {
             return buildLoginResponse(((AccountPrincipal) authentication.getPrincipal()).account());
         } catch (BadCredentialsException e) {
             // same answer whether the identifier exists or not
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            throw new AppException(LegacyError.INVALID_CREDENTIALS);
         } catch (DisabledException e) {
             // e-mail not confirmed yet (AccountPrincipal.isEnabled); told only after the password matched
-            throw new AppException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
+            throw new AppException(LegacyError.ACCOUNT_NOT_ACTIVATED);
         }
     }
 
@@ -105,13 +105,13 @@ class AuthServiceImpl implements AuthService {
         // a deleted account makes the token invalid, as JwtFilter does for access tokens
         AccountView account = accountService
                 .findAccount(claims.accountId())
-                .orElseThrow(() -> new AppException(ErrorCode.REFRESH_TOKEN_INVALID));
+                .orElseThrow(() -> new AppException(LegacyError.REFRESH_TOKEN_INVALID));
         if (!account.verified()) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_ACTIVATED);
+            throw new AppException(LegacyError.ACCOUNT_NOT_ACTIVATED);
         }
         // a refresh token from before a password reset must not open a new session (Q-04)
         if (!account.acceptsTokenIssuedAt(claims.issuedAt())) {
-            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+            throw new AppException(LegacyError.REFRESH_TOKEN_INVALID);
         }
 
         return buildLoginResponse(account);
@@ -168,7 +168,9 @@ class AuthServiceImpl implements AuthService {
 
     /** A matching code whose account is gone answers like a wrong code. */
     private AccountView getOtpOwner(Email email) {
-        return accountService.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.OTP_INVALID_OR_EXPIRED));
+        return accountService
+                .findByEmail(email)
+                .orElseThrow(() -> new AppException(LegacyError.OTP_INVALID_OR_EXPIRED));
     }
 
     /** Falls back to the email when the profile is missing: the OTP mail still goes out. */

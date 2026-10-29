@@ -12,9 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
-import com.moonkage.identity.common.TimeConstant;
-import com.moonkage.identity.common.config.RabbitConfig;
 import com.moonkage.identity.email.EmailNotificationEvent;
+import com.moonkage.identity.platform.messaging.RabbitConfig;
+import com.moonkage.identity.shared.VietnamTime;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWEHeader;
@@ -365,8 +365,7 @@ class IdentityApiIntegrationTest {
                 new Payload(Map.of(
                         "idNumber", idNumber, "dateOfBirth", "1990-01-01", "placeOfResidence", "So 1 Duong Le Loi")));
         jwe.encrypt(new RSAEncrypter((RSAPublicKey) NFC_TRANSPORT_KEYS.getPublic()));
-        String dateOfExpiry =
-                LocalDate.now(TimeConstant.VIETNAM_ZONE).plusYears(5).toString();
+        String dateOfExpiry = LocalDate.now(VietnamTime.ZONE).plusYears(5).toString();
         String card = """
                 {"fullName":"NGUYEN VAN AN","gender":"MALE","nationality":"Viet Nam","placeOfBirth":"Tinh Lam Dong",
                 "dateOfIssue":"2024-01-01","dateOfExpiry":"%s","encryptedFields":"%s","appVersion":"it"}
@@ -435,7 +434,7 @@ class IdentityApiIntegrationTest {
     private String lastOtp(String email) {
         ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
         verify(rabbitTemplate, atLeastOnce())
-                .convertAndSend(eq(RabbitConfig.EVENTS_EXCHANGE), eq(RabbitConfig.EMAIL_ROUTING_KEY), events.capture());
+                .convertAndSend(eq(RabbitConfig.EVENTS_EXCHANGE), eq("orchestrator.email.identity"), events.capture());
         List<EmailNotificationEvent> mine = events.getAllValues().stream()
                 .map(EmailNotificationEvent.class::cast)
                 .filter(e -> e.to().equals(email))

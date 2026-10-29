@@ -20,12 +20,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.common.TimeConstant;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.kyc.dto.request.SubmitCardRequest;
 import com.moonkage.identity.kyc.dto.response.SubmitCardResponse;
-import com.moonkage.identity.outbox.OutboxService;
+import com.moonkage.identity.platform.messaging.outbox.EventId;
+import com.moonkage.identity.platform.messaging.outbox.Outbox;
+import com.moonkage.identity.shared.VietnamTime;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.ErrorCode;
+import com.moonkage.identity.shared.error.LegacyError;
+import com.moonkage.identity.shared.id.SequentialIdGenerator;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,6 +42,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -59,7 +63,7 @@ class NfcServiceImplTest {
         private AccountService accountService;
         private LegalProfileRepository legalProfileRepository;
         private NfcTransportDecryptor decryptor;
-        private OutboxService outboxService;
+        private Outbox outbox;
         private IdNumberHasher hasher;
         private PiiCipher piiCipher;
         private NfcServiceImpl service;
@@ -70,7 +74,7 @@ class NfcServiceImplTest {
             accountService = mock(AccountService.class);
             legalProfileRepository = mock(LegalProfileRepository.class);
             decryptor = mock(NfcTransportDecryptor.class);
-            outboxService = mock(OutboxService.class);
+            outbox = mock(Outbox.class);
             hasher = new IdNumberHasher("test-pepper");
             piiCipher = new PiiCipher("AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=");
             NfcProperties nfcProperties = new NfcProperties();
@@ -81,7 +85,7 @@ class NfcServiceImplTest {
                     decryptor,
                     hasher,
                     piiCipher,
-                    outboxService,
+                    outbox,
                     nfcProperties,
                     new TransactionTemplate(mock(PlatformTransactionManager.class)),
                     attemptTracker,
@@ -190,7 +194,7 @@ class NfcServiceImplTest {
 
         @Test
         void expiredCardIsRejectedButOneExpiringTodayIsNot() {
-            LocalDate today = LocalDate.now(TimeConstant.VIETNAM_ZONE);
+            LocalDate today = LocalDate.now(VietnamTime.ZONE);
             SubmitCardRequest expired = NfcCardValidatorTest.request(
                     "NGUYEN VAN A", "MALE", "2021-01-01", today.minusDays(1).toString());
             SubmitCardRequest lastDay =
@@ -229,17 +233,17 @@ class NfcServiceImplTest {
         @Test
         void startIsRefusedWhenVerifiedLockedOrUnknown() {
             when(legalProfileRepository.existsById(ACCOUNT_ID)).thenReturn(true);
-            assertEquals(ErrorCode.NFC_ALREADY_VERIFIED, startError(ACCOUNT_ID));
+            assertEquals(LegacyError.NFC_ALREADY_VERIFIED, startError(ACCOUNT_ID));
 
             when(legalProfileRepository.existsById(ACCOUNT_ID)).thenReturn(false);
             failTimes(5, Instant.now());
-            assertEquals(ErrorCode.NFC_LOCKED, startError(ACCOUNT_ID));
+            assertEquals(LegacyError.NFC_LOCKED, startError(ACCOUNT_ID));
 
             // the account is checked first: an unknown id never reaches the uuid column
-            doThrow(new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "ghost"))
+            doThrow(new AppException(LegacyError.ACCOUNT_NOT_FOUND, "ghost"))
                     .when(accountService)
                     .requireAccountExists("ghost");
-            assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, startError("ghost"));
+            assertEquals(LegacyError.ACCOUNT_NOT_FOUND, startError("ghost"));
         }
 
         @Test
@@ -271,14 +275,15 @@ class NfcServiceImplTest {
             assertEquals(attemptsLeft, response.attemptsLeft());
         }
 
-        /** The one event written to the outbox, checked to go under its own id and routing key. */
+        /** The one event written to the outbox, checked to carry the id the outbox gives and its routing key. */
+        @SuppressWarnings("unchecked")
         private NfcVerificationEvent publishedEvent() {
-            ArgumentCaptor<String> eventId = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> routingKey = ArgumentCaptor.forClass(String.class);
-            ArgumentCaptor<Object> payload = ArgumentCaptor.forClass(Object.class);
-            verify(outboxService).enqueue(eventId.capture(), routingKey.capture(), payload.capture());
-            NfcVerificationEvent event = (NfcVerificationEvent) payload.getValue();
-            assertEquals(event.eventId(), eventId.getValue());
+            ArgumentCaptor<Function<EventId, ?>> build = ArgumentCaptor.forClass(Function.class);
+            verify(outbox).enqueue(routingKey.capture(), build.capture());
+            EventId eventId = new EventId(SequentialIdGenerator.nth(1));
+            NfcVerificationEvent event = (NfcVerificationEvent) build.getValue().apply(eventId);
+            assertEquals(eventId.toString(), event.eventId());
             assertEquals(event.type().routingKey(), routingKey.getValue());
             return event;
         }
@@ -306,7 +311,7 @@ class NfcServiceImplTest {
                     mock(NfcTransportDecryptor.class),
                     mock(IdNumberHasher.class),
                     mock(PiiCipher.class),
-                    mock(OutboxService.class),
+                    mock(Outbox.class),
                     nfcProperties,
                     new TransactionTemplate(mock(PlatformTransactionManager.class)),
                     new NfcAttemptTracker(nfcProperties),
@@ -327,13 +332,13 @@ class NfcServiceImplTest {
 
         @Test
         void createSessionIsRefusedWhenAccountCannotStart() {
-            doThrow(new AppException(ErrorCode.NFC_ALREADY_VERIFIED))
+            doThrow(new AppException(LegacyError.NFC_ALREADY_VERIFIED))
                     .when(service)
                     .validateCanStartVerification(OWNER);
 
             AppException ex = assertThrows(AppException.class, () -> service.createSession(OWNER));
 
-            assertEquals(ErrorCode.NFC_ALREADY_VERIFIED, ex.getErrorCode());
+            assertEquals(LegacyError.NFC_ALREADY_VERIFIED, ex.getErrorCode());
             assertTrue(service.sessions.isEmpty());
         }
 
@@ -364,7 +369,7 @@ class NfcServiceImplTest {
             String old = service.createSession(OWNER).sessionId();
             String current = service.createSession(OWNER).sessionId();
 
-            assertEquals(ErrorCode.NFC_SESSION_EXPIRED, getError(old, OWNER));
+            assertEquals(LegacyError.NFC_SESSION_EXPIRED, getError(old, OWNER));
             assertEquals(
                     NfcSessionStatus.PENDING, service.getSession(current, OWNER).status());
         }
@@ -373,12 +378,12 @@ class NfcServiceImplTest {
         void getSessionChecksOwnerAndExpiry() {
             String sessionId = service.createSession(OWNER).sessionId();
 
-            assertEquals(ErrorCode.NFC_SESSION_NOT_OWNED, getError(sessionId, OTHER));
-            assertEquals(ErrorCode.NFC_SESSION_EXPIRED, getError("unknown-session-id-123", OWNER));
+            assertEquals(LegacyError.NFC_SESSION_NOT_OWNED, getError(sessionId, OTHER));
+            assertEquals(LegacyError.NFC_SESSION_EXPIRED, getError("unknown-session-id-123", OWNER));
 
             nfcProperties.setSessionTtl(Duration.ZERO);
             String expired = service.createSession(OTHER).sessionId();
-            assertEquals(ErrorCode.NFC_SESSION_EXPIRED, getError(expired, OTHER));
+            assertEquals(LegacyError.NFC_SESSION_EXPIRED, getError(expired, OTHER));
         }
 
         @Test

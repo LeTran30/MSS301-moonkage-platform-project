@@ -1,8 +1,8 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
 import jakarta.persistence.EntityManager;
 import org.springframework.test.util.ReflectionTestUtils;
 

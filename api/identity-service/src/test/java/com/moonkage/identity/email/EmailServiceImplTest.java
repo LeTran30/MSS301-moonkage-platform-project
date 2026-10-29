@@ -4,8 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.moonkage.identity.account.atom.Email;
-import com.moonkage.identity.common.exception.AppException;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.id.SequentialIdGenerator;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ class EmailServiceImplTest {
                 publishedEvent.set(event);
             }
         };
-        service = new EmailServiceImpl(publisher, emailProperties, messageSource);
+        service = new EmailServiceImpl(publisher, emailProperties, messageSource, new SequentialIdGenerator());
     }
 
     @Test
@@ -74,7 +75,8 @@ class EmailServiceImplTest {
                 throw new AmqpException("Broker unreachable");
             }
         };
-        EmailServiceImpl failingService = new EmailServiceImpl(failingPublisher, emailProperties, messageSource);
+        EmailServiceImpl failingService =
+                new EmailServiceImpl(failingPublisher, emailProperties, messageSource, new SequentialIdGenerator());
 
         assertThrows(AppException.class, () -> failingService.sendVerifyAccountOtp(TEST_EMAIL, "Minh", "654321"));
     }

@@ -1,11 +1,12 @@
 package com.moonkage.identity.address;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.address.dto.AddAddressRequest;
 import com.moonkage.identity.address.dto.AddAddressResponse;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.CommonError;
+import com.moonkage.identity.shared.error.LegacyError;
 import com.moonkage.reference.Province;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -91,7 +92,7 @@ class AddressServiceImpl implements AddressService {
     private static String officialProvinceName(String provinceCode) {
         return Province.fromCode(provinceCode)
                 .map(Province::getOfficialName)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_INPUT));
+                .orElseThrow(() -> new AppException(CommonError.INVALID_INPUT));
     }
 
     /**
@@ -107,7 +108,7 @@ class AddressServiceImpl implements AddressService {
     private Address getOwned(String accountId, String addressId) {
         return addressRepository
                 .findByIdAndAccountId(addressId, accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND, addressId));
+                .orElseThrow(() -> new AppException(LegacyError.ADDRESS_NOT_FOUND, addressId));
     }
 
     private void clearOtherDefaults(String accountId, String keptAddressId) {

@@ -10,11 +10,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.kyc.dto.response.NfcStatusResponse;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,7 +44,7 @@ class LegalProfileServiceImplTest {
         service = new LegalProfileServiceImpl(
                 accountService, legalProfileRepository, hasher, attemptTracker, Clock.systemUTC());
 
-        doThrow(new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "ghost"))
+        doThrow(new AppException(LegacyError.ACCOUNT_NOT_FOUND, "ghost"))
                 .when(accountService)
                 .requireAccountExists("ghost");
     }
@@ -77,7 +77,7 @@ class LegalProfileServiceImplTest {
     @Test
     void statusOfUnknownAccountIsNotFound() {
         AppException ex = assertThrows(AppException.class, () -> service.getNfcStatus("ghost"));
-        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
+        assertEquals(LegacyError.ACCOUNT_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
@@ -121,11 +121,11 @@ class LegalProfileServiceImplTest {
     void checkRejectsWrongLengthAndUnknownAccount() {
         AppException tooShort = assertThrows(
                 AppException.class, () -> service.checkIdNumber(new CheckIdNumberRequest(ACCOUNT_ID, "07912345678")));
-        assertEquals(ErrorCode.ID_NUMBER_INVALID, tooShort.getErrorCode());
+        assertEquals(LegacyError.ID_NUMBER_INVALID, tooShort.getErrorCode());
 
         AppException unknown = assertThrows(
                 AppException.class, () -> service.checkIdNumber(new CheckIdNumberRequest("ghost", ID_NUMBER)));
-        assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, unknown.getErrorCode());
+        assertEquals(LegacyError.ACCOUNT_NOT_FOUND, unknown.getErrorCode());
     }
 
     /** As many failed cards as nfc.max-attempts allows, all at {@code at}. */

@@ -1,6 +1,4 @@
 Method <com.moonkage.identity.kyc.LegalProfile.builder()> calls constructor <com.moonkage.identity.kyc.LegalProfile$LegalProfileBuilder.<init>()> in (LegalProfile.java:34)
 Method <com.moonkage.identity.kyc.LegalProfile.builder()> has return type <com.moonkage.identity.kyc.LegalProfile$LegalProfileBuilder> in (LegalProfile.java:0)
-Method <com.moonkage.identity.outbox.OutboxEvent.builder()> calls constructor <com.moonkage.identity.outbox.OutboxEvent$OutboxEventBuilder.<init>()> in (OutboxEvent.java:26)
-Method <com.moonkage.identity.outbox.OutboxEvent.builder()> has return type <com.moonkage.identity.outbox.OutboxEvent$OutboxEventBuilder> in (OutboxEvent.java:0)
 Method <com.moonkage.identity.profile.UserProfile.builder()> calls constructor <com.moonkage.identity.profile.UserProfile$UserProfileBuilder.<init>()> in (UserProfile.java:25)
 Method <com.moonkage.identity.profile.UserProfile.builder()> has return type <com.moonkage.identity.profile.UserProfile$UserProfileBuilder> in (UserProfile.java:0)

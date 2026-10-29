@@ -6,12 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
-import com.moonkage.identity.account.atom.Role;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.Role;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
@@ -84,9 +82,8 @@ class AccountTest {
         assertNull(account.getPasswordChangedAt());
     }
 
+    /** A missing value here is a bug in the caller, not bad input (plan v2, 5.4). */
     private static void assertInvalid(Runnable change) {
-        assertEquals(
-                ErrorCode.INVALID_INPUT,
-                assertThrows(AppException.class, change::run).getErrorCode());
+        assertThrows(NullPointerException.class, change::run);
     }
 }

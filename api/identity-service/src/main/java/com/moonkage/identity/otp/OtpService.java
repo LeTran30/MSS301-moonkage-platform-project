@@ -1,7 +1,7 @@
 package com.moonkage.identity.otp;
 
-import com.moonkage.identity.account.atom.Email;
-import com.moonkage.identity.common.exception.AppException;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.error.AppException;
 
 /** Codes, counters and lockouts are kept per (purpose, email): a code never works for another purpose. */
 public interface OtpService {

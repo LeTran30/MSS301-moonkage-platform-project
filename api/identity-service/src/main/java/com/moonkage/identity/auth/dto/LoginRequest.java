@@ -1,6 +1,6 @@
 package com.moonkage.identity.auth.dto;
 
-import com.moonkage.identity.common.RequestText;
+import com.moonkage.identity.platform.web.validation.RequestText;
 import com.moonkage.identity.security.SecurityConstant;
 import jakarta.validation.constraints.NotBlank;
 

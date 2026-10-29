@@ -1,12 +1,11 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PasswordHash;
-import com.moonkage.identity.account.atom.PhoneNumber;
-import com.moonkage.identity.account.atom.Role;
 import com.moonkage.identity.account.dto.AccountView;
-import com.moonkage.identity.common.BaseEntity;
-import com.moonkage.identity.common.DomainGuard;
+import com.moonkage.identity.platform.persistence.BaseEntity;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.PhoneNumber;
+import com.moonkage.identity.shared.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -71,9 +71,9 @@ class Account extends BaseEntity {
     private Instant passwordChangedAt;
 
     private Account(Email email, PhoneNumber phoneNumber, PasswordHash passwordHash, Role role) {
-        this.email = DomainGuard.requireNonNull(email, "email");
+        this.email = Objects.requireNonNull(email, "email");
         this.phoneNumber = phoneNumber;
-        this.passwordHash = DomainGuard.requireNonNull(passwordHash, "passwordHash");
+        this.passwordHash = Objects.requireNonNull(passwordHash, "passwordHash");
         this.role = role;
         this.accountVerified = false;
     }
@@ -91,8 +91,8 @@ class Account extends BaseEntity {
     /** FR-02: tokens issued before {@code now} stop working (Q-04). */
     void changePassword(PasswordHash newPasswordHash, Instant now) {
         // both checked before either is written: a refused change leaves the account as it was
-        PasswordHash checkedHash = DomainGuard.requireNonNull(newPasswordHash, "passwordHash");
-        Instant changedAt = DomainGuard.requireNonNull(now, "passwordChangedAt");
+        PasswordHash checkedHash = Objects.requireNonNull(newPasswordHash, "passwordHash");
+        Instant changedAt = Objects.requireNonNull(now, "passwordChangedAt");
         this.passwordHash = checkedHash;
         this.passwordChangedAt = changedAt;
     }

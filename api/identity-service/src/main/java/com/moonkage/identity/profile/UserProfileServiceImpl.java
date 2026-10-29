@@ -3,8 +3,8 @@ package com.moonkage.identity.profile;
 import com.moonkage.identity.account.AccountService;
 import com.moonkage.identity.account.dto.AccountResponse;
 import com.moonkage.identity.account.dto.AccountView;
-import com.moonkage.identity.common.exception.AppException;
-import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.shared.error.AppException;
+import com.moonkage.identity.shared.error.LegacyError;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ class UserProfileServiceImpl implements UserProfileService {
     @Override
     @Transactional(readOnly = true)
     public String getFullName(String accountId) {
-        return findFullName(accountId).orElseThrow(() -> new AppException(ErrorCode.USER_PROFILE_NOT_FOUND));
+        return findFullName(accountId).orElseThrow(() -> new AppException(LegacyError.USER_PROFILE_NOT_FOUND));
     }
 
     @Override

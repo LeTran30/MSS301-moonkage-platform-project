@@ -1,9 +1,9 @@
 package com.moonkage.identity.address.dto;
 
-import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.address.AddressConstant;
 import com.moonkage.identity.address.ProvinceCode;
-import com.moonkage.identity.common.RequestText;
+import com.moonkage.identity.platform.web.validation.RequestText;
+import com.moonkage.identity.shared.PhoneNumber;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

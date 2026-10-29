@@ -1,7 +1,7 @@
 package com.moonkage.identity.email;
 
-import com.moonkage.identity.account.atom.Email;
-import com.moonkage.identity.common.exception.AppException;
+import com.moonkage.identity.shared.Email;
+import com.moonkage.identity.shared.error.AppException;
 
 public interface EmailService {
 
