@@ -47,7 +47,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class QuoteRequestServiceImplTest {
 
-    private static final NfcStatusResponse VERIFIED = new NfcStatusResponse("VERIFIED", "NGUYEN THI LAN", "x", NOW);
+    private static final NfcStatusResponse VERIFIED =
+            new NfcStatusResponse("VERIFIED", "NGUYEN THI LAN", "x", null, true);
 
     @Mock
     private QuoteRequestRepository quoteRequestRepository;
@@ -88,7 +89,8 @@ class QuoteRequestServiceImplTest {
 
     @Test
     void buyerWithoutVerifiedNfcCannotCreateARequest() {
-        when(identityClient.getNfcStatus(BUYER)).thenReturn(new NfcStatusResponse("NOT_VERIFIED", null, null, null));
+        when(identityClient.getNfcStatus(BUYER))
+                .thenReturn(new NfcStatusResponse("NOT_VERIFIED", null, null, null, false));
 
         assertError(() -> service.create(BUYER, body(RequestType.DIRECT, 100, Set.of())), ErrorCode.NFC_NOT_VERIFIED);
         verify(quoteRequestRepository, never()).saveAndFlush(any());

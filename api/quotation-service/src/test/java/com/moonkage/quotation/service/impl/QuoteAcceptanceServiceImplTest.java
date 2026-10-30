@@ -61,7 +61,7 @@ class QuoteAcceptanceServiceImplTest {
     private static final String REQUEST = "request-1";
     private static final Duration DEPOSIT_TIMEOUT = Duration.ofMinutes(15);
     private static final NfcStatusResponse VERIFIED =
-            new NfcStatusResponse("VERIFIED", "NGUYEN THI LAN", "********0001", NOW);
+            new NfcStatusResponse("VERIFIED", "NGUYEN THI LAN", "********0001", null, true);
 
     @Mock
     private QuoteAcceptanceRepository quoteAcceptanceRepository;

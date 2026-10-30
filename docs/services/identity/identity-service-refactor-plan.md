@@ -891,6 +891,8 @@ Ghi chú C4: dù chọn (a), mật khẩu **đã lưu** không bị ảnh hưở
 
 ### Phase 8: `identity-client`
 
+> **Bỏ (quyết định H0, 2026-10-30).** Giữ OpenFeign và DTO riêng ở bên gọi. Thay vào đó, DTO KYC của vendor và quotation được thống nhất (`nfcStatus` là chuỗi, thêm `kycVerified`, `isVerified()` đọc `kycVerified`). Phần dưới giữ lại để tham khảo nếu sau này `/internal` lớn lên.
+
 1. Tạo module build `identity-client` theo mục 7.
 2. `InternalKycController implements KycInternalApi`. Test đặc tả nội bộ so với file mẫu Phase 1.
 3. Test proxy phía client với `MockRestServiceServer`.
@@ -952,6 +954,7 @@ Làm sau khi Phase 4 đến 7 đã xong (không còn code cũ nào đọc/ghi c�
 | C3 | (2026-10-29) (a) `provinceName` của client vẫn nhận nhưng bỏ qua; tên lấy từ danh mục theo `provinceCode`. Hướng sau này: frontend gọi API bên thứ ba và chỉ gửi mã |
 | C4 | (2026-10-29) Giữ giới hạn đếm theo ký tự như hiện tại (b) |
 | C5 | (2026-10-29) Sửa B-1: đặt địa chỉ mặc định thứ hai trả đúng 200/201 thay vì 500 |
+| H0 | (2026-10-30) Bỏ Phase 8 (`identity-client`): `/internal` chỉ có 2 endpoint và 2 bên gọi, hợp đồng đã khóa bằng test đặc tả phía identity; chuyển bên gọi khỏi OpenFeign tốn hơn lợi ích. Luật 8.2 về `com.moonkage.identity.client` và ADR-3 không áp dụng |
 
 Ngoài các điểm trên, dừng và hỏi khi:
 - Một test đặc tả buộc phải đổi mà không thuộc quyết định nào ở bảng trên.

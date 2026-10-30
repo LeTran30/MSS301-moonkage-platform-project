@@ -204,8 +204,8 @@ Hạ tầng: `api-gateway`, `discovery-server` (Eureka), `postgres`, `rabbitmq`,
 **API công khai (qua gateway):** xem mục 5.1.
 
 **API nội bộ cung cấp:**
-- `GET /internal/accounts/{accountId}/profile/kyc` → `{nfcStatus, legalName, idNumberMasked, nfcVerifiedAt}`. Dùng cho BR-23 và hiển thị kết quả NFC của chủ ở FR-45 (AC-45.1).
-- `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` với body `{idNumber}` → `{idHash, idHashKeyVer, idMasked, matchesAccount, ownerLegalName, ownerIdMasked, nfcVerifiedAt}`. Chuẩn hóa số (chỉ giữ chữ số, đúng 12 chữ số, nếu sai trả lỗi định dạng). `idHash` băm bằng phiên bản hiện hành để vendor lưu; `matchesAccount` so bằng phiên bản ghi trên tài khoản. Số đầy đủ chỉ tồn tại trong bộ nhớ khi xử lý, không ghi log, không lưu (NFR-03).
+- `GET /internal/accounts/{accountId}/profile/kyc` → `{nfcStatus, legalName, idNumberMasked, nfcVerifiedAt, kycVerified}`. Bên gọi đọc `kycVerified`; `nfcVerifiedAt` luôn `null` (quyết định G1 của plan v2 identity). Dùng cho BR-23 và hiển thị kết quả NFC của chủ ở FR-45 (AC-45.1).
+- `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` với body `{idNumber}` → `{idHash, idHashKeyVer, idMasked, matchesAccount, ownerLegalName, ownerIdMasked, nfcVerifiedAt, kycVerified}`. Chuẩn hóa số (chỉ giữ chữ số, đúng 12 chữ số, nếu sai trả lỗi định dạng). `idHash` băm bằng phiên bản hiện hành để vendor lưu; `matchesAccount` so bằng phiên bản ghi trên tài khoản. Số đầy đủ chỉ tồn tại trong bộ nhớ khi xử lý, không ghi log, không lưu (NFR-03).
 
 ### 4.3 vendor-service
 
