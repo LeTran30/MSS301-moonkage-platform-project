@@ -33,11 +33,4 @@ public interface AccountApi {
      * exists.
      */
     CredentialCheck verifyCredentials(LoginIdentifier identifier, RawPassword password);
-
-    /**
-     * Transitional until address is rebuilt (phase 7): row lock on the account until the caller's transaction ends,
-     * which serialises two requests setting a default address (FR-03). Throws NOT_FOUND, also for an id that is no
-     * UUID.
-     */
-    void lockForUpdate(String accountId);
 }

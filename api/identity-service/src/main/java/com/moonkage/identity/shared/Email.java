@@ -1,7 +1,5 @@
 package com.moonkage.identity.shared;
 
-import com.moonkage.identity.shared.error.AppException;
-import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.value.Text;
 import com.moonkage.identity.shared.value.ValueRejected;
 import java.util.Locale;
@@ -34,18 +32,6 @@ public record Email(String value) {
             throw ValueRejected.badFormat();
         }
         return new Email(value);
-    }
-
-    /**
-     * {@link #parse} for callers that still answer a bad value with a plain 400 {@code COMMON_400}. Transitional (plan
-     * v2 phase 3): removed when account and auth read input through {@code FieldParser} (phases 4–5).
-     */
-    public static Email of(String raw) {
-        try {
-            return parse(raw);
-        } catch (ValueRejected e) {
-            throw new AppException(CommonError.INVALID_INPUT);
-        }
     }
 
     /** {@code a***b@x.vn}, for logs and messages. */

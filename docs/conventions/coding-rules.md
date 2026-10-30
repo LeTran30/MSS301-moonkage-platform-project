@@ -27,7 +27,7 @@ Mỗi package cấp một là một **component** gom mọi thứ của một kh
 - **Dữ liệu đi qua biên bằng bản chụp chỉ đọc hoặc atom** (`AccountView`, `Email`), không bằng entity.
 - **Tầng HTTP `web` nằm ngoài mọi component**, chỉ gọi service public; không component nào phụ thuộc `web`.
 - **Không vòng phụ thuộc giữa các component** (ArchUnit `NO_PACKAGE_CYCLES`). Phụ thuộc đi theo khóa ngoại: `profile`, `address`, `kyc` trỏ tới `accounts` nên phụ thuộc `account`, còn `account` không biết đến chúng. Việc ghép dữ liệu của hai component (vd `GET /api/accounts/me` = tài khoản + họ tên) đặt ở component phía trên (`UserProfileService.getMyAccount`).
-- Sơ đồ component của identity-service: [`docs/services/identity/README.md`](../services/identity/README.md#cấu-trúc-mã-package-by-component).
+- Sơ đồ module của identity-service: [`docs/services/identity/README.md`](../services/identity/README.md#cấu-trúc-mã-package-by-module).
 
 ### 1.2. Package-by-layer (các service chưa chuyển)
 

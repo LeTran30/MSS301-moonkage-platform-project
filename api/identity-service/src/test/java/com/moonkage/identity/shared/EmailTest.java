@@ -3,8 +3,6 @@ package com.moonkage.identity.shared;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.moonkage.identity.shared.error.AppException;
-import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.value.ValueRejected;
 import com.moonkage.identity.shared.value.ValueRejected.Reason;
 import org.junit.jupiter.api.Test;
@@ -33,12 +31,6 @@ class EmailTest {
         assertEquals("Not An Email", new Email("Not An Email").value());
         assertThrows(IllegalArgumentException.class, () -> new Email(" "));
         assertThrows(IllegalArgumentException.class, () -> new Email(null));
-    }
-
-    @Test
-    void ofAnswersABadValueWithCommon400() {
-        AppException ex = assertThrows(AppException.class, () -> Email.of("invalid-email"));
-        assertEquals(CommonError.INVALID_INPUT, ex.getErrorCode());
     }
 
     @Test

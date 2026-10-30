@@ -1,11 +1,8 @@
 package com.moonkage.identity.shared;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.moonkage.identity.shared.error.AppException;
 import com.moonkage.identity.shared.value.ValueRejected;
 import com.moonkage.identity.shared.value.ValueRejected.Reason;
 import org.junit.jupiter.api.Test;
@@ -29,8 +26,6 @@ class PhoneNumberTest {
         assertEquals(
                 Reason.BAD_FORMAT,
                 assertThrows(ValueRejected.class, () -> PhoneNumber.parse(raw)).reason());
-        assertFalse(PhoneNumber.isValid(raw));
-        assertThrows(AppException.class, () -> PhoneNumber.of(raw));
     }
 
     @Test
@@ -41,13 +36,6 @@ class PhoneNumberTest {
         assertEquals(
                 Reason.REQUIRED,
                 assertThrows(ValueRejected.class, () -> PhoneNumber.parse(null)).reason());
-    }
-
-    @Test
-    void regexOfTheRequestsMatchesParse() {
-        assertTrue("0912345678".matches(PhoneNumber.REGEX));
-        assertTrue(PhoneNumber.isValid("0312345678"));
-        assertFalse("+84912345678".matches(PhoneNumber.REGEX));
     }
 
     @Test

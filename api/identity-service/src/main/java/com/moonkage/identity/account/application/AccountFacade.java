@@ -12,7 +12,6 @@ import com.moonkage.identity.shared.PhoneNumber;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /** The module's one door for other modules: each call goes to its use case or to the queries. */
 @Service
@@ -54,13 +53,5 @@ class AccountFacade implements AccountApi {
     @Override
     public CredentialCheck verifyCredentials(LoginIdentifier identifier, RawPassword password) {
         return verifyCredentials.handle(identifier, password);
-    }
-
-    @Override
-    @Transactional
-    public void lockForUpdate(String accountId) {
-        if (!AccountId.tryParse(accountId).map(accounts::lock).orElse(false)) {
-            throw AccountNotFound.of(accountId);
-        }
     }
 }

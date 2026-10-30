@@ -1,7 +1,6 @@
 package com.moonkage.identity.account.infrastructure.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -97,16 +96,6 @@ class JpaAccountRepositoryIntegrationTest {
         AppException error = assertThrows(
                 AppException.class, () -> repository.add(AccountFixtures.member("mai@x.vn", "0912345678")));
         assertEquals(AccountError.PHONE_ALREADY_EXISTS, error.getErrorCode());
-    }
-
-    @Test
-    void rowLockRunsOnPostgres() {
-        Account account = AccountFixtures.verifiedMember("lan@x.vn", null);
-        repository.add(account);
-
-        // SELECT ... FOR UPDATE, used by addresses (FR-03) and the NFC attempt counter (FR-04)
-        assertTrue(repository.lock(account.id()));
-        assertFalse(repository.lock(AccountId.fromStored("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55")));
     }
 
     @Test

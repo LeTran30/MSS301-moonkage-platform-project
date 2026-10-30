@@ -21,11 +21,4 @@ public interface AccountRepository {
     Optional<Account> findByEmail(Email email);
 
     Optional<Account> findByPhoneNumber(PhoneNumber phoneNumber);
-
-    /**
-     * Transitional until address is rebuilt (phase 7): row lock until the transaction ends.
-     *
-     * @return false when there is no such account
-     */
-    boolean lock(AccountId id);
 }

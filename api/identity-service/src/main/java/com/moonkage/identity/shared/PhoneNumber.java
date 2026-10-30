@@ -1,7 +1,5 @@
 package com.moonkage.identity.shared;
 
-import com.moonkage.identity.shared.error.AppException;
-import com.moonkage.identity.shared.error.CommonError;
 import com.moonkage.identity.shared.value.Text;
 import com.moonkage.identity.shared.value.ValueRejected;
 import java.util.regex.Matcher;
@@ -13,12 +11,6 @@ import java.util.regex.Pattern;
  * (decision C1); the frontend adds the leading 0 when it shows the number. {@code toString} is masked.
  */
 public record PhoneNumber(String value) {
-
-    /**
-     * What a request may send: the national form. Transitional (plan v2 phase 3): read by the request DTOs' Bean
-     * Validation until they parse through {@code FieldParser}.
-     */
-    public static final String REGEX = "^0[35789]\\d{8}$";
 
     public static final String NATIONAL_PREFIX = "0";
     public static final int SUBSCRIBER_DIGITS = 9;
@@ -43,23 +35,6 @@ public record PhoneNumber(String value) {
             throw ValueRejected.badFormat();
         }
         return new PhoneNumber(matcher.group(1));
-    }
-
-    /**
-     * {@link #parse} for callers that still answer a bad value with a plain 400 {@code COMMON_400}. Transitional (plan
-     * v2 phase 3): removed when account, auth and address read input through {@code FieldParser} (phases 4–7).
-     */
-    public static PhoneNumber of(String raw) {
-        try {
-            return parse(raw);
-        } catch (ValueRejected e) {
-            throw new AppException(CommonError.INVALID_INPUT);
-        }
-    }
-
-    /** Whether {@link #parse} accepts it. Transitional, like {@link #of}. */
-    public static boolean isValid(String raw) {
-        return raw != null && NATIONAL_INPUT.matcher(raw.trim()).matches();
     }
 
     /** 0912345678: the number a person dials. */

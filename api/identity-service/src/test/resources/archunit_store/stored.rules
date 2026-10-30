@@ -1,7 +1,3 @@
 #
-#Fri Oct 30 03:45:37 GMT+07:00 2026
-constructors\ that\ are\ declared\ in\ classes\ that\ are\ annotated\ with\ @Entity\ and\ have\ no\ parameters\ should\ be\ protected,\ because\ JPA\ needs\ a\ no-argument\ constructor;\ nothing\ else\ may\ use\ it\ (ST-02)=846af1f3-ddbb-4a53-af0b-9395d3195cae
-constructors\ that\ are\ declared\ in\ classes\ that\ are\ annotated\ with\ @Entity\ should\ not\ be\ public,\ because\ an\ entity\ is\ created\ by\ its\ static\ factory,\ which\ checks\ every\ field\ (principle\ 2)=4e331156-e99c-42f9-921a-881a9f25bbb7
-methods\ that\ are\ declared\ in\ classes\ that\ annotated\ with\ @Entity\ or\ annotated\ with\ @MappedSuperclass\ and\ are\ declared\ in\ classes\ that\ reside\ outside\ of\ packages\ ['com.moonkage.identity.account..',\ 'com.moonkage.identity.otp..',\ 'com.moonkage.identity.auth..',\ 'com.moonkage.identity.profile..',\ 'com.moonkage.identity.kyc..']\ and\ are\ public\ should\ have\ name\ matching\ '^(get|is|ensure|accepts|matches).*',\ because\ a\ field\ changes\ only\ through\ a\ named\ method\ of\ its\ entity,\ which\ checks\ it\ (principle\ 2)=2a0adc98-838b-4d25-9398-b419fc491437
-no\ classes\ that\ are\ annotated\ with\ @Entity\ should\ depend\ on\ classes\ that\ have\ simple\ name\ ending\ with\ 'Builder',\ because\ a\ builder\ sets\ fields\ one\ by\ one\ and\ skips\ the\ entity's\ checks\ (principle\ 2)=b77289eb-a83e-4537-9cf1-7d9f9acc1e3f
+#Fri Oct 30 09:39:15 GMT+07:00 2026
 no\ classes\ that\ do\ not\ have\ simple\ name\ 'ClockConfig'\ should\ call\ method\ where\ the\ target\ reads\ the\ system\ clock\ (java.time\ now()\ without\ a\ Clock),\ because\ services\ take\ the\ time\ from\ the\ Clock\ bean\ and\ pass\ it\ in,\ so\ tests\ can\ fix\ it\ (TS-01)=aa1d2885-7aae-487e-b451-7102dbb9ed43

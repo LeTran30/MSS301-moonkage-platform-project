@@ -21,23 +21,22 @@ Schema do Flyway quản lý (`db/migration`), dữ liệu mẫu ở `db/seed`; x
 
 Không có bảng refresh token và không có bảng mã OTP.
 
-## Cấu trúc mã (package-by-component)
+## Cấu trúc mã (package-by-module)
 
-Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): module đã dựng lại (`account`, `otp`, `auth`, `profile`, `kyc`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Module chưa dựng lại vẫn là **component** cũ: bên ngoài chỉ thấy interface `*Service` và DTO / value object; entity, repository, `*ServiceImpl`, mapper đều package-private. `web` là tầng HTTP nằm ngoài mọi component.
+Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): mọi module nghiệp vụ (`account`, `otp`, `auth`, `profile`, `kyc`, `address`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Controller nằm trong `infrastructure/web/` của module sở hữu tài nguyên.
 
 | Package | Sở hữu (bảng / dữ liệu) | Public | Phụ thuộc |
 |---|---|---|---|
-| `web` | — | Controller của component cũ: `AddressController` | mọi service public |
 | `auth` | — (đăng ký, xác nhận email, đăng nhập, làm mới phiên, đặt lại mật khẩu) | `AuthError`; controller `/api/auth/**` nằm trong module ([Auth.md](classes/Auth.md)) | `account`, `profile`, `otp` |
 | `account` | `accounts` | `AccountApi`, `AccountView`, `CredentialCheck`, `LoginIdentifier`, `RawPassword`, `AccountError` ([AccountApi.md](classes/AccountApi.md)) | — |
 | `profile` | `profiles`; ghép `GET /api/accounts/me` | `ProfileApi`, `FullName`, `LegalIdentity` và các value object của nó, `KycCompletion`, `ProfileError` | `account` |
-| `address` | `addresses` | `AddressService`, `address.dto` | `account` |
+| `address` | `addresses` (sổ địa chỉ `AddressBook`, khóa advisory theo tài khoản) | `AddressError`; controller `/api/addresses/**` nằm trong module | — |
 | `kyc` | phiên NFC và bộ đếm/khóa NFC (RAM); ghi KYC qua `ProfileApi` | `KycError`; controller `/api/nfc/**`, `/internal/nfc/**`, `/internal/accounts/check` nằm trong module | `account`, `profile` |
 | `otp` | mã OTP (RAM) | `OtpApi`, `OtpCode`, `OtpPurpose`, `OtpError` ([OtpApi.md](classes/OtpApi.md)) | — |
 | `shared` | — (ngôn ngữ chung, Java thuần) | `Email`, `PhoneNumber`, `Role`, `AccountId`, `IdGenerator`, `ValueRejected`, `ErrorCode`, `AppException`, `CommonError` | — |
 | `platform` | `outbox_events` | cấu hình, `ApiResponse`, `GlobalExceptionHandler`, `FieldParser`, `BearerTokenFilter` + SPI `BearerTokenAuthenticator`, `CurrentUser(Info)`, `BearerTokenError`, `BaseEntity`, `ExpiringMap`, `Outbox` ([Outbox.md](classes/Outbox.md)) | `shared` |
 
-Mọi module đều dùng `shared` và `platform`; hai module này không phụ thuộc module nghiệp vụ nào. Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ModuleArchitectureTest` (module đã dựng lại: ngoài module chỉ dùng gốc package; tầng `domain`/`application`/`infrastructure`; không `*Impl`/`*Service`/`*Mapper`/`*Constant`; id không do JPA sinh), `FoundationArchitectureTest` (`shared`, `platform`), `ComponentArchitectureTest` (component cũ: entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [domain-model-plan.md](domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
+Mọi module đều dùng `shared` và `platform`; hai module này không phụ thuộc module nghiệp vụ nào. Giữa hai module chỉ có liên kết bằng id (`addresses.account_id`, `profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ModuleArchitectureTest` (ngoài module chỉ dùng gốc package; tầng `domain`/`application`/`infrastructure`; không `*Impl`/`*Service`/`*Mapper`/`*Constant`; id không do JPA sinh), `FoundationArchitectureTest` (`shared`, `platform`), `DomainModelArchitectureTest` (entity: không constructor public, có constructor `protected` cho JPA, không builder, chỉ phụ thuộc domain, không phụ thuộc Spring Security; thời gian lấy từ bean `Clock`) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
 
 Endpoint nội bộ `/internal/**` nằm trong module sở hữu dữ liệu, ở `infrastructure/web/internal/` (vd `InternalKycController`), đánh `@Hidden`.
 
@@ -125,12 +124,12 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
 | Method | Path | Body | Kết quả |
 |---|---|---|---|
 | GET | `` | – | 200 danh sách, địa chỉ mặc định đứng đầu, sau đó mới nhất trước |
-| POST | `` | `AddAddressRequest` | 201 `AddAddressResponse` |
-| PUT | `/{addressId}` | `AddAddressRequest` (thay toàn bộ) | 200 `AddAddressResponse` |
+| POST | `` | `AddressRequest` | 201 `AddressResponse` |
+| PUT | `/{addressId}` | `AddressRequest` (thay toàn bộ) | 200 `AddressResponse` |
 | DELETE | `/{addressId}` | – | 204 |
 
 ```json
-// SaveAddressRequest
+// AddressRequest
 { "recipientName": "Nguyễn Lan", "recipientPhone": "0912345678",
   "provinceCode": "79",
   "wardCode": "26734", "wardName": "Phường Sài Gòn",

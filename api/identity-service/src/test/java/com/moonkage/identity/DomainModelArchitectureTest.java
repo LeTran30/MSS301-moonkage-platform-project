@@ -3,7 +3,6 @@ package com.moonkage.identity;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.annotatedWith;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.constructors;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -11,7 +10,6 @@ import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaConstructor;
 import com.tngtech.archunit.core.domain.JavaMethodCall;
-import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -23,16 +21,14 @@ import com.tngtech.archunit.library.freeze.FreezingArchRule;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.MappedSuperclass;
-import java.text.Normalizer;
 import java.time.Clock;
 import java.util.List;
-import java.util.Set;
 
 /**
- * Rich entity rules (docs/services/identity/domain-model-plan.md): an entity keeps its own fields right, so it opens
- * no write path that skips its checks, and it reads the time from the outside.
+ * Rich entity rules: an entity keeps its own fields right, so it opens no write path that skips its checks, and it
+ * reads the time from the outside. Which code may call an entity's write methods is ModuleArchitectureTest's job.
  *
- * <p>Rules wrapped in {@link FreezingArchRule} were added while older code still broke them: those violations are
+ * <p>A rule wrapped in {@link FreezingArchRule} was added while older code still broke it: those violations are
  * recorded in src/test/resources/archunit_store and tolerated, any new one fails. The store shrinks as the code is
  * fixed; commit its change together with the fix.
  */
@@ -54,40 +50,17 @@ class DomainModelArchitectureTest {
             BASE_PACKAGE + ".platform.persistence",
             "com.moonkage.reference");
 
-    /**
-     * Public methods of an entity only read: getters and the questions it answers about itself. Not for the rebuilt
-     * modules: their domain package is apart from the use cases, so write methods are public, and
-     * ModuleArchitectureTest keeps everything outside the module away from them.
-     */
-    private static final String READ_ONLY_METHOD_NAME = "^(get|is|ensure|accepts|matches).*";
-
-    private static final DescribedPredicate<CanBeAnnotated> ENTITY_TYPE =
-            annotatedWith(Entity.class).or(annotatedWith(MappedSuperclass.class));
-
     @ArchTest
-    static final ArchRule ENTITIES_HAVE_NO_PUBLIC_WRITE_METHODS = FreezingArchRule.freeze(methods()
-            .that()
-            .areDeclaredInClassesThat(ENTITY_TYPE)
-            .and()
-            .areDeclaredInClassesThat()
-            .resideOutsideOfPackages(RebuiltModules.packagePatterns())
-            .and()
-            .arePublic()
-            .should()
-            .haveNameMatching(READ_ONLY_METHOD_NAME)
-            .because("a field changes only through a named method of its entity, which checks it (principle 2)"));
-
-    @ArchTest
-    static final ArchRule ENTITIES_HAVE_NO_PUBLIC_CONSTRUCTOR = FreezingArchRule.freeze(constructors()
+    static final ArchRule ENTITIES_HAVE_NO_PUBLIC_CONSTRUCTOR = constructors()
             .that()
             .areDeclaredInClassesThat()
             .areAnnotatedWith(Entity.class)
             .should()
             .notBePublic()
-            .because("an entity is created by its static factory, which checks every field (principle 2)"));
+            .because("an entity is created by its static factory, which checks every field (principle 2)");
 
     @ArchTest
-    static final ArchRule ENTITIES_KEEP_A_PROTECTED_CONSTRUCTOR_FOR_JPA = FreezingArchRule.freeze(constructors()
+    static final ArchRule ENTITIES_KEEP_A_PROTECTED_CONSTRUCTOR_FOR_JPA = constructors()
             .that()
             .areDeclaredInClassesThat()
             .areAnnotatedWith(Entity.class)
@@ -96,27 +69,16 @@ class DomainModelArchitectureTest {
                     (JavaConstructor c) -> c.getRawParameterTypes().isEmpty()))
             .should()
             .beProtected()
-            .because("JPA needs a no-argument constructor; nothing else may use it (ST-02)"));
+            .because("JPA needs a no-argument constructor; nothing else may use it (ST-02)");
 
     @ArchTest
-    static final ArchRule ENTITIES_HAVE_NO_BUILDER = FreezingArchRule.freeze(noClasses()
+    static final ArchRule ENTITIES_HAVE_NO_BUILDER = noClasses()
             .that()
             .areAnnotatedWith(Entity.class)
             .should()
             .dependOnClassesThat()
             .haveSimpleNameEndingWith("Builder")
-            .because("a builder sets fields one by one and skips the entity's checks (principle 2)"));
-
-    @ArchTest
-    static final ArchRule MAPPERS_ONLY_READ_ENTITIES = noClasses()
-            .that()
-            .haveSimpleNameEndingWith("Mapper")
-            .should()
-            .callMethodWhere(DescribedPredicate.describe(
-                    "the target is a void method of an entity",
-                    (JavaMethodCall call) -> call.getTarget().getOwner().isAnnotatedWith(Entity.class)
-                            && call.getTarget().getRawReturnType().isEquivalentTo(void.class)))
-            .because("an entity comes only from its factory, so a mapper reads it and never fills it (principle 3)");
+            .because("a builder sets fields one by one and skips the entity's checks (principle 2)");
 
     @ArchTest
     static final ArchRule ENTITIES_DEPEND_ONLY_ON_THE_DOMAIN = classes()
@@ -126,6 +88,16 @@ class DomainModelArchitectureTest {
             .should(dependOnlyOnTheDomainOrTheirComponent())
             .because("entities hold behaviour on their own data only: no service, repository, DTO or framework");
 
+    @ArchTest
+    static final ArchRule ENTITIES_DO_NOT_DEPEND_ON_SPRING_SECURITY = noClasses()
+            .that()
+            .areAnnotatedWith(Entity.class)
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("org.springframework.security..")
+            .because("an entity is data of the domain, not a Spring Security principal");
+
+    /** Frozen: ApiResponse still stamps its own time; the two calls are recorded in the store. */
     @ArchTest
     static final ArchRule TIME_COMES_FROM_THE_CLOCK_BEAN = FreezingArchRule.freeze(noClasses()
             .that()
@@ -139,32 +111,6 @@ class DomainModelArchitectureTest {
                                     && call.getTarget().getRawParameterTypes().stream()
                                             .noneMatch(type -> type.isEquivalentTo(Clock.class))))
             .because("services take the time from the Clock bean and pass it in, so tests can fix it (TS-01)"));
-
-    /** String methods that change text rather than read it. */
-    private static final Set<String> NORMALIZING_STRING_METHODS = Set.of(
-            "trim",
-            "strip",
-            "stripLeading",
-            "stripTrailing",
-            "toLowerCase",
-            "toUpperCase",
-            "replace",
-            "replaceAll",
-            "replaceFirst");
-
-    @ArchTest
-    static final ArchRule SERVICES_DO_NOT_NORMALIZE = noClasses()
-            .that()
-            .haveSimpleNameEndingWith("ServiceImpl")
-            .should()
-            .callMethodWhere(DescribedPredicate.describe(
-                    "the target normalizes text (String trim/strip/case/replace, java.text.Normalizer)",
-                    (JavaMethodCall call) -> (call.getTarget().getOwner().isEquivalentTo(String.class)
-                                    && NORMALIZING_STRING_METHODS.contains(
-                                            call.getTarget().getName()))
-                            || call.getTarget().getOwner().isEquivalentTo(Normalizer.class)))
-            .because("a request cleans itself in its compact constructor and an atom in its own; a service only"
-                    + " gets clean values (coding-rules.md 1.5)");
 
     private static ArchCondition<JavaClass> dependOnlyOnTheDomainOrTheirComponent() {
         return new ArchCondition<>("depend only on " + DOMAIN_PACKAGES + " or their own component") {
@@ -181,7 +127,7 @@ class DomainModelArchitectureTest {
         };
     }
 
-    /** com.moonkage.identity.kyc.dto → com.moonkage.identity.kyc */
+    /** com.moonkage.identity.kyc.domain.nfc → com.moonkage.identity.kyc */
     private static String componentOf(String packageName) {
         String rest = packageName.substring(BASE_PACKAGE.length() + 1);
         int dot = rest.indexOf('.');

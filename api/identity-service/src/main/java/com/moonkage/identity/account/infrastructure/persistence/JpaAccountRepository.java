@@ -8,7 +8,6 @@ import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.error.AppException;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -56,11 +55,6 @@ class JpaAccountRepository implements AccountRepository {
                 .setParameter("phoneNumber", phoneNumber)
                 .getResultStream()
                 .findFirst();
-    }
-
-    @Override
-    public boolean lock(AccountId id) {
-        return entityManager.find(Account.class, id.toString(), LockModeType.PESSIMISTIC_WRITE) != null;
     }
 
     /** The violated unique key tells which identifier was taken; any other failure stays as it is. */

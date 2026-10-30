@@ -131,20 +131,7 @@ class AccountFacadeTest {
 
         assertError(AccountError.NOT_FOUND, () -> api.confirmEmail(unknown));
         assertError(AccountError.NOT_FOUND, () -> api.changePassword(unknown, PASSWORD));
-        assertError(AccountError.NOT_FOUND, () -> api.lockForUpdate(UNKNOWN_ID));
         assertTrue(api.find(unknown).isEmpty());
-    }
-
-    @Test
-    void idThatIsNoUuidAnswersLikeAnUnknownAccount() {
-        assertError(AccountError.NOT_FOUND, () -> api.lockForUpdate("not-a-uuid"));
-    }
-
-    @Test
-    void existingAccountCanBeLocked() {
-        api.registerMember(EMAIL, null, PASSWORD);
-
-        api.lockForUpdate(FIRST_ID.toString());
     }
 
     private static void assertError(ErrorCode expected, Executable call) {

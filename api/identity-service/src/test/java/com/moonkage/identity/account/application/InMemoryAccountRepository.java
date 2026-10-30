@@ -49,11 +49,6 @@ final class InMemoryAccountRepository implements AccountRepository {
                 .findFirst();
     }
 
-    @Override
-    public boolean lock(AccountId id) {
-        return accounts.containsKey(id);
-    }
-
     int size() {
         return accounts.size();
     }
