@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceException;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Repository;
@@ -27,18 +28,18 @@ class JpaProfileRepository implements ProfileRepository {
 
     @Override
     public Optional<Profile> find(AccountId id) {
-        return Optional.ofNullable(entityManager.find(Profile.class, id.toString()));
+        return Optional.ofNullable(entityManager.find(Profile.class, id.value()));
     }
 
     @Override
     public Optional<Profile> findForUpdate(AccountId id) {
-        return Optional.ofNullable(entityManager.find(Profile.class, id.toString(), LockModeType.PESSIMISTIC_WRITE));
+        return Optional.ofNullable(entityManager.find(Profile.class, id.value(), LockModeType.PESSIMISTIC_WRITE));
     }
 
     @Override
     public boolean isIdNumberTaken(IdNumberHash hash) {
         return !entityManager
-                .createQuery("SELECT p.accountId FROM Profile p WHERE p.idNumberHash = :hash", String.class)
+                .createQuery("SELECT p.accountId FROM Profile p WHERE p.idNumberHash = :hash", UUID.class)
                 .setParameter("hash", hash)
                 .setMaxResults(1)
                 .getResultList()

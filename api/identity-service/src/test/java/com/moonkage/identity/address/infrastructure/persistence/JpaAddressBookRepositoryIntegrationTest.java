@@ -50,7 +50,8 @@ class JpaAddressBookRepositoryIntegrationTest {
 
     @Test
     void addressComesBackAsSaved() {
-        AccountId owner = AccountId.fromStored(AccountFixtures.persistMember(entityManager, "lan@x.vn"));
+        AccountId owner = AccountId.tryParse(AccountFixtures.persistMember(entityManager, "lan@x.vn"))
+                .orElseThrow();
         AddressEntry added = add(owner, "12 Lê Lợi", AddressLabel.parse("Nhà riêng"), false);
         entityManager.clear();
 
@@ -64,7 +65,8 @@ class JpaAddressBookRepositoryIntegrationTest {
 
     @Test
     void movingTheDefaultKeepsOneAndListsItFirst() throws InterruptedException {
-        AccountId owner = AccountId.fromStored(AccountFixtures.persistMember(entityManager, "lan@x.vn"));
+        AccountId owner = AccountId.tryParse(AccountFixtures.persistMember(entityManager, "lan@x.vn"))
+                .orElseThrow();
         AddressEntry old = add(owner, "old", null, false);
         Thread.sleep(5);
         // a new default clears the old one before it is inserted
@@ -90,7 +92,8 @@ class JpaAddressBookRepositoryIntegrationTest {
 
     @Test
     void removedAddressIsGone() {
-        AccountId owner = AccountId.fromStored(AccountFixtures.persistMember(entityManager, "lan@x.vn"));
+        AccountId owner = AccountId.tryParse(AccountFixtures.persistMember(entityManager, "lan@x.vn"))
+                .orElseThrow();
         AddressEntry entry = add(owner, "12 Lê Lợi", null, false);
         entityManager.clear();
 

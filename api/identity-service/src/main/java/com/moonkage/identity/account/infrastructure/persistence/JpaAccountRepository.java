@@ -36,7 +36,7 @@ class JpaAccountRepository implements AccountRepository {
 
     @Override
     public Optional<Account> find(AccountId id) {
-        return Optional.ofNullable(entityManager.find(Account.class, id.toString()));
+        return Optional.ofNullable(entityManager.find(Account.class, id.value()));
     }
 
     @Override

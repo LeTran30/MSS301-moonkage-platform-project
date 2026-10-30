@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test;
 
 class GetMyAccountTest {
 
-    private static final AccountId ID = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
+    private static final AccountId ID =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
     private static final AccountView ACCOUNT =
             new AccountView(ID, Email.parse("a@x.vn"), PhoneNumber.parse("0912345678"), Role.MEMBER, true, null);
     private static final FullName NAME = new FullName("Lan Nguyen");

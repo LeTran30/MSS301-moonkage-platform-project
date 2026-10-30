@@ -44,6 +44,9 @@ class JpaAccountRepositoryIntegrationTest {
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
 
+    private static final String V7_ID = "0192f3a0-7c00-7abc-8def-0123456789ab";
+    private static final String V4_ID = "00000000-0000-4000-8000-0001000000ff";
+
     private final JpaAccountRepository repository;
     private final EntityManager entityManager;
 
@@ -65,6 +68,37 @@ class JpaAccountRepositoryIntegrationTest {
         assertNotSame(account, loaded);
         assertEquals(id, loaded.id());
         assertEquals(account.view(), loaded.view());
+    }
+
+    @Test
+    void idsOfEveryUuidVersionAreStoredAsUuidAndReadBack() {
+        // new accounts get v7 ids; the seeded ones were written as v4 text before the column became uuid
+        AccountId v7 = AccountId.tryParse(V7_ID).orElseThrow();
+        repository.add(Account.registerMember(
+                v7, Email.parse("v7@x.vn"), null, new PasswordHash(AccountFixtures.PASSWORD_HASH)));
+        entityManager
+                .createNativeQuery("INSERT INTO accounts (id, email, password_hash, role, account_verified,"
+                        + " created_at, updated_at)"
+                        + " VALUES (CAST(?1 AS uuid), 'v4@x.vn', ?2, 'MEMBER', true, now(), now())")
+                .setParameter(1, V4_ID)
+                .setParameter(2, AccountFixtures.PASSWORD_HASH)
+                .executeUpdate();
+        entityManager.clear();
+
+        assertEquals(v7, repository.find(v7).orElseThrow().id());
+        assertEquals(
+                V4_ID,
+                repository
+                        .find(AccountId.tryParse(V4_ID).orElseThrow())
+                        .orElseThrow()
+                        .id()
+                        .toString());
+        assertEquals(
+                "uuid",
+                entityManager
+                        .createNativeQuery("SELECT data_type FROM information_schema.columns"
+                                + " WHERE table_name = 'accounts' AND column_name = 'id'")
+                        .getSingleResult());
     }
 
     @Test
@@ -139,7 +173,7 @@ class JpaAccountRepositoryIntegrationTest {
         return entityManager
                 .createNativeQuery("INSERT INTO accounts (id, email, phone_number, password_hash, role,"
                         + " account_verified, created_at, updated_at)"
-                        + " VALUES (gen_random_uuid()::text, ?1, " + phoneSql + ", ?2, 'MEMBER', true, now(), now())")
+                        + " VALUES (gen_random_uuid(), ?1, " + phoneSql + ", ?2, 'MEMBER', true, now(), now())")
                 .setParameter(1, email)
                 .setParameter(2, AccountFixtures.PASSWORD_HASH)
                 .executeUpdate();

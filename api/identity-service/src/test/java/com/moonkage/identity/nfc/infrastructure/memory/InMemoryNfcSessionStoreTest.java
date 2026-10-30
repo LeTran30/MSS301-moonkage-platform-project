@@ -20,8 +20,10 @@ import org.junit.jupiter.api.Test;
 /** AC-04.1, Q-24: one pending session per account; expired ones freed unless a card is being checked. */
 class InMemoryNfcSessionStoreTest {
 
-    private static final AccountId OWNER = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
-    private static final AccountId OTHER = AccountId.fromStored("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55");
+    private static final AccountId OWNER =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
+    private static final AccountId OTHER =
+            AccountId.tryParse("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55").orElseThrow();
     private static final Instant NOW = Instant.parse("2026-10-29T08:00:00Z");
     private static final Instant LATER = NOW.plus(Duration.ofMinutes(5));
 
@@ -85,7 +87,8 @@ class InMemoryNfcSessionStoreTest {
     void removeExpiredSparesLiveSessionsAndCardsBeingChecked() {
         NfcSession live = NfcSession.open(OWNER, LATER);
         NfcSession expired = NfcSession.open(OTHER, NOW);
-        AccountId third = AccountId.fromStored("1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d");
+        AccountId third =
+                AccountId.tryParse("1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d").orElseThrow();
         NfcSession checking = NfcSession.open(third, NOW).claimed();
         store.replacePendingOf(live);
         store.replacePendingOf(expired);

@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * One saved delivery address of an account (FR-03). Its default flag changes only through {@link AddressBook}, which
@@ -19,14 +20,14 @@ import java.util.Optional;
 @Table(name = "addresses")
 public class AddressEntry extends BaseEntity {
 
-    /** The {@link AddressId}, as text while the column is varchar (plan v2, 5.5.5; uuid in phase 8b). */
+    /** The {@link AddressId}. */
     @Id
     @Column(name = "id", nullable = false, updatable = false)
-    private String id;
+    private UUID id;
 
     /** = accounts.id; an id, not a relation, so the account stays inside its module. */
     @Column(name = "account_id", nullable = false, updatable = false)
-    private String accountId;
+    private UUID accountId;
 
     @Embedded
     private DeliveryContact contact;
@@ -42,8 +43,8 @@ public class AddressEntry extends BaseEntity {
     protected AddressEntry() {}
 
     private AddressEntry(AddressId id, AccountId owner, DeliveryContact contact, AddressLabel label) {
-        this.id = Objects.requireNonNull(id, "id").toString();
-        this.accountId = Objects.requireNonNull(owner, "owner").toString();
+        this.id = Objects.requireNonNull(id, "id").value();
+        this.accountId = Objects.requireNonNull(owner, "owner").value();
         this.contact = Objects.requireNonNull(contact, "contact");
         this.label = label;
         this.isDefault = false;
@@ -67,11 +68,11 @@ public class AddressEntry extends BaseEntity {
     }
 
     public AddressId id() {
-        return AddressId.fromStored(id);
+        return new AddressId(id);
     }
 
     public AccountId owner() {
-        return AccountId.fromStored(accountId);
+        return new AccountId(accountId);
     }
 
     public DeliveryContact contact() {

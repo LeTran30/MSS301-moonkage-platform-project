@@ -30,7 +30,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class LoginTest {
 
     static final AccountView ACCOUNT = new AccountView(
-            AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10"),
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow(),
             Email.parse("lan@x.vn"),
             null,
             Role.MEMBER,

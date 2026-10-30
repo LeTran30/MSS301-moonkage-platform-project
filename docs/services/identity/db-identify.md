@@ -14,7 +14,7 @@ KYC là việc nền tảng làm; NFC chỉ là phương thức. Chưa lưu phư
 
 ```sql
 accounts (
-  id                   varchar(255) PRIMARY KEY,           -- UUID dạng chuỗi, JPA sinh khi lưu
+  id                   uuid         PRIMARY KEY,           -- ứng dụng sinh lúc tạo (UUID v7; id seed cũ là v4)
   email                varchar(255) NOT NULL UNIQUE,
   phone_number         varchar(9)   UNIQUE,             -- giữ cho demo
   account_verified     boolean      NOT NULL DEFAULT false,
@@ -26,7 +26,7 @@ accounts (
 );
 
 profiles (
-  account_id           varchar(255) PRIMARY KEY REFERENCES accounts(id),
+  account_id           uuid         PRIMARY KEY REFERENCES accounts(id),
   full_name            varchar(100) NOT NULL,
   kyc_verified         boolean      NOT NULL DEFAULT false,
   legal_name           varchar(100),
@@ -43,14 +43,14 @@ profiles (
 );
 
 addresses (
-  id, account_id, label, recipient_name, recipient_phone,
+  id uuid, account_id uuid REFERENCES accounts(id), label, recipient_name, recipient_phone,
   province_code, ward_name, detail, is_default,
   created_at, updated_at
 );
 -- tối đa một địa chỉ mặc định mỗi tài khoản
 ```
 
-Kỹ thuật: `outbox_events` giữ nguyên.
+Kỹ thuật: `outbox_events` giữ nguyên, riêng `id` là `uuid` (= `eventId`; id trong payload JSON vẫn là chuỗi).
 
 ## Không lưu bền
 

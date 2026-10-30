@@ -35,7 +35,12 @@ class JwtSessionTokensTest {
     private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
     private static final Instant NOW = Instant.parse("2026-10-29T08:00:00Z");
     private static final AccountView ACCOUNT = new AccountView(
-            AccountId.fromStored(ACCOUNT_ID), Email.parse("user@moonkage.vn"), null, Role.MEMBER, true, null);
+            AccountId.tryParse(ACCOUNT_ID).orElseThrow(),
+            Email.parse("user@moonkage.vn"),
+            null,
+            Role.MEMBER,
+            true,
+            null);
 
     private final MovableClock clock = new MovableClock(NOW);
     private final JwtSessionTokens tokens = tokens(SECRET, clock);

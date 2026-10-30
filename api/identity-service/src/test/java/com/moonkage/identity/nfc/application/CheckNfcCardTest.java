@@ -44,8 +44,10 @@ import org.junit.jupiter.api.Test;
  */
 class CheckNfcCardTest {
 
-    static final AccountId OWNER = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
-    static final AccountId OTHER = AccountId.fromStored("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55");
+    static final AccountId OWNER =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
+    static final AccountId OTHER =
+            AccountId.tryParse("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55").orElseThrow();
     static final NfcRules RULES = new NfcRules(Duration.ofMinutes(5), 5, Duration.ofMinutes(15));
 
     /** 10:00 in Vietnam, 2026-10-30. */

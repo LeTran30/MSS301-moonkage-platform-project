@@ -26,9 +26,7 @@ class AccountIdTest {
     }
 
     @Test
-    void aStoredIdThatIsNoUuidIsCorruptData() {
-        assertEquals(V4, AccountId.fromStored(V4).toString());
-        assertThrows(IllegalArgumentException.class, () -> AccountId.fromStored("acc-1"));
+    void anIdAlwaysHoldsAValue() {
         assertThrows(NullPointerException.class, () -> new AccountId(null));
     }
 }

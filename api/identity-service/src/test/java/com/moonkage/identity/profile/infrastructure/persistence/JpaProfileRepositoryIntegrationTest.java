@@ -89,12 +89,13 @@ class JpaProfileRepositoryIntegrationTest {
                 PersistenceException.class,
                 () -> entityManager
                         .createNativeQuery("UPDATE profiles SET kyc_verified = true WHERE account_id = ?1")
-                        .setParameter(1, id.toString())
+                        .setParameter(1, id.value())
                         .executeUpdate());
     }
 
     private AccountId newProfile(String email) {
-        AccountId id = AccountId.fromStored(AccountFixtures.persistMember(entityManager, email));
+        AccountId id = AccountId.tryParse(AccountFixtures.persistMember(entityManager, email))
+                .orElseThrow();
         profiles.add(Profile.create(id, new FullName("Nguyen Lan")));
         profiles.flush();
         return id;

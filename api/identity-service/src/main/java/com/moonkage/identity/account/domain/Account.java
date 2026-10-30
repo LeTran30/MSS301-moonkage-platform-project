@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * How a person gets into the platform: login identifiers, password, role (FR-01, FR-02; plan v2, 4.2). Created only by
@@ -33,10 +34,10 @@ public class Account extends BaseEntity {
     public static final String EMAIL_UNIQUE_KEY = "uk_accounts_email";
     public static final String PHONE_NUMBER_UNIQUE_KEY = "uk_accounts_phone_number";
 
-    /** The {@link AccountId}, as text while the column is varchar (plan v2, 5.5.5; uuid in phase 8b). */
+    /** The {@link AccountId}. */
     @Id
     @Column(name = "id", nullable = false, updatable = false)
-    private String id;
+    private UUID id;
 
     @Column(name = "email", nullable = false, updatable = false)
     private Email email;
@@ -64,7 +65,7 @@ public class Account extends BaseEntity {
     protected Account() {}
 
     private Account(AccountId id, Email email, PhoneNumber phoneNumber, PasswordHash passwordHash, Role role) {
-        this.id = Objects.requireNonNull(id, "id").toString();
+        this.id = Objects.requireNonNull(id, "id").value();
         this.email = Objects.requireNonNull(email, "email");
         this.phoneNumber = phoneNumber;
         this.passwordHash = Objects.requireNonNull(passwordHash, "passwordHash");
@@ -96,7 +97,7 @@ public class Account extends BaseEntity {
     }
 
     public AccountId id() {
-        return AccountId.fromStored(id);
+        return new AccountId(id);
     }
 
     public Email email() {

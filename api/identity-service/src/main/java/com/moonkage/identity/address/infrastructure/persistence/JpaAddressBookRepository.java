@@ -44,7 +44,7 @@ class JpaAddressBookRepository implements AddressBookRepository {
                         "SELECT e FROM AddressEntry e WHERE e.accountId = :owner"
                                 + " ORDER BY e.isDefault DESC, e.createdAt DESC",
                         AddressEntry.class)
-                .setParameter("owner", owner.toString())
+                .setParameter("owner", owner.value())
                 .getResultList();
     }
 

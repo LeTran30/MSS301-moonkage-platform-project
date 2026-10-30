@@ -13,8 +13,10 @@ import org.junit.jupiter.api.Test;
 /** AC-03.1: at most one default; the first address takes it; removing the default leaves none (decision D). */
 class AddressBookTest {
 
-    private static final AccountId LAN = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
-    private static final AccountId MAI = AccountId.fromStored("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55");
+    private static final AccountId LAN =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
+    private static final AccountId MAI =
+            AccountId.tryParse("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55").orElseThrow();
     private static final AddressLabel HOME = AddressLabel.parse("Nhà riêng");
 
     private final AddressBook book = AddressBook.of(LAN, List.of());

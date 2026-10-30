@@ -8,6 +8,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * An event written in the same transaction as the data it describes (Software Design 6, NFR-05), then sent to
@@ -18,10 +19,10 @@ import java.util.Objects;
 @Table(name = "outbox_events", indexes = @Index(name = "ix_outbox_events_unpublished", columnList = "published_at"))
 class OutboxEvent extends BaseEntity {
 
-    /** = the event's own eventId, also sent as the AMQP message id. Varchar until phase 8b. */
+    /** = the event's own eventId, also sent as the AMQP message id. */
     @Id
     @Column(name = "id", nullable = false, updatable = false)
-    private String id;
+    private UUID id;
 
     @Column(name = "routing_key", nullable = false, length = 100, updatable = false)
     private String routingKey;
@@ -40,7 +41,7 @@ class OutboxEvent extends BaseEntity {
     protected OutboxEvent() {}
 
     private OutboxEvent(EventId id, String routingKey, String payload) {
-        this.id = Objects.requireNonNull(id, "id").toString();
+        this.id = Objects.requireNonNull(id, "id").value();
         this.routingKey = Objects.requireNonNull(routingKey, "routingKey");
         this.payload = Objects.requireNonNull(payload, "payload");
     }
@@ -58,8 +59,9 @@ class OutboxEvent extends BaseEntity {
         this.attempts++;
     }
 
+    /** As sent: the AMQP message id and the {@code eventId} in the payload are text. */
     String getId() {
-        return id;
+        return id.toString();
     }
 
     String getRoutingKey() {

@@ -23,11 +23,6 @@ public record AddressId(UUID value) {
         }
     }
 
-    /** From the id column, which stays {@code varchar} until phase 8b. Deleted then. */
-    public static AddressId fromStored(String stored) {
-        return new AddressId(UUID.fromString(stored));
-    }
-
     @Override
     public String toString() {
         return value.toString();

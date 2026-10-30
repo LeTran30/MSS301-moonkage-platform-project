@@ -17,7 +17,8 @@ import org.junit.jupiter.api.Test;
 /** FR-01, FR-04: a profile starts without KYC and gets its legal identity exactly once. */
 class ProfileTest {
 
-    private static final AccountId ID = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
+    private static final AccountId ID =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
     private static final LegalIdentity IDENTITY = new LegalIdentity(
             new LegalName("NGUYEN VAN A"),
             new IdNumberHash("a".repeat(IdNumberHash.LENGTH)),

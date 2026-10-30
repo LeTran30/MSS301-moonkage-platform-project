@@ -52,6 +52,11 @@ Mật khẩu chung của **mọi** tài khoản mẫu, kể cả admin: `SEED_PA
 | `member3@mk.com` | Lê Thị Hoa | 0901000003 | **chưa xác nhận email** | đăng nhập bị từ chối |
 | `member4@mk.com` | Phạm Văn Bánh | 0901000004 | NFC, chủ "Doanh nghiệp tư nhân Bánh Trung Thu Trăng Vàng", **đã duyệt, đã đóng phí** | luồng người bán đầy đủ |
 | `member5@mk.com` | Võ Thị Quê | 0901000005 | NFC, chủ "Hộ kinh doanh Bánh Quê", **chờ duyệt** | màn duyệt của admin |
+| `member6@mk.com` | Đặng Văn Hải | 0901000006 | đã xác nhận email, chưa NFC, chưa có địa chỉ | tài khoản trống để thử mọi luồng |
+| `member7@mk.com` | Bùi Thị Mai | 0901000007 | đã xác nhận email, chưa NFC, chưa có địa chỉ | tài khoản trống để thử mọi luồng |
+| `member8@mk.com` | Đỗ Văn Nam | 0901000008 | đã xác nhận email, chưa NFC, chưa có địa chỉ | tài khoản trống để thử mọi luồng |
+| `member9@mk.com` | Hồ Thị Thu | 0901000009 | đã xác nhận email, chưa NFC, chưa có địa chỉ | tài khoản trống để thử mọi luồng |
+| `member10@mk.com` | Ngô Văn Tâm | 0901000010 | đã xác nhận email, chưa NFC, chưa có địa chỉ | tài khoản trống để thử mọi luồng |
 
 `mk.com` là domain có thật, nên orchestrator **không gửi email** tới `@mk.com` (`moonkage.mail.blocked-domains`), chỉ ghi một dòng log (không kèm mã). Persona không cần OTP để đăng nhập; muốn test luồng OTP (đăng ký, quên mật khẩu) thì dùng email thật của bạn.
 
@@ -64,7 +69,7 @@ Seed không bao giờ đụng tới tài khoản người dùng tự tạo: emai
 | Loại | Mã | ID | Là gì | Service |
 |---|---|---|---|---|
 | account | `0001` | `…-000100000000` | admin | identity |
-| | | `…-000100000001` → `…-000100000005` | member1 → member5 | identity |
+| | | `…-000100000001` → `…-000100000010` | member1 → member10 | identity |
 | vendor | `0002` | `…-000200000001` | Trăng Vàng (của member4) | vendor |
 | | | `…-000200000002` | Bánh Quê (của member5) | vendor |
 | product | `0003` | | *chờ người phụ trách vendor* (sản phẩm ghi ở vendor-service, L-18) | vendor |

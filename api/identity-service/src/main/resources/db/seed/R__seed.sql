@@ -13,6 +13,7 @@ END $$;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- ids are uuid columns: a VALUES list types its columns from the first row, so that row casts its ids.
 -- phone numbers (accounts and addresses) are stored as the 9 subscriber digits (PhoneNumber.value).
 -- The admin is seeded here like every persona, with the same SEED_PASSWORD; no environment creates one at startup.
 INSERT INTO accounts (id, email, phone_number, password_hash, role, account_verified, created_at, updated_at)
@@ -27,18 +28,33 @@ VALUES ('00000000-0000-4000-8000-000100000000', 'admin@mk.com', NULL,
        ('00000000-0000-4000-8000-000100000004', 'member4@mk.com', '901000004',
         crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
        ('00000000-0000-4000-8000-000100000005', 'member5@mk.com', '901000005',
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
+       ('00000000-0000-4000-8000-000100000006', 'member6@mk.com', '901000006',
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
+       ('00000000-0000-4000-8000-000100000007', 'member7@mk.com', '901000007',
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
+       ('00000000-0000-4000-8000-000100000008', 'member8@mk.com', '901000008',
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
+       ('00000000-0000-4000-8000-000100000009', 'member9@mk.com', '901000009',
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
+       ('00000000-0000-4000-8000-000100000010', 'member10@mk.com', '901000010',
         crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now())
 ON CONFLICT DO NOTHING;
 
 -- joined with accounts: when an email was already taken by a hand-made account, its seed rows are skipped too
 INSERT INTO profiles (account_id, full_name, created_at, updated_at)
 SELECT a.id, p.full_name, now(), now()
-FROM (VALUES ('00000000-0000-4000-8000-000100000000', 'Quản trị viên MoonKage'),
+FROM (VALUES ('00000000-0000-4000-8000-000100000000'::uuid, 'Quản trị viên MoonKage'),
              ('00000000-0000-4000-8000-000100000001', 'Nguyễn Thị Lan'),
              ('00000000-0000-4000-8000-000100000002', 'Trần Văn Minh'),
              ('00000000-0000-4000-8000-000100000003', 'Lê Thị Hoa'),
              ('00000000-0000-4000-8000-000100000004', 'Phạm Văn Bánh'),
-             ('00000000-0000-4000-8000-000100000005', 'Võ Thị Quê')) AS p (account_id, full_name)
+             ('00000000-0000-4000-8000-000100000005', 'Võ Thị Quê'),
+             ('00000000-0000-4000-8000-000100000006', 'Đặng Văn Hải'),
+             ('00000000-0000-4000-8000-000100000007', 'Bùi Thị Mai'),
+             ('00000000-0000-4000-8000-000100000008', 'Đỗ Văn Nam'),
+             ('00000000-0000-4000-8000-000100000009', 'Hồ Thị Thu'),
+             ('00000000-0000-4000-8000-000100000010', 'Ngô Văn Tâm')) AS p (account_id, full_name)
 JOIN accounts a ON a.id = p.account_id
 ON CONFLICT DO NOTHING;
 
@@ -54,7 +70,7 @@ SET kyc_verified     = true,
     updated_at       = now()
 FROM (SELECT s.account_id, s.legal_name, s.id_number,
              encode(hmac(s.id_number, '${id_hash_pepper}', 'sha256'), 'hex') AS id_number_hash
-      FROM (VALUES ('00000000-0000-4000-8000-000100000001', 'NGUYEN THI LAN', '079190000001'),
+      FROM (VALUES ('00000000-0000-4000-8000-000100000001'::uuid, 'NGUYEN THI LAN', '079190000001'),
                    ('00000000-0000-4000-8000-000100000004', 'PHAM VAN BANH', '079085000004'),
                    ('00000000-0000-4000-8000-000100000005', 'VO THI QUE', '001192000005'))
                AS s (account_id, legal_name, id_number)) AS k
@@ -68,7 +84,7 @@ INSERT INTO addresses (id, account_id, recipient_name, recipient_phone, province
                        detail, label, is_default, created_at, updated_at)
 SELECT d.id, a.id, d.recipient_name, d.recipient_phone, d.province_code, d.province_name, d.ward_name,
        d.detail, d.label, d.is_default, now(), now()
-FROM (VALUES ('00000000-0000-4000-8000-000600000001', '00000000-0000-4000-8000-000100000001',
+FROM (VALUES ('00000000-0000-4000-8000-000600000001'::uuid, '00000000-0000-4000-8000-000100000001'::uuid,
               'Nguyễn Thị Lan', '901000001', '79', 'Thành phố Hồ Chí Minh', 'Phường Sài Gòn',
               '12 Lê Lợi', 'Nhà riêng', true),
              ('00000000-0000-4000-8000-000600000002', '00000000-0000-4000-8000-000100000001',

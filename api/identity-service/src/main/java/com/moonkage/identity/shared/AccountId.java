@@ -29,14 +29,6 @@ public record AccountId(UUID value) {
         }
     }
 
-    /**
-     * From an id column that is still {@code varchar} (phases 4 to 8b). A value that is no UUID is corrupt data, so it
-     * fails with IllegalArgumentException (500). Deleted in phase 8b.
-     */
-    public static AccountId fromStored(String stored) {
-        return new AccountId(UUID.fromString(stored));
-    }
-
     @Override
     public String toString() {
         return value.toString();

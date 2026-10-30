@@ -40,7 +40,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 class SubmitKycCardTest {
 
-    static final AccountId OWNER = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
+    static final AccountId OWNER =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
 
     private static final Instant NOW = Instant.parse("2026-10-30T03:00:00Z");
     private static final String ID_NUMBER = "079123456789";

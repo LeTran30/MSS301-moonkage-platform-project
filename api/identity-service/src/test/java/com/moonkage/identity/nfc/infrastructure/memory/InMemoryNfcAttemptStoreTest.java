@@ -17,8 +17,10 @@ import org.junit.jupiter.api.Test;
 /** AC-04.9 in memory: each account counted on its own, parallel failures all counted, finished lockouts dropped. */
 class InMemoryKycAttemptStoreTest {
 
-    private static final AccountId LAN = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
-    private static final AccountId MAI = AccountId.fromStored("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55");
+    private static final AccountId LAN =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
+    private static final AccountId MAI =
+            AccountId.tryParse("0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55").orElseThrow();
     private static final Instant NOW = Instant.parse("2026-10-29T08:00:00Z");
     private static final NfcRules RULES = new NfcRules(Duration.ofMinutes(5), 5, Duration.ofMinutes(15));
 

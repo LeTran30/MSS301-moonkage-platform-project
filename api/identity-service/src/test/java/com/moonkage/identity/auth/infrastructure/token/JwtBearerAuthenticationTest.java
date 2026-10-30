@@ -43,7 +43,8 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 /** {@link BearerTokenFilter} with the JWT authenticator behind it: what a request with a bearer token meets. */
 class JwtBearerAuthenticationTest {
 
-    private static final AccountId ID = AccountId.fromStored("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10");
+    private static final AccountId ID =
+            AccountId.tryParse("6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10").orElseThrow();
     private static final Email EMAIL = Email.parse("a@x.vn");
     private static final Instant NOW = Instant.parse("2026-10-29T08:00:00Z");
 

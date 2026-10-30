@@ -127,7 +127,7 @@ class AccountFacadeTest {
 
     @Test
     void unknownAccountAnswersNotFound() {
-        AccountId unknown = AccountId.fromStored(UNKNOWN_ID);
+        AccountId unknown = AccountId.tryParse(UNKNOWN_ID).orElseThrow();
 
         assertError(AccountError.NOT_FOUND, () -> api.confirmEmail(unknown));
         assertError(AccountError.NOT_FOUND, () -> api.changePassword(unknown, PASSWORD));

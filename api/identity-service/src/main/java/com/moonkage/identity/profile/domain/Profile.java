@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Who a person is (plan v2, 4.3): the name they chose and, after KYC, who they are by law. Shares the account's id.
@@ -30,10 +31,10 @@ public class Profile extends BaseEntity {
     /** BR-23: one ID card, one account. */
     public static final String ID_NUMBER_HASH_UNIQUE_KEY = "uk_profiles_id_number_hash";
 
-    /** The {@link AccountId}, as text while the column is varchar (plan v2, 5.5.5; uuid in phase 8b). */
+    /** The {@link AccountId}: the profile has no id of its own. */
     @Id
     @Column(name = "account_id", nullable = false, updatable = false)
-    private String accountId;
+    private UUID accountId;
 
     @Column(name = "full_name", nullable = false, length = FullName.MAX_LENGTH)
     private FullName fullName;
@@ -57,7 +58,7 @@ public class Profile extends BaseEntity {
     protected Profile() {}
 
     private Profile(AccountId accountId, FullName fullName) {
-        this.accountId = Objects.requireNonNull(accountId, "accountId").toString();
+        this.accountId = Objects.requireNonNull(accountId, "accountId").value();
         this.fullName = Objects.requireNonNull(fullName, "fullName");
         this.kycVerified = false;
     }
@@ -83,7 +84,7 @@ public class Profile extends BaseEntity {
     }
 
     public AccountId accountId() {
-        return AccountId.fromStored(accountId);
+        return new AccountId(accountId);
     }
 
     public FullName fullName() {
