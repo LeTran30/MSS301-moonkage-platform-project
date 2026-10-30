@@ -95,7 +95,7 @@ abstract class ContractTest {
         registry.add(
                 "nfc.transport-private-key",
                 () -> base64.encodeToString(NFC_TRANSPORT_KEYS.getPrivate().getEncoded()));
-        // fixed pepper: the id hash in /internal/accounts/check is part of the contract (vendor stores it)
+        // fixed pepper: the id hash of the internal ID number check is part of the contract (vendor stores it)
         registry.add("nfc.id-hash-pepper", () -> "contract-pepper");
     }
 
@@ -235,7 +235,7 @@ abstract class ContractTest {
     // ───────── NFC ─────────
 
     String createNfcSession(String token) throws Exception {
-        Answer created = call(post("/api/nfc/sessions").header("Authorization", bearer(token)));
+        Answer created = call(post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", bearer(token)));
         assertEquals(201, created.status(), "create NFC session");
         return created.read("$.data.sessionId");
     }
@@ -258,7 +258,7 @@ abstract class ContractTest {
     }
 
     Answer submitCard(String token, String sessionId, String body) throws Exception {
-        return postJson("/api/nfc/sessions/" + sessionId + "/card", body, token);
+        return postJson("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId + "/card", body, token);
     }
 
     /** Active account whose card is verified (FR-04). */

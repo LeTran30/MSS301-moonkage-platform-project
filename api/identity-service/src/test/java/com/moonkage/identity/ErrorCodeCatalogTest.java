@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.moonkage.identity.account.AccountError;
 import com.moonkage.identity.address.AddressError;
 import com.moonkage.identity.auth.AuthError;
-import com.moonkage.identity.kyc.KycError;
+import com.moonkage.identity.nfc.NfcError;
 import com.moonkage.identity.otp.OtpError;
 import com.moonkage.identity.platform.security.BearerTokenError;
 import com.moonkage.identity.profile.ProfileError;
@@ -37,7 +37,7 @@ class ErrorCodeCatalogTest {
                     AuthError.values(),
                     BearerTokenError.values(),
                     ProfileError.values(),
-                    KycError.values())
+                    NfcError.values())
             .flatMap(Stream::of)
             .map(ErrorCode.class::cast)
             .toList();

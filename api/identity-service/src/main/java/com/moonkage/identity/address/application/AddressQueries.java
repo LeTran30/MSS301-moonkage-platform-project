@@ -11,13 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 /** FR-03: what the caller reads about their own addresses. */
 @Service
 @RequiredArgsConstructor
-public class AddressQueries {
+class AddressQueries {
 
     private final AddressBookRepository addressBooks;
 
     /** The default first, then the newest. */
     @Transactional(readOnly = true)
-    public List<AddressEntry> list(AccountId owner) {
+    List<AddressEntry> list(AccountId owner) {
         return addressBooks.list(owner);
     }
 }

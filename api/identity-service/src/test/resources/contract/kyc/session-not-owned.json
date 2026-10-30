@@ -5,7 +5,7 @@
     "code" : "NFC_004",
     "message" : "Phiên xác minh không thuộc tài khoản đang đăng nhập.",
     "data" : null,
-    "path" : "/api/nfc/sessions/<masked>",
+    "path" : "/api/accounts/me/profile/kyc/nfc-sessions/<masked>",
     "timestamp" : "<masked>"
   }
 }

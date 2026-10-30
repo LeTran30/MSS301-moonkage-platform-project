@@ -169,10 +169,10 @@ class IdentityApiIntegrationTest {
 
     @Test
     void protectedEndpointWithoutTokenIs401WithPath() throws Exception {
-        mvc.perform(get("/api/addresses"))
+        mvc.perform(get("/api/accounts/me/addresses"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("AUTH_010"))
-                .andExpect(jsonPath("$.path").value("/api/addresses"));
+                .andExpect(jsonPath("$.path").value("/api/accounts/me/addresses"));
     }
 
     // ───────── Q-04, Q-05 ─────────
@@ -227,7 +227,7 @@ class IdentityApiIntegrationTest {
     void addressTimestampsCarryATimeZone() throws Exception {
         String token = token(login(activeAccount(), PASSWORD));
 
-        mvc.perform(post("/api/addresses")
+        mvc.perform(post("/api/accounts/me/addresses")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -248,17 +248,20 @@ class IdentityApiIntegrationTest {
         String owner = token(login(activeAccount(), PASSWORD));
         String stranger = token(login(activeAccount(), PASSWORD));
 
-        String created = mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + owner))
+        String created = mvc.perform(
+                        post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", "Bearer " + owner))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         String sessionId = JsonPath.read(created, "$.data.sessionId");
 
-        mvc.perform(get("/api/nfc/sessions/" + sessionId).header("Authorization", "Bearer " + owner))
+        mvc.perform(get("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId)
+                        .header("Authorization", "Bearer " + owner))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("PENDING"));
-        mvc.perform(get("/api/nfc/sessions/" + sessionId).header("Authorization", "Bearer " + stranger))
+        mvc.perform(get("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId)
+                        .header("Authorization", "Bearer " + stranger))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("NFC_004"));
     }
@@ -267,10 +270,10 @@ class IdentityApiIntegrationTest {
     void nfcStatusOfOwnAccountStartsNotVerified() throws Exception {
         String owner = token(login(activeAccount(), PASSWORD));
 
-        mvc.perform(get("/api/nfc/status").header("Authorization", "Bearer " + owner))
+        mvc.perform(get("/api/accounts/me/profile/kyc").header("Authorization", "Bearer " + owner))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.nfcStatus").value("NOT_VERIFIED"));
-        mvc.perform(get("/api/nfc/status")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/accounts/me/profile/kyc")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -278,16 +281,17 @@ class IdentityApiIntegrationTest {
         String accountId = JsonPath.read(login(activeAccount(), PASSWORD), "$.data.accountId");
 
         // other services get the bare body, not ApiResponse (Software Design 5.1 rule 8)
-        mvc.perform(get("/internal/nfc/status/" + accountId))
+        mvc.perform(get("/internal/accounts/" + accountId + "/profile/kyc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nfcStatus").value("NOT_VERIFIED"));
-        mvc.perform(get("/internal/nfc/status/unknown-account")).andExpect(status().isNotFound());
+        mvc.perform(get("/internal/accounts/unknown-account/profile/kyc")).andExpect(status().isNotFound());
     }
 
     @Test
     void rejectedCardCountsTheAttemptInItsOwnTransaction() throws Exception {
         String owner = token(login(activeAccount(), PASSWORD));
-        String created = mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + owner))
+        String created = mvc.perform(
+                        post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", "Bearer " + owner))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -297,7 +301,7 @@ class IdentityApiIntegrationTest {
 
         // row lock and outbox both need the transaction; the second answer proves the first attempt was committed
         for (int attemptsLeft : new int[] {4, 3}) {
-            mvc.perform(post("/api/nfc/sessions/" + sessionId + "/card")
+            mvc.perform(post("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId + "/card")
                             .header("Authorization", "Bearer " + owner)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(card))
@@ -319,19 +323,20 @@ class IdentityApiIntegrationTest {
                 .andExpect(jsonPath("$.data.reasonCode", nullValue()));
 
         // the web's fallback poll sees the result; the same QR cannot be used twice
-        mvc.perform(get("/api/nfc/sessions/" + sessionId).header("Authorization", "Bearer " + owner))
+        mvc.perform(get("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId)
+                        .header("Authorization", "Bearer " + owner))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("VERIFIED"));
         submitCard(owner, sessionId, idNumber)
                 .andExpect(jsonPath("$.data.status").value("REJECTED"))
                 .andExpect(jsonPath("$.data.reasonCode").value("SESSION_USED"));
 
-        mvc.perform(get("/api/nfc/status").header("Authorization", "Bearer " + owner))
+        mvc.perform(get("/api/accounts/me/profile/kyc").header("Authorization", "Bearer " + owner))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.nfcStatus").value("VERIFIED"))
                 .andExpect(jsonPath("$.data.legalName").value("NGUYEN VAN AN"))
                 .andExpect(jsonPath("$.data.idNumberMasked").value("********" + idNumber.substring(8)));
-        mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + owner))
+        mvc.perform(post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", "Bearer " + owner))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("NFC_001"));
 
@@ -346,7 +351,8 @@ class IdentityApiIntegrationTest {
     // ───────── helpers ─────────
 
     private String createNfcSession(String token) throws Exception {
-        String created = mvc.perform(post("/api/nfc/sessions").header("Authorization", "Bearer " + token))
+        String created = mvc.perform(
+                        post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -366,7 +372,7 @@ class IdentityApiIntegrationTest {
                 {"fullName":"NGUYEN VAN AN","gender":"MALE","nationality":"Viet Nam","placeOfBirth":"Tinh Lam Dong",
                 "dateOfIssue":"2024-01-01","dateOfExpiry":"%s","encryptedFields":"%s","appVersion":"it"}
                 """.formatted(dateOfExpiry, jwe.serialize());
-        return mvc.perform(post("/api/nfc/sessions/" + sessionId + "/card")
+        return mvc.perform(post("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId + "/card")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(card))

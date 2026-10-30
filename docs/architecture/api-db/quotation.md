@@ -75,7 +75,7 @@ Hoãn: xuất báo giá ra file (FR-18), đặt lại từ đơn cũ (FR-23, dù
 
 **API nội bộ**
 
-- Gọi identity: `GET /internal/nfc/status/{accountId}` (BR-23)
+- Gọi identity: `GET /internal/accounts/{accountId}/profile/kyc` (BR-23)
 - Gọi payment: `POST /internal/payments` (`DEPOSIT`), `POST /internal/refunds` (`QUOTE_EXPIRED`) khi báo giá hết hiệu lực lúc thanh toán
 
 ## Quyết định liên quan

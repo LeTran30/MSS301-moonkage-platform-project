@@ -5,7 +5,7 @@
     "code" : "NFC_005",
     "message" : "Số định danh phải gồm đúng 12 chữ số.",
     "data" : null,
-    "path" : "/internal/accounts/check",
+    "path" : "/internal/accounts/<masked>/profile/kyc/id-number-check",
     "timestamp" : "<masked>"
   }
 }

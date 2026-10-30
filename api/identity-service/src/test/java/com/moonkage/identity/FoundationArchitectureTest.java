@@ -23,15 +23,14 @@ class FoundationArchitectureTest {
     private static final String SHARED = "com.moonkage.identity.shared..";
     private static final String PLATFORM = "com.moonkage.identity.platform..";
 
-    /** The business modules, old components included: the foundation must not know any of them. */
+    /** The business modules: the foundation must not know any of them. */
     private static final String[] BUSINESS_MODULES = {
         "com.moonkage.identity.account..",
         "com.moonkage.identity.profile..",
         "com.moonkage.identity.address..",
         "com.moonkage.identity.otp..",
-        "com.moonkage.identity.kyc..",
-        "com.moonkage.identity.auth..",
-        "com.moonkage.identity.web.."
+        "com.moonkage.identity.nfc..",
+        "com.moonkage.identity.auth.."
     };
 
     @ArchTest

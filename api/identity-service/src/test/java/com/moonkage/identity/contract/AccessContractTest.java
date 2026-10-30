@@ -34,7 +34,7 @@ class AccessContractTest extends ContractTest {
     @Test
     void missingTokenIsReportedWithThePath() throws Exception {
         assertContract("security/token-missing", call(get("/api/accounts/me")));
-        assertContract("security/token-missing-addresses", call(get("/api/addresses")));
+        assertContract("security/token-missing-addresses", call(get("/api/accounts/me/addresses")));
     }
 
     @Test

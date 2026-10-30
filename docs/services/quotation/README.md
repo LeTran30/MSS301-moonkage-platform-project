@@ -12,7 +12,7 @@ sequenceDiagram
   participant S as Người bán
   participant P as payment
   B->>Q: POST /api/quote-requests (DIRECT | OPEN)
-  Q->>I: GET /internal/nfc/status/{accountId} (BR-23)
+  Q->>I: GET /internal/accounts/{accountId}/profile/kyc (BR-23)
   Q-->>Q: ghép người bán từ vendor_snapshots (BR-16, BR-22), tạo lời mời
   S->>Q: POST /api/quote-requests/{id}/quotes (máy chủ tính tổng, cọc)
   B->>Q: POST .../quotes/{quoteId}/acceptance

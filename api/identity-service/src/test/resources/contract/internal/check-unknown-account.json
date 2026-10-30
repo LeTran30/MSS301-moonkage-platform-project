@@ -5,7 +5,7 @@
     "code" : "USER_001",
     "message" : "Không tìm thấy tài khoản người dùng <masked>.",
     "data" : null,
-    "path" : "/internal/accounts/check",
+    "path" : "/internal/accounts/<masked>/profile/kyc/id-number-check",
     "timestamp" : "<masked>"
   }
 }

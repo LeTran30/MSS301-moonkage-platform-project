@@ -21,7 +21,7 @@
       "field" : "wardName",
       "message" : "Tên phường/xã không được để trống"
     } ],
-    "path" : "/api/addresses",
+    "path" : "/api/accounts/me/addresses",
     "timestamp" : "<masked>"
   }
 }

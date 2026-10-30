@@ -12,12 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 /** FR-03: deletes one address of the caller. Orders copied it, so they keep theirs. */
 @Service
 @RequiredArgsConstructor
-public class RemoveAddress {
+class RemoveAddress {
 
     private final AddressBookRepository addressBooks;
 
     @Transactional
-    public void handle(AccountId owner, AddressId address) {
+    void handle(AccountId owner, AddressId address) {
         addressBooks.remove(addressBooks
                 .load(owner)
                 .remove(address)

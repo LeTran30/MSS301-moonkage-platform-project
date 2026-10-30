@@ -5,7 +5,7 @@
     "code" : "AUTH_010",
     "message" : "Yêu cầu thiếu Authorization Bearer token.",
     "data" : null,
-    "path" : "/api/addresses",
+    "path" : "/api/accounts/me/addresses",
     "timestamp" : "<masked>"
   }
 }

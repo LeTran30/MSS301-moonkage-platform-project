@@ -179,7 +179,7 @@ class VendorApiIntegrationTest {
 
     @Test
     void anAccountWithoutNfcVerificationCannotSubmit() throws Exception {
-        when(identityClient.checkIdNumber(any()))
+        when(identityClient.checkIdNumber(any(), any()))
                 .thenReturn(new CheckIdNumberResponse("h", 1, "********1234", false, null, null, null, false));
 
         submit(submission())
@@ -454,7 +454,7 @@ class VendorApiIntegrationTest {
     // ─── helpers ───
 
     private void ownerCardIs(String legalName, boolean matchesAccount) {
-        when(identityClient.checkIdNumber(any()))
+        when(identityClient.checkIdNumber(any(), any()))
                 .thenReturn(new CheckIdNumberResponse(
                         "a".repeat(64), 1, "********1234", matchesAccount, legalName, "********1234", null, true));
     }

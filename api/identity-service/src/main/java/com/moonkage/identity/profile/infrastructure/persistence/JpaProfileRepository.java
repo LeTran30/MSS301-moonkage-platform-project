@@ -1,7 +1,7 @@
 package com.moonkage.identity.profile.infrastructure.persistence;
 
 import com.moonkage.identity.profile.IdNumberHash;
-import com.moonkage.identity.profile.IdNumberTakenMeanwhile;
+import com.moonkage.identity.profile.application.port.IdNumberTakenMeanwhile;
 import com.moonkage.identity.profile.application.port.ProfileRepository;
 import com.moonkage.identity.profile.domain.Profile;
 import com.moonkage.identity.shared.AccountId;

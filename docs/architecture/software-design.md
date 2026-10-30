@@ -204,15 +204,15 @@ Hạ tầng: `api-gateway`, `discovery-server` (Eureka), `postgres`, `rabbitmq`,
 **API công khai (qua gateway):** xem mục 5.1.
 
 **API nội bộ cung cấp:**
-- `GET /internal/nfc/status/{accountId}` → `{nfcStatus, legalName, idNumberMasked, nfcVerifiedAt}`. Dùng cho BR-23 và hiển thị kết quả NFC của chủ ở FR-45 (AC-45.1).
-- `POST /internal/accounts/check` với body `{accountId, idNumber}` → `{idHash, idHashKeyVer, idMasked, matchesAccount, ownerLegalName, ownerIdMasked, nfcVerifiedAt}`. Chuẩn hóa số (chỉ giữ chữ số, đúng 12 chữ số, nếu sai trả lỗi định dạng). `idHash` băm bằng phiên bản hiện hành để vendor lưu; `matchesAccount` so bằng phiên bản ghi trên tài khoản. Số đầy đủ chỉ tồn tại trong bộ nhớ khi xử lý, không ghi log, không lưu (NFR-03).
+- `GET /internal/accounts/{accountId}/profile/kyc` → `{nfcStatus, legalName, idNumberMasked, nfcVerifiedAt}`. Dùng cho BR-23 và hiển thị kết quả NFC của chủ ở FR-45 (AC-45.1).
+- `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` với body `{idNumber}` → `{idHash, idHashKeyVer, idMasked, matchesAccount, ownerLegalName, ownerIdMasked, nfcVerifiedAt}`. Chuẩn hóa số (chỉ giữ chữ số, đúng 12 chữ số, nếu sai trả lỗi định dạng). `idHash` băm bằng phiên bản hiện hành để vendor lưu; `matchesAccount` so bằng phiên bản ghi trên tài khoản. Số đầy đủ chỉ tồn tại trong bộ nhớ khi xử lý, không ghi log, không lưu (NFR-03).
 
 ### 4.3 vendor-service
 
 **Trách nhiệm**
 - Khai, nộp lại hồ sơ người bán (FR-26, FR-27); kiểm BR-23 bằng cách gọi identity. Form khai hồ sơ báo mức phí đăng ký hiện hành (AC-26.9).
 - **Xác minh theo tư cách pháp nhân (BR-26, BR-27):**
-  - Khi nộp hoặc nộp lại, gọi `POST /internal/accounts/check` với số định danh người đại diện / chủ vừa khai. Lưu `idHash`, `idHashKeyVer`, `idMasked` của kết quả vào `representative_id_hash`, `representative_id_key_ver`, `representative_id_masked`; **không** lưu số đầy đủ, **không** tự băm (vendor không có pepper).
+  - Khi nộp hoặc nộp lại, gọi `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` với số định danh người đại diện / chủ vừa khai. Lưu `idHash`, `idHashKeyVer`, `idMasked` của kết quả vào `representative_id_hash`, `representative_id_key_ver`, `representative_id_masked`; **không** lưu số đầy đủ, **không** tự băm (vendor không có pepper).
   - `entity_type` là hộ kinh doanh hoặc doanh nghiệp tư nhân và `matchesAccount = false` → từ chối nộp, trả lỗi nghiệp vụ (AC-26.6). Kiểm ở máy chủ, không phụ thuộc giao diện.
   - `entity_type` là công ty → cho nộp dù không trùng (AC-26.7).
   - So họ tên khai báo với `ownerLegalName` theo A-15 bằng một hàm thuần, không I/O (mục 4.3.1).
@@ -363,7 +363,7 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
 **Quy tắc chung** (áp cho API công khai qua gateway và API nội bộ):
 
 1. Client chỉ thấy gateway. Đường dẫn công khai có dạng `/api/<tài-nguyên>/...`, **không** chứa tên service và **không** có số phiên bản. Gateway định tuyến theo tiền tố tài nguyên (bảng dưới); đổi cách chia service bên trong không làm đổi URL của client.
-2. Tên tài nguyên là danh từ tiếng Anh, số nhiều, `kebab-case`: `addresses`, `interprovince-fees`. Các tài nguyên cùng một miền nghiệp vụ gom dưới một tiền tố miền, do một controller quản lý: `/api/nfc/sessions`, `/api/nfc/status`. Tài nguyên mà mỗi người gọi chỉ có một thì dùng số ít: `cart`, `seller/vendor`, `admin/registration-fee`.
+2. Tên tài nguyên là danh từ tiếng Anh, số nhiều, `kebab-case`: `addresses`, `interprovince-fees`. Các tài nguyên cùng một miền nghiệp vụ gom dưới một tiền tố miền, do một controller quản lý: `/api/accounts/me/profile/kyc/nfc-sessions`, `/api/accounts/me/profile/kyc`. Tài nguyên mà mỗi người gọi chỉ có một thì dùng số ít: `cart`, `seller/vendor`, `admin/registration-fee`.
 3. Thao tác CRUD dùng method HTTP: `GET` đọc, `POST` tạo, `PUT` thay toàn bộ, `PATCH` sửa một phần, `DELETE` xóa. Thao tác nghiệp vụ không phải CRUD đặt thành tài nguyên con là danh từ, gọi bằng `POST`: `.../nfc/sessions/{sessionId}/card`, `.../vendors/{vendorId}/approval`. Không đặt động từ trong URL.
 4. Biến đường dẫn và tham số truy vấn viết `camelCase`: `{sessionId}`, `?provinceCode=...&page=0&size=20`. Không đưa dữ liệu cá nhân vào URL (NFR-03).
 5. Theo vai:
@@ -379,7 +379,7 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
 
 | Service | Member, khách | Chủ người bán | Quản trị |
 |---|---|---|---|
-| identity | `/api/auth/**`, `/api/accounts/**`, `/api/addresses/**`, `/api/nfc/**` | | |
+| identity | `/api/auth/**`, `/api/accounts/**` (gồm `/api/accounts/me/profile/kyc/**`, `/api/accounts/me/addresses/**`) | | |
 | vendor | `/api/vendors/**` (nộp hồ sơ người bán, FR-26) | `/api/seller/vendor/**` (hồ sơ, nộp lại, vùng giao, phí nội thành, hồ sơ nhận đặt hàng, đóng phí đăng ký) | `/api/admin/vendors/**`, `/api/admin/registration-fee` |
 | catalog | `/api/products/**` | `/api/seller/products/**` | `/api/admin/products/**`, `/api/admin/interprovince-fees/**` |
 | quotation | `/api/suppliers/**` (FR-14), `/api/requests/**`, `/api/quotes/**` | `/api/seller/requests/**`, `/api/seller/quotes/**` | |
@@ -391,9 +391,9 @@ WHERE product_id = :id AND status = 'DANG_BAN' AND stock >= :qty;
 
 | Method, đường dẫn | Ai gọi | Xác thực | Mục đích |
 |---|---|---|---|
-| `POST /api/nfc/sessions` | React | JWT `MEMBER` | Tạo phiên gắn với tài khoản (AC-04.1) → `{sessionId, expiresAt}` |
-| `GET /api/nfc/sessions/{sessionId}` | React | JWT, chỉ chủ phiên | Xem trạng thái phiên (dự phòng khi WebSocket lỗi) |
-| `POST /api/nfc/sessions/{sessionId}/card` | App Flutter | JWT, phiên phải thuộc tài khoản trong token (AC-04.2) | Gửi một lần sau khi người dùng bấm Lưu. Body `{fullName, gender, nationality, placeOfBirth, dateOfIssue, dateOfExpiry, encryptedFields, appVersion}`; `encryptedFields` là JWE bọc `{idNumber, dateOfBirth, placeOfResidence}` (AC-04.10, D-17) → `{status, reasonCode, attemptsLeft, lockedUntil}` |
+| `POST /api/accounts/me/profile/kyc/nfc-sessions` | React | JWT `MEMBER` | Tạo phiên gắn với tài khoản (AC-04.1) → `{sessionId, expiresAt}` |
+| `GET /api/accounts/me/profile/kyc/nfc-sessions/{sessionId}` | React | JWT, chỉ chủ phiên | Xem trạng thái phiên (dự phòng khi WebSocket lỗi) |
+| `POST /api/accounts/me/profile/kyc/nfc-sessions/{sessionId}/card` | App Flutter | JWT, phiên phải thuộc tài khoản trong token (AC-04.2) | Gửi một lần sau khi người dùng bấm Lưu. Body `{fullName, gender, nationality, placeOfBirth, dateOfIssue, dateOfExpiry, encryptedFields, appVersion}`; `encryptedFields` là JWE bọc `{idNumber, dateOfBirth, placeOfResidence}` (AC-04.10, D-17) → `{status, reasonCode, attemptsLeft, lockedUntil}` |
 
 `status`: `VERIFIED` hoặc `REJECTED`. `reasonCode`: `SESSION_EXPIRED`, `SESSION_NOT_OWNED`, `SESSION_USED`, `LOCKED`, `BAD_FORMAT`, `CARD_EXPIRED`, `ID_ALREADY_LINKED`. `BAD_FORMAT`, `CARD_EXPIRED` và `ID_ALREADY_LINKED` tính một lần thử thất bại (AC-04.9). JWE không giải mã được thì trả `BAD_FORMAT`. Phản hồi không chứa dữ liệu thẻ: app đã hiện dữ liệu từ thẻ trước khi gửi (AC-04.4). `sessionId` là chuỗi base64url ngẫu nhiên ≥ 128 bit (ít nhất 22 ký tự), nằm trong khoảng app chấp nhận (16–128 ký tự). Máy chủ không có bản lưu tạm dữ liệu thẻ (D-20).
 
@@ -408,8 +408,8 @@ Mọi đường dẫn `/internal/**` không mở qua gateway (mục 8). Đặt t
 
 | Bên gọi | Bên được gọi | Endpoint | Dùng cho |
 |---|---|---|---|
-| vendor, quotation | identity | `GET /internal/nfc/status/{accountId}` | BR-23; vendor dùng thêm họ tên, CCCD đã che, thời điểm xác minh cho AC-45.1 |
-| vendor | identity | `POST /internal/accounts/check` | Băm số định danh khai ở hồ sơ người bán và so với CCCD của chủ tài khoản (BR-27, AC-26.6, AC-26.8) |
+| vendor, quotation | identity | `GET /internal/accounts/{accountId}/profile/kyc` | BR-23; vendor dùng thêm họ tên, CCCD đã che, thời điểm xác minh cho AC-45.1 |
+| vendor | identity | `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` | Băm số định danh khai ở hồ sơ người bán và so với CCCD của chủ tài khoản (BR-27, AC-26.6, AC-26.8) |
 | order | catalog | `POST /internal/products/snapshot` | Body: danh sách sản phẩm và địa chỉ giao. Trả giá, trạng thái, tồn kho, vùng giao, và phí giao kèm cờ liên tỉnh theo từng người bán (BR-30, D-14) |
 | order | catalog | `POST /internal/stock/reservations` | Giữ tồn kho trước khi chuyển sang VNPay (BR-28) |
 | order | catalog | `DELETE /internal/stock/reservations/{paymentRef}` | Trả tồn kho khi không tạo được giao dịch thanh toán |
@@ -466,7 +466,7 @@ Các service phát sự kiện liên quan đến tiền, trạng thái đơn, t�
 | BR-22 cấm tự giao dịch | order (giỏ, thanh toán), quotation (yêu cầu, lời mời, chấp nhận báo giá) | So `account_id` trong JWT với `owner_account_id` ở bản sao người bán. Kiểm lại ở bước cuối (AC-09.5, AC-19.4) |
 | BR-23 xác minh NFC | vendor (khai hồ sơ), quotation (tạo yêu cầu) | Gọi REST sang identity. Không dựa vào claim trong JWT vì token cũ không phản ánh lần xác minh mới |
 | BR-23 một CCCD một tài khoản | identity (nhận kết quả thẻ) | Kiểm trùng mã băm theo mọi phiên bản pepper; ràng buộc duy nhất trên `(id_number_hash, id_hash_key_ver)` |
-| BR-27 chủ tài khoản là chính chủ (hộ kinh doanh, doanh nghiệp tư nhân) | vendor (nộp, nộp lại hồ sơ) | Gọi `POST /internal/accounts/check`; `matchesAccount = false` thì từ chối nộp |
+| BR-27 chủ tài khoản là chính chủ (hộ kinh doanh, doanh nghiệp tư nhân) | vendor (nộp, nộp lại hồ sơ) | Gọi `POST /internal/accounts/{accountId}/profile/kyc/id-number-check`; `matchesAccount = false` thì từ chối nộp |
 | BR-26 công ty có làm việc trực tiếp và thỏa thuận | vendor (lệnh duyệt của quản trị) | Từ chối lệnh duyệt khi `entity_type = công ty` mà `onboarding_meeting` thiếu ngày, quản trị thực hiện, họ tên người đại diện, file thỏa thuận hoặc xác nhận tra cứu |
 | BR-31 phí đăng ký mở bán | vendor tính `can_operate`; catalog (đăng sản phẩm, hiển thị), quotation (yêu cầu trực tiếp, lời mời, báo giá) chặn theo bản sao | `can_operate = đã duyệt và đã đóng phí`. Chưa `can_operate` thì không đăng bán, không nhận yêu cầu, không được mời |
 | BR-25 xác nhận qua IPN | payment | Kiểm checksum, `gateway_txn_ref` tồn tại, số tiền khớp; xử lý lặp lại an toàn nhờ khóa duy nhất trên `gateway_txn_ref` và trạng thái Payment. Return URL chỉ để hiển thị |
@@ -576,13 +576,13 @@ sequenceDiagram
     participant I as identity
     participant A as Flutter app
     participant N as notification
-    W->>I: POST /api/nfc/sessions (JWT)
+    W->>I: POST /api/accounts/me/profile/kyc/nfc-sessions (JWT)
     I-->>W: sessionId (QR, không chứa dữ liệu cá nhân)
     A->>I: Đăng nhập (POST /api/auth/login)
     A->>A: Quét QR, đọc Text record JSON, kiểm định dạng và hạn CCCD
     A->>A: Hiện đủ 9 trường; người dùng bấm Lưu (Hủy thì dừng, không gửi)
     A->>A: Mã hóa idNumber, dateOfBirth, placeOfResidence thành JWE
-    A->>I: POST /api/nfc/sessions/{sessionId}/card (JWT, encryptedFields)
+    A->>I: POST /api/accounts/me/profile/kyc/nfc-sessions/{sessionId}/card (JWT, encryptedFields)
     I->>I: Kiểm phiên, chủ phiên, khóa; giải mã; kiểm định dạng, hạn CCCD; băm HMAC; kiểm trùng
     I->>I: Ghi 5 trường (mã hóa số định danh, ngày sinh); bỏ các trường còn lại; nfc_status = đã xác minh; outbox
     I-->>A: VERIFIED
@@ -603,8 +603,8 @@ sequenceDiagram
     participant P as payment
     participant N as notification
     W->>VD: Nộp hồ sơ (loại hình, thông tin đơn vị, họ tên + số định danh người đại diện/chủ, file)
-    VD->>I: GET /internal/nfc/status/{accountId} (BR-23)
-    VD->>I: POST /internal/accounts/check {accountId, idNumber}
+    VD->>I: GET /internal/accounts/{accountId}/profile/kyc (BR-23)
+    VD->>I: POST /internal/accounts/{accountId}/profile/kyc/id-number-check {idNumber}
     I-->>VD: idHash, idMasked, matchesAccount, ownerLegalName, ...
     alt Hộ kinh doanh / DNTN và không trùng
         VD-->>W: Từ chối nộp: chủ tài khoản phải là chính chủ (BR-27)
@@ -637,7 +637,7 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 - **Xác thực:** identity phát JWT theo `docs/services/identity/README.md` (HS256; gateway và service kiểm bằng cùng khóa bí mật, D-19). Claim gồm `sub` (accountId), `type` (`ACCESS` / `REFRESH`) và `role`. Hệ thống có đúng hai vai: `MEMBER` (mọi tài khoản đã đăng ký) và `ADMIN` (quản trị). App mobile dùng cùng endpoint đăng nhập và cùng loại token. Chủ người bán không phải một vai: quyền chủ không nằm trong JWT, service tự tra bản sao người bán theo `sub`.
 - **Phân quyền ở hai lớp:** gateway chặn theo đường dẫn (`/api/admin/**` cần `ADMIN`, `/api/seller/**` cần JWT); service kiểm lại bằng Spring Security. Mọi quy tắc nghiệp vụ kiểm ở service, không dựa vào giao diện (Requirement mục 9).
 - **Endpoint nội bộ:** gateway không định tuyến `/internal/**`. Trong Docker Compose các service nằm trên mạng nội bộ, chỉ gateway mở cổng ra ngoài.
-- **Endpoint công khai không JWT:** đăng ký, xác nhận, đăng nhập, làm mới token, khôi phục mật khẩu dưới `/api/auth/**` (thông tin tài khoản đang đăng nhập `/api/accounts/me` cần JWT); `GET` xem sản phẩm, đánh giá, đơn vị cung cấp (`/api/products/**`, `/api/reviews/**`, `/api/suppliers/**`); IPN VNPay dưới `/api/payments/**` (xác thực bằng checksum của VNPay). Gateway giới hạn số request cho `POST /api/nfc/sessions/{sessionId}/card` theo tài khoản và theo IP.
+- **Endpoint công khai không JWT:** đăng ký, xác nhận, đăng nhập, làm mới token, khôi phục mật khẩu dưới `/api/auth/**` (thông tin tài khoản đang đăng nhập `/api/accounts/me` cần JWT); `GET` xem sản phẩm, đánh giá, đơn vị cung cấp (`/api/products/**`, `/api/reviews/**`, `/api/suppliers/**`); IPN VNPay dưới `/api/payments/**` (xác thực bằng checksum của VNPay). Gateway giới hạn số request cho `POST /api/accounts/me/profile/kyc/nfc-sessions/{sessionId}/card` theo tài khoản và theo IP.
 - **File:** tên object là `<loại>/<uuid>.<ext>`, không chứa accountId hay dữ liệu cá nhân (NFR-03); database lưu object key, không lưu URL.
   - Bucket `MINIO_PUBLIC_BUCKET`: chỉ ảnh sản phẩm, ai cũng đọc được. Bucket `MINIO_PRIVATE_BUCKET`: mọi file còn lại, chỉ xem qua presigned GET có thời hạn, service sở hữu cấp sau khi kiểm quyền theo nghiệp vụ (ví dụ maket: người mua hoặc người bán của đơn). Bucket `MINIO_VENDOR_DOCS_BUCKET` (`vendor-docs`): giấy tờ người bán, file thỏa thuận hợp tác và hóa đơn phí đăng ký, cùng mức bảo vệ với giấy tờ pháp lý.
   - Mỗi service một user MinIO, chỉ có `GetObject`/`PutObject`/`DeleteObject` trên tiền tố của mình: catalog `public/products/`, `private/tmp/catalog/`; order `private/order/`, `private/tmp/order/`; vendor `vendor-docs/vendor/`, `vendor-docs/tmp/vendor/`. Service không giữ tài khoản root và không tạo bucket; bucket, policy, lifecycle và user do container `minio-init` (`infra/minio/init.sh`) tạo bằng root. Service kiểm quyền truy cập vùng tạm lúc khởi động và dừng nếu sai.
@@ -648,7 +648,7 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
   - Thẻ không có chữ ký: hệ thống không chứng minh được thẻ là thật. Đây là hệ quả được chấp nhận (Requirement A-08).
   - Mọi mã băm số CCCD / số định danh là HMAC-SHA256 với pepper chỉ nằm ở identity-service, lưu kèm phiên bản khóa. Không băm trần, vì 12 chữ số có thể dò ngược.
   - Pepper bị lộ thì xử lý theo mục 4.2: thêm phiên bản mới, băm lại tài khoản từ bản mã hóa, băm lại hồ sơ người bán khi chủ nộp lại. Trong lúc chuyển tiếp, mã băm phiên bản cũ vẫn bị coi là có thể dò được; đây là rủi ro còn lại được chấp nhận.
-  - Số đầy đủ chỉ tồn tại trong bộ nhớ lúc kiểm và lúc băm. Log ứng dụng và gateway không ghi body của `POST /api/nfc/sessions/{sessionId}/card` và `POST /internal/accounts/check` (cấu hình bộ lọc log).
+  - Số đầy đủ chỉ tồn tại trong bộ nhớ lúc kiểm và lúc băm. Log ứng dụng và gateway không ghi body của `POST /api/accounts/me/profile/kyc/nfc-sessions/{sessionId}/card` và `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` (cấu hình bộ lọc log).
   - Payload sự kiện và audit chỉ chứa dạng đã che.
 - **Bí mật cấu hình:** khóa VNPay, khóa JWT, pepper, khóa riêng giải mã JWE, khóa AES lưu dữ liệu xác minh, mật khẩu ứng dụng Gmail, mật khẩu database và MinIO đặt qua biến môi trường, không đưa vào repository. Trong Docker Compose mỗi container chỉ nhận biến nó đọc (danh sách `environment` của từng service), không nạp cả `.env`; ví dụ catalog không thấy khóa JWT, pepper hay tài khoản root MinIO.
 
@@ -734,7 +734,7 @@ moonkage/
 | D-04 | Có dùng Spring Cloud Config Server hay chỉ biến môi trường | Q-07 |
 | D-05 | **Đã chốt (v0.6).** Thẻ chứa một NDEF Text record là JSON 9 khóa theo các trường in trên CCCD, không chữ ký; người dùng tự có thẻ (Requirement A-08) | FR-04, A-08 |
 | D-06 | **Đã xong.** Requirement mục 9 chỉ còn ràng buộc; cách chia service và hạ tầng thuộc tài liệu này | Q-07 |
-| D-07 | **Đã chốt.** Endpoint `POST /internal/accounts/check` đặt ở identity; pepper không rời identity-service, vendor không tự băm | BR-27, NFR-03 |
+| D-07 | **Đã chốt.** Endpoint `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` đặt ở identity; pepper không rời identity-service, vendor không tự băm | BR-27, NFR-03 |
 | D-08 | **Đã chốt.** Pepper có phiên bản: mỗi mã băm lưu kèm phiên bản khóa; đổi khóa bằng cách thêm phiên bản và băm lại khi người dùng cung cấp lại số. Mỗi môi trường một pepper. Trong dự án chỉ dùng phiên bản 1 | NFR-03 |
 | D-09 | **Đã chốt.** `Vendor.business_name` cho tên đơn vị; `Account.legal_name` cho họ tên người | Requirement 7.1 |
 | D-10 | **Đã chốt (v0.5).** Thanh toán giỏ đi qua phiên checkout kỹ thuật; Order chỉ được tạo khi có `payment.succeeded`, mỗi Shop một đơn với `payment_group_id = checkout_id`. Lý do: v0.4 tạo "đơn chờ" rồi hủy, trái với FR-09 "thất bại thì không tạo đơn" | FR-09, BR-29 |

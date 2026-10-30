@@ -24,7 +24,7 @@
       "field" : "wardName",
       "message" : "Tên phường/xã tối đa 100 ký tự"
     } ],
-    "path" : "/api/addresses",
+    "path" : "/api/accounts/me/addresses",
     "timestamp" : "<masked>"
   }
 }

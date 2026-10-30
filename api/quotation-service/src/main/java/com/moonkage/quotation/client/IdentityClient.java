@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface IdentityClient {
 
     /** BR-23; also the buyer's legal name and masked ID number for the binding acceptance. */
-    @GetMapping("/nfc/status/{accountId}")
+    @GetMapping("/accounts/{accountId}/profile/kyc")
     NfcStatusResponse getNfcStatus(@PathVariable("accountId") String accountId);
 }

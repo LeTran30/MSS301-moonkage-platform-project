@@ -5,7 +5,7 @@
     "code" : "ADDRESS_001",
     "message" : "Không tìm thấy địa chỉ có mã <masked>.",
     "data" : null,
-    "path" : "/api/addresses/<masked>",
+    "path" : "/api/accounts/me/addresses/<masked>",
     "timestamp" : "<masked>"
   }
 }

@@ -11,6 +11,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import jakarta.persistence.GeneratedValue;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * Layout and naming rules of plan v2 (3.3 to 3.5, 8.2) for the modules already rebuilt ({@link RebuiltModules}).
@@ -39,7 +40,11 @@ class ModuleArchitectureTest {
     }
 
     @ArchTest
-    static void rootDependsOnlyOnShared(JavaClasses classes) {
+    static void rootDependsOnlyOnSharedAndOtherContracts(JavaClasses classes) {
+        String[] allowed = Stream.concat(
+                        RebuiltModules.NAMES.stream().map(name -> RebuiltModules.BASE_PACKAGE + "." + name),
+                        Stream.of(SHARED, "java.."))
+                .toArray(String[]::new);
         for (String module : RebuiltModules.NAMES) {
             String root = RebuiltModules.BASE_PACKAGE + "." + module;
             classes()
@@ -47,8 +52,9 @@ class ModuleArchitectureTest {
                     .resideInAPackage(root)
                     .should()
                     .onlyDependOnClassesThat()
-                    .resideInAnyPackage(root, SHARED, "java..")
-                    .because("the contract other modules compile against carries no framework and no internals (3.4)")
+                    .resideInAnyPackage(allowed)
+                    .because("a contract carries no framework and no internals, but may use another contract, as"
+                            + " profile hands out what nfc reads (3.4)")
                     .check(classes);
         }
     }

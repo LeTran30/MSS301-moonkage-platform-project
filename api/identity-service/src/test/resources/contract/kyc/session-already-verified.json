@@ -5,7 +5,7 @@
     "code" : "NFC_001",
     "message" : "Tài khoản đã xác minh NFC.",
     "data" : null,
-    "path" : "/api/nfc/sessions",
+    "path" : "/api/accounts/me/profile/kyc/nfc-sessions",
     "timestamp" : "<masked>"
   }
 }

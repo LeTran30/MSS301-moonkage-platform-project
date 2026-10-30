@@ -127,7 +127,7 @@ class DomainModelArchitectureTest {
         };
     }
 
-    /** com.moonkage.identity.kyc.domain.nfc → com.moonkage.identity.kyc */
+    /** com.moonkage.identity.nfc.domain → com.moonkage.identity.nfc */
     private static String componentOf(String packageName) {
         String rest = packageName.substring(BASE_PACKAGE.length() + 1);
         int dot = rest.indexOf('.');

@@ -5,7 +5,7 @@
     "code" : "ADDRESS_001",
     "message" : "Không tìm thấy địa chỉ có mã not-a-uuid.",
     "data" : null,
-    "path" : "/api/addresses/not-a-uuid",
+    "path" : "/api/accounts/me/addresses/not-a-uuid",
     "timestamp" : "<masked>"
   }
 }

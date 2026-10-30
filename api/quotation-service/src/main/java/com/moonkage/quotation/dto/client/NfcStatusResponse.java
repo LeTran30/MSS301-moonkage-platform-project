@@ -3,7 +3,7 @@ package com.moonkage.quotation.dto.client;
 import java.time.Instant;
 
 /**
- * identity-service GET /internal/nfc/status/{accountId}: masked data only.
+ * identity-service GET /internal/accounts/{accountId}/profile/kyc: masked data only.
  *
  * @param nfcStatus NOT_VERIFIED, VERIFIED or LOCKED
  */

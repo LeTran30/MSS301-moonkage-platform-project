@@ -2,8 +2,8 @@ package com.moonkage.identity.profile.infrastructure.persistence;
 
 import com.moonkage.identity.profile.FullName;
 import com.moonkage.identity.profile.IdNumberHash;
-import com.moonkage.identity.profile.LegalName;
-import com.moonkage.identity.profile.MaskedIdNumber;
+import com.moonkage.identity.shared.LegalName;
+import com.moonkage.identity.shared.MaskedIdNumber;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

@@ -8,7 +8,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-/** FR-04 identity check by NFC: {@code /api/nfc/**}, {@code /internal/**} and the {@code account.kyc_*} events. */
+/**
+ * FR-04 identity check by NFC: {@code /api/accounts/me/profile/kyc/**}, {@code /internal/**} and the
+ * {@code account.kyc_*} events.
+ */
 class KycContractTest extends ContractTest {
 
     private static final String BAD_CARD = "{\"fullName\":\"NGUYEN VAN AN\",\"encryptedFields\":\"not-a-jwe\"}";
@@ -20,13 +23,16 @@ class KycContractTest extends ContractTest {
         String owner = accessToken(activeAccount("nfc-session"));
         String stranger = accessToken(activeAccount("nfc-session-stranger"));
 
-        Answer created = call(post("/api/nfc/sessions").header("Authorization", bearer(owner)));
+        Answer created = call(post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", bearer(owner)));
         assertContract("kyc/session-created", created);
         String sessionId = created.read("$.data.sessionId");
 
-        assertContract("kyc/session-pending", getWith("/api/nfc/sessions/" + sessionId, owner));
-        assertContract("kyc/session-not-owned", getWith("/api/nfc/sessions/" + sessionId, stranger));
-        assertContract("kyc/session-unknown", getWith("/api/nfc/sessions/" + UUID.randomUUID(), owner));
+        assertContract("kyc/session-pending", getWith("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId, owner));
+        assertContract(
+                "kyc/session-not-owned", getWith("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId, stranger));
+        assertContract(
+                "kyc/session-unknown",
+                getWith("/api/accounts/me/profile/kyc/nfc-sessions/" + UUID.randomUUID(), owner));
         assertContract("kyc/card-session-not-owned", submitCard(stranger, sessionId, validCard("079190000001")));
         assertContract(
                 "kyc/card-session-unknown", submitCard(owner, UUID.randomUUID().toString(), BAD_CARD));
@@ -41,7 +47,7 @@ class KycContractTest extends ContractTest {
         String accountId = accountIdOf(email);
         String sessionId = createNfcSession(token);
 
-        assertContract("kyc/status-not-verified", getWith("/api/nfc/status", token));
+        assertContract("kyc/status-not-verified", getWith("/api/accounts/me/profile/kyc", token));
         assertContract("kyc/card-verified", submitCard(token, sessionId, validCard("079190000002")));
         Golden.assertEvent(
                 "kyc/event-verified",
@@ -50,11 +56,13 @@ class KycContractTest extends ContractTest {
                                         && e.body().contains(accountId),
                                 "kyc_verified"));
 
-        assertContract("kyc/session-verified", getWith("/api/nfc/sessions/" + sessionId, token));
-        assertContract("kyc/card-session-used", submitCard(token, sessionId, validCard("079190000002")));
-        assertContract("kyc/status-verified", getWith("/api/nfc/status", token));
         assertContract(
-                "kyc/session-already-verified", call(post("/api/nfc/sessions").header("Authorization", bearer(token))));
+                "kyc/session-verified", getWith("/api/accounts/me/profile/kyc/nfc-sessions/" + sessionId, token));
+        assertContract("kyc/card-session-used", submitCard(token, sessionId, validCard("079190000002")));
+        assertContract("kyc/status-verified", getWith("/api/accounts/me/profile/kyc", token));
+        assertContract(
+                "kyc/session-already-verified",
+                call(post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", bearer(token))));
     }
 
     @Test
@@ -84,8 +92,10 @@ class KycContractTest extends ContractTest {
                                 e -> "account.kyc_locked".equals(e.routingKey())
                                         && e.body().contains(accountId),
                                 "kyc_locked"));
-        assertContract("kyc/session-locked", call(post("/api/nfc/sessions").header("Authorization", bearer(token))));
-        assertContract("kyc/status-locked", getWith("/api/nfc/status", token));
+        assertContract(
+                "kyc/session-locked",
+                call(post("/api/accounts/me/profile/kyc/nfc-sessions").header("Authorization", bearer(token))));
+        assertContract("kyc/status-locked", getWith("/api/accounts/me/profile/kyc", token));
     }
 
     @Test
@@ -104,10 +114,14 @@ class KycContractTest extends ContractTest {
         String verified = verifiedAccount("internal-status-verified", "079190000005");
         String waiting = activeAccount("internal-status-waiting");
 
-        assertContract("internal/status-verified", call(get("/internal/nfc/status/" + accountIdOf(verified))));
-        assertContract("internal/status-not-verified", call(get("/internal/nfc/status/" + accountIdOf(waiting))));
-        assertContract("internal/status-unknown", call(get("/internal/nfc/status/" + UUID.randomUUID())));
-        assertContract("internal/status-unknown-not-uuid", call(get("/internal/nfc/status/not-a-uuid")));
+        assertContract(
+                "internal/status-verified", call(get("/internal/accounts/" + accountIdOf(verified) + "/profile/kyc")));
+        assertContract(
+                "internal/status-not-verified",
+                call(get("/internal/accounts/" + accountIdOf(waiting) + "/profile/kyc")));
+        assertContract(
+                "internal/status-unknown", call(get("/internal/accounts/" + UUID.randomUUID() + "/profile/kyc")));
+        assertContract("internal/status-unknown-not-uuid", call(get("/internal/accounts/not-a-uuid/profile/kyc")));
     }
 
     @Test
@@ -128,7 +142,7 @@ class KycContractTest extends ContractTest {
 
         assertContract("internal/check-invalid-number", check(waiting, "12345"));
         assertContract("internal/check-unknown-account", check(UUID.randomUUID().toString(), "079190000008"));
-        assertContract("internal/check-missing", postJson("/internal/accounts/check", "{}"));
+        assertContract("internal/check-missing", postJson(idNumberCheckPath(waiting), "{}"));
     }
 
     @Test
@@ -142,7 +156,11 @@ class KycContractTest extends ContractTest {
     }
 
     private Answer check(String accountId, String idNumber) throws Exception {
-        return postJson("/internal/accounts/check", """
-                {"accountId":"%s","idNumber":"%s"}""".formatted(accountId, idNumber));
+        return postJson(idNumberCheckPath(accountId), """
+                {"idNumber":"%s"}""".formatted(idNumber));
+    }
+
+    private static String idNumberCheckPath(String accountId) {
+        return "/internal/accounts/" + accountId + "/profile/kyc/id-number-check";
     }
 }

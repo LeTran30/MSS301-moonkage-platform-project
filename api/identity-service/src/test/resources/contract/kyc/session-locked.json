@@ -5,7 +5,7 @@
     "code" : "NFC_002",
     "message" : "Xác minh NFC đang tạm khóa do thử sai quá nhiều lần. Vui lòng thử lại sau <masked> phút.",
     "data" : null,
-    "path" : "/api/nfc/sessions",
+    "path" : "/api/accounts/me/profile/kyc/nfc-sessions",
     "timestamp" : "<masked>"
   }
 }

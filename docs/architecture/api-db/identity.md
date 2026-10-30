@@ -44,13 +44,13 @@ Auth giữ nguyên như code vì đăng nhập, OTP, refresh không phải tài 
 | `PATCH /api/accounts/me/profile` | M | Sửa họ tên hiển thị, ảnh đại diện | FR-02 |
 | `GET\|POST /api/accounts/me/addresses` | M | Danh sách, thêm địa chỉ | FR-03 |
 | `PUT\|DELETE /api/accounts/me/addresses/{addressId}` | M | Sửa (gồm `isDefault`), xóa | FR-03 |
-| `POST /api/accounts/me/nfc-sessions` | M | Tạo phiên → `{sessionId, expiresAt}` | AC-04.1 |
-| `GET /api/accounts/me/nfc-sessions/{sessionId}` | M, App | Trạng thái phiên; phiên của tài khoản khác trả `SESSION_NOT_OWNED` | AC-04.2 |
-| `PUT /api/accounts/me/nfc-sessions/{sessionId}/card` | App | Gửi thẻ một lần sau khi bấm Lưu (JWE) → `{status, reasonCode, attemptsLeft, lockedUntil}` | AC-04.5 → AC-04.11 |
+| `POST /api/accounts/me/profile/kyc/nfc-sessions` | M | Tạo phiên → `{sessionId, expiresAt}` | AC-04.1 |
+| `GET /api/accounts/me/profile/kyc/nfc-sessions/{sessionId}` | M, App | Trạng thái phiên; phiên của tài khoản khác trả `SESSION_NOT_OWNED` | AC-04.2 |
+| `POST /api/accounts/me/profile/kyc/nfc-sessions/{sessionId}/card` | App | Gửi thẻ một lần sau khi bấm Lưu (JWE) → `{status, reasonCode, attemptsLeft, lockedUntil}` | AC-04.5 → AC-04.11 |
 | `GET /api/accounts/me/legal-profile` | M | Kết quả xác minh: họ tên, giới tính, quốc tịch, số định danh đã che, thời điểm | FR-04, AC-04.12 |
 | `GET /api/accounts?email=&role=`, `GET /api/accounts/{accountId}` | A | Tra cứu tài khoản | FR-45 |
 
-So với code: `/api/addresses` → `/api/accounts/me/addresses`; `/api/nfc/sessions...` → `/api/accounts/me/nfc-sessions...`, và gửi thẻ đổi từ `POST .../card` sang `PUT` (thẻ là tài nguyên duy nhất của phiên). Web và app Moonkage Verify phải sửa theo (mục 11, L-17).
+Code đã theo các đường dẫn trên từ plan v2, với KYC đặt dưới `/profile/kyc`: `POST|GET /api/accounts/me/profile/kyc/nfc-sessions[/{sessionId}]`, gửi thẻ vẫn là `POST .../nfc-sessions/{sessionId}/card`, kết quả KYC đọc ở `GET /api/accounts/me/profile/kyc` (chưa có `/legal-profile`). Đường dẫn cũ (`/api/addresses`, `/api/nfc/**`) không còn. Web và app Moonkage Verify phải sửa theo (mục 11, L-17).
 
 ## Sự kiện và API nội bộ
 
@@ -65,8 +65,8 @@ So với code: `/api/addresses` → `/api/accounts/me/addresses`; `/api/nfc/sess
 
 **API nội bộ**
 
-- Cung cấp `GET /internal/nfc/status/{accountId}` cho vendor, quotation (BR-23, AC-45.1)
-- Cung cấp `POST /internal/accounts/check` cho vendor: băm số định danh, so với CCCD của chủ (BR-27)
+- Cung cấp `GET /internal/accounts/{accountId}/profile/kyc` cho vendor, quotation (BR-23, AC-45.1)
+- Cung cấp `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` cho vendor: băm số định danh, so với CCCD của chủ (BR-27)
 
 ## Quyết định liên quan
 

@@ -11,7 +11,7 @@ final class RebuiltModules {
 
     static final String BASE_PACKAGE = "com.moonkage.identity";
 
-    static final List<String> NAMES = List.of("account", "otp", "auth", "profile", "kyc", "address");
+    static final List<String> NAMES = List.of("account", "otp", "auth", "profile", "nfc", "address");
 
     private RebuiltModules() {}
 

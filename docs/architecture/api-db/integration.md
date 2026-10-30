@@ -8,8 +8,8 @@ Gọi đồng bộ chỉ khi bên gọi cần câu trả lời ngay để quyế
 
 | Bên gọi → bên được gọi | Endpoint | Dùng cho | Code |
 | --- | --- | --- | --- |
-| vendor, quotation → identity | `GET /internal/nfc/status/{accountId}` | BR-23; họ tên, CCCD đã che cho AC-45.1 | Đã có |
-| vendor → identity | `POST /internal/accounts/check` | Băm số định danh, so với CCCD của chủ (BR-27) | Đã có |
+| vendor, quotation → identity | `GET /internal/accounts/{accountId}/profile/kyc` | BR-23; họ tên, CCCD đã che cho AC-45.1 | Đã có |
+| vendor → identity | `POST /internal/accounts/{accountId}/profile/kyc/id-number-check` | Băm số định danh, so với CCCD của chủ (BR-27) | Đã có |
 | catalog, quotation, order → vendor | `GET /internal/vendors/by-owner/{accountId}` | Dựng lại bản sao khi khởi động | Đã có |
 | order → catalog | `POST /internal/products/snapshot` | Phí giao theo vendor và cờ liên tỉnh (D-14) | Mới |
 | order → vendor | `POST /internal/stock/reservations`, `DELETE /internal/stock/reservations/{checkoutId}` | Giữ (kèm `expiresAt` của checkout), giữ lại khi IPN đến trễ, trả tồn kho (BR-28, P-01); trả giá hiện hành để chép vào phiên checkout | Mới |

@@ -3,7 +3,6 @@ package com.moonkage.vendor.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.moonkage.vendor.client.dto.CheckIdNumberRequest;
 import com.moonkage.vendor.common.exception.AppException;
@@ -49,15 +48,19 @@ class IdentityClientConfigTest {
 
     @Test
     void theIdNumberNeverAppearsInALoggedRequest() {
-        String logged = new CheckIdNumberRequest("account-1", "079123456789").toString();
+        String logged = new CheckIdNumberRequest("079123456789").toString();
 
         assertFalse(logged.contains("079123456789"), logged);
-        assertTrue(logged.contains("account-1"), logged);
     }
 
     private static Response response(int status) {
         Request request = Request.create(
-                Request.HttpMethod.GET, "/internal/nfc/status/a", Map.of(), null, StandardCharsets.UTF_8, null);
+                Request.HttpMethod.GET,
+                "/internal/accounts/a/profile/kyc",
+                Map.of(),
+                null,
+                StandardCharsets.UTF_8,
+                null);
         return Response.builder()
                 .status(status)
                 .request(request)

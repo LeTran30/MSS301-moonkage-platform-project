@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface IdentityClient {
 
     /** NFC status of an account, masked data only (BR-23, AC-45.1). 404 → ACCOUNT_NOT_FOUND. */
-    @GetMapping("/nfc/status/{accountId}")
+    @GetMapping("/accounts/{accountId}/profile/kyc")
     NfcStatusResponse getNfcStatus(@PathVariable String accountId);
 
     /**
      * Hashes an ID number declared on a vendor profile and compares it with the owner's verified card (BR-27, D-07):
      * vendor-service never holds the pepper. 400 → INVALID_INPUT, 404 → ACCOUNT_NOT_FOUND.
      */
-    @PostMapping("/accounts/check")
-    CheckIdNumberResponse checkIdNumber(@RequestBody CheckIdNumberRequest request);
+    @PostMapping("/accounts/{accountId}/profile/kyc/id-number-check")
+    CheckIdNumberResponse checkIdNumber(@PathVariable String accountId, @RequestBody CheckIdNumberRequest request);
 }

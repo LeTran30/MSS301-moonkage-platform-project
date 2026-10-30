@@ -7,10 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.moonkage.identity.profile.FullName;
 import com.moonkage.identity.profile.IdNumberHash;
-import com.moonkage.identity.profile.LegalIdentity;
-import com.moonkage.identity.profile.LegalName;
-import com.moonkage.identity.profile.MaskedIdNumber;
 import com.moonkage.identity.shared.AccountId;
+import com.moonkage.identity.shared.LegalName;
+import com.moonkage.identity.shared.MaskedIdNumber;
 import com.moonkage.identity.shared.value.ValueRejected;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

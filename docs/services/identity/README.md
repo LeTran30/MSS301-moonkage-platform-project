@@ -23,22 +23,22 @@ Không có bảng refresh token và không có bảng mã OTP.
 
 ## Cấu trúc mã (package-by-module)
 
-Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): mọi module nghiệp vụ (`account`, `otp`, `auth`, `profile`, `kyc`, `address`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Controller nằm trong `infrastructure/web/` của module sở hữu tài nguyên.
+Mỗi package cấp một dưới `com.moonkage.identity` là một **module**. Code đang được dựng lại theo [plan v2](identity-service-refactor-plan.md): mọi module nghiệp vụ (`account`, `otp`, `auth`, `profile`, `nfc`, `address`) có hợp đồng ở gốc package (`<Module>Api`, view, value object, `<Module>Error`) và bên trong chia `domain/`, `application/`, `infrastructure/`. Các module nằm phẳng cạnh nhau; `profile` và `address` là tài nguyên của tài khoản nên chỉ cung cấp API, mọi endpoint `/api/accounts/**` và `/internal/accounts/**` nằm ở `AccountController`. `nfc` là cơ chế, như `otp`: KYC là thuộc tính của profile (như `account_verified` của account), NFC là cách đạt nó (như OTP là cách xác nhận email).
 
 | Package | Sở hữu (bảng / dữ liệu) | Public | Phụ thuộc |
 |---|---|---|---|
 | `auth` | — (đăng ký, xác nhận email, đăng nhập, làm mới phiên, đặt lại mật khẩu) | `AuthError`; controller `/api/auth/**` nằm trong module ([Auth.md](classes/Auth.md)) | `account`, `profile`, `otp` |
-| `account` | `accounts` | `AccountApi`, `AccountView`, `CredentialCheck`, `LoginIdentifier`, `RawPassword`, `AccountError` ([AccountApi.md](classes/AccountApi.md)) | — |
-| `profile` | `profiles`; ghép `GET /api/accounts/me` | `ProfileApi`, `FullName`, `LegalIdentity` và các value object của nó, `KycCompletion`, `ProfileError` | `account` |
-| `address` | `addresses` (sổ địa chỉ `AddressBook`, khóa advisory theo tài khoản) | `AddressError`; controller `/api/addresses/**` nằm trong module | — |
-| `kyc` | phiên NFC và bộ đếm/khóa NFC (RAM); ghi KYC qua `ProfileApi` | `KycError`; controller `/api/nfc/**`, `/internal/nfc/**`, `/internal/accounts/check` nằm trong module | `account`, `profile` |
+| `account` | `accounts`; mọi endpoint `/api/accounts/**`, `/internal/accounts/**` (`AccountController`) | `AccountApi`, `AccountView`, `CredentialCheck`, `LoginIdentifier`, `RawPassword`, `AccountError` ([AccountApi.md](classes/AccountApi.md)) | `profile`, `address` |
+| `profile` | `profiles` (họ tên, KYC); băm số định danh (pepper), sự kiện `account.kyc_*` | `ProfileApi`, `FullName`, `ProfileKyc`, `KycStatus`, `IdNumberCheck`, `IdNumberHash`, `ProfileError` (`USER_002`, `NFC_001`, `NFC_005`); không controller | `nfc` |
+| `address` | `addresses` (sổ địa chỉ `AddressBook`, khóa advisory theo tài khoản) | `AddressApi`, `AddressDraft`, `AddressView`, `AddressError`; không controller | — |
+| `nfc` | phiên NFC và bộ đếm/khóa NFC (RAM); mở JWE, kiểm 9 trường thẻ | `NfcApi`, `NfcSessionId`, `NfcSessionView`, `SubmittedCard`, `CardHolder`, `CardVerdict`, `CardCheck`, `NfcReasonCode`, `NfcError` (`NFC_002`–`NFC_004`); không controller | — |
 | `otp` | mã OTP (RAM) | `OtpApi`, `OtpCode`, `OtpPurpose`, `OtpError` ([OtpApi.md](classes/OtpApi.md)) | — |
 | `shared` | — (ngôn ngữ chung, Java thuần) | `Email`, `PhoneNumber`, `Role`, `AccountId`, `IdGenerator`, `ValueRejected`, `ErrorCode`, `AppException`, `CommonError` | — |
 | `platform` | `outbox_events` | cấu hình, `ApiResponse`, `GlobalExceptionHandler`, `FieldParser`, `BearerTokenFilter` + SPI `BearerTokenAuthenticator`, `CurrentUser(Info)`, `BearerTokenError`, `BaseEntity`, `ExpiringMap`, `Outbox` ([Outbox.md](classes/Outbox.md)) | `shared` |
 
 Mọi module đều dùng `shared` và `platform`; hai module này không phụ thuộc module nghiệp vụ nào. Giữa hai module chỉ có liên kết bằng id (`addresses.account_id`, `profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ModuleArchitectureTest` (ngoài module chỉ dùng gốc package; tầng `domain`/`application`/`infrastructure`; không `*Impl`/`*Service`/`*Mapper`/`*Constant`; id không do JPA sinh), `FoundationArchitectureTest` (`shared`, `platform`), `DomainModelArchitectureTest` (entity: không constructor public, có constructor `protected` cho JPA, không builder, chỉ phụ thuộc domain, không phụ thuộc Spring Security; thời gian lấy từ bean `Clock`) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
 
-Endpoint nội bộ `/internal/**` nằm trong module sở hữu dữ liệu, ở `infrastructure/web/internal/` (vd `InternalKycController`), đánh `@Hidden`.
+Endpoint nội bộ `/internal/**` đặt cạnh endpoint public của cùng tài nguyên, path đầy đủ ở mức method, đánh `@Hidden` ([coding-rules.md](../../conventions/coding-rules.md)): `/internal/accounts/{accountId}/profile/kyc/**` nằm ở `AccountController`.
 
 ## Token
 
@@ -119,17 +119,17 @@ Thành công và lỗi dùng **một dạng body** `ApiResponse<T>` (Software De
 
 ## Địa chỉ giao hàng (FR-03)
 
-Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Chỉ thao tác trên địa chỉ của chính mình; id của người khác trả 404 như id không tồn tại.
+Prefix `/identity-service/api/accounts/me/addresses`, mọi endpoint cần Bearer token. Chỉ thao tác trên địa chỉ của chính mình; id của người khác trả 404 như id không tồn tại.
 
 | Method | Path | Body | Kết quả |
 |---|---|---|---|
 | GET | `` | – | 200 danh sách, địa chỉ mặc định đứng đầu, sau đó mới nhất trước |
-| POST | `` | `AddressRequest` | 201 `AddressResponse` |
-| PUT | `/{addressId}` | `AddressRequest` (thay toàn bộ) | 200 `AddressResponse` |
+| POST | `` | `AddressDraft` | 201 `AddressView` |
+| PUT | `/{addressId}` | `AddressDraft` (thay toàn bộ) | 200 `AddressView` |
 | DELETE | `/{addressId}` | – | 204 |
 
 ```json
-// AddressRequest
+// AddressDraft
 { "recipientName": "Nguyễn Lan", "recipientPhone": "0912345678",
   "provinceCode": "79",
   "wardCode": "26734", "wardName": "Phường Sài Gòn",

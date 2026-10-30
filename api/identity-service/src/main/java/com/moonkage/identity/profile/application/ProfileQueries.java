@@ -1,8 +1,8 @@
 package com.moonkage.identity.profile.application;
 
 import com.moonkage.identity.profile.FullName;
-import com.moonkage.identity.profile.LegalIdentity;
 import com.moonkage.identity.profile.application.port.ProfileRepository;
+import com.moonkage.identity.profile.domain.LegalIdentity;
 import com.moonkage.identity.profile.domain.Profile;
 import com.moonkage.identity.shared.AccountId;
 import java.util.Optional;

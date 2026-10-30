@@ -1,5 +1,6 @@
 package com.moonkage.identity.address.domain;
 
+import com.moonkage.identity.address.AddressView;
 import com.moonkage.identity.platform.persistence.BaseEntity;
 import com.moonkage.identity.shared.AccountId;
 import jakarta.persistence.Column;
@@ -79,6 +80,25 @@ public class AddressEntry extends BaseEntity {
 
     public Optional<AddressLabel> label() {
         return Optional.ofNullable(label);
+    }
+
+    public AddressView view() {
+        Recipient recipient = contact.recipient();
+        DeliveryLocation location = contact.location();
+        return new AddressView(
+                id().toString(),
+                recipient.name().value(),
+                recipient.phone().value(),
+                location.province().code(),
+                location.province().officialName(),
+                location.ward().value(),
+                location.detail().value(),
+                location.oneLine(),
+                location.area().code(),
+                label == null ? null : label.value(),
+                isDefault,
+                getCreatedAt(),
+                getUpdatedAt());
     }
 
     public boolean isDefault() {

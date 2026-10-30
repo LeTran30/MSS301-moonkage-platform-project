@@ -1,7 +1,9 @@
 package com.moonkage.identity.account;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
+import com.moonkage.identity.profile.ProfileApi;
 import com.moonkage.identity.shared.Email;
 import com.moonkage.identity.shared.PhoneNumber;
 import com.moonkage.identity.shared.error.AppException;
@@ -26,11 +28,13 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.bind.annotation.RestController;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -54,9 +58,17 @@ class ParallelRegistrationIntegrationTest {
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
 
+    /** The account module without its web layer; the profile it asks for names is a stub. */
     @TestConfiguration
-    @ComponentScan("com.moonkage.identity.account")
+    @ComponentScan(
+            basePackages = "com.moonkage.identity.account",
+            excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = RestController.class))
     static class AccountModule {
+
+        @Bean
+        ProfileApi profileApi() {
+            return mock(ProfileApi.class);
+        }
 
         @Bean
         Clock clock() {

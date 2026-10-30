@@ -1,9 +1,8 @@
 package com.moonkage.identity.profile.application;
 
-import com.moonkage.identity.profile.KycCompletion;
-import com.moonkage.identity.profile.LegalIdentity;
 import com.moonkage.identity.profile.ProfileError;
 import com.moonkage.identity.profile.application.port.ProfileRepository;
+import com.moonkage.identity.profile.domain.LegalIdentity;
 import com.moonkage.identity.profile.domain.Profile;
 import com.moonkage.identity.shared.AccountId;
 import com.moonkage.identity.shared.error.AppException;

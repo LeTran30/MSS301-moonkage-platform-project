@@ -75,7 +75,7 @@ class JwtBearerAuthenticationTest {
     void validTokenSetsTheCurrentUser() throws Exception {
         String token = tokenOf(account(true, null));
 
-        filter.doFilter(request("/api/addresses", token), response, chain);
+        filter.doFilter(request("/api/accounts/me/addresses", token), response, chain);
 
         verify(chain).doFilter(any(), any());
         assertEquals(
@@ -87,7 +87,7 @@ class JwtBearerAuthenticationTest {
     void unconfirmedAccountIsRefusedEvenWithAValidToken() throws Exception {
         String token = tokenOf(account(false, null));
 
-        filter.doFilter(request("/api/addresses", token), response, chain);
+        filter.doFilter(request("/api/accounts/me/addresses", token), response, chain);
 
         assertEquals(AuthError.ACCOUNT_NOT_ACTIVATED, resolvedError());
         verify(chain, never()).doFilter(any(), any());
@@ -97,7 +97,7 @@ class JwtBearerAuthenticationTest {
     void tokenFromBeforeAPasswordResetIsRefused() throws Exception {
         String token = tokenOf(account(true, NOW.plus(Duration.ofMinutes(10))));
 
-        filter.doFilter(request("/api/addresses", token), response, chain);
+        filter.doFilter(request("/api/accounts/me/addresses", token), response, chain);
 
         assertEquals(BearerTokenError.TOKEN_INVALID, resolvedError());
         verify(chain, never()).doFilter(any(), any());
@@ -108,7 +108,7 @@ class JwtBearerAuthenticationTest {
         String token = tokenOf(account(true, null));
         when(accountApi.find(ID)).thenReturn(Optional.empty());
 
-        filter.doFilter(request("/api/addresses", token), response, chain);
+        filter.doFilter(request("/api/accounts/me/addresses", token), response, chain);
 
         // 401, not 404: the caller's credential is what is wrong
         assertEquals(BearerTokenError.TOKEN_INVALID, resolvedError());
@@ -120,14 +120,14 @@ class JwtBearerAuthenticationTest {
         String token = tokenOf(account(true, null));
         clock.advance(JwtSessionTokensTest.ACCESS_LIFETIME.plusSeconds(1));
 
-        filter.doFilter(request("/api/addresses", token), response, chain);
+        filter.doFilter(request("/api/accounts/me/addresses", token), response, chain);
 
         assertEquals(BearerTokenError.TOKEN_EXPIRED, resolvedError());
     }
 
     @Test
     void missingTokenOnProtectedPathIsRefused() throws Exception {
-        filter.doFilter(request("/api/addresses", null), response, chain);
+        filter.doFilter(request("/api/accounts/me/addresses", null), response, chain);
 
         assertEquals(BearerTokenError.MISSING_BEARER_TOKEN, resolvedError());
     }
@@ -160,7 +160,8 @@ class JwtBearerAuthenticationTest {
         doThrow(downstream).when(chain).doFilter(any(), any());
 
         ServletException thrown = assertThrows(
-                ServletException.class, () -> filter.doFilter(request("/api/addresses", token), response, chain));
+                ServletException.class,
+                () -> filter.doFilter(request("/api/accounts/me/addresses", token), response, chain));
 
         assertSame(downstream, thrown);
         verify(resolver, never()).resolveException(any(), any(), any(), any());

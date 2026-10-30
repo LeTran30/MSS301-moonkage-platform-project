@@ -121,7 +121,7 @@ final class Golden {
     }
 
     /** NFC session ids are random text, not UUIDs. */
-    private static final Pattern SESSION_IN_PATH = Pattern.compile("/sessions/[^/]+");
+    private static final Pattern SESSION_IN_PATH = Pattern.compile("/nfc-sessions/[^/]+");
 
     /** Time left in the messages of OTP_TOO_FREQUENT, OTP_MAX_ATTEMPTS_EXCEEDED and NFC_LOCKED: real clock. */
     private static final Pattern TIME_LEFT = Pattern.compile("(sau |đợi )\\d+( phút| giây)");
@@ -129,7 +129,7 @@ final class Golden {
     private static String maskIds(String text) {
         String masked = UUID_IN_TEXT.matcher(text).replaceAll(MASK);
         masked = TIME_LEFT.matcher(masked).replaceAll("$1" + MASK + "$2");
-        return SESSION_IN_PATH.matcher(masked).replaceAll("/sessions/" + MASK);
+        return SESSION_IN_PATH.matcher(masked).replaceAll("/nfc-sessions/" + MASK);
     }
 
     /** Masks volatile values; sorts {@code errors[]} because validation reports fields in no fixed order. */

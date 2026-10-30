@@ -105,7 +105,7 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 
 **API nội bộ**
 
-- Gọi identity: `GET /internal/nfc/status/{accountId}`, `POST /internal/accounts/check`
+- Gọi identity: `GET /internal/accounts/{accountId}/profile/kyc`, `POST /internal/accounts/{accountId}/profile/kyc/id-number-check`
 - Gọi payment: `POST /internal/payments` (`purpose = REGISTRATION_FEE`)
 - Cung cấp `GET /internal/vendors/by-owner/{accountId}` cho catalog, quotation, order
 - Cung cấp cho order (order điều khiển, vendor không nghe sự kiện thanh toán):

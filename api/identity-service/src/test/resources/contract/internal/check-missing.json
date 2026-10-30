@@ -6,13 +6,10 @@
     "message" : "Dữ liệu đầu vào không hợp lệ.",
     "data" : null,
     "errors" : [ {
-      "field" : "accountId",
-      "message" : "must not be blank"
-    }, {
       "field" : "idNumber",
       "message" : "must not be blank"
     } ],
-    "path" : "/internal/accounts/check",
+    "path" : "/internal/accounts/<masked>/profile/kyc/id-number-check",
     "timestamp" : "<masked>"
   }
 }
