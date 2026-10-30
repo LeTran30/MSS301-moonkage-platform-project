@@ -1,0 +1,25 @@
+.feeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+.cellInput {
+  width: 100%;
+  box-sizing: border-box;
+  font: var(--text-body-sm);
+  border: var(--border-thin) solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.cellInput:focus-visible {
+  outline: var(--border-thick) solid var(--focus);
+  outline-offset: 1px;
+}
+
+@media (max-width: 900px) {
+  .feeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

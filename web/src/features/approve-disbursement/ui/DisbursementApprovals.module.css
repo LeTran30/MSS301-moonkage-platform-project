@@ -1,0 +1,13 @@
+.cellInput {
+  width: 100%;
+  box-sizing: border-box;
+  font: var(--text-body-sm);
+  border: var(--border-thin) solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.cellInput:focus-visible {
+  outline: var(--border-thick) solid var(--focus);
+  outline-offset: 1px;
+}

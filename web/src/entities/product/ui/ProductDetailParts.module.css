@@ -1,0 +1,141 @@
+.gallery {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.galleryThumbs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.galleryThumb {
+  padding: 0;
+  border: var(--border-thick) solid transparent;
+  border-radius: calc(var(--radius-md) + 2px);
+  background: none;
+  cursor: pointer;
+}
+
+.galleryThumb[aria-pressed="true"] {
+  border-color: var(--brand);
+}
+
+.productHead {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.shopLink {
+  font: var(--text-body-sm);
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.shopLink:hover {
+  text-decoration: underline;
+}
+
+.price {
+  font: var(--text-price);
+  font-size: 28px;
+  line-height: 36px;
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.price small {
+  font: var(--text-caption);
+  color: var(--ink-muted);
+}
+
+.buyBox {
+  display: grid;
+  gap: var(--space-5);
+  border-top: var(--border-thin) solid var(--line);
+  border-bottom: var(--border-thin) solid var(--line);
+  padding-block: var(--space-6);
+}
+
+.buyBoxInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.buyBoxRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.buyBoxQty {
+  width: 120px;
+}
+
+.nudge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--brand-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-6);
+}
+
+.nudgeTitle {
+  font: var(--text-body-strong);
+  margin: 0;
+}
+
+.specs {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-3) var(--space-8);
+  margin: 0;
+}
+
+.factsRow {
+  display: contents;
+}
+
+.factsRow dt {
+  font: var(--text-body-sm);
+  color: var(--ink-muted);
+}
+
+.factsRow dd {
+  font: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.reviews {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-8);
+}
+
+.reviewsList {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.reviewsItem {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+  border-bottom: var(--border-thin) solid var(--line);
+}

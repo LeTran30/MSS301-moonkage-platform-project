@@ -1,181 +1,183 @@
 import type { ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { RequireAuth } from '../features/auth';
-import { legacyRoutes, routes } from '../shared/config/routes';
-import { AccountLayout } from './layouts/AccountLayout';
-import { AdminLayout } from './layouts/AdminLayout';
-import { SellerLayout } from './layouts/SellerLayout';
-import { ShopLayout } from './layouts/ShopLayout';
+import { RequireAuth } from '@/entities/user';
+import { legacyRoutes, routes } from '@/shared/config/routes';
+import { AccountLayout, AdminLayout, AuthLayout, BaseLayout, VendorLayout } from './layouts';
 import { page } from './lazyPage';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 
 const guarded = (element: ReactNode) => <RequireAuth>{element}</RequireAuth>;
+/** Route pattern of a path that carries a query string: the router matches the path alone. */
+const pattern = (path: string) => path.split('?')[0];
 
-/* Buying area (M) */
-const HomePage = page(() => import('../pages/home/HomePage'), 'HomePage');
-const ProductListPage = page(() => import('../pages/products/ProductListPage'), 'ProductListPage');
-const ProductDetailPage = page(() => import('../pages/product-detail/ProductDetailPage'), 'ProductDetailPage');
-const CustomOrderPage = page(() => import('../pages/custom-order/CustomOrderPage'), 'CustomOrderPage');
-const NewQuoteRequestPage = page(() => import('../pages/new-quote-request/NewQuoteRequestPage'), 'NewQuoteRequestPage');
-const SupplierListPage = page(() => import('../pages/suppliers/SupplierListPage'), 'SupplierListPage');
-const SupplierPage = page(() => import('../pages/supplier/SupplierPage'), 'SupplierPage');
-const SupplierRequestPage = page(() => import('../pages/supplier-request/SupplierRequestPage'), 'SupplierRequestPage');
-const CartPage = page(() => import('../pages/cart/CartPage'), 'CartPage');
-const CheckoutPage = page(() => import('../pages/checkout/CheckoutPage'), 'CheckoutPage');
-const VnpayPage = page(() => import('../pages/vnpay/VnpayPage'), 'VnpayPage');
-const PaymentResultPage = page(() => import('../pages/payment-result/PaymentResultPage'), 'PaymentResultPage');
-const LoginPage = page(() => import('../pages/login/LoginPage'), 'LoginPage');
-const RegisterPage = page(() => import('../pages/register/RegisterPage'), 'RegisterPage');
-const ConfirmAccountPage = page(() => import('../pages/confirm-account/ConfirmAccountPage'), 'ConfirmAccountPage');
-const ForgotPasswordPage = page(() => import('../pages/forgot-password/ForgotPasswordPage'), 'ForgotPasswordPage');
-const ResetPasswordPage = page(() => import('../pages/reset-password/ResetPasswordPage'), 'ResetPasswordPage');
-const AccountOverviewPage = page(() => import('../pages/account/AccountOverviewPage'), 'AccountOverviewPage');
-const OrdersPage = page(() => import('../pages/orders/OrdersPage'), 'OrdersPage');
-const OrderDetailPage = page(() => import('../pages/order-detail/OrderDetailPage'), 'OrderDetailPage');
-const OrderComplaintPage = page(() => import('../pages/order-complaint/OrderComplaintPage'), 'OrderComplaintPage');
-const QuoteRequestsPage = page(() => import('../pages/quote-requests/QuoteRequestsPage'), 'QuoteRequestsPage');
-const QuoteRequestPage = page(() => import('../pages/quote-request/QuoteRequestPage'), 'QuoteRequestPage');
-const AcceptQuotePage = page(() => import('../pages/accept-quote/AcceptQuotePage'), 'AcceptQuotePage');
-const AddressesPage = page(() => import('../pages/addresses/AddressesPage'), 'AddressesPage');
-const AddressFormPage = page(() => import('../pages/address-form/AddressFormPage'), 'AddressFormPage');
-const VerifyNfcPage = page(() => import('../pages/verify-nfc/VerifyNfcPage'), 'VerifyNfcPage');
-const ProfilePage = page(() => import('../pages/profile/ProfilePage'), 'ProfilePage');
-const NotificationsPage = page(() => import('../pages/notifications/NotificationsPage'), 'NotificationsPage');
-const SellIntroPage = page(() => import('../pages/sell-intro/SellIntroPage'), 'SellIntroPage');
-const SellApplyPage = page(() => import('../pages/sell-apply/SellApplyPage'), 'SellApplyPage');
-const PolicyPage = page(() => import('../pages/policy/PolicyPage'), 'PolicyPage');
-/* Kênh người bán (B): one module, one lazy chunk */
-const seller = () => import('../pages/seller/SellerPages');
-const SellerOverviewPage = page(seller, 'SellerOverviewPage');
-const SellerFeePage = page(seller, 'SellerFeePage');
-const SellerOrdersPage = page(seller, 'SellerOrdersPage');
-const SellerOrderPage = page(seller, 'SellerOrderPage');
-const SellerRequestsPage = page(seller, 'SellerRequestsPage');
-const SellerRequestPage = page(seller, 'SellerRequestPage');
-const SellerQuotePage = page(seller, 'SellerQuotePage');
-const SellerProductsPage = page(seller, 'SellerProductsPage');
-const SellerProductPage = page(seller, 'SellerProductPage');
-const SellerMoneyPage = page(seller, 'SellerMoneyPage');
-const SellerSettlementsPage = page(seller, 'SellerSettlementsPage');
-const SellerDisbursementsPage = page(seller, 'SellerDisbursementsPage');
-const SellerSettingsPage = page(seller, 'SellerSettingsPage');
-const SellerLegalPage = page(seller, 'SellerLegalPage');
-const SellerZonesPage = page(seller, 'SellerZonesPage');
-const SellerTermsPage = page(seller, 'SellerTermsPage');
-const SellerCapacityPage = page(seller, 'SellerCapacityPage');
-const SellerNotificationsPage = page(seller, 'SellerNotificationsPage');
+/* Base, auth and account areas (M) */
+const HomePage = page(() => import('@/pages/base/home'), 'HomePage');
+const ProductListPage = page(() => import('@/pages/base/products'), 'ProductListPage');
+const ProductDetailPage = page(() => import('@/pages/base/product-detail'), 'ProductDetailPage');
+const CustomOrderPage = page(() => import('@/pages/base/custom-order'), 'CustomOrderPage');
+const NewQuoteRequestPage = page(() => import('@/pages/base/new-quote-request'), 'NewQuoteRequestPage');
+const VendorDirectoryPage = page(() => import('@/pages/base/vendor-directory'), 'VendorDirectoryPage');
+const VendorStorefrontPage = page(() => import('@/pages/base/vendor-storefront'), 'VendorStorefrontPage');
+const DirectRequestPage = page(() => import('@/pages/base/direct-request'), 'DirectRequestPage');
+const CartPage = page(() => import('@/pages/base/cart'), 'CartPage');
+const CheckoutPage = page(() => import('@/pages/base/checkout'), 'CheckoutPage');
+const VnpayPage = page(() => import('@/pages/gateway/vnpay'), 'VnpayPage');
+const PaymentResultPage = page(() => import('@/pages/base/payment-result'), 'PaymentResultPage');
+const LoginPage = page(() => import('@/pages/auth/login'), 'LoginPage');
+const RegisterPage = page(() => import('@/pages/auth/register'), 'RegisterPage');
+const ConfirmAccountPage = page(() => import('@/pages/auth/confirm-account'), 'ConfirmAccountPage');
+const ForgotPasswordPage = page(() => import('@/pages/auth/forgot-password'), 'ForgotPasswordPage');
+const ResetPasswordPage = page(() => import('@/pages/auth/reset-password'), 'ResetPasswordPage');
+const AccountOverviewPage = page(() => import('@/pages/account/overview'), 'AccountOverviewPage');
+const OrdersPage = page(() => import('@/pages/account/orders'), 'OrdersPage');
+const OrderDetailPage = page(() => import('@/pages/account/order-detail'), 'OrderDetailPage');
+const OrderComplaintPage = page(() => import('@/pages/account/order-complaint'), 'OrderComplaintPage');
+const QuoteRequestsPage = page(() => import('@/pages/account/quote-requests'), 'QuoteRequestsPage');
+const QuoteRequestPage = page(() => import('@/pages/account/quote-request-detail'), 'QuoteRequestPage');
+const AcceptQuotePage = page(() => import('@/pages/account/accept-quote'), 'AcceptQuotePage');
+const AddressesPage = page(() => import('@/pages/account/addresses'), 'AddressesPage');
+const AddressFormPage = page(() => import('@/pages/account/address-form'), 'AddressFormPage');
+const VerifyNfcPage = page(() => import('@/pages/account/verify-nfc'), 'VerifyNfcPage');
+const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage');
+const NotificationsPage = page(() => import('@/pages/account/notifications'), 'NotificationsPage');
+const SellIntroPage = page(() => import('@/pages/base/sell-intro'), 'SellIntroPage');
+const ApplyToSellPage = page(() => import('@/pages/account/apply-to-sell'), 'ApplyToSellPage');
+const PolicyPage = page(() => import('@/pages/base/policy'), 'PolicyPage');
+/* Kênh người bán (B) */
+const VendorOverviewPage = page(() => import('@/pages/vendor/overview'), 'VendorOverviewPage');
+const VendorFeePage = page(() => import('@/pages/vendor/fee'), 'VendorFeePage');
+const VendorOrdersPage = page(() => import('@/pages/vendor/orders'), 'VendorOrdersPage');
+const VendorOrderPage = page(() => import('@/pages/vendor/order-detail'), 'VendorOrderPage');
+const VendorRequestsPage = page(() => import('@/pages/vendor/requests'), 'VendorRequestsPage');
+const VendorRequestPage = page(() => import('@/pages/vendor/request-detail'), 'VendorRequestPage');
+const VendorQuotePage = page(() => import('@/pages/vendor/quote'), 'VendorQuotePage');
+const VendorProductsPage = page(() => import('@/pages/vendor/products'), 'VendorProductsPage');
+const VendorProductPage = page(() => import('@/pages/vendor/product-detail'), 'VendorProductPage');
+const VendorMoneyPage = page(() => import('@/pages/vendor/money'), 'VendorMoneyPage');
+const VendorSettlementsPage = page(() => import('@/pages/vendor/settlements'), 'VendorSettlementsPage');
+const VendorDisbursementsPage = page(() => import('@/pages/vendor/disbursements'), 'VendorDisbursementsPage');
+const VendorSettingsPage = page(() => import('@/pages/vendor/settings'), 'VendorSettingsPage');
+const VendorLegalPage = page(() => import('@/pages/vendor/legal'), 'VendorLegalPage');
+const VendorZonesPage = page(() => import('@/pages/vendor/zones'), 'VendorZonesPage');
+const VendorTermsPage = page(() => import('@/pages/vendor/terms'), 'VendorTermsPage');
+const VendorCapacityPage = page(() => import('@/pages/vendor/capacity'), 'VendorCapacityPage');
+const VendorNotificationsPage = page(() => import('@/pages/vendor/notifications'), 'VendorNotificationsPage');
 
-/* Quản trị (Q): one module, one lazy chunk */
-const admin = () => import('../pages/admin/AdminPages');
-const AdminOverviewPage = page(admin, 'AdminOverviewPage');
-const AdminSellersPage = page(admin, 'AdminSellersPage');
-const AdminSellerPage = page(admin, 'AdminSellerPage');
-const AdminProductsPage = page(admin, 'AdminProductsPage');
-const AdminMoneyPage = page(admin, 'AdminMoneyPage');
-const AdminDisbursementsPage = page(admin, 'AdminDisbursementsPage');
-const AdminPayoutsPage = page(admin, 'AdminPayoutsPage');
-const AdminReconciliationPage = page(admin, 'AdminReconciliationPage');
-const AdminDisputesPage = page(admin, 'AdminDisputesPage');
-const AdminDisputePage = page(admin, 'AdminDisputePage');
-const AdminConfigPage = page(admin, 'AdminConfigPage');
-const AdminProvinceFeesPage = page(admin, 'AdminProvinceFeesPage');
-const AdminSellerFeePage = page(admin, 'AdminSellerFeePage');
-const AdminVouchersPage = page(admin, 'AdminVouchersPage');
-const AdminTaxonomyPage = page(admin, 'AdminTaxonomyPage');
-const NotFoundPage = page(() => import('../pages/not-found/NotFoundPage'), 'NotFoundPage');
+/* Quản trị (Q) */
+const AdminOverviewPage = page(() => import('@/pages/admin/overview'), 'AdminOverviewPage');
+const AdminVendorsPage = page(() => import('@/pages/admin/vendors'), 'AdminVendorsPage');
+const AdminVendorPage = page(() => import('@/pages/admin/vendor-detail'), 'AdminVendorPage');
+const AdminProductsPage = page(() => import('@/pages/admin/products'), 'AdminProductsPage');
+const AdminMoneyPage = page(() => import('@/pages/admin/money'), 'AdminMoneyPage');
+const AdminDisbursementsPage = page(() => import('@/pages/admin/disbursements'), 'AdminDisbursementsPage');
+const AdminPayoutsPage = page(() => import('@/pages/admin/payouts'), 'AdminPayoutsPage');
+const AdminReconciliationPage = page(() => import('@/pages/admin/reconciliation'), 'AdminReconciliationPage');
+const AdminDisputesPage = page(() => import('@/pages/admin/disputes'), 'AdminDisputesPage');
+const AdminDisputePage = page(() => import('@/pages/admin/dispute-detail'), 'AdminDisputePage');
+const AdminConfigPage = page(() => import('@/pages/admin/config'), 'AdminConfigPage');
+const AdminProvinceFeesPage = page(() => import('@/pages/admin/province-fees'), 'AdminProvinceFeesPage');
+const AdminVendorFeePage = page(() => import('@/pages/admin/vendor-fee'), 'AdminVendorFeePage');
+const AdminVouchersPage = page(() => import('@/pages/admin/vouchers'), 'AdminVouchersPage');
+const AdminTaxonomyPage = page(() => import('@/pages/admin/taxonomy'), 'AdminTaxonomyPage');
+const NotFoundPage = page(() => import('@/pages/system/not-found'), 'NotFoundPage');
 
 export const router = createBrowserRouter([
-  { path: routes.login, element: LoginPage },
-  { path: routes.register, element: RegisterPage },
-  { path: routes.confirmAccount, element: ConfirmAccountPage },
-  { path: routes.forgotPassword, element: ForgotPasswordPage },
-  { path: routes.resetPassword, element: ResetPasswordPage },
-  { path: '/vnpay/:paymentId', element: guarded(VnpayPage) },
-  { path: legacyRoutes.login, element: <Navigate to={routes.login} replace /> },
-  { path: legacyRoutes.verifyNfc, element: <Navigate to={routes.verifyNfc} replace /> },
   {
-    path: routes.sellerChannel,
-    element: guarded(<SellerLayout />),
+    element: <AuthLayout />,
     errorElement: <RouteErrorBoundary />,
     children: [
-      { index: true, element: SellerOverviewPage },
-      { path: 'phi-mo-ban', element: SellerFeePage },
-      { path: 'don-hang', element: SellerOrdersPage },
-      { path: 'don-hang/:orderId', element: SellerOrderPage },
-      { path: 'yeu-cau', element: SellerRequestsPage },
-      { path: 'yeu-cau/:requestId', element: SellerRequestPage },
-      { path: 'yeu-cau/:requestId/bao-gia', element: SellerQuotePage },
-      { path: 'san-pham', element: SellerProductsPage },
-      { path: 'san-pham/:productId', element: SellerProductPage },
-      { path: 'tien', element: SellerMoneyPage },
-      { path: 'tien/doi-soat', element: SellerSettlementsPage },
-      { path: 'tien/giai-ngan', element: SellerDisbursementsPage },
-      { path: 'cai-dat', element: SellerSettingsPage },
-      { path: 'cai-dat/phap-ly', element: SellerLegalPage },
-      { path: 'cai-dat/vung-giao', element: SellerZonesPage },
-      { path: 'cai-dat/nhan-dat-hang', element: SellerTermsPage },
-      { path: 'cai-dat/cong-suat', element: SellerCapacityPage },
-      { path: 'thong-bao', element: SellerNotificationsPage },
+      { path: routes.auth.login, element: LoginPage },
+      { path: routes.auth.register, element: RegisterPage },
+      { path: routes.auth.confirmAccount, element: ConfirmAccountPage },
+      { path: routes.auth.forgotPassword, element: ForgotPasswordPage },
+      { path: routes.auth.resetPassword, element: ResetPasswordPage },
+    ],
+  },
+  { path: routes.gateway.vnpay(':paymentId'), element: guarded(VnpayPage) },
+  { path: legacyRoutes.login, element: <Navigate to={routes.auth.login} replace /> },
+  {
+    path: routes.vendor.overview,
+    element: guarded(<VendorLayout />),
+    errorElement: <RouteErrorBoundary />,
+    children: [
+      { index: true, element: VendorOverviewPage },
+      { path: routes.vendor.fee, element: VendorFeePage },
+      { path: routes.vendor.orders, element: VendorOrdersPage },
+      { path: routes.vendor.order(':orderId'), element: VendorOrderPage },
+      { path: routes.vendor.requests, element: VendorRequestsPage },
+      { path: routes.vendor.request(':requestId'), element: VendorRequestPage },
+      { path: routes.vendor.quote(':requestId'), element: VendorQuotePage },
+      { path: routes.vendor.products, element: VendorProductsPage },
+      { path: routes.vendor.product(':productId'), element: VendorProductPage },
+      { path: routes.vendor.money, element: VendorMoneyPage },
+      { path: routes.vendor.settlements, element: VendorSettlementsPage },
+      { path: routes.vendor.disbursements, element: VendorDisbursementsPage },
+      { path: routes.vendor.settings, element: VendorSettingsPage },
+      { path: routes.vendor.legal, element: VendorLegalPage },
+      { path: routes.vendor.zones, element: VendorZonesPage },
+      { path: routes.vendor.terms, element: VendorTermsPage },
+      { path: routes.vendor.capacity, element: VendorCapacityPage },
+      { path: routes.vendor.notifications, element: VendorNotificationsPage },
       { path: '*', element: NotFoundPage },
     ],
   },
   {
-    path: routes.admin,
+    path: routes.admin.overview,
     element: guarded(<AdminLayout />),
     errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: AdminOverviewPage },
-      { path: 'nguoi-ban', element: AdminSellersPage },
-      { path: 'nguoi-ban/:applicationId', element: AdminSellerPage },
-      { path: 'san-pham', element: AdminProductsPage },
-      { path: 'tien', element: AdminMoneyPage },
-      { path: 'tien/giai-ngan', element: AdminDisbursementsPage },
-      { path: 'tien/chuyen-tien', element: AdminPayoutsPage },
-      { path: 'tien/doi-soat', element: AdminReconciliationPage },
-      { path: 'khieu-nai', element: AdminDisputesPage },
-      { path: 'khieu-nai/:disputeId', element: AdminDisputePage },
-      { path: 'cau-hinh', element: AdminConfigPage },
-      { path: 'cau-hinh/phi-lien-tinh', element: AdminProvinceFeesPage },
-      { path: 'cau-hinh/phi-mo-ban', element: AdminSellerFeePage },
-      { path: 'cau-hinh/voucher', element: AdminVouchersPage },
-      { path: 'cau-hinh/vo-nhan', element: AdminTaxonomyPage },
+      { path: routes.admin.vendors, element: AdminVendorsPage },
+      { path: routes.admin.vendor(':vendorId'), element: AdminVendorPage },
+      { path: routes.admin.products, element: AdminProductsPage },
+      { path: routes.admin.money, element: AdminMoneyPage },
+      { path: routes.admin.disbursements, element: AdminDisbursementsPage },
+      { path: routes.admin.payouts, element: AdminPayoutsPage },
+      { path: routes.admin.reconciliation, element: AdminReconciliationPage },
+      { path: routes.admin.disputes, element: AdminDisputesPage },
+      { path: routes.admin.dispute(':disputeId'), element: AdminDisputePage },
+      { path: routes.admin.config, element: AdminConfigPage },
+      { path: routes.admin.provinceFees, element: AdminProvinceFeesPage },
+      { path: routes.admin.vendorFee, element: AdminVendorFeePage },
+      { path: routes.admin.vouchers, element: AdminVouchersPage },
+      { path: routes.admin.taxonomy, element: AdminTaxonomyPage },
       { path: '*', element: NotFoundPage },
     ],
   },
   {
-    element: <ShopLayout />,
+    element: <BaseLayout />,
     errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: HomePage },
-      { path: routes.products, element: ProductListPage },
-      { path: '/san-pham/:productId', element: ProductDetailPage },
-      { path: routes.customOrder, element: CustomOrderPage },
-      { path: routes.newQuoteRequest, element: guarded(NewQuoteRequestPage) },
-      { path: routes.suppliers, element: SupplierListPage },
-      { path: '/don-vi-cung-cap/:supplierId', element: SupplierPage },
-      { path: '/don-vi-cung-cap/:supplierId/yeu-cau', element: guarded(SupplierRequestPage) },
-      { path: routes.cart, element: guarded(CartPage) },
-      { path: routes.checkout, element: guarded(CheckoutPage) },
-      { path: '/thanh-toan/ket-qua/:paymentId', element: guarded(PaymentResultPage) },
-      { path: routes.notifications, element: guarded(NotificationsPage) },
-      { path: routes.sellIntro, element: SellIntroPage },
-      { path: routes.sellApply, element: guarded(SellApplyPage) },
-      { path: routes.policy, element: PolicyPage },
+      { path: routes.base.products, element: ProductListPage },
+      { path: routes.base.product(':productId'), element: ProductDetailPage },
+      { path: routes.base.customOrder, element: CustomOrderPage },
+      { path: routes.base.newQuoteRequest, element: guarded(NewQuoteRequestPage) },
+      { path: routes.base.vendorDirectory, element: VendorDirectoryPage },
+      { path: routes.base.vendorStorefront(':vendorId'), element: VendorStorefrontPage },
+      { path: routes.base.directRequest(':vendorId'), element: guarded(DirectRequestPage) },
+      { path: routes.base.cart, element: guarded(CartPage) },
+      { path: routes.base.checkout, element: guarded(CheckoutPage) },
+      { path: routes.base.paymentResult(':paymentId'), element: guarded(PaymentResultPage) },
+      { path: routes.base.sellIntro, element: SellIntroPage },
+      { path: routes.base.policy, element: PolicyPage },
       {
-        path: routes.account,
+        path: routes.account.overview,
         element: guarded(<AccountLayout />),
         children: [
           { index: true, element: AccountOverviewPage },
-          { path: 'don-hang', element: OrdersPage },
-          { path: 'don-hang/:orderId', element: OrderDetailPage },
-          { path: 'don-hang/:orderId/khieu-nai', element: OrderComplaintPage },
-          { path: 'yeu-cau', element: QuoteRequestsPage },
-          { path: 'yeu-cau/:requestId', element: QuoteRequestPage },
-          { path: 'yeu-cau/:requestId/dat-coc', element: AcceptQuotePage },
-          { path: 'dia-chi', element: AddressesPage },
-          { path: 'dia-chi/:addressId', element: AddressFormPage },
-          { path: 'xac-minh', element: VerifyNfcPage },
-          { path: 'thong-tin', element: ProfilePage },
+          { path: routes.account.orders, element: OrdersPage },
+          { path: routes.account.order(':orderId'), element: OrderDetailPage },
+          { path: routes.account.orderComplaint(':orderId'), element: OrderComplaintPage },
+          { path: routes.account.quoteRequests, element: QuoteRequestsPage },
+          { path: routes.account.quoteRequest(':requestId'), element: QuoteRequestPage },
+          { path: pattern(routes.account.acceptQuote(':requestId', '')), element: AcceptQuotePage },
+          { path: routes.account.addresses, element: AddressesPage },
+          { path: routes.account.address(':addressId'), element: AddressFormPage },
+          { path: routes.account.verifyNfc, element: VerifyNfcPage },
+          { path: routes.account.profile, element: ProfilePage },
+          { path: routes.account.notifications, element: NotificationsPage },
+          { path: routes.account.applyToSell, element: ApplyToSellPage },
         ],
       },
       { path: '*', element: NotFoundPage },

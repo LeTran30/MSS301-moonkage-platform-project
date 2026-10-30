@@ -1,5 +1,5 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
-import { routes } from '../shared/config/routes';
+import { routes } from '@/shared/config/routes';
 
 export function RouteErrorBoundary() {
   const error = useRouteError();
@@ -33,7 +33,7 @@ export function RouteErrorBoundary() {
           >
             Tải lại trang
           </button>
-          <a href={routes.home} className="mk-btn mk-btn--quiet">
+          <a href={routes.base.home} className="mk-btn mk-btn--quiet">
             Về trang chủ
           </a>
         </div>

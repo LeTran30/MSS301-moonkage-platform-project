@@ -1,0 +1,23 @@
+/* [NGUYÊN TẮC 1 & 2: CÔ LẬP & ĐỒNG VỊ TRÍ]
+   ShopNotifications.module.css — Style cô lập cho ShopNotifications */
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-thin) solid var(--line);
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: var(--border-thin) solid var(--line);
+}
+
+.itemUnread {
+  background: var(--surface-muted);
+}

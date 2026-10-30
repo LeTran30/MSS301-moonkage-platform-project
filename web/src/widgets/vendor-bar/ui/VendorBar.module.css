@@ -1,0 +1,53 @@
+/* [NGUYÊN TẮC 1 & 2: CÔ LẬP & ĐỒNG VỊ TRÍ]
+   VendorBar.module.css — Style cô lập cho Header & Nav của Kênh người bán */
+
+.vendorBar :global(.mk-nav__in:first-child) {
+  justify-content: space-between;
+}
+
+.vendorZone {
+  font: var(--text-label);
+  color: var(--ink-muted);
+  padding-left: var(--space-3);
+  margin-left: var(--space-1);
+  border-left: var(--border-thin) solid var(--line);
+}
+
+.vendorShop {
+  font: var(--text-label);
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.vendorNav {
+  min-height: 48px;
+  gap: var(--space-6);
+  border-top: var(--border-thin) solid var(--line);
+}
+
+.vendorLink {
+  font: var(--text-label);
+  color: var(--ink-muted);
+  text-decoration: none;
+  padding: var(--space-3) 0;
+  border-bottom: var(--border-thick) solid transparent;
+}
+
+.vendorLink:hover {
+  color: var(--ink);
+}
+
+.vendorLink[aria-current="page"] {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+.vendorLink:focus-visible {
+  outline: var(--border-thick) solid var(--focus);
+  outline-offset: var(--border-thick);
+}
+
+.spacer {
+  flex: 1;
+}

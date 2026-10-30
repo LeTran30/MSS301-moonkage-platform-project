@@ -1,7 +1,9 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { config } from '../config/env';
-import { strings } from '../config/strings';
 import { HTTP_UNAUTHORIZED } from './httpStatus';
+
+const NETWORK_ERROR_MSG = 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.';
+const SERVER_ERROR_MSG = 'Máy chủ đang gặp lỗi. Thử lại sau ít phút.';
 
 export interface ApiFieldError {
   field: string;
@@ -93,12 +95,12 @@ apiClient.interceptors.response.use(
 function toApiError(error: unknown): ApiError {
   if (error instanceof AxiosError) {
     const response = error.response;
-    if (!response) return new ApiError(0, null, strings.errors.network);
+    if (!response) return new ApiError(0, null, NETWORK_ERROR_MSG);
     const body = response.data as Partial<ApiResponse<unknown>> | undefined;
     const errors = Array.isArray(body?.errors)
       ? body.errors.filter((e): e is ApiFieldError => Boolean(e && typeof e.field === 'string' && typeof e.message === 'string'))
       : [];
-    const fallbackMessage = errors[0]?.message || strings.errors.server;
+    const fallbackMessage = errors[0]?.message || SERVER_ERROR_MSG;
     return new ApiError(
       response.status,
       typeof body?.code === 'string' ? body.code : null,
@@ -106,5 +108,5 @@ function toApiError(error: unknown): ApiError {
       errors,
     );
   }
-  return new ApiError(0, null, strings.errors.server);
+  return new ApiError(0, null, SERVER_ERROR_MSG);
 }

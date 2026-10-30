@@ -1,6 +1,7 @@
 import { config } from '../config/env';
-import { strings } from '../config/strings';
 import { ApiError } from './client';
+
+const NETWORK_ERROR_MSG = 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.';
 
 /**
  * MinIO presigned POST link returned by `POST /api/<root>/uploads` (common-storage `PresignedUploadLinkResponse`).
@@ -50,7 +51,7 @@ export async function uploadToPresignedUrl(link: PresignedUploadLink, file: File
       body: formData,
     });
   } catch {
-    throw new ApiError(0, null, strings.errors.network);
+    throw new ApiError(0, null, NETWORK_ERROR_MSG);
   }
 
   if (!response.ok) {

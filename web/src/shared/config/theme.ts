@@ -6,3 +6,10 @@ export function applyLightTheme() {
   document.documentElement.setAttribute('data-theme', 'light');
   document.documentElement.style.colorScheme = 'light';
 }
+
+/**
+ * Đọc giá trị token trực tiếp từ CSS variables trên :root (`tokens.css` là nguồn duy nhất).
+ */
+export function getToken(name: `--${string}`): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}

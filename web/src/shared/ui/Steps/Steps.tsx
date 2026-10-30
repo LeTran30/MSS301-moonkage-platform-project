@@ -1,6 +1,6 @@
 import styles from './Steps.module.css';
 
-/** A row of numbered steps (checkout, deposit, seller profile); `current` is 0-based. */
+/** A row of numbered steps (checkout, deposit, vendor profile); `current` is 0-based. */
 export function Steps({ steps, current, label }: { steps: string[]; current: number; label: string }) {
   return (
     <ol className={styles.stepsBar} aria-label={label}>

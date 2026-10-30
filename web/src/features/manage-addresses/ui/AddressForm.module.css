@@ -1,0 +1,32 @@
+.form {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.section {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.section > legend {
+  font: var(--text-heading);
+  font-size: 20px;
+  line-height: 28px;
+  padding: 0;
+  margin-bottom: var(--space-4);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
