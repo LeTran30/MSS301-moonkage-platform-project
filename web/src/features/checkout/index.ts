@@ -1,3 +1,4 @@
+export { fetchCheckout, payCart, type CheckoutState } from './api/checkoutApi';
 export { CHECKOUT_STEPS } from './model/checkoutSteps';
 export { useCartItems } from './model/useCartItems';
 export { CartView } from './ui/CartView';

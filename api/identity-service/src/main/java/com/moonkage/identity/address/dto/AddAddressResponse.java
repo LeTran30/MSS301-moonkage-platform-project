@@ -10,7 +10,7 @@ import lombok.Builder;
  * @param areaCode key to filter products and sellers by delivery area (AC-03.2); today the province code (Q-12)
  */
 @Builder
-public record AddressResponse(
+public record AddAddressResponse(
         String id,
         String recipientName,
         String recipientPhone,

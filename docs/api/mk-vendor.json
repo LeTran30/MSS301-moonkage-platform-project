@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "MoonKage - Vendor",
-    "description": "vendor-service qua api-gateway, đường dẫn theo tên root (L-17). Đặt seedPassword (SEED_PASSWORD trong .env), adminPassword, rồi chạy thư mục 0 và các bước theo thứ tự. Xem docs/services/vendor/README.md.",
+    "description": "vendor-service qua api-gateway, đường dẫn theo tên root (L-17). Đặt seedPassword (SEED_PASSWORD trong .env, dùng cho mọi tài khoản mẫu kể cả admin), rồi chạy thư mục 0 và các bước theo thứ tự. Xem docs/services/vendor/README.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -72,7 +72,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+              "raw": "{\n  \"username\": \"{{adminEmail}}\",\n  \"password\": \"{{seedPassword}}\"\n}"
             }
           },
           "event": [
@@ -1096,15 +1096,11 @@
     },
     {
       "key": "seedPassword",
-      "value": ""
+      "value": "12345678"
     },
     {
       "key": "adminEmail",
-      "value": "admin@moonkage.vn"
-    },
-    {
-      "key": "adminPassword",
-      "value": ""
+      "value": "admin@mk.com"
     },
     {
       "key": "sellerToken",

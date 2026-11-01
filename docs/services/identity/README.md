@@ -4,6 +4,8 @@ Cách làm theo project Capstone (E-commerce): `Account` có vai (`Role` enum), 
 
 Mọi request đi qua gateway `http://localhost:8080`. Prefix của identity-service: `/identity-service/api/auth`.
 
+Kế hoạch đưa entity về hướng rich entity (entity tự giữ đúng thuộc tính của nó): [domain-model-plan.md](domain-model-plan.md).
+
 ## Dữ liệu
 
 | Bảng | Vai trò |
@@ -27,17 +29,17 @@ Mỗi package cấp một dưới `com.moonkage.identity` là một **component*
 |---|---|---|---|
 | `web` | — | Controller: `AuthController`, `AccountController`, `AddressController`, `KycController` | mọi service public |
 | `auth` | — (luồng đăng ký, OTP, đăng nhập) | `AuthService`, `auth.dto` | `account`, `profile`, `otp`, `email`, `security` |
-| `account` | `accounts` | `AccountService`, `AccountView`, `AccountCredentials`, `AccountResponse`, `NfcLockout`, `Role`, `account.vo` (`Email`, `PhoneNumber`, `PasswordHash`) | `profile` |
-| `profile` | `user_profiles` | `UserProfileService`, `ProfileConstant` | — |
+| `account` | `accounts` | `AccountService`, `account.dto` (`AccountView`, `AccountCredentials`, `AccountResponse`), `account.atom` (`Email`, `PhoneNumber`, `PasswordHash`, `PasswordConstant`, `Role`) | — |
+| `profile` | `user_profiles`; ghép `GET /api/accounts/me` | `UserProfileService`, `ProfileConstant` | `account` |
 | `address` | `addresses` | `AddressService`, `address.dto` | `account` |
-| `kyc` | `legal_profiles`, phiên NFC (RAM) | `NfcService`, `LegalProfileService`, `kyc.dto`, enum NFC | `account`, `outbox` |
+| `kyc` | `legal_profiles`, phiên NFC và bộ đếm/khóa NFC (RAM) | `NfcService`, `LegalProfileService`, `kyc.dto`, enum NFC | `account`, `outbox` |
 | `otp` | mã OTP (RAM) | `OtpService`, `OtpPurpose` | — |
 | `email` | — (sự kiện RabbitMQ) | `EmailService` | — |
 | `outbox` | `outbox_events` | `OutboxService` | — |
 | `security` | — | `JwtTokenProvider`, `AccountPrincipal`, `CurrentUser(Info)` | `account` |
 | `common` | — | `BaseEntity`, `AppException`, `ErrorCode`, `ApiResponse`, cấu hình | — |
 
-Mọi component đều dùng `common` và value object của `account.vo`. Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ComponentArchitectureTest` (entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
+Mọi component đều dùng `common` và atom của `account.atom` (atom là thành phần cấu tạo nên entity, nằm cùng component với entity; `account` là component dưới cùng nên ai cũng dùng được). Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ComponentArchitectureTest` (entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [domain-model-plan.md](domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
 
 Endpoint nội bộ `/internal/**` nằm trong controller của chính tài nguyên đó (vd `POST /internal/accounts/check` ở `AccountController`), đánh `@Hidden`; không tách controller riêng cho đường nội bộ.
 
@@ -91,7 +93,7 @@ Thông tin người bán **không** còn nằm trong `LoginResponse` (Vendor đ�
 
 ## Lỗi
 
-Thành công và lỗi dùng **một dạng body** `ApiResponse<T>` (Software Design 5.1 quy tắc 8): `{status, code, message, data, timestamp}`. Thành công: `code = "SUCCESS"`, `message = "OK"`, dữ liệu nằm trong `data` (các ví dụ `LoginResponse`, `AddressResponse` trong tài liệu này là nội dung của `data`). Lỗi: `code` là mã nghiệp vụ (`ErrorCode`), `message` là câu cho người dùng, `data = null`, thêm `path`; lỗi validation thêm `errors`. API nội bộ `/internal/**` trả thẳng dữ liệu, không bọc.
+Thành công và lỗi dùng **một dạng body** `ApiResponse<T>` (Software Design 5.1 quy tắc 8): `{status, code, message, data, timestamp}`. Thành công: `code = "SUCCESS"`, `message = "OK"`, dữ liệu nằm trong `data` (các ví dụ `LoginResponse`, `AddAddressResponse` trong tài liệu này là nội dung của `data`). Lỗi: `code` là mã nghiệp vụ (`ErrorCode`), `message` là câu cho người dùng, `data = null`, thêm `path`; lỗi validation thêm `errors`. API nội bộ `/internal/**` trả thẳng dữ liệu, không bọc.
 
 ```json
 { "status": 200, "code": "SUCCESS", "message": "OK",
@@ -125,8 +127,8 @@ Prefix `/identity-service/api/addresses`, mọi endpoint cần Bearer token. Ch�
 | Method | Path | Body | Kết quả |
 |---|---|---|---|
 | GET | `` | – | 200 danh sách, địa chỉ mặc định đứng đầu, sau đó mới nhất trước |
-| POST | `` | `SaveAddressRequest` | 201 `AddressResponse` |
-| PUT | `/{addressId}` | `SaveAddressRequest` (thay toàn bộ) | 200 `AddressResponse` |
+| POST | `` | `AddAddressRequest` | 201 `AddAddressResponse` |
+| PUT | `/{addressId}` | `AddAddressRequest` (thay toàn bộ) | 200 `AddAddressResponse` |
 | DELETE | `/{addressId}` | – | 204 |
 
 ```json
@@ -180,5 +182,5 @@ Thiếu `../../.env` hoặc thiếu một biến thì service dừng ngay khi kh
 | `JWT_EXPIRATION` / `JWT_REFRESH_EXPIRATION` | Đơn vị mili giây (12 giờ / 7 ngày) |
 | `OTP_EXPIRATION` / `OTP_MAX_ATTEMPTS` | `5m` / `5` |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | Để trống `MAIL_HOST` thì OTP được in ra log thay vì gửi mail |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Admin được tạo khi khởi động lần đầu |
+| `SEED_PASSWORD` | Mật khẩu chung của tài khoản mẫu, kể cả admin `admin@mk.com` (chỉ dev, [database.md](../../guides/database.md#4-tài-khoản-mẫu)) |
 | `CORS_ORIGINS` | Gateway, nhiều giá trị thì ngăn bằng dấu phẩy |

@@ -2,7 +2,6 @@ package com.moonkage.identity.account;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,19 +9,22 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.moonkage.identity.account.vo.Email;
-import com.moonkage.identity.account.vo.PasswordHash;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.Email;
+import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.atom.Role;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
-import com.moonkage.identity.profile.UserProfileService;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.hibernate.exception.ConstraintViolationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -30,55 +32,56 @@ import org.springframework.dao.DataIntegrityViolationException;
 @ExtendWith(MockitoExtension.class)
 class AccountServiceImplTest {
 
-    private static final String ACCOUNT_ID = "acc-1";
+    private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
+    private static final String UNKNOWN_ID = "0b7e4c19-2f5a-4d8e-a613-9c4d2e8f7a55";
     private static final Email EMAIL = Email.of("a@x.vn");
     private static final PhoneNumber PHONE = PhoneNumber.of("0912345678");
     private static final PasswordHash HASH =
             PasswordHash.of("$2a$10$abcdefghijklmnopqrstuuJ8r6b0qkF3U9e5R1yW2Hn0mDxv3pL7a");
 
+    private static final Instant NOW = Instant.parse("2026-10-29T08:00:00Z");
+
     @Mock
     private AccountRepository accountRepository;
 
-    @Mock
-    private UserProfileService userProfileService;
-
-    @InjectMocks
     private AccountServiceImpl accountService;
 
-    @Test
-    void myAccountCarriesTheProfileName() {
-        when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account(true)));
-        when(userProfileService.getFullName(ACCOUNT_ID)).thenReturn("Lan Nguyen");
-
-        AccountResponse response = accountService.getMyAccount(ACCOUNT_ID);
-
-        assertEquals(ACCOUNT_ID, response.accountId());
-        assertEquals("a@x.vn", response.email());
-        assertEquals("Lan Nguyen", response.fullName());
+    @BeforeEach
+    void setUp() {
+        accountService = new AccountServiceImpl(accountRepository, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
     void unknownAccountAnswersNotFound() {
-        when(accountRepository.findById("ghost")).thenReturn(Optional.empty());
+        when(accountRepository.findById(UNKNOWN_ID)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> accountService.getAccount("ghost"));
+        AppException ex = assertThrows(AppException.class, () -> accountService.getAccount(UNKNOWN_ID));
 
         assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
     void newMemberIsUnverified() {
-        when(accountRepository.saveAndFlush(any(Account.class))).thenAnswer(inv -> {
-            Account saved = inv.getArgument(0);
-            saved.setId(ACCOUNT_ID);
-            return saved;
-        });
+        // JPA gives the id on save
+        when(accountRepository.saveAndFlush(any(Account.class)))
+                .thenAnswer(inv -> AccountFixtures.withId(inv.getArgument(0), ACCOUNT_ID));
 
         AccountView member = accountService.createMember(EMAIL, PHONE, HASH);
 
         assertEquals(ACCOUNT_ID, member.id());
+        assertEquals("a@x.vn", member.email());
+        assertEquals("912345678", member.phoneNumber());
         assertEquals(Role.MEMBER, member.role());
         assertFalse(member.verified());
+    }
+
+    @Test
+    void confirmingTheEmailVerifiesTheAccount() {
+        Account account = AccountFixtures.withId(Account.registerMember(EMAIL, PHONE, HASH), ACCOUNT_ID);
+        when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account));
+
+        assertTrue(accountService.confirmEmail(ACCOUNT_ID).verified());
+        assertTrue(account.isAccountVerified());
     }
 
     @Test
@@ -115,34 +118,23 @@ class AccountServiceImplTest {
     void passwordChangeEndsOlderTokens() {
         Account account = account(true);
         when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account));
-        Instant issuedBefore = Instant.now().minusSeconds(60);
 
         accountService.changePassword(ACCOUNT_ID, HASH);
 
-        assertEquals(HASH, account.passwordHash());
-        assertNotNull(account.getPasswordChangedAt());
-        assertFalse(AccountMapper.toView(account).acceptsTokenIssuedAt(issuedBefore));
+        assertEquals(HASH, account.getPasswordHash());
+        // the time comes from the Clock bean
+        assertEquals(NOW, account.getPasswordChangedAt());
+        assertFalse(AccountMapper.toView(account).acceptsTokenIssuedAt(NOW.minusSeconds(60)));
+        assertTrue(AccountMapper.toView(account).acceptsTokenIssuedAt(NOW));
     }
 
     @Test
     void lockForUpdateOfAnUnknownAccountAnswersNotFound() {
-        when(accountRepository.findByIdForUpdate("ghost")).thenReturn(Optional.empty());
+        when(accountRepository.findByIdForUpdate(UNKNOWN_ID)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class, () -> accountService.lockForUpdate("ghost"));
+        AppException ex = assertThrows(AppException.class, () -> accountService.lockForUpdate(UNKNOWN_ID));
 
         assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, ex.getErrorCode());
-    }
-
-    @Test
-    void nfcLockoutIsStoredOnTheAccount() {
-        Account account = account(true);
-        when(accountRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(account));
-        Instant until = Instant.now().plusSeconds(60);
-
-        accountService.saveNfcLockout(ACCOUNT_ID, new NfcLockout(0, until));
-
-        assertEquals(until, account.getNfcLockedUntil());
-        assertTrue(accountService.getNfcLockout(ACCOUNT_ID).isLocked(Instant.now()));
     }
 
     @Test
@@ -156,12 +148,11 @@ class AccountServiceImplTest {
     }
 
     private static Account account(boolean verified) {
-        return Account.builder()
-                .id(ACCOUNT_ID)
-                .email(EMAIL)
-                .passwordHash(HASH)
-                .accountVerified(verified)
-                .build();
+        Account account = AccountFixtures.withId(Account.registerMember(EMAIL, null, HASH), ACCOUNT_ID);
+        if (verified) {
+            account.confirmEmail();
+        }
+        return account;
     }
 
     private static DataIntegrityViolationException duplicateKey(String constraintName) {

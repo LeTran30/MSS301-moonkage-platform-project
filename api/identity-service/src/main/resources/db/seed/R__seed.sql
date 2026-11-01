@@ -13,25 +13,28 @@ END $$;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- phone numbers (accounts and addresses) are stored as the 9 subscriber digits (PhoneNumber.value)
-INSERT INTO accounts (id, email, phone_number, password_hash, role, account_verified, nfc_failed_attempts,
-                      created_at, updated_at)
-VALUES ('00000000-0000-4000-8000-000100000001', 'member1@mk.com', '901000001',
-        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, 0, now(), now()),
+-- phone numbers (accounts and addresses) are stored as the 9 subscriber digits (PhoneNumber.value).
+-- The admin is seeded here like every persona, with the same SEED_PASSWORD; no environment creates one at startup.
+INSERT INTO accounts (id, email, phone_number, password_hash, role, account_verified, created_at, updated_at)
+VALUES ('00000000-0000-4000-8000-000100000000', 'admin@mk.com', NULL,
+        crypt('${seed_password}', gen_salt('bf', 10)), 'ADMIN', true, now(), now()),
+       ('00000000-0000-4000-8000-000100000001', 'member1@mk.com', '901000001',
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
        ('00000000-0000-4000-8000-000100000002', 'member2@mk.com', '901000002',
-        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, 0, now(), now()),
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
        ('00000000-0000-4000-8000-000100000003', 'member3@mk.com', '901000003',
-        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', false, 0, now(), now()),
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', false, now(), now()),
        ('00000000-0000-4000-8000-000100000004', 'member4@mk.com', '901000004',
-        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, 0, now(), now()),
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now()),
        ('00000000-0000-4000-8000-000100000005', 'member5@mk.com', '901000005',
-        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, 0, now(), now())
+        crypt('${seed_password}', gen_salt('bf', 10)), 'MEMBER', true, now(), now())
 ON CONFLICT DO NOTHING;
 
 -- joined with accounts: when an email was already taken by a hand-made account, its seed rows are skipped too
 INSERT INTO user_profiles (account_id, full_name, created_at, updated_at)
 SELECT a.id, p.full_name, now(), now()
-FROM (VALUES ('00000000-0000-4000-8000-000100000001', 'Nguyễn Thị Lan'),
+FROM (VALUES ('00000000-0000-4000-8000-000100000000', 'Quản trị viên MoonKage'),
+             ('00000000-0000-4000-8000-000100000001', 'Nguyễn Thị Lan'),
              ('00000000-0000-4000-8000-000100000002', 'Trần Văn Minh'),
              ('00000000-0000-4000-8000-000100000003', 'Lê Thị Hoa'),
              ('00000000-0000-4000-8000-000100000004', 'Phạm Văn Bánh'),

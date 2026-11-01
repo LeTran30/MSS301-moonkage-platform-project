@@ -1,18 +1,17 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.vo.Email;
-import com.moonkage.identity.account.vo.PasswordHash;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.Email;
+import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.dto.AccountCredentials;
+import com.moonkage.identity.account.dto.AccountView;
 import java.util.Optional;
 
 /**
  * Public API of the account component: the only way other components read or change an account. Methods that change
- * state join the caller's transaction.
+ * state join the caller's transaction. An account id that is not a UUID answers like an unknown account.
  */
 public interface AccountService {
-
-    /** GET /api/accounts/me: the account plus its display name. */
-    AccountResponse getMyAccount(String accountId);
 
     /** Throws ACCOUNT_NOT_FOUND. */
     AccountView getAccount(String accountId);
@@ -33,7 +32,8 @@ public interface AccountService {
      */
     AccountView createMember(Email email, PhoneNumber phoneNumber, PasswordHash passwordHash);
 
-    AccountView markVerified(String accountId);
+    /** FR-01: the OTP matched. Throws ACCOUNT_NOT_FOUND. */
+    AccountView confirmEmail(String accountId);
 
     /** Tokens issued before this moment stop working (Q-04). */
     void changePassword(String accountId, PasswordHash passwordHash);
@@ -43,9 +43,4 @@ public interface AccountService {
      * requests setting a default address (FR-03) or two NFC card submits (FR-04). Throws ACCOUNT_NOT_FOUND.
      */
     void lockForUpdate(String accountId);
-
-    /** Throws ACCOUNT_NOT_FOUND. */
-    NfcLockout getNfcLockout(String accountId);
-
-    void saveNfcLockout(String accountId, NfcLockout lockout);
 }

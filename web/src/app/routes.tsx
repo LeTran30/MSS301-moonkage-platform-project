@@ -23,6 +23,7 @@ const CartPage = page(() => import('@/pages/base/cart'), 'CartPage');
 const CheckoutPage = page(() => import('@/pages/base/checkout'), 'CheckoutPage');
 const VnpayPage = page(() => import('@/pages/gateway/vnpay'), 'VnpayPage');
 const PaymentResultPage = page(() => import('@/pages/base/payment-result'), 'PaymentResultPage');
+const VnpayReturnPage = page(() => import('@/pages/base/payment-result'), 'VnpayReturnPage');
 const LoginPage = page(() => import('@/pages/auth/login'), 'LoginPage');
 const RegisterPage = page(() => import('@/pages/auth/register'), 'RegisterPage');
 const ConfirmAccountPage = page(() => import('@/pages/auth/confirm-account'), 'ConfirmAccountPage');
@@ -135,7 +136,7 @@ export const router = createBrowserRouter([
       { path: routes.admin.payouts, element: AdminPayoutsPage },
       { path: routes.admin.reconciliation, element: AdminReconciliationPage },
       { path: routes.admin.disputes, element: AdminDisputesPage },
-      { path: routes.admin.dispute(':disputeId'), element: AdminDisputePage },
+      { path: routes.admin.dispute(':orderId'), element: AdminDisputePage },
       { path: routes.admin.config, element: AdminConfigPage },
       { path: routes.admin.provinceFees, element: AdminProvinceFeesPage },
       { path: routes.admin.vendorFee, element: AdminVendorFeePage },
@@ -158,6 +159,7 @@ export const router = createBrowserRouter([
       { path: routes.base.directRequest(':vendorId'), element: guarded(DirectRequestPage) },
       { path: routes.base.cart, element: guarded(CartPage) },
       { path: routes.base.checkout, element: guarded(CheckoutPage) },
+      { path: routes.base.vnpayReturn, element: guarded(VnpayReturnPage) },
       { path: routes.base.paymentResult(':paymentId'), element: guarded(PaymentResultPage) },
       { path: routes.base.sellIntro, element: SellIntroPage },
       { path: routes.base.policy, element: PolicyPage },

@@ -25,9 +25,8 @@ import lombok.Setter;
 @Builder
 class UserProfile extends BaseEntity {
 
-    /** = accounts.id */
     @Id
-    @Column(name = "account_id")
+    @Column(name = "account_id", nullable = false, updatable = false)
     private String accountId;
 
     @Column(name = "full_name", nullable = false, length = ProfileConstant.MAX_FULL_NAME_LENGTH)

@@ -37,7 +37,6 @@ export function AreaPicker({ variant = 'bar', label }: { variant?: 'bar' | 'link
       </button>
       {open && (
         <div id={listId} className={`${styles.menu} area-picker__menu`} role="group" aria-label={areaStrings.menuLabel}>
-          <p className={styles.menuCaption}>{areaStrings.menuHint}</p>
           {provinces.map((p) => (
             <button
               key={p}

@@ -36,7 +36,7 @@ class LegalProfile extends BaseEntity {
 
     /** = accounts.id */
     @Id
-    @Column(name = "account_id")
+    @Column(name = "account_id", nullable = false, updatable = false)
     private String accountId;
 
     /** Upper case, no diacritics, as on the card (A-08). */

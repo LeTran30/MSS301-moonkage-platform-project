@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -21,13 +20,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.NfcLockout;
 import com.moonkage.identity.common.TimeConstant;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.kyc.dto.request.SubmitCardRequest;
 import com.moonkage.identity.kyc.dto.response.SubmitCardResponse;
 import com.moonkage.identity.outbox.OutboxService;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -54,7 +53,7 @@ class NfcServiceImplTest {
     @Nested
     class CardCheck {
 
-        private static final String ACCOUNT_ID = "acc-1";
+        private static final String ACCOUNT_ID = "6f1c2a4e-8d3b-4f7a-9c21-5b0e7d9a3f10";
         private static final String SESSION_ID = "session-1";
 
         private AccountService accountService;
@@ -64,8 +63,7 @@ class NfcServiceImplTest {
         private IdNumberHasher hasher;
         private PiiCipher piiCipher;
         private NfcServiceImpl service;
-        /** What AccountService stores for ACCOUNT_ID; saveNfcLockout writes it back. */
-        private NfcLockout lockout = NfcLockout.NONE;
+        private NfcAttemptTracker attemptTracker;
 
         @BeforeEach
         void setUp() {
@@ -75,6 +73,8 @@ class NfcServiceImplTest {
             outboxService = mock(OutboxService.class);
             hasher = new IdNumberHasher("test-pepper");
             piiCipher = new PiiCipher("AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=");
+            NfcProperties nfcProperties = new NfcProperties();
+            attemptTracker = new NfcAttemptTracker(nfcProperties);
             service = new NfcServiceImpl(
                     accountService,
                     legalProfileRepository,
@@ -82,19 +82,17 @@ class NfcServiceImplTest {
                     hasher,
                     piiCipher,
                     outboxService,
-                    new NfcProperties(),
-                    new TransactionTemplate(mock(PlatformTransactionManager.class)));
+                    nfcProperties,
+                    new TransactionTemplate(mock(PlatformTransactionManager.class)),
+                    attemptTracker,
+                    Clock.systemUTC());
 
-            when(accountService.getNfcLockout(ACCOUNT_ID)).thenAnswer(inv -> lockout);
-            doAnswer(inv -> lockout = inv.getArgument(1))
-                    .when(accountService)
-                    .saveNfcLockout(eq(ACCOUNT_ID), any(NfcLockout.class));
             when(decryptor.decrypt("jwe")).thenReturn(Optional.of(NfcCardValidatorTest.validFields()));
         }
 
         @Test
         void validCardSavesOnlyTheMinimumProtected() {
-            lockout = new NfcLockout(3, lockout.lockedUntil());
+            failTimes(3, Instant.now());
 
             SubmitCardResponse response =
                     service.saveCardResult(SESSION_ID, ACCOUNT_ID, NfcCardValidatorTest.validRequest());
@@ -113,7 +111,8 @@ class NfcServiceImplTest {
             // AC-04.11: ID number and date of birth stored only encrypted
             assertEquals(NfcCardValidatorTest.ID_NUMBER, piiCipher.decrypt(p.getIdNumberEnc()));
             assertEquals("1990-05-01", piiCipher.decrypt(p.getDateOfBirthEnc()));
-            assertEquals(0, lockout.failedAttempts());
+            // a verified card starts the account clean
+            assertEquals(NfcLockout.NONE, lockout());
 
             NfcVerificationEvent event = publishedEvent();
             assertEquals(NfcVerificationEvent.Type.VERIFIED, event.type());
@@ -129,7 +128,7 @@ class NfcServiceImplTest {
                     service.saveCardResult(SESSION_ID, ACCOUNT_ID, NfcCardValidatorTest.validRequest());
 
             assertRejected(response, NfcReasonCode.BAD_FORMAT, 4);
-            assertEquals(1, lockout.failedAttempts());
+            assertEquals(1, lockout().failedAttempts());
             NfcVerificationEvent event = publishedEvent();
             assertEquals(NfcVerificationEvent.Type.FAILED, event.type());
             assertEquals(4, event.attemptsLeft());
@@ -146,7 +145,7 @@ class NfcServiceImplTest {
 
         @Test
         void fifthFailureLocksForFifteenMinutes() {
-            lockout = new NfcLockout(4, lockout.lockedUntil());
+            failTimes(4, Instant.now());
             when(decryptor.decrypt("jwe")).thenReturn(Optional.empty());
             Instant before = Instant.now();
 
@@ -155,8 +154,8 @@ class NfcServiceImplTest {
 
             assertRejected(response, NfcReasonCode.BAD_FORMAT, 0);
             assertTrue(!response.lockedUntil().isBefore(before.plus(Duration.ofMinutes(15))));
-            assertEquals(response.lockedUntil(), lockout.lockedUntil());
-            assertEquals(0, lockout.failedAttempts());
+            assertEquals(response.lockedUntil(), lockout().lockedUntil());
+            assertEquals(0, lockout().failedAttempts());
             NfcVerificationEvent event = publishedEvent();
             assertEquals(NfcVerificationEvent.Type.LOCKED, event.type());
             assertEquals(NfcReasonCode.BAD_FORMAT, event.reasonCode());
@@ -164,8 +163,9 @@ class NfcServiceImplTest {
 
         @Test
         void lockedAccountIsRejectedBeforeDecrypting() {
-            Instant lockedUntil = Instant.now().plus(Duration.ofMinutes(10));
-            lockout = new NfcLockout(lockout.failedAttempts(), lockedUntil);
+            // locked 5 minutes ago for 15: 10 minutes left
+            failTimes(5, Instant.now().minus(Duration.ofMinutes(5)));
+            Instant lockedUntil = lockout().lockedUntil();
 
             SubmitCardResponse response =
                     service.saveCardResult(SESSION_ID, ACCOUNT_ID, NfcCardValidatorTest.validRequest());
@@ -177,15 +177,15 @@ class NfcServiceImplTest {
 
         @Test
         void finishedLockoutStartsAFreshRound() {
-            lockout = new NfcLockout(lockout.failedAttempts(), Instant.now().minusSeconds(1));
-            lockout = new NfcLockout(4, lockout.lockedUntil());
+            // locked 16 minutes ago for 15: over a minute ago
+            failTimes(5, Instant.now().minus(Duration.ofMinutes(16)));
             when(decryptor.decrypt("jwe")).thenReturn(Optional.empty());
 
             SubmitCardResponse response =
                     service.saveCardResult(SESSION_ID, ACCOUNT_ID, NfcCardValidatorTest.validRequest());
 
             assertRejected(response, NfcReasonCode.BAD_FORMAT, 4);
-            assertNull(lockout.lockedUntil());
+            assertNull(lockout().lockedUntil());
         }
 
         @Test
@@ -232,19 +232,32 @@ class NfcServiceImplTest {
             assertEquals(ErrorCode.NFC_ALREADY_VERIFIED, startError(ACCOUNT_ID));
 
             when(legalProfileRepository.existsById(ACCOUNT_ID)).thenReturn(false);
-            lockout = new NfcLockout(lockout.failedAttempts(), Instant.now().plus(Duration.ofMinutes(5)));
+            failTimes(5, Instant.now());
             assertEquals(ErrorCode.NFC_LOCKED, startError(ACCOUNT_ID));
 
-            when(accountService.getNfcLockout("ghost"))
-                    .thenThrow(new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "ghost"));
+            // the account is checked first: an unknown id never reaches the uuid column
+            doThrow(new AppException(ErrorCode.ACCOUNT_NOT_FOUND, "ghost"))
+                    .when(accountService)
+                    .requireAccountExists("ghost");
             assertEquals(ErrorCode.ACCOUNT_NOT_FOUND, startError("ghost"));
         }
 
         @Test
         void startIsAllowedAfterTheLockoutEnds() {
-            lockout = new NfcLockout(lockout.failedAttempts(), Instant.now().minusSeconds(1));
+            failTimes(5, Instant.now().minus(Duration.ofMinutes(16)));
 
             service.validateCanStartVerification(ACCOUNT_ID);
+        }
+
+        /** Failed cards of ACCOUNT_ID counted at the given moment; five lock it until then + 15 minutes. */
+        private void failTimes(int times, Instant at) {
+            for (int i = 0; i < times; i++) {
+                attemptTracker.recordFailure(ACCOUNT_ID, at);
+            }
+        }
+
+        private NfcLockout lockout() {
+            return attemptTracker.lockoutOf(ACCOUNT_ID);
         }
 
         private ErrorCode startError(String accountId) {
@@ -295,7 +308,9 @@ class NfcServiceImplTest {
                     mock(PiiCipher.class),
                     mock(OutboxService.class),
                     nfcProperties,
-                    new TransactionTemplate(mock(PlatformTransactionManager.class))));
+                    new TransactionTemplate(mock(PlatformTransactionManager.class)),
+                    new NfcAttemptTracker(nfcProperties),
+                    Clock.systemUTC()));
             doNothing().when(service).validateCanStartVerification(anyString());
         }
 

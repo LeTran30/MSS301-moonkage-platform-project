@@ -44,7 +44,7 @@ export function AdminOverview() {
         <TaskList
           empty="Hàng chờ trống."
           tasks={[
-            ...open.map((d) => ({ id: d.id, tag: 'Khiếu nại', title: `${d.id} · đơn ${d.orderId}${d.vendorProposal ? ' · người bán đã đề xuất' : ''}`, meta: `mở ${d.openedAt}`, to: routes.admin.dispute(d.id), action: 'Xử lý', primary: true })),
+            ...open.map((d) => ({ id: d.id, tag: 'Khiếu nại', title: `${d.id} · đơn ${d.orderId}${d.vendorProposal || d.vendorReplies?.length ? ' · người bán đã phản hồi' : ''}`, meta: `mở ${d.openedAt}`, to: routes.admin.dispute(d.orderId), action: 'Xử lý', primary: true })),
             ...pending.map((a) => ({ id: a.id, tag: 'Hồ sơ', title: `${a.shopName} · ${a.kind.toLowerCase()}`, meta: a.waiting, to: routes.admin.vendor(a.id), action: 'Xử lý' })),
             ...waitingDis.map((d) => ({ id: d.id, tag: 'Giải ngân', title: `${d.orderId} · ${formatVnd(d.amount)}`, meta: `xin ${d.askedAt}`, to: routes.admin.disbursements, action: 'Xử lý' })),
           ]}

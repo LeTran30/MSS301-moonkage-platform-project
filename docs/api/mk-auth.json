@@ -204,10 +204,10 @@
             "login"
           ]
         },
-        "description": "Admin được tạo sẵn từ ADMIN_EMAIL / ADMIN_PASSWORD trong .env",
+        "description": "Admin có sẵn từ seed của identity-service; mật khẩu là SEED_PASSWORD trong .env (mặc định 12345678)",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"username\": \"admin@moonkage.vn\",\n  \"password\": \"admin123@\"\n}"
+          "raw": "{\n  \"username\": \"admin@mk.com\",\n  \"password\": \"12345678\"\n}"
         }
       },
       "event": [

@@ -1,5 +1,8 @@
 package com.moonkage.identity.profile;
 
+import com.moonkage.identity.account.AccountService;
+import com.moonkage.identity.account.dto.AccountResponse;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import java.util.Optional;
@@ -12,6 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 class UserProfileServiceImpl implements UserProfileService {
 
     private final UserProfileRepository userProfileRepository;
+    private final AccountService accountService;
+
+    @Override
+    @Transactional(readOnly = true)
+    public AccountResponse getMyAccount(String accountId) {
+        AccountView account = accountService.getAccount(accountId);
+        return UserProfileMapper.toAccountResponse(account, getFullName(accountId));
+    }
 
     @Override
     @Transactional

@@ -1,5 +1,6 @@
 package com.moonkage.identity.auth.dto;
 
+import com.moonkage.identity.common.RequestText;
 import com.moonkage.identity.security.SecurityConstant;
 import jakarta.validation.constraints.NotBlank;
 
@@ -15,6 +16,11 @@ public record LoginRequest(
 
         @NotBlank(message = "{validation.password.required}")
         String password) {
+
+    /** The identifier is cleaned; the password is kept as typed. */
+    public LoginRequest {
+        username = RequestText.trim(username);
+    }
 
     @Override
     public String toString() {

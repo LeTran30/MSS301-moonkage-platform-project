@@ -1,6 +1,6 @@
 package com.moonkage.identity.security;
 
-import com.moonkage.identity.account.AccountView;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import io.jsonwebtoken.Claims;

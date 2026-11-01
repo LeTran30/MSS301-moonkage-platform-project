@@ -53,10 +53,18 @@ export function DisputeList() {
                   </span>
                 </td>
                 <td>{d.reason}</td>
-                <td>{d.vendorProposal ? `${d.vendorProposal.kind} ${formatVnd(d.vendorProposal.amount)}` : <span className="muted">Chưa có</span>}</td>
+                <td>
+                  {d.vendorProposal ? (
+                    `${d.vendorProposal.kind} ${formatVnd(d.vendorProposal.amount)}`
+                  ) : d.vendorReplies?.length ? (
+                    d.vendorReplies[d.vendorReplies.length - 1].note || 'Đã gửi bằng chứng'
+                  ) : (
+                    <span className="muted">Chưa có</span>
+                  )}
+                </td>
                 <td className={`${styles.num} mk-num`}>{formatVnd(d.held)}</td>
                 <td className={styles.actions}>
-                  <Link to={routes.admin.dispute(d.id)} className="mk-btn mk-btn--quiet mk-btn--sm">
+                  <Link to={routes.admin.dispute(d.orderId)} className="mk-btn mk-btn--quiet mk-btn--sm">
                     {d.state === 'open' ? 'Xử lý' : 'Xem'}
                   </Link>
                 </td>

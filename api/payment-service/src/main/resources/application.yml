@@ -66,7 +66,7 @@ vnpay:
   hash-secret: ${VNPAY_HASH_SECRET:}
   pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
   # the web result page (M4.3); it forwards the query to GET /api/payments/vnpay/return
-  return-url: ${VNPAY_RETURN_URL:http://localhost:5173/thanh-toan/ket-qua}
+  return-url: ${VNPAY_RETURN_URL:http://localhost:5173/checkout/result}
   default-lifetime: 15m
   # merchant_webapi: refunds (AC-49.3)
   api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}

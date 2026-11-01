@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { CartProvider } from '@/entities/cart';
 import { useCurrentUser } from '@/entities/user';
 import { SessionProvider } from '@/entities/user';
-import { DeliveryAreaProvider } from '@/features/choose-delivery-area';
+import { DeliveryAreaProvider, useDeliveryArea } from '@/features/choose-delivery-area';
 import { RealtimeProvider } from '@/shared/api/realtime/RealtimeProvider';
 import { config } from '@/shared/config/env';
 
@@ -12,13 +12,24 @@ function SessionRealtime({ children }: { children: ReactNode }) {
   return <RealtimeProvider token={config.demoMode ? null : (session?.token ?? null)}>{children}</RealtimeProvider>;
 }
 
+/** The logged-in account's cart, priced to the chosen delivery area. */
+function SessionCart({ children }: { children: ReactNode }) {
+  const session = useCurrentUser();
+  const { provinceCode } = useDeliveryArea();
+  return (
+    <CartProvider accountId={session?.accountId ?? null} provinceCode={provinceCode}>
+      {children}
+    </CartProvider>
+  );
+}
+
 /** Providers of the whole app, outermost first: session, its realtime connection, delivery area, cart. */
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <SessionRealtime>
         <DeliveryAreaProvider>
-          <CartProvider>{children}</CartProvider>
+          <SessionCart>{children}</SessionCart>
         </DeliveryAreaProvider>
       </SessionRealtime>
     </SessionProvider>

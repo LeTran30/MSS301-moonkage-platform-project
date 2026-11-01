@@ -17,6 +17,18 @@
   object-fit: cover;
 }
 
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.66) 0%,
+    rgba(255, 255, 255, 0.77) 50%,
+    rgba(255, 255, 255, 0.88) 100%
+  );
+  pointer-events: none;
+}
+
 .text {
   position: relative;
   display: grid;

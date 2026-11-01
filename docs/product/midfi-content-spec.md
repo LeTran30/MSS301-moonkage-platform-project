@@ -85,7 +85,7 @@ Dùng thống nhất các nhân vật và con số dưới đây trên toàn b�
 
 | # | Tên trường | Loại thành phần UI | Tính chất | Định dạng & Giới hạn ký tự | Placeholder / Gợi ý mặc định |
 |---|---|---|---|---|---|
-| 1 | Họ và tên | Text Input (`autocomplete="name"`) | Bắt buộc | 1–100 ký tự (`AccountConstant.MAX_FULL_NAME_LENGTH`), cho phép tiếng Việt có dấu | `Ví dụ: Nguyễn Thị Lan` |
+| 1 | Họ và tên | Text Input (`autocomplete="name"`) | Bắt buộc | 1–100 ký tự (`ProfileConstant.MAX_FULL_NAME_LENGTH`), cho phép tiếng Việt có dấu | `Ví dụ: Nguyễn Thị Lan` |
 | 2 | Email | Text Input (`type="email"`) | Bắt buộc | Email hợp lệ, duy nhất trên hệ thống | `Ví dụ: lan.nguyen@gmail.com` |
 | 3 | Mật khẩu | Password Input + nút `Hiện`/`Ẩn` | Bắt buộc | 8–72 ký tự (`PASSWORD_MIN_LENGTH = 8`, `PASSWORD_MAX_LENGTH = 72`) | `Từ 8 đến 72 ký tự` |
 

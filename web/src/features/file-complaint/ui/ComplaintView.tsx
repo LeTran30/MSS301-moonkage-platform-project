@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { complaintDaysLeft, type Complaint, type ReadyOrder } from '@/entities/order';
+import { DISPUTE_REASONS, type DisputeReasonCode } from '@/shared/config/disputes';
+import { useAction } from '@/shared/lib';
 import { FileDrop, KeyValue, PageHeader, StatusBadge } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import { sendComplaint } from '../api/fileComplaintApi';
 import styles from './ComplaintView.module.css';
 
-const REASONS = ['Hộp hoặc bánh bị hỏng khi nhận', 'Thiếu hoặc sai so với đơn', 'Bánh không đảm bảo chất lượng', 'Khác'];
+/** What the form asks for; order-service takes up to 10. */
+const MAX_PHOTOS = 5;
 
 /** M6.1.3: report a problem (form) or follow one already sent (events, decision). */
 export function ComplaintView({
@@ -19,18 +22,20 @@ export function ComplaintView({
   onSent: () => void;
   onCancel: () => void;
 }) {
-  const [reason, setReason] = useState(REASONS[0]);
+  const [reason, setReason] = useState<DisputeReasonCode>(DISPUTE_REASONS[0].code);
   const [description, setDescription] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const send = useAction();
+  const busy = send.busy;
   const daysLeft = complaintDaysLeft(order);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!description.trim()) return setError('Mô tả vấn đề để người bán và quản trị hiểu chuyện gì đã xảy ra.');
-    setBusy(true);
-    await sendComplaint(order.id, order.shop, reason, description.trim(), 1);
-    onSent();
+    if (photos.length > MAX_PHOTOS) return setError(`Gửi tối đa ${MAX_PHOTOS} ảnh.`);
+    setError(null);
+    if (await send.run(() => sendComplaint(order.id, order.shop, reason, description.trim(), photos))) onSent();
   };
 
   return (
@@ -73,9 +78,9 @@ export function ComplaintView({
           <form className="form" onSubmit={submit} noValidate>
             <fieldset className="form-section">
               <legend>Vấn đề</legend>
-              {REASONS.map((r) => (
-                <label key={r} className="check">
-                  <input type="radio" name="reason" checked={reason === r} onChange={() => setReason(r)} /> {r}
+              {DISPUTE_REASONS.map((r) => (
+                <label key={r.code} className="check">
+                  <input type="radio" name="reason" checked={reason === r.code} onChange={() => setReason(r.code)} /> {r.label}
                 </label>
               ))}
             </fieldset>
@@ -95,12 +100,17 @@ export function ComplaintView({
                 {error ?? 'Nói rõ hộp nào, bánh nào và tình trạng khi nhận.'}
               </span>
             </div>
-            <FileDrop label="Ảnh bằng chứng" hint="PNG, JPG · tối đa 5 ảnh" accept="image/*" multiple />
+            <FileDrop label="Ảnh bằng chứng" hint={`PNG, JPG · tối đa ${MAX_PHOTOS} ảnh`} accept="image/*" multiple onSelect={setPhotos} />
+            {send.error && (
+              <p className="error-text" role="alert">
+                {send.error}
+              </p>
+            )}
             <div className="form-actions">
               <button type="button" className="mk-btn mk-btn--quiet" onClick={onCancel}>
                 Hủy
               </button>
-              <button type="submit" className="mk-btn mk-btn--primary" aria-busy={busy || undefined}>
+              <button type="submit" className="mk-btn mk-btn--primary" disabled={busy} aria-busy={busy || undefined}>
                 Gửi
               </button>
             </div>

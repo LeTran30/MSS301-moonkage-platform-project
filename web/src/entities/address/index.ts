@@ -3,6 +3,7 @@ export {
   addressStore,
   fetchAddress,
   formatAddress,
+  formatAddressDetail,
   fromAddressDto,
   toSaveAddressDto,
   type Address,

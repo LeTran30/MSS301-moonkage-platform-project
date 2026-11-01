@@ -1,4 +1,4 @@
-package com.moonkage.identity.account.vo;
+package com.moonkage.identity.account.atom;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
