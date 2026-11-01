@@ -22,6 +22,15 @@ export const ordersApi = '/order-service/api';
 export const paymentsApi = '/payment-service/api';
 export const notificationsApi = '/orchestrator-service/api/notifications';
 
+/** order-service roots: the caller's cart, checkouts (one VNPay payment for the cart) and orders. */
+export const cartApi = `${ordersApi}/carts/me`;
+export const checkoutsApi = `${ordersApi}/checkouts`;
+export const ordersPath = `${ordersApi}/orders`;
+
+/** payment-service: a payment's state, and the VNPay return the result page forwards (BR-25). */
+export const paymentsPath = `${paymentsApi}/payments`;
+export const vnpayReturnPath = `${paymentsPath}/vnpay/return`;
+
 /** STOMP over WebSocket of orchestrator-service, through the gateway; the token goes in the CONNECT frame. */
 export const realtimePath = '/ws';
 

@@ -1,13 +1,46 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { goods, orderStatusLabel, type VendorCustomOrder, type VendorReadyOrder } from '@/entities/order';
+import { customStepLabel, goods, nextCustomStep, orderStatusLabel, type VendorCustomOrder, type VendorReadyOrder } from '@/entities/order';
 import { routes } from '@/shared/config/routes';
+import { useAction } from '@/shared/lib';
 import { FileDrop, KeyValue, PageHeader, SectionTabs, StatusBadge, Steps } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
-import { addProgress, attachInvoice, confirmOrder, markDelivered, proposeResolution, sendMockup, shipOrder } from '../api/fulfillOrderApi';
+import { advanceCustomOrder, attachInvoice, confirmOrder, markDelivered, proposeResolution, sendMockup, shipOrder } from '../api/fulfillOrderApi';
 import styles from './VendorOrderDetail.module.css';
 
 const PROPOSALS = ['Hoàn một phần', 'Hoàn toàn bộ', 'Không hoàn, kèm lý do'];
+/** Shown while the ledger is not read here. */
+const UNKNOWN_AMOUNT = '—';
+
+/** Runs one change of the order, then reloads it; keeps the server's message when it refuses. */
+function useOrderAction(onChanged: () => void) {
+  const action = useAction();
+  const { busy, error } = action;
+  const run = async (fn: () => Promise<unknown>) => {
+    const ok = await action.run(fn);
+    if (ok) onChanged();
+    return ok;
+  };
+  const errorView = error && (
+    <p className="error-text" role="alert">
+      {error}
+    </p>
+  );
+  return { busy, run, errorView };
+}
+
+/** Invoice upload (FR-44): pick the file, then attach it. */
+function InvoiceAttach({ busy, onAttach }: { busy: boolean; onAttach: (file: File) => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  return (
+    <div className="stack">
+      <FileDrop label="Hóa đơn đã xuất" hint="PDF, PNG" accept=".pdf,image/*" onSelect={(files) => setFile(files[0] ?? null)} />
+      <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" disabled={!file || busy} onClick={() => file && onAttach(file)}>
+        Gắn hóa đơn
+      </button>
+    </div>
+  );
+}
 
 /** B2.1: a shop order. New → confirm → (tracking code when inter-province) → delivered; complaint response. */
 export function VendorReadyOrderView({ order, onChanged }: { order: VendorReadyOrder; onChanged: () => void }) {
@@ -17,10 +50,7 @@ export function VendorReadyOrderView({ order, onChanged }: { order: VendorReadyO
   const [amount, setAmount] = useState('210000');
   const [note, setNote] = useState('');
   const status = orderStatusLabel[order.status];
-  const run = async (fn: () => Promise<unknown>) => {
-    await fn();
-    onChanged();
-  };
+  const { busy, run, errorView } = useOrderAction(onChanged);
 
   const ship = (e: FormEvent) => {
     e.preventDefault();
@@ -135,7 +165,7 @@ export function VendorReadyOrderView({ order, onChanged }: { order: VendorReadyO
             Xử lý đơn
           </h2>
           {order.status === 'new' && (
-            <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={() => run(() => confirmOrder(order.id))}>
+            <button type="button" className="mk-btn mk-btn--primary mk-btn--block" disabled={busy} onClick={() => run(() => confirmOrder(order.id))}>
               Xác nhận đơn
             </button>
           )}
@@ -148,27 +178,24 @@ export function VendorReadyOrderView({ order, onChanged }: { order: VendorReadyO
                   {trackingError ?? (order.interProvince ? 'Bắt buộc khi giao liên tỉnh.' : 'Giao nội tỉnh có thể bỏ trống.')}
                 </span>
               </div>
-              <button type="submit" className="mk-btn mk-btn--primary mk-btn--block">
+              <button type="submit" className="mk-btn mk-btn--primary mk-btn--block" disabled={busy}>
                 Đã giao cho vận chuyển
               </button>
             </form>
           )}
           {order.status === 'shipping' && (
-            <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={() => run(() => markDelivered(order.id))}>
+            <button type="button" className="mk-btn mk-btn--primary mk-btn--block" disabled={busy} onClick={() => run(() => markDelivered(order.id))}>
               Đánh dấu đã giao
             </button>
           )}
+          {errorView}
           <KeyValue
             rows={[
               { label: 'Giao', value: order.deliveredAt ? `Đã giao ${order.deliveredAt}` : order.tracking ? `Mã ${order.tracking}` : 'Chưa giao' },
               { label: 'Hóa đơn', value: order.invoiceAttached ? 'Đã gắn' : 'Chưa có' },
             ]}
           />
-          {!order.invoiceAttached && (
-            <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" onClick={() => run(() => attachInvoice(order.id))}>
-              Gắn hóa đơn
-            </button>
-          )}
+          {!order.invoiceAttached && <InvoiceAttach busy={busy} onAttach={(file) => void run(() => attachInvoice(order.id, file))} />}
           <p className="muted">Đơn mới: Xác nhận → nhập mã vận đơn (liên tỉnh) → Đã giao.</p>
         </aside>
       </div>
@@ -184,18 +211,26 @@ type Tab = 'mockup' | 'progress' | 'money' | 'invoice';
 export function VendorCustomOrderView({ order, onChanged }: { order: VendorCustomOrder; onChanged: () => void }) {
   const [tab, setTab] = useState<Tab>('mockup');
   const [update, setUpdate] = useState('');
-  const run = async (fn: () => Promise<unknown>) => {
-    await fn();
-    onChanged();
-  };
+  const [mockupFile, setMockupFile] = useState<File | null>(null);
+  const { busy, run, errorView } = useOrderAction(onChanged);
   const nextMockup = order.mockupsSent + 1;
+  const next = nextCustomStep[order.step];
+  const status =
+    order.step !== 'mockup'
+      ? { tone: 'soft' as const, label: customStepLabel[order.step] }
+      : order.feedback
+        ? { tone: 'warn' as const, label: 'Sửa maket theo góp ý' }
+        : order.mockupsSent === 0
+          ? { tone: 'warn' as const, label: 'Chờ bạn gửi maket' }
+          : { tone: 'soft' as const, label: order.mockupApproved ? 'Maket đã duyệt' : 'Chờ người mua duyệt maket' };
+  const amountOf = (n: number | null) => (n === null ? UNKNOWN_AMOUNT : formatVnd(n));
   return (
     <div className="page">
       <PageHeader
         eyebrow="Đơn đặt hàng"
         title={
           <>
-            Đơn {order.id} <StatusBadge tone={order.feedback ? 'warn' : 'soft'}>{order.feedback ? 'Sửa maket theo góp ý' : 'Chờ người mua duyệt maket'}</StatusBadge>
+            Đơn {order.id} <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
           </>
         }
         lead={`${order.buyer} · ${order.title} · giao trước ${order.deliverBy}`}
@@ -219,42 +254,63 @@ export function VendorCustomOrderView({ order, onChanged }: { order: VendorCusto
                   Góp ý của người mua: "{order.feedback.text}" · {order.feedback.at}
                 </p>
               )}
-              <div className={styles.mockup}>
-                <div className={styles.mockupFrame}>Maket lần {order.mockupsSent}</div>
-                <p className="muted">Maket lần {order.mockupsSent} (đã gửi)</p>
-              </div>
-              <FileDrop label={`Tải maket lần ${nextMockup}`} hint="PDF, PNG" accept=".pdf,image/*" />
-              <button type="button" className="mk-btn mk-btn--primary" onClick={() => run(() => sendMockup(order.id))}>
-                Gửi maket lần {nextMockup}
-              </button>
+              {order.mockupsSent > 0 && (
+                <div className={styles.mockup}>
+                  <div className={styles.mockupFrame}>
+                    {order.latestMockupUrl ? (
+                      <a href={order.latestMockupUrl} target="_blank" rel="noreferrer">
+                        Mở maket lần {order.mockupsSent}
+                      </a>
+                    ) : (
+                      <>Maket lần {order.mockupsSent}</>
+                    )}
+                  </div>
+                  <p className="muted">Maket lần {order.mockupsSent} (đã gửi)</p>
+                </div>
+              )}
+              {order.step === 'mockup' && !order.mockupApproved && (
+                <>
+                  <FileDrop label={`Tải maket lần ${nextMockup}`} hint="PDF, PNG" accept=".pdf,image/*" onSelect={(files) => setMockupFile(files[0] ?? null)} />
+                  <button
+                    type="button"
+                    className="mk-btn mk-btn--primary"
+                    disabled={!mockupFile || busy}
+                    onClick={() => mockupFile && void run(() => sendMockup(order.id, mockupFile)).then((ok) => ok && setMockupFile(null))}
+                  >
+                    Gửi maket lần {nextMockup}
+                  </button>
+                </>
+              )}
             </div>
           )}
           {tab === 'progress' && (
             <div className="stack">
               <KeyValue rows={order.progress.map((p) => ({ label: p.at, value: p.label }))} />
-              <form
-                className="row"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (update.trim()) void run(() => addProgress(order.id, update.trim())).then(() => setUpdate(''));
-                }}
-              >
-                <div className="mk-field grow">
-                  <label htmlFor="update">Cập nhật sản xuất</label>
-                  <input id="update" value={update} onChange={(e) => setUpdate(e.target.value)} placeholder="Đã mua nguyên liệu, bắt đầu nướng" />
-                </div>
-                <button type="submit" className="mk-btn mk-btn--quiet">
-                  + Cập nhật tiến độ
-                </button>
-              </form>
+              {next && (
+                <form
+                  className="row"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void run(() => advanceCustomOrder(order.id, next, customStepLabel[next], update.trim())).then((ok) => ok && setUpdate(''));
+                  }}
+                >
+                  <div className="mk-field grow">
+                    <label htmlFor="update">Ghi chú cho người mua (không bắt buộc)</label>
+                    <input id="update" value={update} onChange={(e) => setUpdate(e.target.value)} placeholder="Đã mua nguyên liệu, bắt đầu nướng" />
+                  </div>
+                  <button type="submit" className="mk-btn mk-btn--quiet" disabled={busy}>
+                    Chuyển sang: {customStepLabel[next]}
+                  </button>
+                </form>
+              )}
             </div>
           )}
           {tab === 'money' && (
             <div className="stack">
               <KeyValue
                 rows={[
-                  { label: 'Đang giữ (cọc)', value: formatVnd(order.held) },
-                  { label: 'Đã giải ngân', value: formatVnd(order.disbursed) },
+                  { label: 'Đang giữ (cọc)', value: amountOf(order.held) },
+                  { label: 'Đã giải ngân', value: amountOf(order.disbursed) },
                 ]}
               />
               <Link to={routes.vendor.disbursements} className="mk-btn mk-btn--quiet">
@@ -266,9 +322,7 @@ export function VendorCustomOrderView({ order, onChanged }: { order: VendorCusto
             (order.invoiceAttached ? (
               <p>Đã gắn hóa đơn.</p>
             ) : (
-              <button type="button" className="mk-btn mk-btn--quiet" onClick={() => run(() => attachInvoice(order.id))}>
-                Gắn hóa đơn
-              </button>
+              <InvoiceAttach busy={busy} onAttach={(file) => void run(() => attachInvoice(order.id, file))} />
             ))}
         </SectionTabs>
         <aside className={styles.actionBox} aria-labelledby="now-heading">
@@ -276,19 +330,28 @@ export function VendorCustomOrderView({ order, onChanged }: { order: VendorCusto
             Việc của bạn bây giờ
           </h2>
           <p>
-            {order.feedback
-              ? `Gửi maket lần ${nextMockup} theo góp ý. Sản xuất bắt đầu khi người mua duyệt.`
-              : 'Chờ người mua duyệt maket. Bạn nhận thông báo khi có kết quả.'}
+            {order.step !== 'mockup'
+              ? next
+                ? `Khi xong bước hiện tại, chuyển sang "${customStepLabel[next]}" ở thẻ Tiến độ.`
+                : 'Chờ người mua trả phần còn lại.'
+              : order.feedback
+                ? `Gửi maket lần ${nextMockup} theo góp ý. Sản xuất bắt đầu khi người mua duyệt.`
+                : order.mockupApproved
+                  ? 'Người mua đã duyệt maket. Chuyển sang "Sản xuất" ở thẻ Tiến độ.'
+                  : order.mockupsSent === 0
+                    ? 'Gửi maket lần 1 cho người mua duyệt.'
+                    : 'Chờ người mua duyệt maket. Bạn nhận thông báo khi có kết quả.'}
           </p>
-          {order.feedback && (
+          {order.step === 'mockup' && !order.mockupApproved && (order.feedback || order.mockupsSent === 0) && (
             <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={() => setTab('mockup')}>
               Gửi maket mới
             </button>
           )}
+          {errorView}
           <KeyValue
             rows={[
               { label: 'Giá trị', value: formatVnd(order.value) },
-              { label: 'Đang giữ', value: formatVnd(order.held) },
+              { label: 'Đang giữ', value: amountOf(order.held) },
             ]}
           />
         </aside>

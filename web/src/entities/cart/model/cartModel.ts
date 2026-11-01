@@ -1,6 +1,8 @@
 import { createContext, useContext } from 'react';
 
 export interface CartLine {
+  /** The server's line id; absent in demo mode, where the cart is kept in the browser. */
+  itemId?: string;
   productId: string;
   quantity: number;
 }
@@ -9,10 +11,11 @@ export interface CartValue {
   lines: CartLine[];
   /** Number of boxes in the cart (the header count). */
   count: number;
-  add: (productId: string, quantity: number) => void;
+  /** Rejects with the server's ApiError, e.g. above the stock (AC-08.2). */
+  add: (productId: string, quantity: number) => Promise<void>;
   setQuantity: (productId: string, quantity: number) => void;
   remove: (productId: string) => void;
-  /** After checkout: the paid lines leave the cart. */
+  /** After checkout: the paid lines leave the cart (the server already dropped them; this reloads). */
   clear: () => void;
 }
 

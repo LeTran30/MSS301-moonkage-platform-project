@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { deposit, type Quote, type QuoteRequest } from '@/entities/quote';
+import { useAction } from '@/shared/lib';
 import { KeyValue, PageHeader, Steps } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import styles from './AcceptQuote.module.css';
@@ -15,10 +16,11 @@ export function AcceptQuote({
   request: QuoteRequest;
   quote: Quote;
   onBack: () => void;
-  onPay: (withInvoice: boolean) => void;
+  onPay: (withInvoice: boolean) => Promise<void>;
   invoiceCompany?: string;
 }) {
   const [agree, setAgree] = useState(false);
+  const { busy, error, run } = useAction();
   const [invoice, setInvoice] = useState(Boolean(invoiceCompany));
   return (
     <div className="page">
@@ -82,9 +84,20 @@ export function AcceptQuote({
               <span className="mk-num">{formatVnd(quote.total - deposit(quote))}</span>
             </li>
           </ul>
-          <button type="button" className="mk-btn mk-btn--primary mk-btn--block" disabled={!agree} onClick={() => onPay(invoice)}>
+          <button
+            type="button"
+            className="mk-btn mk-btn--primary mk-btn--block"
+            disabled={!agree || busy}
+            aria-busy={busy || undefined}
+            onClick={() => void run(() => onPay(invoice))}
+          >
             Đặt cọc qua VNPay
           </button>
+          {error && (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
+          )}
           {!agree && <p className="muted">Đánh dấu ô đồng ý để đặt cọc.</p>}
         </aside>
       </div>

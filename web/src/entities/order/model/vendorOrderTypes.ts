@@ -35,9 +35,14 @@ export interface VendorCustomOrder {
   step: VendorCustomStep;
   feedback?: { text: string; at: string };
   mockupsSent: number;
+  /** Short-lived link to the newest mockup; none in the demo. */
+  latestMockupUrl?: string;
+  /** Production may start (BR-15); the demo seed does not say. */
+  mockupApproved?: boolean;
   progress: { label: string; at: string }[];
-  held: number;
-  disbursed: number;
+  /** Deposit Moonkage holds and has released; null while the ledger (payment-service) is not wired here. */
+  held: number | null;
+  disbursed: number | null;
   invoiceAttached: boolean;
 }
 

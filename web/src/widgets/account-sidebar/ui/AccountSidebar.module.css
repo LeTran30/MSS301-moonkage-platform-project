@@ -41,6 +41,12 @@
   cursor: pointer;
 }
 
+.divider {
+  border: 0;
+  border-top: var(--border-thin) solid var(--line);
+  margin: var(--space-2) 0;
+}
+
 .link:hover {
   background: var(--surface-hover);
 }

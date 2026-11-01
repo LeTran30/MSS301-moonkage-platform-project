@@ -17,7 +17,14 @@ export const customStepLabel: Record<VendorCustomOrder['step'], string> = {
   done: 'Hoàn tất',
 };
 
-export const goods = (o: VendorReadyOrder) => o.lines.reduce((n, l) => n + l.price * l.quantity, 0);
+/** The step the vendor moves a custom order to next (FR-40, FR-42); the buyer's payment ends 'remaining'. */
+export const nextCustomStep: Partial<Record<VendorCustomOrder['step'], VendorCustomOrder['step']>> = {
+  mockup: 'production',
+  production: 'delivery',
+  delivery: 'remaining',
+};
+
+export const goods =(o: VendorReadyOrder) => o.lines.reduce((n, l) => n + l.price * l.quantity, 0);
 
 /** Orders of each tab of B2.0. */
 export type OrderTab = 'todo' | 'shipping' | 'delivered' | 'no-invoice' | 'complaint';

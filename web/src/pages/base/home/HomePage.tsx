@@ -6,6 +6,7 @@ import { AreaPicker, areaStrings, useDeliveryArea } from '@/features/choose-deli
 import { QuickFilters } from '@/features/filter-products';
 import { useLoginRedirect } from '@/features/login';
 import { routes } from '@/shared/config/routes';
+import heroPhoto from '@/shared/assets/hero-banner.jpg';
 import { ErrorState, LoadingState, SectionHeader } from '@/shared/ui';
 import { HomeHero, MoneyFlow } from '@/widgets/buying-guide';
 import styles from './HomePage.module.css';
@@ -25,6 +26,7 @@ export function HomePage() {
     <div className="home">
       <HomeHero
         area={area}
+        photo={heroPhoto}
         areaPrompt={
           !chosen && (
             <div className="home-hero__prompt">

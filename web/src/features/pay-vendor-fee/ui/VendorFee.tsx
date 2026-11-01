@@ -1,10 +1,12 @@
 import { VENDOR_FEE, type VendorProfile } from '@/entities/vendor';
+import { useAction } from '@/shared/lib';
 import { PageHeader, Steps } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import styles from './VendorFee.module.css';
 
 /** B1.1: pay the one-off fee after approval (VNPay through the page). */
-export function VendorFee({ profile, onPay, onLater }: { profile: VendorProfile; onPay: () => void; onLater: () => void }) {
+export function VendorFee({ profile, onPay, onLater }: { profile: VendorProfile; onPay: () => Promise<void>; onLater: () => void }) {
+  const { busy, error, run } = useAction();
   return (
     <div className="page">
       <PageHeader title="Đóng phí mở bán" />
@@ -40,9 +42,20 @@ export function VendorFee({ profile, onPay, onLater }: { profile: VendorProfile;
             </li>
           </ul>
           <p className="muted">Hóa đơn phí tải ở Thông tin pháp lý.</p>
-          <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={onPay}>
+          <button
+            type="button"
+            className="mk-btn mk-btn--primary mk-btn--block"
+            disabled={busy}
+            aria-busy={busy || undefined}
+            onClick={() => void run(onPay)}
+          >
             Thanh toán qua VNPay
           </button>
+          {error && (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
+          )}
           <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" onClick={onLater}>
             Để sau
           </button>

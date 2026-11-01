@@ -21,6 +21,8 @@ export const routes = {
     cart: '/cart',
     checkout: '/checkout',
     paymentResult: (paymentId: string) => `/checkout/result/${paymentId}`,
+    /** Where VNPay sends the payer back, with its signed query (payment-service `vnpay.return-url`). */
+    vnpayReturn: '/checkout/result',
     sellIntro: '/sell',
     policy: '/policy',
   },
