@@ -36,6 +36,13 @@ export interface Payout {
   paid?: boolean;
 }
 
+/** B5.0: what Moonkage holds for the Shop, what it will still pay, what the Shop already got. */
+export interface VendorMoneySummary {
+  held: number;
+  toReceive: number;
+  received: number;
+}
+
 export interface Reconciliation {
   month: string;
   vnpay: number;

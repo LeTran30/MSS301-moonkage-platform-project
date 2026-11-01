@@ -4,12 +4,6 @@ import { routes } from '@/shared/config/routes';
 import { useDisclosure } from '@/shared/lib';
 import styles from './AccountMenu.module.css';
 
-/** Initials for the avatar: first letters of the last two words of the name. */
-function initialsOf(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  return words.slice(-2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?';
-}
-
 /**
  * "Tài khoản ▾" of the buying area. Selling is not in this menu: it has its own link in the utility bar.
  * Closes on choice, Escape or a click outside.
@@ -31,13 +25,17 @@ export function AccountMenu() {
 
   return (
     <div className={styles.menu} ref={ref}>
-      <button type="button" className={styles.toggle} aria-expanded={open} aria-controls={menuId} onClick={toggle}>
-        <span className={styles.initials} aria-hidden="true">
-          {initialsOf(session.displayName)}
-        </span>
-        {userStrings.menu.account}
+      <button
+        type="button"
+        className={styles.toggle}
+        aria-label={userStrings.menu.account}
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={toggle}
+      >
         <svg className="mk-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m6 9 6 6 6-6" />
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
         </svg>
       </button>
       {open && (

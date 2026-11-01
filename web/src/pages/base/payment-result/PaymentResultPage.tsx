@@ -26,15 +26,24 @@ export function PaymentResultPage() {
     );
 
   const paid = payment.status === 'paid';
+  const pending = payment.status === 'pending';
   const created = (payment.context.orders as CreatedOrder[] | undefined) ?? [];
+  /** Known in the demo; on the server a deposit's order is found in the order list. */
+  const orderId = payment.context.orderId as string | undefined;
+  const requestId = payment.context.requestId as string | undefined;
   const back =
     payment.purpose === 'checkout'
       ? routes.base.checkout
       : payment.purpose === 'vendor-fee'
         ? routes.vendor.fee
         : payment.purpose === 'deposit'
-          ? routes.account.quoteRequest(payment.context.requestId as string)
-          : routes.account.order(payment.context.orderId as string);
+          ? requestId
+            ? routes.account.quoteRequest(requestId)
+            : routes.account.quoteRequests
+          : orderId
+            ? routes.account.order(orderId)
+            : routes.account.orders;
+  const orderRoute = orderId ? routes.account.order(orderId) : routes.account.orders;
 
   return (
     <div className="shop__inner page page--narrow">
@@ -44,12 +53,20 @@ export function PaymentResultPage() {
           {paid ? '✓' : '!'}
         </span>
         <PageHeader
-          title={`Kết quả thanh toán: ${paid ? 'thành công' : 'chưa thanh toán'}`}
+          title={`Kết quả thanh toán: ${paid ? 'thành công' : pending ? 'đang chờ VNPay xác nhận' : 'chưa thanh toán'}`}
           lead={`Lần thanh toán ${payment.id} · ${formatVnd(payment.amount)} · ${payment.at}`}
         />
       </div>
 
-      {!paid && (
+      {pending && (
+        <EmptyState title="VNPay chưa báo kết quả" body="Nếu bạn đã trả tiền, kết quả sẽ về trong ít phút. Tải lại trang để xem.">
+          <button type="button" className="mk-btn mk-btn--primary" onClick={() => window.location.reload()}>
+            Tải lại
+          </button>
+        </EmptyState>
+      )}
+
+      {!paid && !pending && (
         <EmptyState title="Bạn đã hủy ở VNPay" body="Chưa trừ tiền. Bạn có thể thanh toán lại.">
           <Link to={back} className="mk-btn mk-btn--primary">
             Thanh toán lại
@@ -83,10 +100,10 @@ export function PaymentResultPage() {
       )}
       {paid && payment.purpose === 'deposit' && (
         <p className="notice">
-          Đã đặt cọc. Đơn {String(payment.context.orderId)} được tạo; đơn vị gửi maket trong 24 giờ. Moonkage giữ tiền cọc và chỉ giải ngân theo tiến độ.
+          Đã đặt cọc. {orderId ? `Đơn ${orderId}` : 'Đơn'} được tạo; đơn vị gửi maket trong 24 giờ. Moonkage giữ tiền cọc và chỉ giải ngân theo tiến độ.
         </p>
       )}
-      {paid && payment.purpose === 'remaining' && <p className="notice">Đã trả phần còn lại. Đơn {String(payment.context.orderId)} hoàn tất.</p>}
+      {paid && payment.purpose === 'remaining' && <p className="notice">Đã trả phần còn lại. {orderId ? `Đơn ${orderId}` : 'Đơn'} hoàn tất.</p>}
       {paid && payment.purpose === 'vendor-fee' && <p className="notice">Đã đóng phí mở bán. Bạn có thể đăng sản phẩm và khai vùng giao.</p>}
 
       {paid && (
@@ -96,10 +113,7 @@ export function PaymentResultPage() {
               Vào Kênh người bán
             </Link>
           ) : (
-            <Link
-              to={payment.purpose === 'checkout' ? routes.account.orders : routes.account.order(String(payment.context.orderId))}
-              className="mk-btn mk-btn--primary"
-            >
+            <Link to={payment.purpose === 'checkout' ? routes.account.orders : orderRoute} className="mk-btn mk-btn--primary">
               {payment.purpose === 'checkout' ? 'Đến Đơn hàng' : 'Xem đơn'}
             </Link>
           )}

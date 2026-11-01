@@ -40,6 +40,7 @@ export function AccountSidebar() {
           </NavLink>
         ))}
         <SellEntryLink status={session?.vendorStatus ?? 'none'} className={styles.link} />
+        <hr className={styles.divider} />
         <button type="button" className={styles.link} onClick={logout}>
           Đăng xuất
         </button>

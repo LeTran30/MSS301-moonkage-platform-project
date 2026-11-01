@@ -1,8 +1,9 @@
 package com.moonkage.identity.address.dto;
 
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.address.AddressConstant;
 import com.moonkage.identity.address.ProvinceCode;
+import com.moonkage.identity.common.RequestText;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -18,7 +19,7 @@ import lombok.Builder;
  * @param isDefault true = make this the default. null on update keeps the current flag
  */
 @Builder
-public record SaveAddressRequest(
+public record AddAddressRequest(
         @NotBlank(message = "{validation.address.recipient_name.required}")
         @Size(max = AddressConstant.MAX_RECIPIENT_NAME_LENGTH, message = "{validation.address.recipient_name.too_long}")
         String recipientName,
@@ -50,4 +51,16 @@ public record SaveAddressRequest(
         @Size(max = AddressConstant.MAX_LABEL_LENGTH, message = "{validation.address.label.too_long}")
         String label,
 
-        Boolean isDefault) {}
+        Boolean isDefault) {
+
+    /** Cleans itself before validation: the service stores what it gets. */
+    public AddAddressRequest {
+        recipientName = RequestText.trim(recipientName);
+        recipientPhone = RequestText.trim(recipientPhone);
+        provinceCode = RequestText.trim(provinceCode);
+        provinceName = RequestText.trim(provinceName);
+        wardName = RequestText.trim(wardName);
+        detail = RequestText.trim(detail);
+        label = RequestText.trimToNull(label);
+    }
+}

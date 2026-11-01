@@ -1,5 +1,6 @@
-package com.moonkage.identity.account;
+package com.moonkage.identity.account.dto;
 
+import com.moonkage.identity.account.atom.Role;
 import lombok.Builder;
 
 /** The logged-in person's account and display profile: GET /api/accounts/me. */

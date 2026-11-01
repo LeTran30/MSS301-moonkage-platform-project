@@ -17,8 +17,13 @@ export interface VendorReadyOrder {
   complaint?: {
     reason: string;
     description: string;
-    daysLeft: number;
+    /** Days left to answer; the server sets no deadline for the vendor's answer. */
+    daysLeft?: number;
+    /** Short-lived links to the buyer's photos; none in the demo. */
+    photoUrls?: string[];
+    /** The demo's structured proposal; on the server the vendor answers with evidence and a note. */
     proposal?: { kind: string; amount: number; note: string };
+    replies?: { note: string; at: string }[];
   };
 }
 
@@ -35,9 +40,14 @@ export interface VendorCustomOrder {
   step: VendorCustomStep;
   feedback?: { text: string; at: string };
   mockupsSent: number;
+  /** Short-lived link to the newest mockup; none in the demo. */
+  latestMockupUrl?: string;
+  /** Production may start (BR-15); the demo seed does not say. */
+  mockupApproved?: boolean;
   progress: { label: string; at: string }[];
-  held: number;
-  disbursed: number;
+  /** Deposit Moonkage holds and has released; null when unknown (the list does not read the ledger). */
+  held: number | null;
+  disbursed: number | null;
   invoiceAttached: boolean;
 }
 

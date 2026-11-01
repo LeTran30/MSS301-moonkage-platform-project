@@ -1,6 +1,6 @@
 package com.moonkage.identity.auth;
 
-import com.moonkage.identity.account.AccountView;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.auth.dto.LoginResponse;
 import com.moonkage.identity.auth.dto.RegisterAccountResponse;
 import com.moonkage.identity.auth.dto.VerifyAccountResponse;

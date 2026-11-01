@@ -1,4 +1,6 @@
-import type { Disbursement, Settlement } from '../model/types';
+import type { Disbursement, Settlement, VendorMoneySummary } from '../model/types';
+
+export const seedMoneySummary: VendorMoneySummary = { held: 9840000, toReceive: 1360000, received: 12400000 };
 
 /** Money of Xưởng Bánh Nghệ Nhân, the open demo shop. */
 export const seedSettlements: Settlement[] = [

@@ -96,10 +96,6 @@ security:
     - /api/auth/reset-password
 
 app:
-  admin:
-    email: ${ADMIN_EMAIL}
-    password: ${ADMIN_PASSWORD}
-    full-name: "Quản trị viên MoonKage"
   # dev seed data (db/seed, docs/guides/database.md); true only in docker-compose
   seed:
     enabled: ${APP_SEED_ENABLED:false}

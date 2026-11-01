@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { complaintDaysLeft, goodsTotal, readyStatusLabel, readyTotal, type ReadyOrder } from '@/entities/order';
+import { canConfirmReceipt, complaintDaysLeft, goodsTotal, openInvoice, readyStatusLabel, readyTotal, type ReadyOrder } from '@/entities/order';
 import { routes } from '@/shared/config/routes';
+import { useAction } from '@/shared/lib';
 import { KeyValue, PageHeader, StatusBadge, Steps } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import { confirmReceived } from '../api/confirmDeliveryApi';
@@ -9,19 +9,16 @@ import styles from './ReadyOrderView.module.css';
 
 const STEPS = ['Đã thanh toán', 'Shop xác nhận', 'Đang giao', 'Đã giao'];
 const stepOf = { pending: 0, shipping: 2, delivered: 3, cancelled: 0 } as const;
-
 /** M6.1.1: one ready-made order; "Báo vấn đề với đơn" only while the window is open. */
 export function ReadyOrderView({ order, onChanged }: { order: ReadyOrder; onChanged: () => void }) {
-  const [busy, setBusy] = useState(false);
+  const { busy, error, run } = useAction();
   const status = readyStatusLabel[order.status];
   const daysLeft = complaintDaysLeft(order);
   const canComplain = order.complaintId !== undefined || (daysLeft !== null && daysLeft > 0);
 
-  const receive = async () => {
-    setBusy(true);
-    await confirmReceived(order.id);
-    setBusy(false);
-    onChanged();
+  /** `changes` false: the call changes nothing on the order (e.g. opening the invoice). */
+  const act = async (fn: () => Promise<unknown>, changes = true) => {
+    if ((await run(fn)) && changes) onChanged();
   };
 
   return (
@@ -114,15 +111,25 @@ export function ReadyOrderView({ order, onChanged }: { order: ReadyOrder; onChan
           <h2 id="actions-heading" className="card-title-text">
             Bạn có thể
           </h2>
-          {order.status === 'shipping' && (
-            <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={receive} aria-busy={busy || undefined}>
+          {canConfirmReceipt(order) && (
+            <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={() => act(() => confirmReceived(order.id))} disabled={busy} aria-busy={busy || undefined}>
               Xác nhận đã nhận hàng
             </button>
           )}
           {order.invoice && (
-            <button type="button" className="mk-btn mk-btn--quiet mk-btn--block">
-              Tải hóa đơn
+            <button
+              type="button"
+              className="mk-btn mk-btn--quiet mk-btn--block"
+              disabled={busy || order.invoiceAttached === false}
+              onClick={() => act(() => openInvoice(order.id), false)}
+            >
+              {order.invoiceAttached === false ? 'Tải hóa đơn (Shop chưa gắn)' : 'Tải hóa đơn'}
             </button>
+          )}
+          {error && (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
           )}
           <button type="button" className="mk-btn mk-btn--quiet mk-btn--block" disabled={order.status !== 'delivered'}>
             {order.status === 'delivered' ? 'Đánh giá' : 'Đánh giá (sau khi nhận)'}

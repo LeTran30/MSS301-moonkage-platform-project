@@ -47,7 +47,7 @@ export function createCustomOrder(input: Omit<CustomOrder, 'kind' | 'id' | 'step
 /** After VNPay: the rest of a custom order is paid. */
 export function markRemainingPaid(orderId: string): Promise<CustomOrder | null> {
   const next = orderStore.update((list) =>
-    list.map((o) => (o.id === orderId && o.kind === 'custom' ? { ...o, step: 'done', progress: [...o.progress, { label: 'Bạn trả phần còn lại', at: today() }] } : o)),
+    list.map((o) => (o.id === orderId && o.kind === 'custom' ? { ...o, step: 'done' as const, progress: [...o.progress, { label: 'Bạn trả phần còn lại', at: today() }] } : o)),
   );
   return mockResponse((next.find((o) => o.id === orderId) as CustomOrder | undefined) ?? null);
 }

@@ -10,7 +10,7 @@ Schema đã gần đủ. Phiên NFC và OTP giữ nguyên trong bộ nhớ của
 
 | Bảng | Cột chính | Ràng buộc | Nguồn |
 | --- | --- | --- | --- |
-| `accounts` | `id`, `email`, `phone_number`, `password_hash`, `account_verified`, `role`, `nfc_failed_attempts`, `nfc_locked_until`, `password_changed_at` | `email` duy nhất; `phone_number` duy nhất; `role` ∈ MEMBER, ADMIN | FR-01, FR-02, D-21 |
+| `accounts` | `id`, `email`, `phone_number`, `password_hash`, `account_verified`, `role`, `password_changed_at` | `id` là UUID dạng chuỗi (`varchar`), JPA sinh khi lưu; `email` duy nhất, chữ thường; `phone_number` duy nhất, 9 chữ số thuê bao; `role` ∈ MEMBER, ADMIN. Bộ đếm và khóa NFC không lưu ([db-identify.md](../../services/identity/db-identify.md)) | FR-01, FR-02 |
 | `user_profiles` | `account_id` (PK, FK), `full_name`, `avatar_key` | 1-1 với `accounts` | D-21; **Sửa** `avatar_url` → `avatar_key` |
 | `legal_profiles` | `account_id` (PK, FK), `legal_name`, `gender`, `nationality`, `date_of_birth_enc`, `id_number_enc`, `id_number_hash`, `id_hash_key_ver`, `id_number_masked`, `pii_key_ver`, `nfc_verified_at` | `(id_number_hash, id_hash_key_ver)` duy nhất; có bản ghi = đã xác minh | FR-04, AC-04.11, BR-23 |
 | `addresses` | `id`, `account_id` (FK), `recipient_name`, `recipient_phone`, `province_code`, `province_name`, `ward_name`, `detail`, `label`, `is_default` | Tối đa một `is_default = true` mỗi tài khoản (unique index có điều kiện) | FR-03; vùng giao theo `province_code` (Q-12) |

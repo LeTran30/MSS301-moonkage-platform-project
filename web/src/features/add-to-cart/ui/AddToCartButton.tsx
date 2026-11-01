@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useCart } from '@/entities/cart';
+import { ApiError } from '@/shared/api/client';
 import { addToCartStrings } from '../strings';
 import styles from './AddToCartButton.module.css';
 
@@ -27,6 +28,8 @@ export function AddToCartButton({
 }) {
   const { add } = useCart();
   const [added, setAdded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!added) return;
@@ -34,21 +37,41 @@ export function AddToCartButton({
     return () => clearTimeout(timer);
   }, [added]);
 
-  const onClick = () => {
+  const onClick = async () => {
     if (!loggedIn) return onNeedLogin();
-    add(productId, quantity);
-    setAdded(true);
+    setBusy(true);
+    setError(null);
+    try {
+      await add(productId, quantity);
+      setAdded(true);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : addToCartStrings.failed);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const cls = size === 'sm' ? 'mk-btn mk-btn--outline mk-btn--sm' : `mk-btn mk-btn--primary ${styles.buttonBlock} buy-box__add`;
   return (
     <>
-      <button type="button" className={cls} onClick={onClick} aria-label={size === 'sm' ? addToCartStrings.addNamed(productName) : undefined}>
+      <button
+        type="button"
+        className={cls}
+        onClick={onClick}
+        disabled={busy}
+        aria-busy={busy || undefined}
+        aria-label={size === 'sm' ? addToCartStrings.addNamed(productName) : undefined}
+      >
         {added ? addToCartStrings.added : addToCartStrings.add}
       </button>
       <span className="mk-sr" role="status">
         {added ? addToCartStrings.addedAnnounce(quantity) : ''}
       </span>
+      {error && (
+        <p className="error-text" role="alert">
+          {error}
+        </p>
+      )}
     </>
   );
 }

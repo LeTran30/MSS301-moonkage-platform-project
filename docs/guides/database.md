@@ -42,11 +42,11 @@ Lệnh này tạo bảng, nạp dữ liệu mẫu, và tạo tài khoản admin.
 
 ## 4. Tài khoản mẫu
 
-Mật khẩu chung: `SEED_PASSWORD` trong `.env` (bắt buộc, không dùng dấu `'`). Đăng nhập bằng email hoặc số điện thoại.
+Mật khẩu chung của **mọi** tài khoản mẫu, kể cả admin: `SEED_PASSWORD` trong `.env` (bắt buộc, không dùng dấu `'`; `.env.example` đặt `12345678`). Đăng nhập bằng email hoặc số điện thoại.
 
 | Email | Họ tên | SĐT | Trạng thái | Dùng để test |
 |---|---|---|---|---|
-| `ADMIN_EMAIL` trong `.env` | Quản trị viên MoonKage | — | ADMIN | duyệt người bán, bảng phí |
+| `admin@mk.com` | Quản trị viên MoonKage | — | ADMIN | duyệt người bán, bảng phí |
 | `member1@mk.com` | Nguyễn Thị Lan | 0901000001 | đã xác nhận email, **đã NFC**, 2 địa chỉ | mua ngay, gửi yêu cầu đặt hàng |
 | `member2@mk.com` | Trần Văn Minh | 0901000002 | đã xác nhận, **chưa NFC**, 1 địa chỉ | luồng bị BR-23 chặn |
 | `member3@mk.com` | Lê Thị Hoa | 0901000003 | **chưa xác nhận email** | đăng nhập bị từ chối |
@@ -63,7 +63,8 @@ Seed không bao giờ đụng tới tài khoản người dùng tự tạo: emai
 
 | Loại | Mã | ID | Là gì | Service |
 |---|---|---|---|---|
-| account | `0001` | `…-000100000001` → `…-000100000005` | member1 → member5 | identity |
+| account | `0001` | `…-000100000000` | admin | identity |
+| | | `…-000100000001` → `…-000100000005` | member1 → member5 | identity |
 | vendor | `0002` | `…-000200000001` | Trăng Vàng (của member4) | vendor |
 | | | `…-000200000002` | Bánh Quê (của member5) | vendor |
 | product | `0003` | | *chờ người phụ trách vendor* (sản phẩm ghi ở vendor-service, L-18) | vendor |

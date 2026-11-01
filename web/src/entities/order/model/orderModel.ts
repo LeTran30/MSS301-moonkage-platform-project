@@ -41,6 +41,15 @@ export const readyTotal = (o: ReadyOrder) => goodsTotal(o) + o.shippingFee;
 export const depositAmount = (o: CustomOrder) => Math.round((o.value * o.depositPercent) / 100);
 export const remainingAmount = (o: CustomOrder) => o.value - depositAmount(o);
 
+/**
+ * Whether the buyer can confirm receipt now (FR-11): on the server once the shop marked it delivered; the demo seed,
+ * which has no receipt flag, while it is being delivered.
+ */
+export function canConfirmReceipt(o: ReadyOrder): boolean {
+  if (o.receivedConfirmed === undefined) return o.status === 'shipping';
+  return o.status === 'delivered' && !o.receivedConfirmed;
+}
+
 /** Days left to report a problem on a delivered ready order; null when the window does not apply. */
 export function complaintDaysLeft(o: ReadyOrder, today = new Date()): number | null {
   if (o.status !== 'delivered' || !o.deliveredAt) return null;
@@ -69,7 +78,7 @@ export function orderTasks(orders: Order[]): Task[] {
       return [{ id: o.id, tag: 'Maket', title: `Duyệt maket · Đơn ${o.id} · ${o.vendorName}`, meta: `Gửi lúc ${o.mockups[0].sentAt}`, to: routes.account.order(o.id), action: 'Duyệt', primary: true }];
     if (o.kind === 'custom' && o.step === 'remaining')
       return [{ id: o.id, tag: 'Thanh toán', title: `Trả phần còn lại ${formatVnd(remainingAmount(o))} · Đơn ${o.id}`, meta: 'Đơn vị đã giao xong', to: routes.account.order(o.id), action: 'Thanh toán' }];
-    if (o.kind === 'ready' && o.status === 'shipping')
+    if (o.kind === 'ready' && canConfirmReceipt(o))
       return [{ id: o.id, tag: 'Nhận hàng', title: `Xác nhận đã nhận · Đơn ${o.id} · ${o.shop}`, meta: o.expectedAt ? `Dự kiến giao ${o.expectedAt}` : 'Đang giao', to: routes.account.order(o.id), action: 'Xem đơn' }];
     return [];
   });

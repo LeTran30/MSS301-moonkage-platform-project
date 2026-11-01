@@ -1,6 +1,6 @@
 package com.moonkage.identity.address;
 
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,7 +28,7 @@ class Address extends BaseEntity {
     private String id;
 
     /** = accounts.id; an id, not a relation, so the Account entity stays inside its component. */
-    @Column(name = "account_id", nullable = false)
+    @Column(name = "account_id", nullable = false, updatable = false)
     private String accountId;
 
     @Column(nullable = false, length = AddressConstant.MAX_RECIPIENT_NAME_LENGTH)

@@ -6,13 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.moonkage.identity.account.vo.Email;
-import com.moonkage.identity.account.vo.PasswordHash;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.Email;
+import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.atom.PhoneNumber;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.kyc.CitizenId;
-import java.time.Duration;
-import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,6 +43,7 @@ class ValueObjectsTest {
         assertEquals(phone1, PhoneNumber.of("+84912345678"));
         assertEquals(phone1, PhoneNumber.of("84912345678"));
         assertEquals(phone1, PhoneNumber.of(" 912345678 "));
+        assertEquals(phone1, PhoneNumber.of(" 0912345678 "));
         // a stored number that itself starts with 84 is not mistaken for a country code
         assertEquals("841234567", PhoneNumber.of("841234567").value());
 
@@ -76,35 +75,17 @@ class ValueObjectsTest {
         assertFalse(hash.matches("WrongPassword", encoder));
         assertEquals("[PROTECTED]", hash.toString());
 
-        assertThrows(IllegalArgumentException.class, () -> PasswordHash.of("plain-text"));
-        assertThrows(IllegalArgumentException.class, () -> PasswordHash.of(null));
+        assertThrows(AppException.class, () -> PasswordHash.of("plain-text"));
+        assertThrows(AppException.class, () -> PasswordHash.of(null));
+        assertThrows(AppException.class, () -> PasswordHash.fromRawPassword(" ", encoder));
     }
 
     @Test
-    void nfcLockoutEnforcesStateTransitions() {
-        NfcLockout lockout = NfcLockout.NONE;
-        Instant now = Instant.now();
-        assertFalse(lockout.isLocked(now));
-        assertEquals(0, lockout.failedAttempts());
-
-        NfcLockout failedOnce = lockout.recordFailure(3, Duration.ofMinutes(15), now);
-        assertEquals(1, failedOnce.failedAttempts());
-        assertEquals(2, failedOnce.attemptsLeft(3));
-        assertFalse(failedOnce.isLocked(now));
-
-        NfcLockout failedTwice = failedOnce.recordFailure(3, Duration.ofMinutes(15), now);
-        assertEquals(2, failedTwice.failedAttempts());
-        assertFalse(failedTwice.isLocked(now));
-
-        // the last allowed attempt locks and restarts the count for the round after the lockout
-        NfcLockout locked = failedTwice.recordFailure(3, Duration.ofMinutes(15), now);
-        assertEquals(0, locked.failedAttempts());
-        assertTrue(locked.isLocked(now));
-        assertTrue(locked.isLocked(now.plus(Duration.ofMinutes(14))));
-        assertFalse(locked.isLocked(now.plus(Duration.ofMinutes(16))));
-
-        assertEquals(locked, locked.clearFinished(now));
-        assertEquals(NfcLockout.NONE, locked.clearFinished(now.plus(Duration.ofMinutes(16))));
+    void rawPasswordMustFitBcrypt() {
+        assertThrows(AppException.class, () -> PasswordHash.fromRawPassword("a".repeat(7), encoder));
+        assertThrows(AppException.class, () -> PasswordHash.fromRawPassword("a".repeat(73), encoder));
+        assertTrue(PasswordHash.fromRawPassword("a".repeat(8), encoder).matches("a".repeat(8), encoder));
+        assertTrue(PasswordHash.fromRawPassword("a".repeat(72), encoder).matches("a".repeat(72), encoder));
     }
 
     @Test

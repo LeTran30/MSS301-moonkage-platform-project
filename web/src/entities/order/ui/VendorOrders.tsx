@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config/routes';
 import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge, Tabs } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
-import { customStepLabel, goods, inTab, orderStatusLabel, type OrderTab } from '../model/vendorOrdersModel';
+import { complaintAnswered, customStepLabel, goods, inTab, orderStatusLabel, type OrderTab } from '../model/vendorOrdersModel';
 import type { VendorCustomOrder, VendorReadyOrder } from '../model/vendorOrderTypes';
 import { useVendorOrders } from '../model/useVendorOrders';
 import styles from './VendorOrders.module.css';
@@ -86,8 +86,8 @@ export function VendorOrders() {
                     </td>
                     <td className={`${styles.num} mk-num`}>{formatVnd(goods(o))}</td>
                     <td className={styles.actions}>
-                      <Link to={routes.vendor.order(o.id)} className={`mk-btn mk-btn--sm ${o.status === 'new' || (o.complaint && !o.complaint.proposal) ? 'mk-btn--primary' : 'mk-btn--quiet'}`}>
-                        {o.complaint && !o.complaint.proposal ? 'Phản hồi' : o.status === 'new' ? 'Xử lý' : 'Xem'}
+                      <Link to={routes.vendor.order(o.id)} className={`mk-btn mk-btn--sm ${o.status === 'new' || (o.complaint && !complaintAnswered(o.complaint)) ? 'mk-btn--primary' : 'mk-btn--quiet'}`}>
+                        {o.complaint && !complaintAnswered(o.complaint) ? 'Phản hồi' : o.status === 'new' ? 'Xử lý' : 'Xem'}
                       </Link>
                     </td>
                   </tr>

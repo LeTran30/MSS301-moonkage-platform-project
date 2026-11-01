@@ -40,7 +40,7 @@
 ### `verifyAccount(request)` và `resetPassword(email, otp, newPassword)`
 1. Chuẩn hóa email → `OtpService.verifyOtp(mục đích, email, otp)`. Sai, hết hạn hoặc đang bị khóa thì `OtpService` ném lỗi.
 2. Tìm tài khoản theo email. Mã đúng mà tài khoản đã biến mất → trả lời như mã sai (`OTP_INVALID_OR_EXPIRED`).
-3. `verifyAccount`: `AccountService.markVerified(accountId)`.
+3. `verifyAccount`: `AccountService.confirmEmail(accountId)`.
    `resetPassword`: băm mật khẩu mới → `AccountService.changePassword(accountId, hash)`, hàm này đặt `passwordChangedAt = bây giờ` → mọi token cũ hết hiệu lực.
 
 ### `sendVerifyAccountOtp(email)` và `sendResetPasswordOtp(email)`

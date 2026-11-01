@@ -12,7 +12,12 @@ import styles from './HomeHero.module.css';
 export function HomeHero({ area, photo, areaPrompt }: { area: string; photo?: string; areaPrompt?: ReactNode }) {
   return (
     <section className={styles.hero} aria-labelledby="hero-title">
-      {photo && <img className={styles.photo} src={photo} alt="" />}
+      {photo && (
+        <>
+          <img className={styles.photo} src={photo} alt="" />
+          <div className={styles.overlay} aria-hidden="true" />
+        </>
+      )}
       <div className={styles.text}>
         <h1 id="hero-title" className={styles.title}>
           {s.heroTitle(area)}

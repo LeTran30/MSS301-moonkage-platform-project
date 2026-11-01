@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { disputeStateLabel as stateLabel, maxRefund, type Dispute } from '@/entities/dispute';
+import { DISPUTE_DECISIONS, type DisputeDecisionCode } from '@/shared/config/disputes';
+import { useAction } from '@/shared/lib';
 import { KeyValue, PageHeader, StatusBadge } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import { decideDispute } from '../api/decideDisputeApi';
 import styles from './DisputeDecision.module.css';
 
-const KINDS = ['Hoàn một phần', 'Hoàn toàn bộ', 'Không hoàn'] as const;
-
 /** Q5.1: both sides, the money held, and a decision that can not refund more than is held. */
 export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; onChanged: () => void }) {
-  const [kind, setKind] = useState<(typeof KINDS)[number]>('Hoàn một phần');
+  const [kind, setKind] = useState<DisputeDecisionCode>('PARTIAL_REFUND');
   const [amount, setAmount] = useState(d.vendorProposal?.amount ?? 0);
   const [note, setNote] = useState('');
+  const decide = useAction();
   const max = maxRefund(d);
-  const value = kind === 'Hoàn toàn bộ' ? max : kind === 'Không hoàn' ? 0 : amount;
+  const value = kind === 'FULL_REFUND' ? max : kind === 'REJECTED' ? 0 : amount;
   const tooMuch = value > max;
   const label = stateLabel[d.state];
   return (
@@ -35,11 +36,17 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
               <strong>{d.reason}.</strong> {d.buyerText}
             </p>
             <div className="grid-2">
-              {['Ảnh người mua gửi 1', 'Ảnh người mua gửi 2'].map((x) => (
-                <div key={x} className={styles.mockupFrame}>
-                  {x}
-                </div>
-              ))}
+              {d.buyerPhotoUrls
+                ? d.buyerPhotoUrls.map((url, i) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer" className={styles.mockupFrame}>
+                      Ảnh người mua gửi {i + 1}
+                    </a>
+                  ))
+                : ['Ảnh người mua gửi 1', 'Ảnh người mua gửi 2'].map((x) => (
+                    <div key={x} className={styles.mockupFrame}>
+                      {x}
+                    </div>
+                  ))}
             </div>
           </section>
           <section className="panel panel--wide">
@@ -48,6 +55,15 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
               <p>
                 {d.vendorProposal.kind} <strong className="mk-num">{formatVnd(d.vendorProposal.amount)}</strong>. {d.vendorProposal.note}
               </p>
+            ) : d.vendorReplies?.length ? (
+              d.vendorReplies.map((r) => (
+                <p key={r.fileUrl}>
+                  {r.at} · {r.note || 'Không ghi chú'} ·{' '}
+                  <a href={r.fileUrl} target="_blank" rel="noreferrer">
+                    Xem bằng chứng
+                  </a>
+                </p>
+              ))
             ) : (
               <p className="muted">Người bán chưa đề xuất.</p>
             )}
@@ -81,19 +97,18 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (tooMuch || !note.trim()) return;
-                await decideDispute(d.id, kind, value, note.trim());
-                onChanged();
+                if (await decide.run(() => decideDispute(d, kind, value, note.trim()))) onChanged();
               }}
             >
               <fieldset className="stack">
                 <legend className="mk-sr">Hình thức</legend>
-                {KINDS.map((k) => (
-                  <label key={k} className="check">
-                    <input type="radio" name="kind" checked={kind === k} onChange={() => setKind(k)} /> {k}
+                {DISPUTE_DECISIONS.map((k) => (
+                  <label key={k.code} className="check">
+                    <input type="radio" name="kind" checked={kind === k.code} onChange={() => setKind(k.code)} /> {k.label}
                   </label>
                 ))}
               </fieldset>
-              {kind === 'Hoàn một phần' && (
+              {kind === 'PARTIAL_REFUND' && (
                 <div className={`mk-field${tooMuch ? ' mk-field--error' : ''}`}>
                   <label htmlFor="refund">Số hoàn cho người mua</label>
                   <input id="refund" inputMode="numeric" value={amount} onChange={(e) => setAmount(Number(e.target.value.replace(/\D/g, '')) || 0)} />
@@ -111,7 +126,12 @@ export function DisputeDecision({ dispute: d, onChanged }: { dispute: Dispute; o
                   { label: 'Chuyển người bán', value: <span className="mk-num">{formatVnd(Math.max(0, d.held - value))}</span> },
                 ]}
               />
-              <button type="submit" className="mk-btn mk-btn--primary mk-btn--block" disabled={tooMuch || !note.trim()}>
+              {decide.error && (
+                <p className="error-text" role="alert">
+                  {decide.error}
+                </p>
+              )}
+              <button type="submit" className="mk-btn mk-btn--primary mk-btn--block" disabled={tooMuch || !note.trim() || decide.busy}>
                 Chốt quyết định
               </button>
             </form>

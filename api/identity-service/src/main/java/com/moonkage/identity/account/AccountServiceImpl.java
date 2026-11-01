@@ -1,11 +1,13 @@
 package com.moonkage.identity.account;
 
-import com.moonkage.identity.account.vo.Email;
-import com.moonkage.identity.account.vo.PasswordHash;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.Email;
+import com.moonkage.identity.account.atom.PasswordHash;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.dto.AccountCredentials;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
-import com.moonkage.identity.profile.UserProfileService;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -14,19 +16,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Loads the account, asks the Account entity to change itself, saves. The rules live on Account. */
 @Service
 @RequiredArgsConstructor
 class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
-    private final UserProfileService userProfileService;
-
-    @Override
-    @Transactional(readOnly = true)
-    public AccountResponse getMyAccount(String accountId) {
-        Account account = getEntity(accountId);
-        return AccountMapper.toAccountResponse(account, userProfileService.getFullName(accountId));
-    }
+    private final Clock clock;
 
     @Override
     @Transactional(readOnly = true)
@@ -61,7 +57,7 @@ class AccountServiceImpl implements AccountService {
     @Transactional(readOnly = true)
     public void requireAccountExists(String accountId) {
         if (!accountRepository.existsById(accountId)) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId);
+            throw notFound(accountId);
         }
     }
 
@@ -69,56 +65,38 @@ class AccountServiceImpl implements AccountService {
     @Transactional
     public AccountView createMember(Email email, PhoneNumber phoneNumber, PasswordHash passwordHash) {
         validateUniqueness(email, phoneNumber);
-        Account account = Account.builder()
-                .email(email)
-                .phoneNumber(phoneNumber)
-                .passwordHash(passwordHash)
-                .accountVerified(false)
-                .role(Role.MEMBER)
-                .build();
+        Account account = Account.registerMember(email, phoneNumber, passwordHash);
         return AccountMapper.toView(saveNewAccount(account));
     }
 
     @Override
     @Transactional
-    public AccountView markVerified(String accountId) {
+    public AccountView confirmEmail(String accountId) {
         Account account = getEntity(accountId);
-        account.setAccountVerified(true);
+        account.confirmEmail();
         return AccountMapper.toView(account);
     }
 
     @Override
     @Transactional
     public void changePassword(String accountId, PasswordHash passwordHash) {
-        Account account = getEntity(accountId);
-        account.setPasswordHash(passwordHash);
-        account.setPasswordChangedAt(Instant.now());
+        getEntity(accountId).changePassword(passwordHash, Instant.now(clock));
     }
 
     @Override
     @Transactional
     public void lockForUpdate(String accountId) {
         if (accountRepository.findByIdForUpdate(accountId).isEmpty()) {
-            throw new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId);
+            throw notFound(accountId);
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public NfcLockout getNfcLockout(String accountId) {
-        return getEntity(accountId).getNfcLockout();
-    }
-
-    @Override
-    @Transactional
-    public void saveNfcLockout(String accountId, NfcLockout lockout) {
-        getEntity(accountId).setNfcLockout(lockout);
-    }
-
     private Account getEntity(String accountId) {
-        return accountRepository
-                .findById(accountId)
-                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId));
+        return accountRepository.findById(accountId).orElseThrow(() -> notFound(accountId));
+    }
+
+    private static AppException notFound(String accountId) {
+        return new AppException(ErrorCode.ACCOUNT_NOT_FOUND, accountId);
     }
 
     /** AC-01.3: an email or phone already bound to an account cannot register again. */
@@ -138,21 +116,23 @@ class AccountServiceImpl implements AccountService {
     private Account saveNewAccount(Account account) {
         try {
             return accountRepository.saveAndFlush(account);
-        } catch (DataIntegrityViolationException e) {
-            throw toDuplicateException(e, account);
+        } catch (DataIntegrityViolationException exception) {
+            throw toDuplicateException(exception, account);
         }
     }
 
     /** The violated unique key tells which identifier was taken; any other violation stays as it is. */
-    private static RuntimeException toDuplicateException(DataIntegrityViolationException e, Account account) {
+    private static RuntimeException toDuplicateException(DataIntegrityViolationException exception, Account account) {
         String violatedKey =
-                e.getCause() instanceof ConstraintViolationException cause ? cause.getConstraintName() : null;
+                exception.getCause() instanceof ConstraintViolationException cause ? cause.getConstraintName() : null;
         if (Account.EMAIL_UNIQUE_KEY.equalsIgnoreCase(violatedKey)) {
-            return new AppException(ErrorCode.EMAIL_ALREADY_EXISTS, account.getEmail());
+            return new AppException(
+                    ErrorCode.EMAIL_ALREADY_EXISTS, account.getEmail().value());
         }
         if (Account.PHONE_NUMBER_UNIQUE_KEY.equalsIgnoreCase(violatedKey)) {
-            return new AppException(ErrorCode.PHONE_ALREADY_EXISTS, account.getPhoneNumber());
+            return new AppException(
+                    ErrorCode.PHONE_ALREADY_EXISTS, account.getPhoneNumber().value());
         }
-        return e;
+        return exception;
     }
 }

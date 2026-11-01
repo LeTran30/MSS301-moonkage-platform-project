@@ -102,9 +102,9 @@ export function toSaveAddressDto(input: Omit<Address, 'id'>): SaveAddressRequest
 
 /** Seed from the wireframe (m6-3) for demo mode. */
 const seed: Address[] = [
-  { id: 'a1', label: 'Nhà', name: 'Anh Minh', phone: '0912 345 678', province: 'Hà Nội', provinceCode: '01', line: '18 Hoàng Diệu, Ba Đình', isDefault: true },
-  { id: 'a2', label: 'Văn phòng', name: 'Anh Minh', phone: '0912 345 678', province: 'Hà Nội', provinceCode: '01', line: 'Tòa Landmark, Cầu Giấy', isDefault: false },
-  { id: 'a3', label: 'Chi nhánh HCM', name: 'Chị Lan', phone: '0988 223 344', province: 'TP Hồ Chí Minh', provinceCode: '79', line: '124 Nguyễn Huệ, Quận 1', isDefault: false },
+  { id: 'a1', label: 'Nhà', name: 'Anh Minh', phone: '0912 345 678', province: 'Hà Nội', provinceCode: '01', ward: 'Phường Quán Thánh', line: '18 Hoàng Diệu', isDefault: true },
+  { id: 'a2', label: 'Văn phòng', name: 'Anh Minh', phone: '0912 345 678', province: 'Hà Nội', provinceCode: '01', ward: 'Phường Dịch Vọng Hậu', line: 'Tòa Landmark', isDefault: false },
+  { id: 'a3', label: 'Chi nhánh HCM', name: 'Chị Lan', phone: '0988 223 344', province: 'TP Hồ Chí Minh', provinceCode: '79', ward: 'Phường Bến Nghé', line: '124 Nguyễn Huệ', isDefault: false },
 ];
 
 export const addressStore = seedStore<Address[]>('addresses', seed);
@@ -122,4 +122,7 @@ export async function fetchAddress(id: string): Promise<Address | null> {
   return list.find((a) => a.id === id) ?? null;
 }
 
-export const formatAddress = (a: Address) => `${a.line}, ${a.province}`;
+/** Street and ward, without the province; the line of a server address already carries its ward. */
+export const formatAddressDetail = (a: Address) => (a.ward && !a.line.includes(a.ward) ? `${a.line}, ${a.ward}` : a.line);
+
+export const formatAddress = (a: Address) => `${formatAddressDetail(a)}, ${a.province}`;

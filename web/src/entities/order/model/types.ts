@@ -34,8 +34,12 @@ export interface ReadyOrder {
   tracking?: string;
   expectedAt?: string;
   deliveredAt?: string;
+  /** The buyer confirmed receipt (FR-11); the demo seed does not carry it. */
+  receivedConfirmed?: boolean;
   address: DeliveryAddress;
   invoice?: Invoice;
+  /** The shop attached its invoice file (FR-44); the demo seed does not carry it. */
+  invoiceAttached?: boolean;
   history: { label: string; at: string }[];
   /** Days after delivery during which "Báo vấn đề với đơn" shows. */
   complaintDays: number;
@@ -48,6 +52,8 @@ export interface Mockup {
   note: string;
   state: 'waiting' | 'revise' | 'approved';
   feedback?: string;
+  /** Short-lived link to the file; none in the demo. */
+  fileUrl?: string;
 }
 
 /** An order to request (custom): deposit, mockup, production, delivery, rest (M6.1.2). */
@@ -56,7 +62,8 @@ export interface CustomOrder {
   id: string;
   vendorName: string;
   title: string;
-  requestId: string;
+  /** The quote request it came from; the server order only keeps the quote, so it is known in the demo only. */
+  requestId?: string;
   value: number;
   depositPercent: number;
   depositPaidAt: string;

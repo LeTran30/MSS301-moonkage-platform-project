@@ -13,8 +13,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.AccountView;
-import com.moonkage.identity.account.Role;
+import com.moonkage.identity.account.atom.Role;
+import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import jakarta.servlet.FilterChain;

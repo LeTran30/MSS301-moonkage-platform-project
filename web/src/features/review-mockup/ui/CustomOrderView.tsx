@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { customStatus, customSteps, depositAmount, remainingAmount, stepIndex, type CustomOrder } from '@/entities/order';
+import { customStatus, customSteps, depositAmount, openInvoice, remainingAmount, stepIndex, type CustomOrder } from '@/entities/order';
+import { useAction } from '@/shared/lib';
 import { KeyValue, PageHeader, SectionTabs, StatusBadge, Steps } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import { approveMockup, requestRevision } from '../api/reviewMockupApi';
 import styles from './CustomOrderView.module.css';
 
 type Tab = 'mockup' | 'progress' | 'payment' | 'invoice';
-
 /** M6.1.2: a custom order. The action box says the one thing the buyer has to do now. */
 export function CustomOrderView({
   order,
@@ -15,21 +15,21 @@ export function CustomOrderView({
 }: {
   order: CustomOrder;
   onChanged: () => void;
-  onPayRemaining: (order: CustomOrder) => void;
+  onPayRemaining: (order: CustomOrder) => Promise<void>;
 }) {
   const [tab, setTab] = useState<Tab>('mockup');
   const [feedback, setFeedback] = useState('');
-  const [busy, setBusy] = useState(false);
+  const { busy, error, run } = useAction();
   const status = customStatus(order);
   const latest = order.mockups[0];
   const waitingMockup = order.step === 'mockup' && latest?.state === 'waiting';
 
-  const act = async (fn: () => Promise<unknown>) => {
-    setBusy(true);
-    await fn();
-    setBusy(false);
-    setFeedback('');
-    onChanged();
+  /** `changes` false: the call changes nothing on the order (e.g. opening the invoice). */
+  const act = async (fn: () => Promise<unknown>, changes = true) => {
+    if ((await run(fn)) && changes) {
+      setFeedback('');
+      onChanged();
+    }
   };
 
   return (
@@ -41,7 +41,7 @@ export function CustomOrderView({
             Đơn {order.id} <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
           </>
         }
-        lead={`${order.vendorName} · ${order.title} · từ yêu cầu ${order.requestId}`}
+        lead={[order.vendorName, order.title, order.requestId && `từ yêu cầu ${order.requestId}`].filter(Boolean).join(' · ')}
       />
       <Steps label="Tiến độ đơn" steps={customSteps.map((s) => s.label)} current={stepIndex(order.step)} />
 
@@ -63,7 +63,15 @@ export function CustomOrderView({
               <ul className={`${styles.mockups} mockups`}>
                 {order.mockups.map((m) => (
                   <li key={m.version} className={`${styles.mockup} mockup`}>
-                    <div className={`${styles.mockupFrame} mockup__frame`}>Maket lần {m.version}</div>
+                    <div className={`${styles.mockupFrame} mockup__frame`}>
+                      {m.fileUrl ? (
+                        <a href={m.fileUrl} target="_blank" rel="noreferrer">
+                          Mở maket lần {m.version}
+                        </a>
+                      ) : (
+                        <>Maket lần {m.version}</>
+                      )}
+                    </div>
                     <div className="stack mockup__info">
                       <p className="body-strong-text">
                         Maket lần {m.version}{' '}
@@ -71,7 +79,8 @@ export function CustomOrderView({
                         {m.state === 'revise' && <StatusBadge tone="muted">Đã yêu cầu sửa</StatusBadge>}
                       </p>
                       <p className="muted">
-                        Gửi {m.sentAt} · {m.note}
+                        Gửi {m.sentAt}
+                        {m.note ? ` · ${m.note}` : ''}
                       </p>
                       {m.feedback && <p className="notice">Góp ý của bạn: {m.feedback}</p>}
                     </div>
@@ -91,7 +100,7 @@ export function CustomOrderView({
               </li>
               <li className={`${styles.linesRow} lines__row`}>
                 <span>
-                  Đã cọc {order.depositPercent}% · {order.depositPaidAt}
+                  Đã cọc {Math.round(order.depositPercent)}% · {order.depositPaidAt}
                 </span>
                 <span />
                 <span className="mk-num">{formatVnd(depositAmount(order))}</span>
@@ -105,7 +114,7 @@ export function CustomOrderView({
           )}
           {tab === 'invoice' &&
             (order.invoiceAttached ? (
-              <button type="button" className="mk-btn mk-btn--quiet">
+              <button type="button" className="mk-btn mk-btn--quiet" onClick={() => void act(() => openInvoice(order.id), false)}>
                 Tải hóa đơn
               </button>
             ) : (
@@ -120,7 +129,7 @@ export function CustomOrderView({
           {waitingMockup && (
             <>
               <p>Duyệt maket lần {latest.version} để đơn vị bắt đầu sản xuất.</p>
-              <button type="button" className="mk-btn mk-btn--primary mk-btn--block" aria-busy={busy || undefined} onClick={() => act(() => approveMockup(order.id))}>
+              <button type="button" className="mk-btn mk-btn--primary mk-btn--block" aria-busy={busy || undefined} onClick={() => act(() => approveMockup(order.id, latest.version))}>
                 Duyệt maket
               </button>
               <div className="mk-field">
@@ -131,11 +140,16 @@ export function CustomOrderView({
                 type="button"
                 className="mk-btn mk-btn--quiet mk-btn--block"
                 disabled={!feedback.trim()}
-                onClick={() => act(() => requestRevision(order.id, feedback.trim()))}
+                onClick={() => act(() => requestRevision(order.id, latest.version, feedback.trim()))}
               >
                 Yêu cầu sửa
               </button>
             </>
+          )}
+          {error && (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
           )}
           {order.step === 'mockup' && !waitingMockup && <p className="muted">Chờ đơn vị gửi maket mới. Bạn nhận thông báo khi có.</p>}
           {(order.step === 'production' || order.step === 'delivery') && (
@@ -146,7 +160,13 @@ export function CustomOrderView({
               <p>
                 Đơn đã giao {order.deliveredAt}. Trả phần còn lại {formatVnd(remainingAmount(order))} để hoàn tất đơn.
               </p>
-              <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={() => onPayRemaining(order)}>
+              <button
+                type="button"
+                className="mk-btn mk-btn--primary mk-btn--block"
+                disabled={busy}
+                aria-busy={busy || undefined}
+                onClick={() => act(() => onPayRemaining(order), false)}
+              >
                 Trả phần còn lại {formatVnd(remainingAmount(order))}
               </button>
             </>

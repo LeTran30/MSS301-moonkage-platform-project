@@ -65,11 +65,10 @@ export function Header() {
     <header className={`${styles.nav} mk-nav`}>
       <div className={`${styles.topbar} mk-topbar`}>
         <div className={`${styles.topbarInner} mk-topbar__in`}>
-          <AreaPicker />
           <nav aria-label={headerStrings.utility} className={`${styles.topbarLinks} topbar-links`}>
             <SellEntryLink status={vendorStatus} />
-            <Link to={routes.base.policy}>{headerStrings.policy}</Link>
           </nav>
+          <AreaPicker />
         </div>
       </div>
       <div className={`${styles.navInner} mk-nav__in`}>
@@ -83,6 +82,7 @@ export function Header() {
         </nav>
         <ProductSearchBox />
         <div className={`${styles.actions} mk-nav__actions`}>
+          <CartLink />
           {session ? (
             <>
               <NotificationBell />
@@ -97,7 +97,6 @@ export function Header() {
               {headerStrings.login}
             </Link>
           )}
-          <CartLink />
         </div>
       </div>
     </header>

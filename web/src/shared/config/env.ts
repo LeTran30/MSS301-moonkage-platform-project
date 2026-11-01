@@ -9,6 +9,9 @@ function readPositiveInt(raw: string | undefined, fallback: number): number {
 const DEFAULT_NFC_POLL_INTERVAL_MS = 2000;
 /** While the WebSocket is up the push does the work; the poll only covers a missed message. */
 const DEFAULT_NFC_POLL_INTERVAL_CONNECTED_MS = 15000;
+/** The VNPay IPN usually lands within seconds; 15 × 2 s covers a slow one before the page gives up waiting. */
+const DEFAULT_PAYMENT_POLL_INTERVAL_MS = 2000;
+const DEFAULT_PAYMENT_POLL_ATTEMPTS = 15;
 
 export const config = {
   apiBaseUrl: (import.meta.env.VITE_API_BASE_URL ?? '').trim(),
@@ -19,6 +22,8 @@ export const config = {
     import.meta.env.VITE_NFC_POLL_INTERVAL_CONNECTED_MS,
     DEFAULT_NFC_POLL_INTERVAL_CONNECTED_MS,
   ),
+  paymentPollIntervalMs: readPositiveInt(import.meta.env.VITE_PAYMENT_POLL_INTERVAL_MS, DEFAULT_PAYMENT_POLL_INTERVAL_MS),
+  paymentPollAttempts: readPositiveInt(import.meta.env.VITE_PAYMENT_POLL_ATTEMPTS, DEFAULT_PAYMENT_POLL_ATTEMPTS),
 };
 
 /** False when VITE_API_BASE_URL is missing or not an http(s) URL: the app shows a configuration error. */

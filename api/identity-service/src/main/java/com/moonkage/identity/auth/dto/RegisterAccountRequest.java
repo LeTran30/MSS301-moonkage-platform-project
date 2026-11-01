@@ -1,7 +1,8 @@
 package com.moonkage.identity.auth.dto;
 
-import com.moonkage.identity.account.AccountConstant;
-import com.moonkage.identity.account.vo.PhoneNumber;
+import com.moonkage.identity.account.atom.PasswordConstant;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.common.RequestText;
 import com.moonkage.identity.profile.ProfileConstant;
 import com.moonkage.identity.security.SecurityConstant;
 import jakarta.validation.constraints.Email;
@@ -25,10 +26,17 @@ public record RegisterAccountRequest(
 
         @NotBlank(message = "{validation.password.required}")
         @Size(
-                min = AccountConstant.PASSWORD_MIN_LENGTH,
-                max = AccountConstant.PASSWORD_MAX_LENGTH,
+                min = PasswordConstant.MIN_LENGTH,
+                max = PasswordConstant.MAX_LENGTH,
                 message = "{validation.password.size}")
         String password) {
+
+    /** Cleans itself before validation; the password is kept as typed. A blank phone means none. */
+    public RegisterAccountRequest {
+        email = RequestText.trim(email);
+        phoneNumber = RequestText.trimToNull(phoneNumber);
+        fullName = RequestText.trim(fullName);
+    }
 
     @Override
     public String toString() {

@@ -1,16 +1,15 @@
 package com.moonkage.identity.address;
 
 import com.moonkage.identity.account.AccountService;
-import com.moonkage.identity.account.vo.PhoneNumber;
-import com.moonkage.identity.address.dto.AddressResponse;
-import com.moonkage.identity.address.dto.SaveAddressRequest;
+import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.address.dto.AddAddressRequest;
+import com.moonkage.identity.address.dto.AddAddressResponse;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 /**
  * FR-03. Rules: at most one default per account (AC-03.1); the first address becomes the default;
@@ -26,7 +25,7 @@ class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponse create(String accountId, SaveAddressRequest request) {
+    public AddAddressResponse create(String accountId, AddAddressRequest request) {
         // row lock on the account: two parallel requests cannot both leave a default (AC-03.1)
         accountService.lockForUpdate(accountId);
         List<Address> existingAddresses = addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId);
@@ -47,7 +46,7 @@ class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AddressResponse> getMyAddresses(String accountId) {
+    public List<AddAddressResponse> getMyAddresses(String accountId) {
         return addressRepository.findByAccountIdOrderByIsDefaultDescCreatedAtDesc(accountId).stream()
                 .map(AddressMapper::toResponse)
                 .toList();
@@ -55,7 +54,7 @@ class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponse update(String accountId, String addressId, SaveAddressRequest request) {
+    public AddAddressResponse update(String accountId, String addressId, AddAddressRequest request) {
         accountService.lockForUpdate(accountId);
         Address address = getOwned(accountId, addressId);
 
@@ -77,14 +76,14 @@ class AddressServiceImpl implements AddressService {
         addressRepository.delete(getOwned(accountId, addressId));
     }
 
-    private static void apply(Address address, SaveAddressRequest request) {
-        address.setRecipientName(request.recipientName().trim());
+    private static void apply(Address address, AddAddressRequest request) {
+        address.setRecipientName(request.recipientName());
         address.setRecipientPhone(PhoneNumber.of(request.recipientPhone()));
         address.setProvinceCode(request.provinceCode());
-        address.setProvinceName(request.provinceName().trim());
-        address.setWardName(request.wardName().trim());
-        address.setDetail(request.detail().trim());
-        address.setLabel(StringUtils.hasText(request.label()) ? request.label().trim() : null);
+        address.setProvinceName(request.provinceName());
+        address.setWardName(request.wardName());
+        address.setDetail(request.detail());
+        address.setLabel(request.label());
     }
 
     private static void clearDefaults(List<Address> addresses) {

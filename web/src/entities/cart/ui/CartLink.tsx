@@ -19,7 +19,6 @@ export function CartLink() {
           {count}
         </span>
       )}
-      Giỏ
     </Link>
   );
 }
