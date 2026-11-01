@@ -1,10 +1,9 @@
-import { orderPath, vendorOrderStore, type VendorCustomOrder, type VendorOrder, type VendorReadyOrder } from '@/entities/order';
-import { apiClient, type ApiResponse } from '@/shared/api/client';
-import { ordersPath } from '@/shared/api/gateway';
+import { orderPath, uploadOrderFile, vendorOrderStore, type VendorCustomOrder, type VendorOrder, type VendorReadyOrder } from '@/entities/order';
+import { apiClient } from '@/shared/api/client';
 import { mockResponse } from '@/shared/api/mock';
-import { uploadToPresignedUrl, type PresignedUploadLink } from '@/shared/api/upload';
 import { config } from '@/shared/config/env';
 import { nowStamp, today } from '@/shared/utils/format';
+import { formatVnd } from '@/shared/utils/money';
 
 function patchOrder<T extends VendorOrder>(id: string, change: (o: T) => T) {
   const next = vendorOrderStore.update((list) => list.map((o) => (o.id === id ? change(o as T) : o)));
@@ -16,15 +15,6 @@ type NextStatus = 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'IN_PRODUCTION' | 'RE
 /** FR-32, FR-40, FR-42: one step forward; the server writes the progress update with `note`. */
 async function advance(id: string, status: NextStatus, extra: { trackingCode?: string; note?: string } = {}) {
   await apiClient.patch(orderPath(id), { status, ...extra });
-}
-
-/** Step 1 and 2 of an upload: the signed link from order-service, then the file straight to storage. */
-async function uploadOrderFile(file: File): Promise<string> {
-  const res = await apiClient.post<ApiResponse<PresignedUploadLink>>(`${ordersPath}/uploads`, {
-    contentType: file.type || 'application/octet-stream',
-    sizeBytes: file.size,
-  });
-  return uploadToPresignedUrl(res.data.data, file);
 }
 
 export async function confirmOrder(id: string) {
@@ -58,8 +48,17 @@ export async function attachInvoice(id: string, file: File) {
   return patchOrder(id, (o) => ({ ...o, invoiceAttached: true }));
 }
 
-/** Disputes are not wired to order-service yet: the complaint panel only shows in the demo. */
-export function proposeResolution(id: string, proposal: { kind: string; amount: number; note: string }) {
+/**
+ * AC-49.1: the shop's answer to a complaint. The server keeps evidence with a note, not a structured proposal: the
+ * proposal is written into the note for the admin to read.
+ */
+export async function proposeResolution(id: string, proposal: { kind: string; amount: number; note: string }, evidence: File) {
+  if (!config.demoMode) {
+    const tempKey = await uploadOrderFile(evidence);
+    const offer = proposal.amount ? `${proposal.kind} ${formatVnd(proposal.amount)}` : proposal.kind;
+    await apiClient.post(`${orderPath(id)}/dispute/evidences`, { tempKey, note: proposal.note.trim() ? `${offer}. ${proposal.note.trim()}` : offer });
+    return;
+  }
   return patchOrder<VendorReadyOrder>(id, (o) => ({
     ...o,
     complaint: o.complaint && { ...o.complaint, proposal },

@@ -1,4 +1,6 @@
 import { mockResponse, seedStore } from '@/shared/api/mock';
+import { fetchVendorNames } from '@/shared/api/vendors';
+import { disputeDecisionLabel, disputeReasonLabel } from '@/shared/config/disputes';
 import { config } from '@/shared/config/env';
 import { provinceNameOf } from '@/shared/config/provinces';
 import type { Complaint, CustomOrder, CustomStep, Mockup, Order, ReadyOrder, ReadyStatus } from '../model/types';
@@ -6,13 +8,14 @@ import {
   complaintDaysOf,
   dateOf,
   depositPercentOf,
+  fetchDispute,
   fetchOrderBundle,
   fetchOrderBundles,
-  fetchVendorNames,
   historyOf,
   linesOf,
   newestFirst,
   titleOf,
+  type DisputeDto,
   type MockupReviewStatusDto,
   type OrderBundle,
   type OrderStatusDto,
@@ -107,13 +110,40 @@ export async function fetchOrders(): Promise<Order[]> {
 
 export async function fetchOrder(orderId: string): Promise<Order | null> {
   if (config.demoMode) return mockResponse(orderStore.get().find((o) => o.id === orderId) ?? null);
-  const bundle = await fetchOrderBundle(orderId);
+  const [bundle, dispute] = await Promise.all([fetchOrderBundle(orderId), fetchDispute(orderId)]);
   if (!bundle) return null;
   const [order] = await toBuyerOrders([bundle]);
-  return order;
+  return order.kind === 'ready' && dispute ? { ...order, complaintId: dispute.disputeId } : order;
 }
 
-/** Disputes are not wired to order-service yet: only the demo has complaints. */
-export function fetchComplaintOfOrder(orderId: string): Promise<Complaint | null> {
-  return mockResponse(config.demoMode ? (complaintStore.get().find((c) => c.orderId === orderId) ?? null) : null);
+/** What the buyer follows of their complaint (M6.1.3), newest event first. */
+function toComplaint(d: DisputeDto, shop: string): Complaint {
+  const buyerEvidences = d.evidences.filter((e) => e.party === 'BUYER');
+  const events = [
+    { label: 'Bạn gửi báo vấn đề', at: dateOf(d.createdAt) ?? '' },
+    ...d.evidences
+      .filter((e) => e.party === 'VENDOR')
+      .map((e) => ({ label: e.note ? `Người bán phản hồi: ${e.note}` : 'Người bán gửi bằng chứng', at: dateOf(e.createdAt) ?? '' })),
+    ...(d.resolvedAt ? [{ label: 'Quản trị quyết định', at: dateOf(d.resolvedAt) ?? '' }] : []),
+  ].reverse();
+  return {
+    id: d.disputeId,
+    orderId: d.orderId,
+    shop,
+    reason: disputeReasonLabel(d.reason),
+    description: d.description,
+    photos: buyerEvidences.length,
+    sentAt: dateOf(d.createdAt) ?? '',
+    events,
+    decision:
+      d.status === 'RESOLVED' && d.decision
+        ? { title: disputeDecisionLabel(d.decision), amount: d.refundAmount ?? 0, body: d.decisionReason ?? '', at: dateOf(d.resolvedAt) ?? '' }
+        : undefined,
+  };
+}
+
+export async function fetchComplaintOfOrder(orderId: string): Promise<Complaint | null> {
+  if (config.demoMode) return mockResponse(complaintStore.get().find((c) => c.orderId === orderId) ?? null);
+  const [dispute, order] = await Promise.all([fetchDispute(orderId), fetchOrder(orderId)]);
+  return dispute && toComplaint(dispute, order?.kind === 'ready' ? order.shop : '');
 }

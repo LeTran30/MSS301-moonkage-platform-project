@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePayouts } from '@/entities/payout';
+import { useAction } from '@/shared/lib';
 import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import { payOut } from '../api/payOutApi';
@@ -9,6 +10,7 @@ import styles from './Payouts.module.css';
 export function Payouts() {
   const state = usePayouts();
   const [picked, setPicked] = useState<string[]>([]);
+  const action = useAction();
   if (state.kind === 'loading') return <LoadingState />;
   if (state.kind === 'error') return <ErrorState message={state.message} onRetry={state.reload} />;
   const open = state.data.filter((p) => !p.paid);
@@ -70,9 +72,10 @@ export function Payouts() {
             <button
               type="button"
               className="mk-btn mk-btn--primary"
-              disabled={picked.length === 0}
+              disabled={picked.length === 0 || action.busy}
+              aria-busy={action.busy || undefined}
               onClick={async () => {
-                await payOut(picked);
+                await action.run(() => payOut(picked));
                 setPicked([]);
                 state.reload();
               }}
@@ -80,6 +83,11 @@ export function Payouts() {
               Chuyển {picked.length} đơn
             </button>
           </div>
+          {action.error && (
+            <p className="error-text" role="alert">
+              {action.error}
+            </p>
+          )}
         </>
       )}
       {state.data.some((p) => p.paid) && (

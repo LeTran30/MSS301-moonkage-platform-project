@@ -49,6 +49,7 @@ export function VendorReadyOrderView({ order, onChanged }: { order: VendorReadyO
   const [proposal, setProposal] = useState(PROPOSALS[0]);
   const [amount, setAmount] = useState('210000');
   const [note, setNote] = useState('');
+  const [evidence, setEvidence] = useState<File | null>(null);
   const status = orderStatusLabel[order.status];
   const { busy, run, errorView } = useOrderAction(onChanged);
 
@@ -78,23 +79,43 @@ export function VendorReadyOrderView({ order, onChanged }: { order: VendorReadyO
                 <h2 id="complaint-heading" className="detail-heading">
                   Khiếu nại của người mua
                 </h2>
-                <StatusBadge tone="warn">{`Còn ${order.complaint.daysLeft} ngày để phản hồi`}</StatusBadge>
+                {order.complaint.daysLeft !== undefined && <StatusBadge tone="warn">{`Còn ${order.complaint.daysLeft} ngày để phản hồi`}</StatusBadge>}
               </div>
               <p>
                 {order.complaint.reason} <span className="muted">"{order.complaint.description}"</span>
               </p>
-              <div className={`${styles.mockupFrame} ${styles.complaintPhoto}`}>Ảnh người mua</div>
+              {order.complaint.photoUrls?.length ? (
+                <div className="row">
+                  {order.complaint.photoUrls.map((url, i) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer" className={`${styles.mockupFrame} ${styles.complaintPhoto}`}>
+                      Ảnh người mua {i + 1}
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className={`${styles.mockupFrame} ${styles.complaintPhoto}`}>Ảnh người mua</div>
+              )}
               {order.complaint.proposal ? (
                 <p className="notice">
                   Bạn đã đề xuất: {order.complaint.proposal.kind}
                   {order.complaint.proposal.amount ? ` ${formatVnd(order.complaint.proposal.amount)}` : ''}. Quản trị ra quyết định cuối cùng.
                 </p>
+              ) : order.complaint.replies?.length ? (
+                <div className="notice">
+                  {order.complaint.replies.map((r) => (
+                    <p key={`${r.at}-${r.note}`}>
+                      Bạn đã phản hồi {r.at}: {r.note}
+                    </p>
+                  ))}
+                  <p>Quản trị ra quyết định cuối cùng.</p>
+                </div>
               ) : (
                 <form
                   className="stack"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    void run(() => proposeResolution(order.id, { kind: proposal, amount: proposal === PROPOSALS[2] ? 0 : Number(amount) || 0, note }));
+                    if (!evidence) return;
+                    void run(() => proposeResolution(order.id, { kind: proposal, amount: proposal === PROPOSALS[2] ? 0 : Number(amount) || 0, note }, evidence));
                   }}
                 >
                   <div className={styles.fieldRow}>
@@ -117,9 +138,10 @@ export function VendorReadyOrderView({ order, onChanged }: { order: VendorReadyO
                     <label htmlFor="proposal-note">Giải thích cho quản trị</label>
                     <textarea id="proposal-note" className={styles.textarea} rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Đồng ý 1 bánh bị dập do vận chuyển." />
                   </div>
+                  <FileDrop label="Ảnh hoặc tệp bằng chứng của bạn" hint="PNG, JPG, PDF" accept=".pdf,image/*" onSelect={(files) => setEvidence(files[0] ?? null)} />
                   <div className="row-between">
                     <span className="muted">Quản trị ra quyết định cuối cùng. Tiền đơn đang được giữ.</span>
-                    <button type="submit" className="mk-btn mk-btn--primary">
+                    <button type="submit" className="mk-btn mk-btn--primary" disabled={!evidence || busy}>
                       Gửi đề xuất cho Moonkage
                     </button>
                   </div>

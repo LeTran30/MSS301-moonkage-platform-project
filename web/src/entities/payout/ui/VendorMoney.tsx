@@ -3,26 +3,30 @@ import { routes } from '@/shared/config/routes';
 import { ErrorState, LoadingState, PageHeader, StatusBadge } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import { settlementTotal } from '../model/payoutModel';
-import { useSettlements } from '../model/usePayouts';
+import { useSettlements, useVendorMoneySummary } from '../model/usePayouts';
 import styles from './VendorMoney.module.css';
 
 /** B5.0 */
 export function VendorMoneyOverview({ takesCustom }: { takesCustom: boolean }) {
+  const summary = useVendorMoneySummary();
+  if (summary.kind === 'loading') return <LoadingState />;
+  if (summary.kind === 'error') return <ErrorState message={summary.message} onRetry={summary.reload} />;
+  const s = summary.data;
   return (
     <div className="page">
       <PageHeader title="Tiền" />
       <div className={styles.statGrid}>
         <div className={styles.statTile}>
           <span className="muted">Moonkage đang giữ</span>
-          <span className={`${styles.statNum} mk-num`}>{formatVnd(9840000)}</span>
+          <span className={`${styles.statNum} mk-num`}>{formatVnd(s.held)}</span>
         </div>
         <div className={styles.statTile}>
           <span className="muted">Chờ chuyển cho bạn</span>
-          <span className={`${styles.statNum} mk-num`}>{formatVnd(1360000)}</span>
+          <span className={`${styles.statNum} mk-num`}>{formatVnd(s.toReceive)}</span>
         </div>
         <div className={styles.statTile}>
-          <span className="muted">Đã nhận tháng 10/2026</span>
-          <span className={`${styles.statNum} mk-num`}>{formatVnd(12400000)}</span>
+          <span className="muted">Đã nhận (chuyển và giải ngân)</span>
+          <span className={`${styles.statNum} mk-num`}>{formatVnd(s.received)}</span>
         </div>
       </div>
       <div className="grid-2">

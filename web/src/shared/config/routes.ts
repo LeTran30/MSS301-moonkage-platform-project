@@ -81,7 +81,8 @@ export const routes = {
     payouts: '/admin/money/payouts',
     reconciliation: '/admin/money/reconciliation',
     disputes: '/admin/disputes',
-    dispute: (disputeId: string) => `/admin/disputes/${disputeId}`,
+    /** By order: an order has one open dispute at a time, and the server reads it by its order. */
+    dispute: (orderId: string) => `/admin/disputes/${orderId}`,
     config: '/admin/config',
     provinceFees: '/admin/config/province-fees',
     vendorFee: '/admin/config/vendor-fee',

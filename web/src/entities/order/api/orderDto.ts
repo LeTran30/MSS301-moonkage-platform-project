@@ -1,5 +1,5 @@
 import { ApiError, apiClient, type ApiResponse } from '@/shared/api/client';
-import { ordersPath, vendorDirectoryApi, vendorsApi } from '@/shared/api/gateway';
+import { ordersPath } from '@/shared/api/gateway';
 import { HTTP_NOT_FOUND } from '@/shared/api/httpStatus';
 import { provinceNameOf } from '@/shared/config/provinces';
 import { formatDate, formatDateTime } from '@/shared/utils/format';
@@ -153,18 +153,36 @@ export async function fetchOrderBundles(params: Record<string, string> = {}): Pr
   return Promise.all((res.data.data.content ?? []).map((o) => fetchBundle(o.id, o.kind)));
 }
 
-/** Shop names by vendorId, from the public vendor directory (quotation-service). */
-export async function fetchVendorNames(): Promise<Map<string, string>> {
+/** order-service `DisputeResponse`: the dispute of an order with both parties' evidence (AC-49.1). */
+export interface DisputeDto {
+  disputeId: string;
+  orderId: string;
+  reason: string;
+  description: string;
+  status: 'OPEN' | 'RESOLVED';
+  decision: 'FULL_REFUND' | 'PARTIAL_REFUND' | 'REJECTED' | null;
+  refundAmount: number | null;
+  decisionReason: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  evidences: { party: 'BUYER' | 'VENDOR'; downloadUrl: string; note: string | null; createdAt: string }[];
+}
+
+/** The order's latest dispute, null when it never had one. */
+export async function fetchDispute(orderId: string): Promise<DisputeDto | null> {
   try {
-    const res = await apiClient.get<ApiResponse<{ vendorId: string; businessName: string }[]>>(vendorDirectoryApi);
-    return new Map((res.data.data ?? []).map((v) => [v.vendorId, v.businessName]));
-  } catch {
-    return new Map();
+    const res = await apiClient.get<ApiResponse<DisputeDto>>(`${orderPath(orderId)}/dispute`);
+    return res.data.data;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === HTTP_NOT_FOUND) return null;
+    throw e;
   }
 }
 
-/** The caller's own Shop (vendor-service), null when the account has none. */
-export async function fetchMyVendorId(): Promise<string | null> {
-  const res = await apiClient.get<ApiResponse<{ id: string }[]>>(vendorsApi, { params: { ownerAccountId: 'me' } });
-  return res.data.data?.[0]?.id ?? null;
+/** Ids of the orders with an open dispute among those `params` select (FR-49). */
+export async function fetchOpenDisputeOrderIds(params: Record<string, string> = {}): Promise<Set<string>> {
+  const res = await apiClient.get<ApiResponse<PageDto<OrderDto>>>(ordersPath, {
+    params: { ...params, disputeStatus: 'OPEN', size: ORDER_PAGE_SIZE },
+  });
+  return new Set((res.data.data.content ?? []).map((o) => o.id));
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useDisbursementRequests } from '@/entities/payout';
+import { useDisbursementRequests, type DisbursementRequest } from '@/entities/payout';
+import { useAction } from '@/shared/lib';
 import { EmptyState, ErrorState, KeyValue, LoadingState, PageHeader, StatusBadge, Tabs } from '@/shared/ui';
 import { formatVnd } from '@/shared/utils/money';
 import { decideDisbursement } from '../api/approveDisbursementApi';
@@ -10,12 +11,12 @@ export function DisbursementApprovals() {
   const state = useDisbursementRequests();
   const [tab, setTab] = useState<'waiting' | 'done'>('waiting');
   const [refusals, setRefusals] = useState<Record<string, string>>({});
+  const action = useAction();
   if (state.kind === 'loading') return <LoadingState />;
   if (state.kind === 'error') return <ErrorState message={state.message} onRetry={state.reload} />;
   const list = state.data.filter((d) => (tab === 'waiting' ? d.state === 'waiting' : d.state !== 'waiting'));
-  const decide = async (id: string, approve: boolean) => {
-    await decideDisbursement(id, approve, refusals[id]?.trim());
-    state.reload();
+  const decide = async (d: DisbursementRequest, approve: boolean) => {
+    if (await action.run(() => decideDisbursement(d, approve, refusals[d.id]?.trim()))) state.reload();
   };
   return (
     <div className="page">
@@ -52,7 +53,7 @@ export function DisbursementApprovals() {
             />
             {d.state === 'waiting' && (
               <div className="row">
-                <button type="button" className="mk-btn mk-btn--primary" disabled={d.amount > d.heldNow} onClick={() => decide(d.id, true)}>
+                <button type="button" className="mk-btn mk-btn--primary" disabled={d.amount > d.heldNow || action.busy} onClick={() => decide(d, true)}>
                   Duyệt {formatVnd(d.amount)}
                 </button>
                 <input
@@ -62,12 +63,17 @@ export function DisbursementApprovals() {
                   value={refusals[d.id] ?? ''}
                   onChange={(e) => setRefusals({ ...refusals, [d.id]: e.target.value })}
                 />
-                <button type="button" className="mk-btn mk-btn--quiet" disabled={!refusals[d.id]?.trim()} onClick={() => decide(d.id, false)}>
+                <button type="button" className="mk-btn mk-btn--quiet" disabled={!refusals[d.id]?.trim() || action.busy} onClick={() => decide(d, false)}>
                   Từ chối
                 </button>
               </div>
             )}
             {d.state === 'waiting' && d.amount > d.heldNow && <p className="error-text">Số xin vượt số Moonkage đang giữ.</p>}
+            {d.state === 'waiting' && action.error && (
+              <p className="error-text" role="alert">
+                {action.error}
+              </p>
+            )}
           </article>
         ))
       )}

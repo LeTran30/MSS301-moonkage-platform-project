@@ -136,7 +136,7 @@ export const router = createBrowserRouter([
       { path: routes.admin.payouts, element: AdminPayoutsPage },
       { path: routes.admin.reconciliation, element: AdminReconciliationPage },
       { path: routes.admin.disputes, element: AdminDisputesPage },
-      { path: routes.admin.dispute(':disputeId'), element: AdminDisputePage },
+      { path: routes.admin.dispute(':orderId'), element: AdminDisputePage },
       { path: routes.admin.config, element: AdminConfigPage },
       { path: routes.admin.provinceFees, element: AdminProvinceFeesPage },
       { path: routes.admin.vendorFee, element: AdminVendorFeePage },
