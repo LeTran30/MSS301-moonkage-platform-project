@@ -12,7 +12,7 @@ Runtime mặc định chỉ scan entity `ProductListing` @Immutable và reposito
 
 ## C2: đã xác nhận và còn chờ
 
-[Audit contract trước code](c2-contract-audit.md) ghi bằng chứng thời điểm C2 ban đầu. Phase A đã nhận develop `6523d00`; **vendor endpoint sản phẩm/producer event vẫn chưa có**, schema event wire chưa được nhóm duyệt. Lê Trần cho phép nhận nguyên migration L-19 có sẵn và sửa tương thích catalog; các service khác giữ nguyên nội dung develop. Không suy ra event contract được duyệt từ việc merge base.
+[Audit contract trước code](../../archive/2026-10-26-catalog-c2-contract-audit.md) ghi bằng chứng thời điểm C2 ban đầu. Phase A đã nhận develop `6523d00`; **vendor endpoint sản phẩm/producer event vẫn chưa có**, schema event wire chưa được nhóm duyệt. Lê Trần cho phép nhận nguyên migration L-19 có sẵn và sửa tương thích catalog; các service khác giữ nguyên nội dung develop. Không suy ra event contract được duyệt từ việc merge base.
 
 - Core nội bộ dùng row bám schema V2, không phải JSON event DTO: eventId claim + projection trong cùng transaction; sourceVersion bigint của source, không lấy timestamp thay thế; SQL gate chỉ version mới hơn.
 - Product tombstone tồn tại dù removal đến trước snapshot; không dựng product giả với dữ liệu trống. Upsert stale hoặc ON_SALE sau tombstone không hồi sinh sản phẩm. Không có restore adapter cho tới khi có contract cho phép.
@@ -49,7 +49,7 @@ Full replay/rebuild vẫn thiếu contract và nguồn feed/checkpoint được 
 
 Ghi chú cho owner orchestrator: [orchestrator-handoff.md](orchestrator-handoff.md). Chưa sửa orchestrator và chưa nghiệm thu audit E2E.
 
-Verify Phase B: full clean verify **403 pass / 0 fail / 0 error / 0 skip**; catalog 109, gồm 38 full application tests PG/Rabbit thật. Phase A sau merge có 393 tests; B thêm 10 recovery tests. Chi tiết/cách đếm trong [báo cáo A–C](phase-abc-report.md). Kết quả 371/99 bên dưới là lịch sử trước merge develop.
+Verify Phase B: full clean verify **403 pass / 0 fail / 0 error / 0 skip**; catalog 109, gồm 38 full application tests PG/Rabbit thật. Phase A sau merge có 393 tests; B thêm 10 recovery tests. Chi tiết/cách đếm trong [báo cáo A–C](../../archive/2026-10-26-catalog-phase-abc-report.md). Kết quả 371/99 bên dưới là lịch sử trước merge develop.
 
 Phase C: [đề xuất contract](contract-proposal.md) **CHƯA ĐƯỢC NHÓM DUYỆT**. Chưa có production adapter theo tài liệu đó, chưa bắt đầu D. Gate yêu cầu Lê Trần xác nhận contract đã được nhóm duyệt, sau đó mới làm C3/C4/C5. Local commits A/B không phải lệnh push/deploy.
 

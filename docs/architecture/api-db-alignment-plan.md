@@ -68,6 +68,8 @@
 
 **Xong khi:** từng luồng chạy được trên kịch bản demo của Context mục 7.
 
+Tiến độ từng luồng F1–F7 và lỗ hổng còn chặn: [user-flow-readiness.md](user-flow-readiness.md).
+
 ### 5. Tài liệu
 
 - Software Design: sửa D-18 theo L-17, mục 4.3 và 4.4 theo L-18, D-14 (giữ hàng ở vendor), D-24 đóng, A-18 đóng (P-07).

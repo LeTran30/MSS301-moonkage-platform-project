@@ -1,6 +1,8 @@
 # Kế hoạch hoàn thành vendor-service
 
-> **Trạng thái:** Đề xuất (2026-10-26). Đích là [api-db/vendor.md](../../architecture/api-db/vendor.md); kế hoạch này chỉ chia việc và thứ tự. Khi hai bên lệch, `vendor.md` là bản đúng. Là phần vendor của giai đoạn 2 và 4.1 trong [api-db-alignment-plan.md](../../architecture/api-db-alignment-plan.md).
+> **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/services/vendor/README.md](../services/vendor/README.md).
+
+> **Trạng thái:** Đề xuất (2026-10-26). Đích là [api-db/vendor.md](../architecture/api-db/vendor.md); kế hoạch này chỉ chia việc và thứ tự. Khi hai bên lệch, `vendor.md` là bản đúng. Là phần vendor của giai đoạn 2 và 4.1 trong [api-db-alignment-plan.md](../architecture/api-db-alignment-plan.md).
 
 ## Hiện trạng (nhánh `fix/vendor-entities-schema`)
 
@@ -15,8 +17,8 @@
 
 ## Nguyên tắc
 
-- Cấu trúc **package-by-component** như identity ([README identity](../identity/README.md)): entity, repository, `*ServiceImpl`, mapper package-private; controller chỉ ở `web`; có `ComponentArchitectureTest`.
-- **Tên phản ánh đúng bản chất** của thứ nó nói tới ([coding-rules.md](../../conventions/coding-rules.md) phần 2): đọc tên class, method, field là biết nó *là gì* và *làm gì*, không phải nó được dùng ở đâu hay nằm ở tầng nào. Cụ thể:
+- Cấu trúc **package-by-component** như identity ([README identity](../services/identity/README.md)): entity, repository, `*ServiceImpl`, mapper package-private; controller chỉ ở `web`; có `ComponentArchitectureTest`.
+- **Tên phản ánh đúng bản chất** của thứ nó nói tới ([coding-rules.md](../conventions/coding-rules.md) phần 2): đọc tên class, method, field là biết nó *là gì* và *làm gì*, không phải nó được dùng ở đâu hay nằm ở tầng nào. Cụ thể:
   - Tên theo ngôn ngữ nghiệp vụ của requirement và `vendor.md`: `businessName` (tên đơn vị), không `name`; `registrationFeePaidAt`, không `paidDate`; `ownerCheck`, không `nfcCompare`.
   - Tiền tố method cam kết kiểu trả về: `get…` ném lỗi khi không có, `find…` trả `Optional`, `is/has/can…` trả `boolean` (`canOperate()`, `isOwnedBy(accountId)`).
   - Package đặt theo đúng thứ nó sở hữu (`registrationfee`, `deliveryarea`, không `fee`, `delivery`); class phụ trợ đặt theo vai trò thật (`BankAccountNumberCipher` chỉ mã hóa số tài khoản, không `PiiCipher` chung chung).
@@ -174,7 +176,7 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 - Thứ tự bằng nhau xếp theo khóa tên, để mọi lần đọc cùng thứ tự. `sortOrder` âm → `VENDOR_109`.
 - Không phát sự kiện khi đổi danh mục: catalog chỉ giữ mã, nhãn và thứ tự lấy từ endpoint này (L-19).
 - Làm luôn phần vỏ và nhân của hồ sơ nhận đặt hàng dời từ giai đoạn 3 (AC-35.2): bảng `order_profile_cake_attributes`, bỏ cột `cake_types` (migration `V2026_10_26_1100`). `PUT order-profile` nhận `crustCodes`, `fillingCodes`; tự sản xuất bắt buộc ít nhất một vỏ và một nhân. Mã không có hoặc đã ẩn → `VENDOR_022` tại trường; mã đã ẩn mà hồ sơ đang có thì giữ được (giống AC-33.6). Response và `VendorSnapshotEvent.orderProfile` mang `crustCodes`, `fillingCodes` theo thứ tự của danh mục.
-- Theo [correctness-review.md](correctness-review.md): luật đủ điều khoản theo nguồn hàng chuyển từ service vào `OrderTerms` (constructor gọn, nhận `SupplySource`; `SupplySource.produces()`/`resells()`), kèm `leadTimeDays ≥ 0` (`VENDOR_110`). `packagingTypes`, `distributedBrands` có `@Size` (trước đây dài quá 255 ký tự ra 500).
+- Theo [correctness-review.md](../services/vendor/correctness-review.md): luật đủ điều khoản theo nguồn hàng chuyển từ service vào `OrderTerms` (constructor gọn, nhận `SupplySource`; `SupplySource.produces()`/`resells()`), kèm `leadTimeDays ≥ 0` (`VENDOR_110`). `packagingTypes`, `distributedBrands` có `@Size` (trước đây dài quá 255 ký tự ra 500).
 - `CakeAttributeService.select(group, codes, linkedIds)` là chỗ dùng chung cho giai đoạn 5 (sản phẩm): cùng luật "mã đang hiện, hoặc đã ẩn nhưng đang gắn".
 
 - Entity `CakeAttribute`; danh mục ban đầu đã có trong migration `V2026_10_22_1500`.
@@ -237,7 +239,7 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 
 - `GET /internal/vendors/by-owner` trả `VendorView` (bản chụp chỉ đọc đã dùng giữa các component, thêm `canOperate`), không có tài khoản ngân hàng, số định danh, giấy tờ; test khẳng định điều đó. `VendorResponse` chỉ còn cho chủ và admin. Chỉ catalog có `VendorClient`: `VendorInfo` thêm `canOperate`. quotation, order chưa gọi endpoint này.
 - Gateway thêm route theo tên root cho vendor (`/api/vendors/**`, `/api/registration-fee-config/**`, `/api/cake-attributes/**`) và mở `GET` công khai ở cả hai dạng đường dẫn; chặn thêm `/internal/**` ở gốc. **Chưa** tắt discovery locator: việc đó làm cho mọi service cùng lúc (giai đoạn 3 của alignment plan), nên `/vendor-service/api/**` vẫn chạy và web hiện tại không vỡ.
-- [README.md](README.md) theo mẫu identity; Postman [`docs/api/mk-vendor.json`](../../api/mk-vendor.json) dùng tài khoản seed `member4@mk.com` (chủ vendor seed) và admin.
+- [README.md](../services/vendor/README.md) theo mẫu identity; Postman [`docs/api/mk-vendor.json`](../api/mk-vendor.json) dùng tài khoản seed `member4@mk.com` (chủ vendor seed) và admin.
 - Swagger lấy mô tả từ Javadoc của controller và DTO (`therapi-runtime-javadoc`, chỉ thêm ở vendor-service), mọi endpoint có Javadoc. Chưa có ví dụ body riêng trong Swagger; ví dụ nằm ở Postman.
 - NFR-03 không phải sửa: `IdNumber`, `BankAccountNumber`, `SubmitVendorRequest`, `CheckIdNumberRequest` che số trong `toString()`; Feign không log body; handler không log body request; link giấy tờ hết hạn sau 10 phút.
 

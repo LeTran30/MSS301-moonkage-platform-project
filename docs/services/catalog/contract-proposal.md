@@ -23,7 +23,7 @@ Phase D đã nối adapter theo tài liệu này (xem [implementation-plan](impl
 | Migration catalog đã merge: product_views, vendor_snapshots, product_reviews, processed_events và arrays/jsonb; 34 mã tỉnh | Bổ sung acceptsOrders vào read model, cơ chế restore/rebuild generation, contract tests producer-consumer |
 | [API/DB vendor](../../architecture/api-db/vendor.md): root /api/cake-attributes; crustCodes/fillingCodes, seed/code và validation L-19 | Bản triển khai endpoint và producer chạy thật; tài liệu API không đồng nghĩa code đã hoàn thành |
 
-Phase A đã nhận develop `6523d00`, giữ nguyên migration `V2026_10_22_1510` theo ngoại lệ Lê Trần cho phép. Không tự sửa migration đó. Phase B chỉ có raw inbox capture/recovery skeleton, **không có adapter nghiệp vụ production**. Xem [audit C2](c2-contract-audit.md) và [báo cáo A–C](phase-abc-report.md).
+Phase A đã nhận develop `6523d00`, giữ nguyên migration `V2026_10_22_1510` theo ngoại lệ Lê Trần cho phép. Không tự sửa migration đó. Phase B chỉ có raw inbox capture/recovery skeleton, **không có adapter nghiệp vụ production**. Xem [audit C2](../../archive/2026-10-26-catalog-c2-contract-audit.md) và [báo cáo A–C](../../archive/2026-10-26-catalog-phase-abc-report.md).
 
 ## 2. Envelope đề xuất v1
 

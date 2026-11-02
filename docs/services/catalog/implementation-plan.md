@@ -97,7 +97,7 @@ Docker ban đầu chưa chạy; đã khởi động Docker Desktop để chạy 
 
 ## 9. C2: phạm vi đã làm và nghiệm thu còn thiếu
 
-Cập nhật master prompt Phase A–C: C2 cũ đã commit local `1e160ae`; merge develop `6523d00` bằng merge commit local `3227fed` sau xác nhận Lê Trần cho phép nhận nguyên migration L-19. A không có conflict Git, chỉ sửa tương thích schema catalog; verify A **393 pass / 0 fail / 0 error / 0 skip**. Proposal catalog ghi taxonomy ở §7 không còn hiệu lực. [Báo cáo theo phase](phase-abc-report.md).
+Cập nhật master prompt Phase A–C: C2 cũ đã commit local `1e160ae`; merge develop `6523d00` bằng merge commit local `3227fed` sau xác nhận Lê Trần cho phép nhận nguyên migration L-19. A không có conflict Git, chỉ sửa tương thích schema catalog; verify A **393 pass / 0 fail / 0 error / 0 skip**. Proposal catalog ghi taxonomy ở §7 không còn hiệu lực. [Báo cáo theo phase](../../archive/2026-10-26-catalog-phase-abc-report.md).
 
 Phase B thêm recovery internal port: batch rebuild rating từ reviews; replay pending raw qua interface ProjectionReplayAdapter, transaction riêng lock entry, kiểm marker đúng eventId/key. Không có adapter production, nên chưa duyệt contract thì toàn bộ entry liên quan deferred. ReplayCheckpoint chỉ là scan cursor tạm, không persist như producer checkpoint; mỗi run mới bắt đầu null. Không tạo feed giả, không xóa processed_events/tombstone/raw. Full rebuild còn blocker producer feed và business contract.
 
@@ -127,7 +127,7 @@ Lam quyết định sau khi Lê Trần duyệt contract; làm theo thứ tự d�
 
 Tài liệu bàn giao audit cho owner orchestrator: [handoff](orchestrator-handoff.md), không sửa code hoặc gửi tin ra ngoài. Pseudocode: [recovery coordinator](classes/ProjectionRecoveryServiceImpl.md), [entry transaction](classes/ProjectionReplayEntryServiceImpl.md).
 
-Đã đối chiếu trước code: [audit contract](c2-contract-audit.md). Lê Trần xác nhận chưa có contract được nhóm duyệt ngoài repo, cho phép chỉ triển khai phần đã xác nhận và cô lập legacy. Giữ nguyên code vendor/order/orchestrator/frontend, migration V2, writer entity/repository và test ảnh cũ. Migration mới chỉ thêm inbox/tombstone và backfill removal đã tồn tại.
+Đã đối chiếu trước code: [audit contract](../../archive/2026-10-26-catalog-c2-contract-audit.md). Lê Trần xác nhận chưa có contract được nhóm duyệt ngoài repo, cho phép chỉ triển khai phần đã xác nhận và cô lập legacy. Giữ nguyên code vendor/order/orchestrator/frontend, migration V2, writer entity/repository và test ảnh cũ. Migration mới chỉ thêm inbox/tombstone và backfill removal đã tồn tại.
 
 - Runtime mặc định: read-only ProductListing/view, basic public reads và reviews; không storage upload/MinIO startup. Entity/repository legacy còn trong source/profile, không giả làm bản đọc và không còn chặn default entity scan.
 - Core nội bộ đã chuẩn hóa theo row V2: transactional eventId dedup, bigint version gate, tombstone kể cả removed đến trước, vendor state stream độc lập product, reviewId dedup và aggregate kể cả reviews đến trước. Không dùng timestamp làm version.
