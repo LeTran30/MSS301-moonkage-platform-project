@@ -34,8 +34,7 @@ class InterprovinceFeeControllerTest {
                 new ObjectMapper().findAndRegisterModules(),
                 Clock.systemUTC());
         mvc = MockMvcBuilders.standaloneSetup(new InterprovinceFeeController(service))
-                .setControllerAdvice(
-                        new GlobalExceptionHandler(new org.springframework.context.support.StaticMessageSource()))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 

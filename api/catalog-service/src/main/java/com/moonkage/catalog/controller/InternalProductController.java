@@ -6,7 +6,6 @@ import com.moonkage.catalog.service.ProductSnapshotService;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 /** Called by order-service through OpenFeign only; the gateway blocks /internal/**. Unwrapped. */
 @Hidden
 @RestController
-@Profile("!legacy-writer")
 @RequiredArgsConstructor
 public class InternalProductController {
 

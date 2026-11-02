@@ -4,6 +4,7 @@ import { useShopProducts } from '@/entities/product';
 import { useCurrentUser } from '@/entities/user';
 import { VendorStorefrontView, useVendorStorefront } from '@/entities/vendor';
 import { AddToCartButton } from '@/features/add-to-cart';
+import { useDeliveryArea } from '@/features/choose-delivery-area';
 import { useLoginRedirect } from '@/features/login';
 import { EmptyState, ErrorState, LoadingState } from '@/shared/ui';
 
@@ -12,7 +13,8 @@ export function VendorStorefrontPage() {
   const { vendorId = '' } = useParams();
   const session = useCurrentUser();
   const vendor = useVendorStorefront(vendorId);
-  const products = useShopProducts(vendorId);
+  const { area } = useDeliveryArea();
+  const products = useShopProducts(vendorId, area);
   const toLogin = useLoginRedirect();
   if (vendor.kind === 'loading') return <LoadingState />;
   if (vendor.kind === 'error') return <ErrorState message={vendor.message} onRetry={vendor.reload} />;

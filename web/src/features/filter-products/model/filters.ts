@@ -1,4 +1,4 @@
-import type { Crust, Filling, ProductSummary } from '@/entities/product';
+import type { ProductSummary } from '@/entities/product';
 
 /**
  * The filters of "Mua hàng có sẵn" (M2.0), kept in the URL so a filtered list can be linked and the quick chips of
@@ -7,28 +7,18 @@ import type { Crust, Filling, ProductSummary } from '@/entities/product';
  */
 export interface ProductFilters {
   query: string;
-  crusts: Crust[];
-  fillings: Filling[];
+  /** Crust and filling codes of the vendor catalogue (GET /api/cake-attributes). */
+  crusts: string[];
+  fillings: string[];
   brands: string[];
+  /** Shop (vendor) ids. */
   shops: string[];
   priceMin: number | null;
   priceMax: number | null;
   sort: ProductSort;
 }
 
-export type ProductSort = 'rating' | 'price-asc' | 'price-desc';
-
-export const crustLabels: Record<Crust, string> = { nuong: 'Nướng', deo: 'Dẻo', 'than-tre': 'Than tre' };
-export const fillingLabels: Record<Filling, string> = {
-  'thap-cam': 'Thập cẩm',
-  'hat-sen': 'Hạt sen',
-  'dau-xanh': 'Đậu xanh',
-  'tra-xanh': 'Trà xanh',
-  'khoai-mon': 'Khoai môn',
-  'me-den': 'Mè đen',
-  'yen-sao': 'Yến sào',
-  'vi-ca': 'Vi cá',
-};
+export type ProductSort = 'rating' | 'price-asc' | 'price-desc' | 'newest';
 
 const PARAM = {
   query: 'q',
@@ -41,7 +31,7 @@ const PARAM = {
   sort: 'sap-xep',
 } as const;
 
-const SORTS: ProductSort[] = ['rating', 'price-asc', 'price-desc'];
+const SORTS: ProductSort[] = ['rating', 'price-asc', 'price-desc', 'newest'];
 
 function list<T extends string>(params: URLSearchParams, key: string, allowed?: readonly T[]): T[] {
   const values = (params.get(key) ?? '').split(',').map((v) => v.trim()).filter(Boolean) as T[];
@@ -59,8 +49,8 @@ export function parseFilters(params: URLSearchParams): ProductFilters {
   const sort = params.get(PARAM.sort) as ProductSort | null;
   return {
     query: (params.get(PARAM.query) ?? '').trim(),
-    crusts: list(params, PARAM.crusts, Object.keys(crustLabels) as Crust[]),
-    fillings: list(params, PARAM.fillings, Object.keys(fillingLabels) as Filling[]),
+    crusts: list(params, PARAM.crusts),
+    fillings: list(params, PARAM.fillings),
     brands: list(params, PARAM.brands),
     shops: list(params, PARAM.shops),
     priceMin: amount(params, PARAM.priceMin),
@@ -126,18 +116,56 @@ export function matchesQuery(text: string, query: string): boolean {
 const byRating = (a: ProductSummary, b: ProductSummary) =>
   (b.rating ?? -1) - (a.rating ?? -1) || b.reviewCount - a.reviewCount;
 
+/** The demo mode's search over sample products; the server does the same for real data. */
 export function applyFilters(products: ProductSummary[], filters: ProductFilters): ProductSummary[] {
   const result = products.filter(
     (p) =>
       matchesQuery(`${p.name} ${p.shopName}`, filters.query) &&
-      (!filters.crusts.length || filters.crusts.includes(p.crust)) &&
-      (!filters.fillings.length || p.fillings.some((f) => filters.fillings.includes(f))) &&
+      (!filters.crusts.length || p.crustCodes.some((c) => filters.crusts.includes(c))) &&
+      (!filters.fillings.length || p.fillingCodes.some((f) => filters.fillings.includes(f))) &&
       (!filters.brands.length || filters.brands.includes(p.brand)) &&
-      (!filters.shops.length || filters.shops.includes(p.shopName)) &&
+      (!filters.shops.length || filters.shops.includes(p.shopId)) &&
       (filters.priceMin === null || p.price >= filters.priceMin) &&
       (filters.priceMax === null || p.price <= filters.priceMax),
   );
   if (filters.sort === 'price-asc') return result.sort((a, b) => a.price - b.price);
   if (filters.sort === 'price-desc') return result.sort((a, b) => b.price - a.price);
+  // sample products carry no update time: they stay in the order they are listed
+  if (filters.sort === 'newest') return result;
   return result.sort(byRating);
+}
+
+/** The values the filters can offer, with how many products have each (GET /api/products/facets). */
+export interface ProductFacets {
+  crusts: { value: string; count: number }[];
+  fillings: { value: string; count: number }[];
+  brands: { value: string; count: number }[];
+  vendors: { vendorId: string; vendorName: string; count: number }[];
+  priceMin: number | null;
+  priceMax: number | null;
+}
+
+function counted(values: string[]): { value: string; count: number }[] {
+  const counts = new Map<string, number>();
+  values.forEach((v) => counts.set(v, (counts.get(v) ?? 0) + 1));
+  return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([value, count]) => ({ value, count }));
+}
+
+/** The demo mode's facets: the products of the area matching the text, before the other filters. */
+export function facetsOf(products: ProductSummary[], query: string): ProductFacets {
+  const matched = products.filter((p) => matchesQuery(`${p.name} ${p.shopName}`, query));
+  const vendors = new Map<string, { vendorId: string; vendorName: string; count: number }>();
+  matched.forEach((p) => {
+    const vendor = vendors.get(p.shopId) ?? { vendorId: p.shopId, vendorName: p.shopName, count: 0 };
+    vendors.set(p.shopId, { ...vendor, count: vendor.count + 1 });
+  });
+  const prices = matched.map((p) => p.price);
+  return {
+    crusts: counted(matched.flatMap((p) => p.crustCodes)),
+    fillings: counted(matched.flatMap((p) => p.fillingCodes)),
+    brands: counted(matched.map((p) => p.brand)),
+    vendors: [...vendors.values()].sort((a, b) => a.vendorName.localeCompare(b.vendorName)),
+    priceMin: prices.length ? Math.min(...prices) : null,
+    priceMax: prices.length ? Math.max(...prices) : null,
+  };
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { Crust, Filling, ProductSummary } from '@/entities/product';
-import { crustLabels, fillingLabels, type ProductFilters } from '../model/filters';
+import { labelOf, type CakeAttributeLabels } from '@/entities/product';
+import type { ProductFacets, ProductFilters } from '../model/filters';
 import { filterStrings } from '../strings';
 import styles from './ProductFilterPanel.module.css';
 
@@ -57,21 +57,30 @@ function PriceInput({ id, label, value, onCommit }: { id: string; label: string;
   );
 }
 
-/** Left column of M2.0. Options come from the products of the area, so no option leads to an empty list by itself. */
+/**
+ * Left column of M2.0. Options are the facets of the area and the search text, so no option leads to an empty list
+ * by itself; crusts and fillings follow the order of the vendor catalogue.
+ */
 export function ProductFilterPanel({
-  products,
+  facets,
+  labels,
   filters,
   onChange,
 }: {
-  products: ProductSummary[];
+  facets: ProductFacets;
+  labels: CakeAttributeLabels | undefined;
   filters: ProductFilters;
   onChange: (next: ProductFilters) => void;
 }) {
-  const unique = (pick: (p: ProductSummary) => string[]) => [...new Set(products.flatMap(pick))];
-  const crusts = unique((p) => [p.crust]) as Crust[];
-  const fillings = unique((p) => p.fillings) as Filling[];
   const set = (key: ListKey, value: string) =>
     onChange({ ...filters, [key]: toggle(filters[key] as string[], value) });
+  const inCatalogueOrder = (counts: { value: string }[], catalogue: Record<string, string> | undefined) => {
+    const order = Object.keys(catalogue ?? {});
+    const rank = (code: string) => (order.includes(code) ? order.indexOf(code) : order.length);
+    return [...counts]
+      .sort((a, b) => rank(a.value) - rank(b.value))
+      .map((c) => ({ value: c.value, label: labelOf(catalogue, c.value) }));
+  };
 
   return (
     <aside className={`${styles.panel} filter-panel`} aria-labelledby="filter-heading">
@@ -87,25 +96,25 @@ export function ProductFilterPanel({
       </fieldset>
       <CheckGroup
         legend={filterStrings.brand}
-        options={unique((p) => [p.brand]).map((b) => ({ value: b, label: b }))}
+        options={facets.brands.map((b) => ({ value: b.value, label: b.value }))}
         selected={filters.brands}
         onToggle={(v) => set('brands', v)}
       />
       <CheckGroup
         legend={filterStrings.crust}
-        options={(Object.keys(crustLabels) as Crust[]).filter((c) => crusts.includes(c)).map((c) => ({ value: c, label: crustLabels[c] }))}
+        options={inCatalogueOrder(facets.crusts, labels?.crusts)}
         selected={filters.crusts}
         onToggle={(v) => set('crusts', v)}
       />
       <CheckGroup
         legend={filterStrings.filling}
-        options={(Object.keys(fillingLabels) as Filling[]).filter((f) => fillings.includes(f)).map((f) => ({ value: f, label: fillingLabels[f] }))}
+        options={inCatalogueOrder(facets.fillings, labels?.fillings)}
         selected={filters.fillings}
         onToggle={(v) => set('fillings', v)}
       />
       <CheckGroup
         legend={filterStrings.shop}
-        options={unique((p) => [p.shopName]).map((s) => ({ value: s, label: s }))}
+        options={facets.vendors.map((v) => ({ value: v.vendorId, label: v.vendorName }))}
         selected={filters.shops}
         onToggle={(v) => set('shops', v)}
       />

@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ProductGrid, productStrings } from '@/entities/product';
+import { ProductGrid, productStrings, useCakeAttributeLabels } from '@/entities/product';
 import { useCurrentUser } from '@/entities/user';
 import { VendorCard, vendorDirectoryStrings, useVendors } from '@/entities/vendor';
 import { AddToCartButton } from '@/features/add-to-cart';
 import { AreaPicker, areaStrings, useDeliveryArea } from '@/features/choose-delivery-area';
 import {
+  filterStrings,
   hasActiveFilters,
   matchesQuery,
   ProductFilterPanel,
@@ -19,7 +20,9 @@ import { ErrorState, LoadingState } from '@/shared/ui';
 export function ProductListPage() {
   const session = useCurrentUser();
   const { area } = useDeliveryArea();
-  const { all, filters, setFilters, results } = useProductSearch(area);
+  const { filters, setFilters, results, facets, loadMore, reload } = useProductSearch(area);
+  const attributes = useCakeAttributeLabels();
+  const labels = attributes.kind === 'loaded' ? attributes.data : undefined;
   const vendors = useVendors();
   const toLogin = useLoginRedirect();
 
@@ -51,7 +54,7 @@ export function ProductListPage() {
         </section>
       )}
 
-      {all.kind === 'loading' && (
+      {facets.kind === 'loading' && (
         <div className="listing" style={{ minHeight: 480 }}>
           <div className="panel" style={{ height: 320, opacity: 0.5 }} />
           <div className="listing__results">
@@ -59,23 +62,37 @@ export function ProductListPage() {
           </div>
         </div>
       )}
-      {all.kind === 'error' && <ErrorState message={all.message} onRetry={all.reload} />}
-      {all.kind === 'loaded' && (
+      {facets.kind === 'error' && <ErrorState message={facets.message} onRetry={facets.reload} />}
+      {facets.kind === 'loaded' && (
         <div className="listing">
-          <ProductFilterPanel products={all.data} filters={filters} onChange={setFilters} />
+          <ProductFilterPanel facets={facets.data} labels={labels} filters={filters} onChange={setFilters} />
           <div className="listing__results">
-            <ProductToolbar filters={filters} onChange={setFilters} />
-            <p className="muted" aria-live="polite">
-              {productStrings.count(results.length)}
-            </p>
-            {results.length > 0 ? (
-              <ProductGrid
-                products={results}
-                renderAction={(p) => (
-                  <AddToCartButton productId={p.id} productName={p.name} size="sm" loggedIn={Boolean(session)} onNeedLogin={toLogin} />
+            <ProductToolbar filters={filters} facets={facets.data} labels={labels} onChange={setFilters} />
+            {results.kind === 'loading' && <LoadingState />}
+            {results.kind === 'error' && <ErrorState message={results.message} onRetry={reload} />}
+            {results.kind === 'loaded' && (
+              <p className="muted" aria-live="polite">
+                {productStrings.count(results.total)}
+              </p>
+            )}
+            {results.kind === 'loaded' && results.items.length > 0 && (
+              <>
+                <ProductGrid
+                  products={results.items}
+                  renderAction={(p) => (
+                    <AddToCartButton productId={p.id} productName={p.name} size="sm" loggedIn={Boolean(session)} onNeedLogin={toLogin} />
+                  )}
+                />
+                {results.items.length < results.total && (
+                  <div className="row">
+                    <button type="button" className="mk-btn mk-btn--quiet" onClick={loadMore} disabled={results.loadingMore}>
+                      {results.loadingMore ? filterStrings.loadingMore : filterStrings.loadMore}
+                    </button>
+                  </div>
                 )}
-              />
-            ) : (
+              </>
+            )}
+            {results.kind === 'loaded' && results.items.length === 0 && (
               <div className="empty-state">
                 <p className="empty-state__title">{productStrings.emptyTitle(area)}</p>
                 <p className="muted">{productStrings.emptyBody}</p>

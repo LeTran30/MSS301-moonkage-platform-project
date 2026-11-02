@@ -1,15 +1,27 @@
 import { formatVnd } from '@/shared/utils/money';
-import { crustLabels, emptyFilters, fillingLabels, hasActiveFilters, type ProductFilters, type ProductSort } from '../model/filters';
+import { labelOf, type CakeAttributeLabels } from '@/entities/product';
+import { emptyFilters, hasActiveFilters, type ProductFacets, type ProductFilters, type ProductSort } from '../model/filters';
 import { filterStrings } from '../strings';
 import styles from './ProductToolbar.module.css';
 
 /** Active filters as removable chips, "Xóa lọc", and the sort. */
-export function ProductToolbar({ filters, onChange }: { filters: ProductFilters; onChange: (next: ProductFilters) => void }) {
+export function ProductToolbar({
+  filters,
+  facets,
+  labels,
+  onChange,
+}: {
+  filters: ProductFilters;
+  facets: ProductFacets | undefined;
+  labels: CakeAttributeLabels | undefined;
+  onChange: (next: ProductFilters) => void;
+}) {
+  const shopName = (id: string) => facets?.vendors.find((v) => v.vendorId === id)?.vendorName ?? id;
   const active: { label: string; remove: () => void }[] = [
     ...filters.brands.map((b) => ({ label: b, remove: () => onChange({ ...filters, brands: filters.brands.filter((x) => x !== b) }) })),
-    ...filters.crusts.map((c) => ({ label: `Vỏ ${crustLabels[c].toLowerCase()}`, remove: () => onChange({ ...filters, crusts: filters.crusts.filter((x) => x !== c) }) })),
-    ...filters.fillings.map((f) => ({ label: fillingLabels[f], remove: () => onChange({ ...filters, fillings: filters.fillings.filter((x) => x !== f) }) })),
-    ...filters.shops.map((s) => ({ label: s, remove: () => onChange({ ...filters, shops: filters.shops.filter((x) => x !== s) }) })),
+    ...filters.crusts.map((c) => ({ label: labelOf(labels?.crusts, c), remove: () => onChange({ ...filters, crusts: filters.crusts.filter((x) => x !== c) }) })),
+    ...filters.fillings.map((f) => ({ label: `${filterStrings.fillingChip} ${labelOf(labels?.fillings, f).toLowerCase()}`, remove: () => onChange({ ...filters, fillings: filters.fillings.filter((x) => x !== f) }) })),
+    ...filters.shops.map((s) => ({ label: shopName(s), remove: () => onChange({ ...filters, shops: filters.shops.filter((x) => x !== s) }) })),
     ...(filters.priceMin !== null ? [{ label: `Từ ${formatVnd(filters.priceMin)}`, remove: () => onChange({ ...filters, priceMin: null }) }] : []),
     ...(filters.priceMax !== null ? [{ label: `Đến ${formatVnd(filters.priceMax)}`, remove: () => onChange({ ...filters, priceMax: null }) }] : []),
   ];

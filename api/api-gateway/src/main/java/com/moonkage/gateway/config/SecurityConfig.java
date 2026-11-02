@@ -65,8 +65,6 @@ public class SecurityConfig {
                         // /internal/** is for service-to-service (OpenFeign) calls only
                         .pathMatchers("/internal/**", "/*/internal/**")
                         .denyAll()
-                        .pathMatchers("/internal/**")
-                        .denyAll()
                         .pathMatchers(
                                 HttpMethod.GET,
                                 "/api/interprovince-fees",
@@ -98,7 +96,12 @@ public class SecurityConfig {
                         .permitAll()
                         // FR-04: guests browse products before logging in
                         .pathMatchers(
-                                HttpMethod.GET, "/catalog-service/api/products/**", "/order-service/api/reviews/**")
+                                HttpMethod.GET,
+                                "/api/products",
+                                "/api/products/**",
+                                "/catalog-service/api/products",
+                                "/catalog-service/api/products/**",
+                                "/order-service/api/reviews/**")
                         .permitAll()
                         // BR-25: VNPay calls the IPN server to server and redirects the payer to the return page,
                         // both without our token; payment-service checks vnp_SecureHash instead

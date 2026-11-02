@@ -6,8 +6,7 @@ import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.moonkage.catalog.entity.Product;
-import com.moonkage.catalog.entity.ProductPriceTier;
+import com.moonkage.catalog.dto.request.ProductSearchRequest;
 import com.moonkage.catalog.entity.projection.ProductProjectionRow;
 import com.moonkage.catalog.entity.projection.ReviewProjectionRow;
 import com.moonkage.catalog.entity.projection.VendorProjectionRow;
@@ -16,13 +15,10 @@ import com.moonkage.catalog.enums.DeliveryLabel;
 import com.moonkage.catalog.enums.ProductStatus;
 import com.moonkage.catalog.enums.ProjectionOutcome;
 import com.moonkage.catalog.repository.JdbcProjectionInboxRepository;
-import com.moonkage.catalog.repository.ProductRepository;
 import com.moonkage.catalog.repository.readmodel.ProductListingRepository;
 import com.moonkage.catalog.service.CatalogProjectionService;
 import com.moonkage.catalog.service.ProductReadService;
-import com.moonkage.catalog.service.ProductService;
 import com.moonkage.catalog.service.ProjectionInboxService;
-import com.moonkage.storage.ObjectStorage;
 import jakarta.persistence.EntityManagerFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -161,11 +157,7 @@ class CatalogProjectionIntegrationTest {
                 .isEqualTo("validate");
         assertThat(entityManagerFactory.getMetamodel().getEntities())
                 .extracting(type -> type.getJavaType().getName())
-                .containsExactly(ProductListing.class.getName())
-                .doesNotContain(Product.class.getName(), ProductPriceTier.class.getName());
-        assertThat(context.getBeansOfType(ProductRepository.class)).isEmpty();
-        assertThat(context.getBeansOfType(ProductService.class)).isEmpty();
-        assertThat(context.getBeansOfType(ObjectStorage.class)).isEmpty();
+                .containsExactly(ProductListing.class.getName());
         assertThat(jdbc.queryForObject("SELECT to_regclass('public.products')::text", String.class))
                 .isNull();
         assertThat(jdbc.queryForObject("SELECT to_regclass('public.product_price_tiers')::text", String.class))
@@ -337,18 +329,15 @@ class CatalogProjectionIntegrationTest {
     void vendorLockUnlockUsesOneVersionStreamAndDoesNotOverwriteProduct() {
         seedVendor();
         projection.applyProduct(id(), product("p", 10, "product", ProductStatus.ON_SALE));
-        assertThat(products.search("01", null, null, null, 0, 20).totalElements())
-                .isEqualTo(1);
+        assertThat(countIn("01")).isEqualTo(1);
         projection.applyVendor("lock", "vendor.locked", vendor(2, true));
-        assertThat(products.search("01", null, null, null, 0, 20).totalElements())
-                .isZero();
+        assertThat(countIn("01")).isZero();
         assertThat(projection.applyVendor("old-update", "vendor.updated", vendor(1, false)))
                 .isEqualTo(ProjectionOutcome.STALE);
         projection.applyVendor("unlock", "vendor.updated", vendor(3, false));
         assertThat(projection.applyVendor("old-lock", "vendor.locked", vendor(2, true)))
                 .isEqualTo(ProjectionOutcome.STALE);
-        assertThat(products.search("01", null, null, null, 0, 20).totalElements())
-                .isEqualTo(1);
+        assertThat(countIn("01")).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT source_version FROM product_views WHERE product_id='p'", Long.class))
                 .isEqualTo(10);
     }
@@ -359,14 +348,13 @@ class CatalogProjectionIntegrationTest {
         projection.applyProduct(id(), product("hidden", 1, "hidden", ProductStatus.HIDDEN));
         projection.applyProduct(id(), product("removed", 1, "removed", ProductStatus.REMOVED));
         projection.applyProduct(id(), product("sale", 1, "sale", ProductStatus.ON_SALE));
-        assertThat(products.search("01", null, null, null, 0, 20).totalElements())
-                .isEqualTo(1);
+        assertThat(countIn("01")).isEqualTo(1);
         projection.applyVendor(
                 id(),
                 "vendor.updated",
-                new VendorProjectionRow(VENDOR, OWNER, "Shop one", "APPROVED", true, false, List.of("01"), 10000L, 2));
-        assertThat(products.search("01", null, null, null, 0, 20).totalElements())
-                .isZero();
+                new VendorProjectionRow(
+                        VENDOR, OWNER, "Shop one", "APPROVED", true, false, false, List.of("01"), 10000L, 2));
+        assertThat(countIn("01")).isZero();
         assertThatThrownBy(() -> products.getProduct("sale", "01", null))
                 .isInstanceOf(com.moonkage.catalog.exception.CatalogException.class);
     }
@@ -385,10 +373,8 @@ class CatalogProjectionIntegrationTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
         var result = http.getForObject("/api/products?provinceCode=01&q=ABC", JsonNode.class);
         assertThat(result.at("/data/totalElements").asInt()).isEqualTo(1);
-        assertThat(products.search("01", null, "%", null, 0, 20).totalElements())
-                .isZero();
-        assertThat(products.search("79", null, null, null, 0, 20).totalElements())
-                .isZero();
+        assertThat(countIn("01", "%")).isZero();
+        assertThat(countIn("79")).isZero();
         assertThat(http.getForEntity("/api/products/p?provinceCode=79", JsonNode.class)
                         .getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
@@ -419,7 +405,8 @@ class CatalogProjectionIntegrationTest {
                 local.sourceVersion());
         projection.applyProduct(id(), national);
         projection.applyReview(id(), review("review", "p", 4));
-        assertThat(products.search("79", VENDOR, null, null, 0, 20).totalElements())
+        assertThat(products.search(searchIn("79", null, List.of(VENDOR), null, null), null)
+                        .totalElements())
                 .isEqualTo(1);
         var reviews = http.getForObject("/api/products/p/reviews?provinceCode=79", JsonNode.class);
         assertThat(reviews.at("/data/totalElements").asInt()).isEqualTo(1);
@@ -582,7 +569,7 @@ class CatalogProjectionIntegrationTest {
     }
 
     @Test
-    void defaultRecoveryHasNoBusinessAdapterAndDefersStoredInboxAcrossPages() {
+    void malformedStoredEventsFailAndStayPendingAcrossPages() {
         for (String eventId : List.of("a", "b", "c")) {
             inbox.capture("product.removed", bytes("{\"eventId\":\"" + eventId + "\"}"));
         }
@@ -590,19 +577,19 @@ class CatalogProjectionIntegrationTest {
         var recovery = context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class);
         var first = recovery.replayPending(null, 2);
         assertThat(first.inspected()).isEqualTo(2);
-        assertThat(first.deferred()).isEqualTo(2);
+        assertThat(first.failed()).isEqualTo(2);
         assertThat(first.applied()).isZero();
         assertThat(first.hasMore()).isTrue();
         assertThat(first.nextScanPosition().eventId()).isEqualTo("b");
         var second = recovery.replayPending(first.nextScanPosition(), 2);
         assertThat(second.inspected()).isEqualTo(1);
-        assertThat(second.deferred()).isEqualTo(1);
+        assertThat(second.failed()).isEqualTo(1);
         assertThat(second.hasMore()).isFalse();
         assertThat(context.getBeansOfType(com.moonkage.catalog.service.replay.ProjectionReplayAdapter.class))
-                .isEmpty();
+                .hasSize(5);
         assertThat(count("processed_events")).isZero();
         assertThat(count("product_tombstones")).isZero();
-        assertThat(count("projection_inbox")).isEqualTo(3);
+        assertThat(inbox.findPending(10)).hasSize(3);
     }
 
     @Test
@@ -705,7 +692,7 @@ class CatalogProjectionIntegrationTest {
                 java.sql.Timestamp.from(REVIEW_TIME));
         assertThat(recovery.replayPending(first.nextScanPosition(), 10).inspected())
                 .isZero();
-        assertThat(recovery.replayPending(null, 10).deferred()).isEqualTo(2);
+        assertThat(recovery.replayPending(null, 10).failed()).isEqualTo(2);
         assertThat(count("processed_events")).isZero();
     }
 
@@ -733,6 +720,232 @@ class CatalogProjectionIntegrationTest {
         assertThatThrownBy(() -> new com.moonkage.catalog.dto.replay.ReplayCheckpoint(null, "id"))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(count("processed_events")).isZero();
+    }
+
+    @Test
+    void producerWirePayloadsReachThePublicListingThroughTheScheduledProjector() {
+        inbox.capture("vendor.updated", bytes(vendorWire("v-1", "vendor.updated", 1, "APPROVED", true)));
+        inbox.capture("product.upserted", bytes(productWire("p-1", "wire", 0, "ON_SALE")));
+        inbox.capture("review.created", bytes(reviewWire("r-1", "review-wire", "wire", 5)));
+        var projector = new com.moonkage.catalog.scheduling.PendingInboxProjector(
+                context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class),
+                context.getBean(com.moonkage.catalog.config.CatalogProjectionProperties.class));
+        projector.applyPending();
+        assertThat(inbox.findPending(10)).isEmpty();
+        var listing = http.getForObject("/api/products?provinceCode=01", JsonNode.class);
+        assertThat(listing.at("/data/totalElements").asInt()).isEqualTo(1);
+        assertThat(listing.at("/data/content/0/vendorAcceptsOrders").asBoolean())
+                .isTrue();
+        assertThat(jdbc.queryForObject(
+                        "SELECT price_tiers::text FROM product_views WHERE product_id='wire'", String.class))
+                .isEqualTo("[{\"fromQty\": 10, \"unitPrice\": 95000}]");
+        assertThat(jdbc.queryForObject("SELECT rating_count FROM product_views WHERE product_id='wire'", Integer.class))
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                        "SELECT local_delivery_fee FROM vendor_snapshots WHERE vendor_id=?", Long.class, VENDOR))
+                .isEqualTo(15000L);
+    }
+
+    @Test
+    void wireRemovalAndLockHideTheProductOnTheirOwnVersionStreams() {
+        var recovery = context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class);
+        inbox.capture("vendor.updated", bytes(vendorWire("v-1", "vendor.updated", 1, "APPROVED", true)));
+        inbox.capture("product.upserted", bytes(productWire("p-1", "wire", 3, "ON_SALE")));
+        inbox.capture("product.upserted", bytes(productWire("p-2", "other", 0, "ON_SALE")));
+        assertThat(recovery.replayPending(null, 10).applied()).isEqualTo(3);
+        inbox.capture("product.removed", bytes(removedWire("p-3", "wire", 4)));
+        inbox.capture("vendor.locked", bytes(vendorWire("v-2", "vendor.locked", 2, "LOCKED", false)));
+        assertThat(recovery.replayPending(null, 10).applied()).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT status FROM product_views WHERE product_id='wire'", String.class))
+                .isEqualTo("REMOVED");
+        assertThat(countIn("01")).isZero();
+        inbox.capture("product.upserted", bytes(productWire("p-4", "wire", 5, "ON_SALE")));
+        inbox.capture("vendor.updated", bytes(vendorWire("v-3", "vendor.updated", 3, "APPROVED", true)));
+        recovery.replayPending(null, 10);
+        assertThat(jdbc.queryForObject("SELECT status FROM product_views WHERE product_id='wire'", String.class))
+                .isEqualTo("REMOVED");
+        assertThat(countIn("01")).isEqualTo(1);
+    }
+
+    @Test
+    void wireThatBreaksTheContractStaysPendingAndProjectsNothing() {
+        var recovery = context.getBean(com.moonkage.catalog.service.ProjectionRecoveryService.class);
+        inbox.capture(
+                "product.upserted",
+                bytes(productWire("type", "a", 0, "ON_SALE")
+                        .replace("\"eventType\":\"product.upserted\"", "\"eventType\":\"product.removed\"")));
+        inbox.capture(
+                "product.upserted",
+                bytes(productWire("aggregate", "b", 0, "ON_SALE")
+                        .replace("\"aggregateId\":\"b\"", "\"aggregateId\":\"someone-else\"")));
+        inbox.capture(
+                "product.upserted",
+                bytes(productWire("snapshot", "c", 0, "ON_SALE").replace("\"origin\":null,", "")));
+        inbox.capture(
+                "product.upserted",
+                bytes(productWire("schema", "d", 0, "ON_SALE").replace("\"schemaVersion\":1", "\"schemaVersion\":2")));
+        inbox.capture("vendor.locked", bytes(vendorWire("locked", "vendor.locked", 1, "APPROVED", true)));
+        var result = recovery.replayPending(null, 10);
+        assertThat(result.failed()).isEqualTo(5);
+        assertThat(inbox.findPending(10)).hasSize(5);
+        assertThat(count("product_views")).isZero();
+        assertThat(count("vendor_snapshots")).isZero();
+        assertThat(count("processed_events")).isZero();
+    }
+
+    @Test
+    void searchFiltersSortsAndMatchesWordsWithoutAccents() {
+        seedVendor();
+        projection.applyProduct(
+                id(),
+                withCodes(
+                        product("cheap", 1, "Bánh nướng đậu xanh", ProductStatus.ON_SALE),
+                        "banh-nuong",
+                        "dau-xanh",
+                        90000));
+        projection.applyProduct(
+                id(),
+                withCodes(
+                        product("dear", 1, "Bánh dẻo trứng muối", ProductStatus.ON_SALE),
+                        "banh-deo",
+                        "trung-muoi",
+                        300000));
+        projection.applyProduct(
+                id(),
+                withCodes(
+                        product("mid", 1, "Bánh nướng thập cẩm", ProductStatus.ON_SALE),
+                        "banh-nuong",
+                        "thap-cam",
+                        150000));
+        assertThat(ids(searchIn("01", "banh nuong", List.of(), List.of(), null)))
+                .containsExactly("cheap", "mid");
+        assertThat(ids(searchIn("01", null, List.of(), List.of("banh-deo", "banh-nuong"), "price-desc")))
+                .containsExactly("dear", "mid", "cheap");
+        var filtered = new ProductSearchRequest(
+                "01", null, null, null, null, List.of("thap-cam", "trung-muoi"), 100000L, 200000L, "price-asc", 0, 20);
+        assertThat(ids(filtered)).containsExactly("mid");
+        assertThat(http.getForObject(
+                                "/api/products?provinceCode=01&crust=banh-nuong,banh-deo&sort=price-asc",
+                                JsonNode.class)
+                        .at("/data/content/0/id")
+                        .asText())
+                .isEqualTo("cheap");
+        assertThat(http.getForEntity("/api/products?provinceCode=01&sort=popular", JsonNode.class)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(http.getForEntity("/api/products?provinceCode=01&priceMin=5&priceMax=1", JsonNode.class)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void facetsCountTheAreaAndTextButIgnoreTheOtherFilters() {
+        seedVendor();
+        projection.applyProduct(
+                id(),
+                withCodes(product("a", 1, "Bánh nướng A", ProductStatus.ON_SALE), "banh-nuong", "dau-xanh", 90000));
+        projection.applyProduct(
+                id(), withCodes(product("b", 1, "Bánh dẻo B", ProductStatus.ON_SALE), "banh-deo", "dau-xanh", 300000));
+        projection.applyProduct(
+                id(), withCodes(product("h", 1, "Bánh ẩn", ProductStatus.HIDDEN), "banh-lanh", "khac", 10));
+        var facets = http.getForObject("/api/products/facets?provinceCode=01", JsonNode.class)
+                .at("/data");
+        assertThat(facets.at("/crusts").toString())
+                .isEqualTo("[{\"value\":\"banh-deo\",\"count\":1},{\"value\":\"banh-nuong\",\"count\":1}]");
+        assertThat(facets.at("/fillings").toString()).isEqualTo("[{\"value\":\"dau-xanh\",\"count\":2}]");
+        assertThat(facets.at("/vendors/0/vendorName").asText()).isEqualTo("Shop one");
+        assertThat(facets.at("/vendors/0/count").asLong()).isEqualTo(2);
+        assertThat(facets.at("/priceMin").asLong()).isEqualTo(90000);
+        assertThat(facets.at("/priceMax").asLong()).isEqualTo(300000);
+        var nuong = http.getForObject("/api/products/facets?provinceCode=01&q=nuong", JsonNode.class)
+                .at("/data");
+        assertThat(nuong.at("/crusts").size()).isEqualTo(1);
+        var elsewhere = http.getForObject("/api/products/facets?provinceCode=79", JsonNode.class)
+                .at("/data");
+        assertThat(elsewhere.at("/vendors").size()).isZero();
+        assertThat(elsewhere.at("/priceMin").isNull()).isTrue();
+    }
+
+    private ProductProjectionRow withCodes(ProductProjectionRow row, String crust, String filling, long price) {
+        return new ProductProjectionRow(
+                row.productId(),
+                row.vendorId(),
+                row.name(),
+                row.description(),
+                List.of(crust),
+                List.of(filling),
+                row.brand(),
+                row.origin(),
+                row.piecesPerBox(),
+                price,
+                row.stock(),
+                row.expiryDate(),
+                row.deliveryLabel(),
+                row.quoteThreshold(),
+                row.status(),
+                row.imageKeys(),
+                row.priceTiers(),
+                row.sourceVersion());
+    }
+
+    private List<String> ids(ProductSearchRequest request) {
+        return products.search(request, null).content().stream()
+                .map(com.moonkage.catalog.dto.response.ProductListingResponse::id)
+                .toList();
+    }
+
+    private static ProductSearchRequest searchIn(
+            String province, String query, List<String> vendorIds, List<String> crusts, String sort) {
+        return new ProductSearchRequest(province, query, vendorIds, null, crusts, null, null, null, sort, 0, 20);
+    }
+
+    private long countIn(String province) {
+        return countIn(province, null);
+    }
+
+    private long countIn(String province, String query) {
+        return products.search(searchIn(province, query, null, null, null), null)
+                .totalElements();
+    }
+
+    private static String productWire(String eventId, String productId, long version, String status) {
+        return """
+                {"eventId":"%s","schemaVersion":1,"eventType":"product.upserted","sourceService":"vendor-service",
+                "aggregateType":"PRODUCT","aggregateId":"%s","sourceVersion":%d,"occurredAt":"2026-10-26T11:00:00Z",
+                "data":{"productId":"%s","vendorId":"%s","name":"Hộp bánh mẫu","description":"Hộp bốn bánh",
+                "crustCodes":["banh-nuong"],"fillingCodes":["dau-xanh"],"brand":"Thương hiệu mẫu","origin":null,
+                "resold":false,"piecesPerBox":4,"listPrice":100000,"stock":12,"expiryDate":"2027-01-01",
+                "deliveryLabel":"LOCAL","quoteThreshold":null,"status":"%s","imageKeys":["products/x/cover.png"],
+                "priceTiers":[{"fromQty":10,"unitPrice":95000}]}}
+                """.formatted(eventId, productId, version, productId, VENDOR, status);
+    }
+
+    private static String removedWire(String eventId, String productId, long version) {
+        return """
+                {"eventId":"%s","schemaVersion":1,"eventType":"product.removed","sourceService":"vendor-service",
+                "aggregateType":"PRODUCT","aggregateId":"%s","sourceVersion":%d,"occurredAt":"2026-10-26T11:00:00Z",
+                "data":{"productId":"%s","vendorId":"%s","status":"REMOVED"}}
+                """.formatted(eventId, productId, version, productId, VENDOR);
+    }
+
+    private static String vendorWire(
+            String eventId, String routingKey, long version, String status, boolean canOperate) {
+        return """
+                {"eventId":"%s","schemaVersion":1,"eventType":"%s","sourceService":"vendor-service",
+                "aggregateType":"VENDOR","aggregateId":"%s","sourceVersion":%d,"occurredAt":"2026-10-26T11:00:00Z",
+                "data":{"vendorId":"%s","ownerAccountId":"%s","businessName":"Shop one","status":"%s",
+                "statusReason":null,"canOperate":%s,"sellsShop":true,"acceptsOrders":true,"deliveryAreas":["01"],
+                "localDeliveryFee":15000,"orderProfile":null,"changedBy":null}}
+                """.formatted(eventId, routingKey, VENDOR, version, VENDOR, OWNER, status, canOperate);
+    }
+
+    private static String reviewWire(String eventId, String reviewId, String productId, int rating) {
+        return """
+                {"eventId":"%s","schemaVersion":1,"eventType":"review.created","sourceService":"order-service",
+                "aggregateType":"REVIEW","aggregateId":"%s","sourceVersion":1,"occurredAt":"2026-10-26T07:00:01Z",
+                "data":{"reviewId":"%s","productId":"%s","vendorId":"%s","orderId":"order-one",
+                "rating":%d,"content":"Ngon","createdAt":"2026-10-26T07:00:00Z"}}
+                """.formatted(eventId, reviewId, reviewId, productId, VENDOR, rating);
     }
 
     private void captureRemovalFixture(String eventId) {
@@ -767,6 +980,7 @@ class CatalogProjectionIntegrationTest {
                 locked ? "LOCKED" : "APPROVED",
                 !locked,
                 true,
+                false,
                 List.of("01"),
                 15000L,
                 version);

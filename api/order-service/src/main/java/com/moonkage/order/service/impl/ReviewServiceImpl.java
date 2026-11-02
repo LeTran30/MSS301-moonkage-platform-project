@@ -6,6 +6,7 @@ import com.moonkage.order.dto.request.CreateReviewRequest;
 import com.moonkage.order.dto.response.ReviewResponse;
 import com.moonkage.order.entity.Order;
 import com.moonkage.order.entity.Review;
+import com.moonkage.order.enums.AggregateType;
 import com.moonkage.order.enums.OrderKind;
 import com.moonkage.order.enums.OrderStatus;
 import com.moonkage.order.exception.AppException;
@@ -20,7 +21,6 @@ import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,7 +60,6 @@ public class ReviewServiceImpl implements ReviewService {
         reviewRepository.save(review);
         entityManager.flush();
         ReviewCreatedEvent event = new ReviewCreatedEvent(
-                UUID.randomUUID().toString(),
                 review.getId(),
                 review.getProductId(),
                 review.getVendorId(),
@@ -68,7 +67,12 @@ public class ReviewServiceImpl implements ReviewService {
                 review.getRating(),
                 review.getContent(),
                 Objects.requireNonNullElseGet(review.getCreatedAt(), Instant::now));
-        outboxService.enqueue(event.eventId(), RabbitConfig.REVIEW_CREATED_ROUTING_KEY, event);
+        outboxService.enqueueState(
+                RabbitConfig.REVIEW_CREATED_ROUTING_KEY,
+                AggregateType.REVIEW,
+                event.reviewId(),
+                ReviewCreatedEvent.SOURCE_VERSION,
+                event);
         return toResponse(review);
     }
 

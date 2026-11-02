@@ -7,14 +7,17 @@ export const filterStrings = {
   brand: 'Thương hiệu',
   crust: 'Vỏ bánh',
   filling: 'Nhân bánh',
+  fillingChip: 'Nhân',
   shop: 'Shop',
   filterHint: 'Nhiều lựa chọn trong một nhóm = HOẶC; giữa các nhóm = VÀ.',
   clearFilters: 'Xóa lọc',
   removeFilter: (label: string) => `Bỏ lọc ${label}`,
   sort: 'Sắp xếp',
-  sorts: { rating: 'Đánh giá cao', 'price-asc': 'Giá thấp → cao', 'price-desc': 'Giá cao → thấp' },
+  sorts: { rating: 'Đánh giá cao', 'price-asc': 'Giá thấp → cao', 'price-desc': 'Giá cao → thấp', newest: 'Mới cập nhật' },
 
   quickTitle: 'Tìm nhanh',
   allFilters: 'Tất cả bộ lọc',
   under: (amount: string) => `Dưới ${amount}`,
+  loadMore: 'Xem thêm',
+  loadingMore: 'Đang tải…',
 };

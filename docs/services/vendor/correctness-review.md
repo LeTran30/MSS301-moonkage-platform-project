@@ -1,6 +1,6 @@
 # Nhận xét: tính đúng đắn theo từng tầng của vendor-service
 
-> **Trạng thái:** nhận xét (2026-10-26), sau giai đoạn 3 của [completion-plan.md](completion-plan.md), trên nhánh `feat/vendor-foundation`. Chỉ xét component `vendor` (gồm vùng giao, hồ sơ nhận đặt hàng) và `registrationfee`.
+> **Trạng thái:** nhận xét (2026-10-26), sau giai đoạn 3 của [completion-plan.md](../../archive/2026-10-26-vendor-completion-plan.md), trên nhánh `feat/vendor-foundation`. Chỉ xét component `vendor` (gồm vùng giao, hồ sơ nhận đặt hàng) và `registrationfee`.
 
 ## Câu hỏi
 

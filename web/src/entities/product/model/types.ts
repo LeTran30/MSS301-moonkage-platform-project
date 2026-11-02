@@ -1,6 +1,3 @@
-export type Crust = 'nuong' | 'deo' | 'than-tre';
-export type Filling = 'thap-cam' | 'hat-sen' | 'dau-xanh' | 'tra-xanh' | 'khoai-mon' | 'me-den' | 'yen-sao' | 'vi-ca';
-
 export interface ProductSummary {
   id: string;
   name: string;
@@ -9,8 +6,9 @@ export interface ProductSummary {
   /** District of the shop; null when the shop has not declared one. */
   district: string | null;
   brand: string;
-  crust: Crust;
-  fillings: Filling[];
+  /** Codes of the crust and filling catalogue of vendor-service (GET /api/cake-attributes), e.g. `banh-nuong`. */
+  crustCodes: string[];
+  fillingCodes: string[];
   price: number;
   rating: number | null;
   reviewCount: number;
