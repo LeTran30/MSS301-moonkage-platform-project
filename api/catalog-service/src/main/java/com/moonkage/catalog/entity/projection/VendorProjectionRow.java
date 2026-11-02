@@ -12,6 +12,7 @@ public record VendorProjectionRow(
         String status,
         boolean canOperate,
         boolean sellsShop,
+        boolean acceptsOrders,
         List<String> deliveryAreas,
         Long localDeliveryFee,
         long sourceVersion) {

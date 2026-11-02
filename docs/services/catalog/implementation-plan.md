@@ -42,9 +42,9 @@ Scope nhận: API tìm/lọc/chi tiết/reviews, bản chiếu qua RabbitMQ, b�
 | --- | --- | --- | --- |
 | C0 | Đọc nguồn, map màn/API/DB, ghi sai lệch và ranh giới | 0,5–1 ngày | Đã lập kế hoạch |
 | C1 | Phí liên tỉnh: record DTO, validation server, ADMIN, lock chống lưu xen kẽ, atomic outbox, relay confirm/return, gateway route; tests thiếu/trùng/mã lạ/âm/zero/quyền/rollback | 1 ngày | Backend và tests đã qua; audit consumer/startup còn phụ thuộc C2/C5 |
-| C2 | Thay entity/repository sản phẩm cũ bằng view `@Immutable`; bỏ writer khỏi catalog khi vendor có endpoint thay thế; consumer idempotent/version gate, tombstone chống resurrect; reviews đến trước product, vendor lock/unlock; replay/rebuild | 1,5–2 ngày | Phần đã xác nhận đã triển khai và qua kiểm tra: startup V2, core projection, inbox capture. **Chưa hoàn tất C2**: business adapter/full replay chờ contract và producer; writer còn giữ profile legacy |
-| C3 | Chốt contract v1.8 với vendor; migration mới taxonomy và arrays/quan hệ read model; search nhiều tiêu chí, facets có scope vùng/quyền, sort ổn định + page giới hạn; chi tiết/reviews/own/admin | 1,5–2 ngày | Chờ contract và C2 |
-| C4 | Shipping policy + snapshot, LOCAL/NATIONWIDE, một phí/shop, fee chưa cấu hình không thành 0; root routes và internal deny | 0,5–1 ngày | Chưa triển khai |
+| C2 | Thay entity/repository sản phẩm cũ bằng view `@Immutable`; bỏ writer khỏi catalog khi vendor có endpoint thay thế; consumer idempotent/version gate, tombstone chống resurrect; reviews đến trước product, vendor lock/unlock; replay/rebuild | 1,5–2 ngày | Startup V2, core projection, inbox capture; **adapter cho 5 key và `PendingInboxProjector` (Phase D, 02/11/2026)**. Writer cũ đã xóa (02/11/2026). Còn lại: full rebuild từ feed của producer |
+| C3 | Chốt contract v1.8 với vendor; migration mới taxonomy và arrays/quan hệ read model; search nhiều tiêu chí, facets có scope vùng/quyền, sort ổn định + page giới hạn; chi tiết/reviews/own/admin | 1,5–2 ngày | Search nhiều tiêu chí, facets, sort và `acceptsOrders` xong (02/11/2026). Còn lại: chế độ quản lý own/admin |
+| C4 | Shipping policy + snapshot, LOCAL/NATIONWIDE, một phí/shop, fee chưa cấu hình không thành 0; root routes và internal deny | 0,5–1 ngày | Root route `/api/products` và chặn internal xong (02/11/2026); snapshot phí đã có từ F1. Còn lại: rà shipping policy |
 | C5 | Seed/replay fixture, Postgres+Rabbit integration, contract với vendor/order/orchestrator, nối UI và visual QA, startup qua Flyway validate | 1–1,5 ngày | Chưa triển khai |
 
 Tổng dự kiến khoảng **6–8,5 ngày tập trung**. Để cân đối STEMotion, nhận catalog backend với các đầu vào rõ ràng; việc sửa toàn bộ màn seller/admin/buyer là task frontend riêng. Có thể review/merge từng mốc sau khi dependency tương ứng sẵn sàng.
@@ -61,7 +61,7 @@ Tổng dự kiến khoảng **6–8,5 ngày tập trung**. Để cân đối STE
 
 ## 6. Rủi ro và kế hoạch kiểm tra
 
-- **Blocker tại C1, xử lý trong C2:** entity cũ map bảng đã bị V2 xóa. Lê Trần đã cho phép cô lập code/entity/repository/controller writer cũ trong profile `legacy-writer`, không bật mặc định; giữ code nghiệp vụ và 11 test ảnh cũ. Runtime mặc định scan ProductListing @Immutable/read repository, vẫn validate schema. Profile legacy không dùng được với V2, không khôi phục bảng hoặc tắt validate.
+- **Blocker tại C1, xử lý trong C2:** entity cũ map bảng đã bị V2 xóa. Lê Trần đã cho phép cô lập code/entity/repository/controller writer cũ trong profile `legacy-writer`, không bật mặc định; giữ code nghiệp vụ và 11 test ảnh cũ. Runtime mặc định scan ProductListing @Immutable/read repository, vẫn validate schema. Profile legacy không dùng được với V2, không khôi phục bảng hoặc tắt validate. **Đã xóa hẳn writer, profile và 11 test ảnh ngày 02/11/2026** sau khi vendor-service có endpoint ghi sản phẩm (L-18).
 - Docker trên máy chưa chạy lúc bắt đầu. Unit/MVC/ArchUnit có thể chạy; tests Postgres/Rabbit chỉ tính đã xác minh khi hạ tầng thật chạy. Test skip không phải pass tích hợp.
 - Test slice C1 dùng entity scan có chủ đích cho fee/province/outbox; không chứng minh các entity sản phẩm cũ hợp lệ.
 - Test tiền tệ: `long`, 0 hợp lệ, âm/null bị chặn, không gán phí mặc định cho province chưa cấu hình.
@@ -104,6 +104,26 @@ Phase B thêm recovery internal port: batch rebuild rating từ reviews; replay 
 Verify B bản cuối **403 pass / 0 fail / 0 error / 0 skip**, full clean verify 18:05:11 ngày 26/10/2026; catalog 109 gồm 38 full application tests. Đếm XML theo 11 module parent POM sau clean, không targets cũ; PG/Rabbit thật, checks chất lượng và diff check qua. C2 vẫn chưa hoàn tất business integration.
 
 Commit B **local** `1cf65c5`. Phase C đã soạn [contract-proposal.md](contract-proposal.md), chưa được nhóm duyệt, không nối adapter theo payload đề xuất. **DỪNG trước D**; chờ Lê Trần xác nhận “contract đã được nhóm duyệt”. Không push, merge vào develop/main hoặc deploy; §7 cũ chỉ truy vết.
+
+### Phase D, 02/11/2026: nối adapter
+
+Lam mở gate D ngày 02/11/2026 để thông luồng F1 (Mua hàng có sẵn). Lê Trần duyệt toàn bộ contract cùng ngày, kể cả các chỗ lệch ghi ở [contract-proposal.md](contract-proposal.md#0-trạng-thái-triển-khai-02112026).
+
+- `service/replay`: `ProductUpsertedAdapter`, `ProductRemovedAdapter`, `VendorUpdatedAdapter`, `VendorLockedAdapter` (chung `VendorSnapshotReader`), `ReviewCreatedAdapter`; `ProjectionEventReader` đọc envelope v1 chặt: schemaVersion 1, eventType trùng routing key, aggregateType, aggregateId trùng id trong data, field nullable phải có mặt.
+- `PendingInboxProjector` (`catalog.projections.apply-*`) chạy mỗi giây, áp các entry chưa có trong `processed_events`. Event sai contract: transaction của entry rollback, entry giữ pending, log eventId (không log payload), batch chạy tiếp; `ReplayBatchResponse.failed` đếm số này.
+- Seed dev `vendor_snapshots` cho hai vendor của seed vendor (version 0), vì seed vendor ghi thẳng DB nên không phát `vendor.updated`.
+- Kiểm tra: `CatalogProjectionIntegrationTest` 41 pass (PG/Rabbit thật), gồm payload đúng dạng producer cho 5 key, removal/lock trên từng version stream, và 5 ca sai contract giữ pending. F1 chạy qua gateway trên docker-compose: vendor tạo sản phẩm → listing/chi tiết → giỏ → checkout → IPN → đơn PAID → giao → nhận → đánh giá hiện ở catalog.
+
+### 02/11/2026: acceptsOrders, tìm kiếm, bỏ writer cũ, review envelope
+
+Lam quyết định sau khi Lê Trần duyệt contract; làm theo thứ tự dưới đây.
+
+- `acceptsOrders`: migration `V2026_11_02_1000` tạo lại view `product_listings` với `vendor_accepts_orders`; `VendorProjectionRow`, `JdbcCatalogProjectionRepository.applyVendor`, `ProductListingResponse.vendorAcceptsOrders`.
+- Tìm kiếm: `JdbcProductSearchRepository` dựng SQL động trên `product_listings` (lọc vendor/brand/crust/filling/giá, sort `rating`/`price-asc`/`price-desc`/`newest`, tie-break productId), facets bằng CTE chỉ áp vùng và `q`; migration `V2026_11_02_1100` bật `unaccent`. Service lấy trang id rồi đọc entity view giữ thứ tự.
+- Bỏ writer cũ: xóa controller/service/entity/repository/DTO/mapper ghi sản phẩm, `VendorClient`, `AuditPublisher`, `LegacyWriterConfig`, mọi `@Profile("!legacy-writer")`; bỏ dependency `common-storage` và `spring-cloud-starter-openfeign`, cấu hình `storage.*`. Gateway có route `catalog-service` cho `/api/products/**` và `/api/interprovince-fees/**`, guest GET được cả hai đường; `/internal/**` luôn bị chặn.
+- `review.created`: order-service có `EventEnvelope`/`AggregateType` cùng dạng vendor-service; `ReviewCreatedAdapter` đọc envelope và kiểm aggregateId = reviewId.
+- Web: storefront dùng tỉnh đang chọn; trang danh sách gọi search/facets của server, phân trang "Xem thêm", nhãn vỏ/nhân lấy từ `/api/cake-attributes`.
+- Kiểm tra: catalog 103 test (CatalogProjectionIntegrationTest 43), order-service 31 (thêm `OutboxServiceImplTest`), gateway 9; web `npm run check`.
 
 Tài liệu bàn giao audit cho owner orchestrator: [handoff](orchestrator-handoff.md), không sửa code hoặc gửi tin ra ngoài. Pseudocode: [recovery coordinator](classes/ProjectionRecoveryServiceImpl.md), [entry transaction](classes/ProjectionReplayEntryServiceImpl.md).
 

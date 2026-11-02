@@ -1,5 +1,9 @@
 # Catalog service
 
+## Trạng thái 02/11/2026
+
+Contract v1 đã duyệt; Phase D xong phần adapter, `acceptsOrders`, tìm kiếm/facets, root route gateway và `review.created` theo envelope. Catalog chỉ còn phía đọc: không ghi sản phẩm, không gọi MinIO hay Feign. Chi tiết trong [implementation-plan](implementation-plan.md#02112026-acceptsorders-tìm-kiếm-bỏ-writer-cũ-review-envelope). Các mục bên dưới là lịch sử.
+
 ## Trạng thái 26/10/2026
 
 [Kế hoạch C0–C5](implementation-plan.md) là bản phân chia scope sau khi đối chiếu IA và hai bộ wireframe. **C1** đã push riêng (`3cbb1ff`). Snapshot C2 đã commit **local** `1e160ae`, merge develop local `3227fed` theo master prompt Phase A–C. C2 còn chờ contract producer, chưa hoàn thành consumer nghiệp vụ/full replay. Không push, merge vào develop/main hoặc deploy; Phase D chờ xác nhận nhóm duyệt contract.
@@ -49,7 +53,19 @@ Verify Phase B: full clean verify **403 pass / 0 fail / 0 error / 0 skip**; cata
 
 Phase C: [đề xuất contract](contract-proposal.md) **CHƯA ĐƯỢC NHÓM DUYỆT**. Chưa có production adapter theo tài liệu đó, chưa bắt đầu D. Gate yêu cầu Lê Trần xác nhận contract đã được nhóm duyệt, sau đó mới làm C3/C4/C5. Local commits A/B không phải lệnh push/deploy.
 
-## API đọc cơ bản C2
+## API đọc
+
+Gateway root `/api/products` (route `catalog-service`); `/catalog-service/api/products` vẫn chạy qua discovery locator với cùng quyền. Guest đọc được, không cần token.
+
+| Method/path | Tham số | Kết quả |
+| --- | --- | --- |
+| `GET /api/products` | `provinceCode` (bắt buộc, 34 mã); `q`; `vendorId`, `brand`, `crust`, `filling` (lặp tham số hoặc phân tách bằng dấu phẩy, tối đa 50 giá trị); `priceMin`, `priceMax` (>= 0, min <= max); `sort` = `rating` (mặc định) \| `price-asc` \| `price-desc` \| `newest`; `page`, `size` (1–100) | Trang `ProductListingResponse`. `q` tách theo khoảng trắng (tối đa 10 từ), mỗi từ phải có trong tên, thương hiệu hoặc tên Shop, không phân biệt hoa thường và dấu (`unaccent`). Cùng một nhóm là OR, khác nhóm là AND; vỏ/nhân khớp khi sản phẩm có ít nhất một mã đã chọn. Sort lạ → `CAT_001` |
+| `GET /api/products/facets` | `provinceCode`, `q` | `{crusts, fillings, brands: [{value, count}], vendors: [{vendorId, vendorName, count}], priceMin, priceMax}` trên các sản phẩm công khai trong vùng khớp `q`, bỏ qua các bộ lọc khác để panel không tự thu hẹp |
+| `GET /api/products/{id}`, `GET /api/products/{id}/reviews` | `provinceCode` (tùy chọn) | Chi tiết và đánh giá của sản phẩm công khai |
+
+Chỉ ON_SALE + canOperate + sellsShop + giao được tới tỉnh; LOCAL ngoài vùng không lọt ra. Response có `vendorAcceptsOrders` để web quyết định nút gửi yêu cầu báo giá.
+
+### Lịch sử: API đọc cơ bản C2
 
 Qua discovery route gateway `/catalog-service/api/products`; endpoint service giữ `/api/products` (root gateway/facets đầy đủ thuộc C3). GET list yêu cầu `provinceCode` hợp lệ trong 34 mã, hỗ trợ q theo name/brand, vendorId, page/size (1–100), sort cố định updatedAt rồi id. Chỉ ON_SALE + canOperate + sellsShop + giao được; LOCAL ngoài vùng không lọt ra. GET detail/reviews chặn hàng không công khai, detail chưa chọn tỉnh không trả shippingFee giả bằng 0. Phí/snapshot đầy đủ thuộc C4.
 

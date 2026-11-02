@@ -13,10 +13,11 @@ spring:
       server:
         webflux:
           routes:
-            - id: catalog-interprovince-fees
+            # catalog-service by resource (contract catalog v1); /catalog-service/** still works through the locator
+            - id: catalog-service
               uri: lb://catalog-service
               predicates:
-                - Path=/api/interprovince-fees,/api/interprovince-fees/**
+                - Path=/api/products,/api/products/**,/api/interprovince-fees,/api/interprovince-fees/**
             # STOMP over WebSocket of orchestrator-service (Software Design 5.1 rule 9). Open at the HTTP level:
             # a browser cannot send a header on the handshake, so the access token is checked on STOMP CONNECT.
             - id: orchestrator-websocket

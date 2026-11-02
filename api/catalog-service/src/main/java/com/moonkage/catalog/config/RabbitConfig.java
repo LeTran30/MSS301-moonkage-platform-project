@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
 
     public static final String EVENTS_EXCHANGE = "moonkage.events";
-    public static final String AUDIT_ROUTING_KEY = "audit.catalog";
 
     @Bean
     TopicExchange eventsExchange() {

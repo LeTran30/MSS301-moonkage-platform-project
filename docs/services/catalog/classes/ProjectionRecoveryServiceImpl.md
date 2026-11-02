@@ -2,13 +2,13 @@
 
 ## 1. Thông tin chung và bất biến
 
-ProjectionRecoveryServiceImpl phụ thuộc ProjectionRecoveryRepository, CatalogProjectionService, ProjectionReplayEntryService và danh sách ProjectionReplayAdapter. Không có controller/scheduler hay feed giả. Production hiện **không có adapter nghiệp vụ**. Checkpoint chỉ là vị trí quét inbox tạm, không được persist như producer checkpoint.
+ProjectionRecoveryServiceImpl phụ thuộc ProjectionRecoveryRepository, CatalogProjectionService, ProjectionReplayEntryService và danh sách ProjectionReplayAdapter. Không có controller hay feed giả; `PendingInboxProjector` gọi replayPending theo lịch. Production có 5 adapter (product.upserted/removed, vendor.updated/locked, review.created). Checkpoint chỉ là vị trí quét inbox tạm, không được persist như producer checkpoint.
 
 ## 2. Method
 
 | Method | Input | Output | Lỗi |
 | --- | --- | --- | --- |
-| replayPending | checkpoint hoặc null, limit 1–1000 | inspected/applied/skipped/deferred, nextScanPosition/hasMore | Invalid input, ambiguity, adapter/DB errors |
+| replayPending | checkpoint hoặc null, limit 1–1000 | inspected/applied/skipped/deferred/failed, nextScanPosition/hasMore | Invalid input, ambiguity |
 | rebuildRatings | afterProductId hoặc null, limit 1–1000 | rebuilt, nextProductId/hasMore | Invalid input, DB errors |
 
 ## 3. Pseudocode
@@ -16,7 +16,7 @@ ProjectionRecoveryServiceImpl phụ thuộc ProjectionRecoveryRepository, Catalo
 ### replayPending
 
 1. **Guard:** limit hợp lệ. Checkpoint record kiểm timestamp/eventId. Đọc inbox pending bằng keyset `(received_at, event_id)`, lấy limit+1 để báo hasMore.
-2. **Nghiệp vụ:** mỗi entry chọn adapter cùng routingKey. Không có → deferred, không gọi mutation. Nhiều adapter cùng key → lỗi cấu hình. Có đúng một → gọi entryService qua proxy riêng.
+2. **Nghiệp vụ:** mỗi entry chọn adapter cùng routingKey. Không có → deferred, không gọi mutation. Nhiều adapter cùng key → lỗi cấu hình. Có đúng một → gọi entryService qua proxy riêng. Adapter hoặc DB từ chối (IllegalArgumentException, CatalogException, DataAccessException) → transaction của entry rollback, tính failed, log eventId/routingKey, entry giữ pending, batch chạy tiếp.
 3. **Persistence:** không ghi checkpoint DB, không xóa raw/processed/tombstone. EntryService dùng transaction REQUIRES_NEW cho từng event; batch có thể commit một phần trước lỗi. Chạy lại từ đầu an toàn nhờ eventId/core dedup.
 4. **Response:** outcome APPLIED tính applied; DUPLICATE/STALE/REMOVED tính skipped. NextScanPosition là dòng cuối đã **quét**, có thể gồm deferred; không phải chứng nhận đã xử lý hết.
 

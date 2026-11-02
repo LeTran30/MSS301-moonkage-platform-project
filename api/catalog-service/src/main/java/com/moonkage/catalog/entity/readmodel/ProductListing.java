@@ -83,4 +83,6 @@ public class ProductListing {
     private Long localDeliveryFee;
     private boolean canOperate;
     private boolean sellsShop;
+
+    private boolean vendorAcceptsOrders;
 }

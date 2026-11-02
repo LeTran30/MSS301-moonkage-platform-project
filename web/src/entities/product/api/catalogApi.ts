@@ -43,15 +43,16 @@ export async function fetchFeaturedProducts(area: string): Promise<ProductSummar
 }
 
 /** Every product of one shop delivered to `area` (vendor page). */
-export async function fetchShopProducts(shopId: string): Promise<ProductSummary[]> {
+export async function fetchShopProducts(shopId: string, area: string): Promise<ProductSummary[]> {
   if (config.demoMode) {
-    return mockResponse(mockProducts.filter((p) => p.shopId === shopId).map(summary));
+    return mockResponse(mockProducts.filter((p) => p.shopId === shopId && p.deliverTo.includes(area)).map(summary));
   }
   try {
+    const provinceCode = provinceCodeOf(area);
     const res = await apiClient.get<ApiResponse<PageResponse<ProductListingDto>>>(
-      `${catalogProductsApi}?provinceCode=01&vendorId=${encodeURIComponent(shopId)}&size=50`,
+      `${catalogProductsApi}?provinceCode=${encodeURIComponent(provinceCode)}&vendorId=${encodeURIComponent(shopId)}&size=50`,
     );
-    return (res.data.data?.content ?? []).map((dto) => mapDtoToSummary(dto));
+    return (res.data.data?.content ?? []).map((dto) => mapDtoToSummary(dto, area));
   } catch {
     return [];
   }

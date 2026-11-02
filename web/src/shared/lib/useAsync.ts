@@ -5,6 +5,11 @@ export type AsyncState<T> = { kind: 'loading' } | { kind: 'error'; message: stri
 
 const DEFAULT_LOAD_ERROR = 'Không tải được dữ liệu. Thử lại sau ít phút.';
 
+/** What to tell the user when a load failed: the server's message, or a general one. */
+export function loadErrorMessage(error: unknown): string {
+  return error instanceof ApiError ? error.message : DEFAULT_LOAD_ERROR;
+}
+
 /**
  * Runs `load` on mount and whenever `deps` change; answers that arrive after a newer request are dropped.
  * `reload` runs it again (the retry button).
@@ -22,7 +27,7 @@ export function useAsync<T>(load: () => Promise<T>, deps: readonly unknown[]): A
     run().then(
       (data) => current && setState({ kind: 'loaded', data }),
       (error: unknown) =>
-        current && setState({ kind: 'error', message: error instanceof ApiError ? error.message : DEFAULT_LOAD_ERROR }),
+        current && setState({ kind: 'error', message: loadErrorMessage(error) }),
     );
     return () => {
       current = false;

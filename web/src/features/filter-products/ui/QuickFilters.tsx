@@ -1,24 +1,29 @@
 import { Link } from 'react-router-dom';
-import type { Crust, Filling } from '@/entities/product';
+import { labelOf, useCakeAttributeLabels } from '@/entities/product';
 import { routes } from '@/shared/config/routes';
 import { formatVnd } from '@/shared/utils/money';
-import { crustLabels, fillingLabels, filterLink, type ProductFilters } from '../model/filters';
+import { filterLink, type ProductFilters } from '../model/filters';
 import { filterStrings } from '../strings';
 import styles from './QuickFilters.module.css';
 
 const UNDER_AMOUNT = 500000;
 
-const chips: { label: string; filters: Partial<ProductFilters> }[] = [
-  ...(['nuong', 'deo'] as Crust[]).map((c) => ({ label: `Vỏ ${crustLabels[c].toLowerCase()}`, filters: { crusts: [c] } })),
-  ...(['thap-cam', 'hat-sen', 'dau-xanh', 'tra-xanh'] as Filling[]).map((f, i) => ({
-    label: i === 0 ? `Nhân ${fillingLabels[f].toLowerCase()}` : fillingLabels[f],
-    filters: { fillings: [f] },
-  })),
-  { label: filterStrings.under(formatVnd(UNDER_AMOUNT)), filters: { priceMax: UNDER_AMOUNT } },
-];
+/** Codes of the vendor catalogue seed (codes never change, L-19); labels come from the catalogue. */
+const QUICK_CRUSTS = ['banh-nuong', 'banh-deo'];
+const QUICK_FILLINGS = ['thap-cam', 'hat-sen', 'dau-xanh', 'tra-xanh'];
 
 /** One row of links into "Mua hàng có sẵn" with a filter already set; only filters the list really has. */
 export function QuickFilters() {
+  const attributes = useCakeAttributeLabels();
+  const labels = attributes.kind === 'loaded' ? attributes.data : undefined;
+  const chips: { label: string; filters: Partial<ProductFilters> }[] = [
+    ...QUICK_CRUSTS.map((c) => ({ label: labelOf(labels?.crusts, c), filters: { crusts: [c] } })),
+    ...QUICK_FILLINGS.map((f) => ({
+      label: `${filterStrings.fillingChip} ${labelOf(labels?.fillings, f).toLowerCase()}`,
+      filters: { fillings: [f] },
+    })),
+    { label: filterStrings.under(formatVnd(UNDER_AMOUNT)), filters: { priceMax: UNDER_AMOUNT } },
+  ];
   return (
     <nav className={`${styles.quickFilters} quick-filters`} aria-label={filterStrings.quickTitle}>
       <span className={`${styles.label} quick-filters__label`}>{filterStrings.quickTitle}</span>

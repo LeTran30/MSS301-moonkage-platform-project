@@ -35,6 +35,7 @@ public final class ProductListingMapper {
                 product.getPriceTiers().deepCopy(),
                 product.getRatingAvg(),
                 product.getRatingCount(),
+                product.isVendorAcceptsOrders(),
                 Objects.equals(accountId, product.getOwnerAccountId()),
                 product.getUpdatedAt());
     }

@@ -1,4 +1,5 @@
-export type { Crust, Filling, ProductDetail, ProductSummary, Review } from './model/types';
+export type { ProductDetail, ProductSummary, Review } from './model/types';
+export { fetchCakeAttributeLabels, labelOf, type CakeAttributeLabels } from './api/cakeAttributeApi';
 export { ProductCard, ProductGrid } from './ui/ProductCard';
 export {
   fetchProduct,
@@ -11,7 +12,8 @@ export {
 } from './api/productApi';
 export { featuredProductIds, mockProducts } from './api/mockData';
 export { useProduct, useProductsByIds } from './model/useProduct';
-export { useAreaProducts, useFeaturedProducts, useShopProducts } from './model/useCatalog';
+export { fetchProducts } from './api/catalogApi';
+export { useAreaProducts, useCakeAttributeLabels, useFeaturedProducts, useShopProducts } from './model/useCatalog';
 export { productStrings } from './strings';
 export { BuyBox, CustomOrderNudge, ProductGallery, ProductHead, ProductSpecs, ReviewList } from './ui/ProductDetailParts';
 export { adminProductStore, fetchAdminProducts, vendorIdOfProduct } from './api/adminProductApi';

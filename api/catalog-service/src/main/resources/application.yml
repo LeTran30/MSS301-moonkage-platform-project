@@ -6,9 +6,6 @@ server:
 spring:
   application:
     name: catalog-service
-  # error texts of common-storage (StorageErrorCode)
-  messages:
-    basename: storage-messages
   datasource:
     url: "jdbc:postgresql://${CATALOG_DB_HOST}:${CATALOG_DB_PORT}/catalog_db"
     username: ${DB_USERNAME}
@@ -39,26 +36,14 @@ spring:
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
 
-# values come from the repo-root .env (see .env.example)
-# internal-url = how this service reaches MinIO (docker compose sets MINIO_INTERNAL_URL=http://minio:9000);
-# browser-url = how a browser reaches it (product image URLs and presigned upload links)
-storage:
-  internal-url: "${MINIO_INTERNAL_URL:http://localhost:${MINIO_API_PORT}}"
-  browser-url: "${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT}}"
-  # catalog's own MinIO user (infra/minio/init.sh): may only touch <public>/products/ and <private>/tmp/catalog/
-  access-key: ${MINIO_CATALOG_ACCESS_KEY}
-  secret-key: ${MINIO_CATALOG_SECRET_KEY}
-  public-bucket-name: ${MINIO_PUBLIC_BUCKET}
-  private-bucket-name: ${MINIO_PRIVATE_BUCKET}
-  region: ${MINIO_REGION:us-east-1}
-  # fixed: it must match the prefix infra/minio/init.sh grants this service
-  temp-key-prefix: tmp/catalog
-  upload-link-lifetime: ${MINIO_UPLOAD_LINK_LIFETIME:10m}
-  download-link-lifetime: ${MINIO_DOWNLOAD_LINK_LIFETIME:10m}
-
 catalog:
   projections:
     capture-enabled: true
+    # apply captured inbox events to the read model (PendingInboxProjector)
+    apply-enabled: true
+    apply-interval: 1s
+    apply-batch-size: 100
+    apply-max-pages: 10
   public-images:
     base-url: "${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT:9000}}"
     bucket: "${MINIO_PUBLIC_BUCKET:moonkage-public}"
@@ -66,9 +51,6 @@ catalog:
     enabled: true
     relay-interval: 2s
     batch-size: 25
-  product-image:
-    allowed-content-types: ${PRODUCT_IMAGE_ALLOWED_CONTENT_TYPES:image/jpeg,image/png,image/webp}
-    max-size: ${PRODUCT_IMAGE_MAX_SIZE:5MB}
 
 eureka:
   client:

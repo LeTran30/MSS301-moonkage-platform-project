@@ -3,7 +3,7 @@ import { catalogProductsApi } from '@/shared/api/gateway';
 import { mockResponse } from '@/shared/api/mock';
 import { config } from '@/shared/config/env';
 import { ALL_PROVINCE_NAMES } from '@/shared/config/provinces';
-import type { Crust, Filling, ProductDetail, ProductSummary, Review } from '../model/types';
+import type { ProductDetail, ProductSummary, Review } from '../model/types';
 import { mockProducts } from './mockData';
 
 export interface PageResponse<T> {
@@ -37,6 +37,8 @@ export interface ProductListingDto {
   priceTiers: string | null;
   ratingAvg: number | null;
   ratingCount: number;
+  /** The Shop takes custom orders: the detail page offers a request to it (M2.1). */
+  vendorAcceptsOrders: boolean;
   isOwn: boolean;
   updatedAt: string;
 }
@@ -47,28 +49,6 @@ export interface ProductReviewDto {
   rating: number;
   comment: string | null;
   createdAt: string;
-}
-
-function toCrust(codes: string[]): Crust {
-  if (codes.includes('DEO')) return 'deo';
-  if (codes.includes('THAN_TRE')) return 'than-tre';
-  return 'nuong';
-}
-
-const FILLING_CODE_MAP: Record<string, Filling> = {
-  THAP_CAM: 'thap-cam',
-  HAT_SEN: 'hat-sen',
-  DAU_XANH: 'dau-xanh',
-  TRA_XANH: 'tra-xanh',
-  KHOAI_MON: 'khoai-mon',
-  ME_DEN: 'me-den',
-  YEN_SAO: 'yen-sao',
-  VI_CA: 'vi-ca',
-};
-
-function toFillings(codes: string[]): Filling[] {
-  const result = codes.map((c) => FILLING_CODE_MAP[c]).filter((f): f is Filling => Boolean(f));
-  return result.length > 0 ? result : ['thap-cam'];
 }
 
 function formatIsoDate(iso: string | null | undefined): string {
@@ -104,8 +84,8 @@ export function mapDtoToSummary(dto: ProductListingDto, area?: string): ProductS
     stock: dto.stock,
     rating: dto.ratingAvg !== null && dto.ratingAvg !== undefined ? Number(dto.ratingAvg) : null,
     reviewCount: dto.ratingCount ?? 0,
-    crust: toCrust(dto.crustCodes),
-    fillings: toFillings(dto.fillingCodes),
+    crustCodes: dto.crustCodes ?? [],
+    fillingCodes: dto.fillingCodes ?? [],
     images: dto.imageUrls ?? [],
   };
 }
@@ -130,7 +110,7 @@ export function mapDtoToDetail(dto: ProductListingDto, reviewDtos: ProductReview
     ...sum,
     shippingFrom: 25000,
     specs,
-    shopTakesCustom: dto.quoteThreshold !== null && dto.quoteThreshold !== undefined ? true : true,
+    shopTakesCustom: dto.vendorAcceptsOrders,
     reviews,
   };
 }

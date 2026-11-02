@@ -3,17 +3,10 @@ package com.moonkage.catalog.common.exception;
 import com.moonkage.catalog.dto.response.ApiResponse;
 import com.moonkage.catalog.exception.CatalogErrorCode;
 import com.moonkage.catalog.exception.CatalogException;
-import com.moonkage.storage.InvalidFileException;
-import com.moonkage.storage.StorageErrorCode;
-import com.moonkage.storage.StorageUnavailableException;
-import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +17,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-/** Central error boundary; legacy product bodies stay compatible until the CQRS transition. */
+/** Central error boundary: the ApiResponse envelope on /api/products and /api/interprovince-fees. */
 @Slf4j
 @RestControllerAdvice
-@RequiredArgsConstructor
 public class GlobalExceptionHandler {
-
-    /** Holds storage-messages (spring.messages.basename). */
-    private final MessageSource messageSource;
 
     @ExceptionHandler(CatalogException.class)
     public ResponseEntity<Object> handleCatalog(CatalogException ex, HttpServletRequest request) {
@@ -64,31 +53,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<Object> handleMissingHeader(MissingRequestHeaderException ex, HttpServletRequest request) {
         return build(HttpStatus.UNAUTHORIZED, "Thiếu thông tin đăng nhập", request);
-    }
-
-    @ExceptionHandler(CustomException.class)
-    public ResponseEntity<Object> handleCustom(CustomException ex, HttpServletRequest request) {
-        return build(ex.getStatus(), ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(InvalidFileException.class)
-    public ResponseEntity<Object> handleInvalidFile(InvalidFileException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_REQUEST, localize(ex.getErrorCode(), ex.getMessageArgs()), request);
-    }
-
-    @ExceptionHandler(StorageUnavailableException.class)
-    public ResponseEntity<Object> handleStorage(StorageUnavailableException ex, HttpServletRequest request) {
-        log.error("MinIO call failed", ex);
-        return build(HttpStatus.SERVICE_UNAVAILABLE, localize(StorageErrorCode.UNAVAILABLE), request);
-    }
-
-    @ExceptionHandler(FeignException.class)
-    public ResponseEntity<Object> handleFeign(FeignException ex, HttpServletRequest request) {
-        log.error("Call to another service failed", ex);
-        return build(
-                HttpStatus.SERVICE_UNAVAILABLE,
-                "Dịch vụ liên quan đang không phản hồi. Vui lòng thử lại sau.",
-                request);
     }
 
     @ExceptionHandler(Exception.class)
@@ -126,9 +90,5 @@ public class GlobalExceptionHandler {
                 || path.startsWith("/api/interprovince-fees/")
                 || path.equals("/api/products")
                 || path.startsWith("/api/products/");
-    }
-
-    private String localize(StorageErrorCode errorCode, Object... args) {
-        return messageSource.getMessage(errorCode.getMessageKey(), args, LocaleContextHolder.getLocale());
     }
 }

@@ -9,7 +9,7 @@ export const registrationFeeConfigApi = '/api/registration-fee-config';
 export const cakeAttributesApi = '/api/cake-attributes';
 
 /** catalog-service read endpoints and interprovince fee table. */
-export const catalogProductsApi = '/catalog-service/api/products';
+export const catalogProductsApi = '/api/products';
 export const interprovinceFeesApi = '/api/interprovince-fees';
 
 /** quotation-service endpoints through the gateway discovery locator. */
