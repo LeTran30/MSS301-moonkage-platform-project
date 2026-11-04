@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { routes } from '@/shared/config';
 import { useAction } from '@/shared/lib';
 import { Tabs, toast, AsyncState, EmptyState } from '@/shared/ui';
 import { useOrderList, type Order } from '@/entities/order';
@@ -23,6 +25,7 @@ type VendorOrderTab = 'ALL' | 'RETAIL' | 'BULK' | 'DISPUTED';
  * version (`POST /api/orders/{orderId}/mockups`, FR-39).
  */
 export function VendorOrdersPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<VendorOrderTab>('ALL');
   const { busy, run } = useAction();
 
@@ -167,6 +170,7 @@ export function VendorOrdersPage() {
                 order={order}
                 onUploadMaket={handleUploadMaket}
                 onAttachInvoice={handleAttachInvoice}
+                onOpen={(o) => navigate(routes.vendor.order(o.id))}
               />
             ))}
           </div>

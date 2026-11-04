@@ -61,7 +61,10 @@ export function usePaymentPoll(
 
         if (payment.status === 'SUCCEEDED' || payment.status === 'DUPLICATE') {
           let orderIds: string[] = [];
-          const checkoutIdToRead = checkoutId;
+          // After the VNPay redirect the browser no longer has the checkout id; a
+          // CHECKOUT payment names it in referenceId.
+          const checkoutIdToRead =
+            checkoutId ?? (payment.purpose === 'CHECKOUT' ? (payment.referenceId ?? null) : null);
           if (checkoutIdToRead) {
             const checkout = await orderApi.getCheckout(checkoutIdToRead);
             if (current) orderIds = checkout?.orderIds ?? [];

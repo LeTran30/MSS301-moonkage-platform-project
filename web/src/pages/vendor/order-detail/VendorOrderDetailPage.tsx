@@ -2,53 +2,57 @@ import styles from './VendorOrderDetailPage.module.css';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, ButtonLink, Card, Breadcrumbs, toast } from '@/shared/ui';
+import { formatCurrency, formatDate } from '@/shared/utils';
+import { Badge, Button, ButtonLink, Card, Breadcrumbs, Input, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useOrderDetail, nextOrderStatus, toBackendOrderStatus } from '@/entities/order';
+import {
+  nextOrderStatus,
+  orderStatusLabel,
+  orderStatusSteps,
+  toBackendOrderStatus,
+  useOrderDetail,
+} from '@/entities/order';
 import { useAdvanceOrder } from '@/features/advance-order-status';
 
-const STEPS = [
-  { title: 'Nhận đơn & Chuẩn bị nguyên liệu', desc: 'Kiểm tra bột, trứng muốn, hạt điều, mè rang' },
-  { title: 'Trộn nhân & Nướng bánh mẻ 1', desc: 'Nướng ở nhiệt độ 200°C, quét lòng đỏ trứng gà tươi' },
-  { title: 'Hút ẩm, Đóng gói & Dán tem NFC', desc: 'Dán tem NFC định danh truy xuất nguồn gốc' },
-  { title: 'Đóng thùng & Bàn giao Shipper', desc: 'Giao cho đối tác vận chuyển giao tận nơi' },
-];
-
+/**
+ * B2.1, B2.2 — the shop moves one order forward (FR-32, FR-40).
+ *
+ * The backend allows exactly one step at a time (409 on a jump), so the page
+ * offers only the next status. An interprovince order going to SHIPPING needs
+ * its tracking code (AC-32.3). DELIVERED to COMPLETED is the buyer's step.
+ */
 export function VendorOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const orderId = id || '';
-  const asyncOrder = useOrderDetail(orderId);
+  const asyncOrder = useOrderDetail(id || '');
   const order = asyncOrder.kind === 'loaded' ? asyncOrder.data : null;
-  const [productionStep, setProductionStep] = useState<number>(2);
-  const { busy, run } = useAction();
+  const { busy, run, error } = useAction();
   const advanceOrder = useAdvanceOrder();
+  const [trackingCode, setTrackingCode] = useState('');
+  const [note, setNote] = useState('');
 
-  // FR-32, FR-40: chỉ có một bước tiếp theo; backend từ chối nhảy bước (409).
   const nextStatus = order ? nextOrderStatus(order.status) : null;
+  const needsTracking = Boolean(order?.interprovince && nextStatus === 'SHIPPING');
 
-  function handleAdvanceStep() {
+  function handleAdvance() {
     if (!order || !nextStatus) return;
+    if (needsTracking && !trackingCode.trim()) {
+      toast.warning('Đơn liên tỉnh cần mã vận đơn trước khi chuyển sang "Đang giao".');
+      return;
+    }
     void run(async () => {
-      // FR-40: mỗi bước ghi một cập nhật tiến độ kèm ghi chú.
       await advanceOrder(order.id, {
         status: toBackendOrderStatus(nextStatus),
-        note: STEPS[productionStep]?.title,
+        ...(needsTracking ? { trackingCode: trackingCode.trim() } : {}),
+        ...(note.trim() ? { note: note.trim() } : {}),
       });
-      setProductionStep((prev) => Math.min(prev + 1, STEPS.length - 1));
-      toast.success(
-        `Đã chuyển đơn #${order.id} sang bước "${nextStatus}". Khách hàng đã nhận được thông báo.`,
-      );
+      toast.success(`Đơn đã chuyển sang "${orderStatusLabel(nextStatus)}". Người mua đã được báo.`);
+      setNote('');
       asyncOrder.reload();
     });
   }
 
   if (asyncOrder.kind === 'loading') {
-    return (
-      <div>
-        <p>Đang tải đơn hàng…</p>
-      </div>
-    );
+    return <p>Đang tải đơn hàng…</p>;
   }
 
   if (asyncOrder.kind === 'error') {
@@ -65,11 +69,14 @@ export function VendorOrderDetailPage() {
   if (!order) {
     return (
       <div>
-        <p>Không tìm thấy đơn hàng xưởng.</p>
+        <p>Không tìm thấy đơn hàng.</p>
         <ButtonLink to={routes.vendor.orders}>Về danh sách đơn</ButtonLink>
       </div>
     );
   }
+
+  const steps = orderStatusSteps(order.type);
+  const currentIndex = steps.indexOf(order.status);
 
   return (
     <div className={styles.page}>
@@ -83,40 +90,36 @@ export function VendorOrderDetailPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>
-            Xử Lý Đơn Hàng #{order.id} (B2.1, B2.2)
-          </h1>
+          <h1 className={styles.title}>Xử Lý Đơn Hàng #{order.id} (B2.1, B2.2)</h1>
           <p className={styles.subtitle}>
-            Ngày đặt: {order.createdAt} · Khách hàng: {order.buyerName} ({order.shippingAddress.phone})
+            Ngày đặt: {formatDate(order.createdAt)} · Người nhận: {order.shippingAddress.receiver} (
+            {order.shippingAddress.phone})
           </p>
         </div>
-        <Badge tone={order.status === 'DELIVERED' ? 'green' : 'gold'} size="md">
-          {order.status === 'DELIVERED' ? 'Đã giao thành công' : 'Đang xử lý sản xuất'}
+        <Badge tone={order.status === 'COMPLETED' ? 'green' : 'gold'} size="md">
+          {orderStatusLabel(order.status)}
         </Badge>
       </div>
 
+      {error && (
+        <p role="alert" className={styles.subtitle}>
+          {error}
+        </p>
+      )}
+
       <div className={styles.gridTwo}>
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Sản Phẩm Cần Chế Biến</h2>
+          <h2 className={styles.sectionTitle}>Sản phẩm trong đơn</h2>
           <div className={styles.stack}>
             {order.items.map((it, idx) => (
               <div key={idx} className={styles.productRow}>
-                <img
-                  src={it.image || '/images/banh-nuong.jpg'}
-                  alt={it.name}
-                  className={styles.productImage}
-                  loading="lazy"
-                  decoding="async"
-                />
                 <div className={styles.productInfo}>
                   <div className={styles.productName}>{it.name}</div>
                   <div className={styles.productMeta}>
                     Số lượng: <strong>{it.quantity}</strong> × {formatCurrency(it.price)}
                   </div>
                 </div>
-                <div className={styles.priceStrong}>
-                  {formatCurrency(it.quantity * it.price)}
-                </div>
+                <div className={styles.priceStrong}>{formatCurrency(it.quantity * it.price)}</div>
               </div>
             ))}
           </div>
@@ -128,47 +131,73 @@ export function VendorOrderDetailPage() {
                 {order.shippingAddress.address}, {order.shippingAddress.province}
               </strong>
             </div>
+            {order.trackingCode && (
+              <div className={styles.summaryRow}>
+                <span>Mã vận đơn:</span>
+                <strong className={styles.summaryRight}>{order.trackingCode}</strong>
+              </div>
+            )}
             <div className={styles.totalRow}>
-              <span>Trạng thái tiền ký quỹ Escrow:</span>
-              <span className={styles.totalStrong}>Đã phong tỏa đủ 100%</span>
+              <span>Tổng giá trị đơn:</span>
+              <span className={styles.totalStrong}>{formatCurrency(order.total)}</span>
             </div>
           </div>
         </Card>
 
         <Card padding="lg" className={styles.stackWide}>
-          <h2 className={styles.sectionTitle}>Tiến Độ Chế Biến & Kiểm Tra NFC</h2>
+          <h2 className={styles.sectionTitle}>Tiến độ đơn hàng</h2>
 
           <div className={styles.cardBody}>
-            {STEPS.map((st, i) => (
-              <div key={i} className={styles.progressRow}>
-                <div
-                  className={`${styles.stepBadge} ${i <= productionStep ? styles.stepBadgeDone : styles.stepBadgePending}`}
-                >
-                  {i <= productionStep ? '✓' : i + 1}
-                </div>
-                <div className={styles.productInfo}>
-                  <div className={`${styles.stepTitle} ${i > productionStep ? styles.stepTitlePending : ''}`}>
-                    {st.title}
+            {steps.map((step, i) => {
+              const done = i <= currentIndex;
+              return (
+                <div key={step} className={styles.progressRow}>
+                  <div
+                    className={`${styles.stepBadge} ${done ? styles.stepBadgeDone : styles.stepBadgePending}`}
+                  >
+                    {done ? '✓' : i + 1}
                   </div>
-                  <div className={styles.productMeta}>{st.desc}</div>
+                  <div className={styles.productInfo}>
+                    <div className={`${styles.stepTitle} ${done ? '' : styles.stepTitlePending}`}>
+                      {orderStatusLabel(step)}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
+          {nextStatus && (
+            <div className={styles.stack}>
+              {needsTracking && (
+                <Input
+                  label="Mã vận đơn (đơn liên tỉnh) *"
+                  value={trackingCode}
+                  onChange={(e) => setTrackingCode(e.target.value)}
+                  placeholder="Ví dụ: GHN123456789"
+                />
+              )}
+              <Input
+                label="Ghi chú cho người mua"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Ví dụ: Đã đóng gói, chiều nay giao"
+              />
+            </div>
+          )}
+
           <div className={styles.timelineRow}>
-            <Button
-              variant="primary"
-              className={styles.productInfo}
-              onClick={handleAdvanceStep}
-              disabled={busy || !nextStatus}
-            >
-              {busy
-                ? 'Đang cập nhật…'
-                : nextStatus
-                  ? `Chuyển Sang Bước "${nextStatus}"`
-                  : 'Đã Bàn Giao Vận Chuyển'}
-            </Button>
+            {nextStatus ? (
+              <Button variant="primary" onClick={handleAdvance} loading={busy}>
+                Chuyển sang: {orderStatusLabel(nextStatus)}
+              </Button>
+            ) : (
+              <p className={styles.productMeta}>
+                {order.status === 'DELIVERED'
+                  ? 'Đã giao. Chờ người mua xác nhận đã nhận hàng.'
+                  : 'Đơn không còn bước nào cho Shop.'}
+              </p>
+            )}
             <ButtonLink to={routes.vendor.orders} variant="outline">
               Về Danh Sách
             </ButtonLink>

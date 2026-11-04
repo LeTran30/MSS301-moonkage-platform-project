@@ -1,5 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
 import { isDemoMode } from '@/shared/config';
+import { demoPaymentUrl } from '@/shared/lib';
 import { generateEntityId } from '@/shared/utils';
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 import type { CheckoutResponse, CreateCheckoutPayload } from '@/entities/order';
@@ -22,10 +23,11 @@ export async function checkoutOrder(payload: CreateCheckoutPayload): Promise<Che
   trackEvent(ANALYTICS_EVENTS.beginCheckout, { has_invoice: Boolean(payload.invoiceInfo) });
 
   if (isDemoMode()) {
+    const demoPaymentId = generateEntityId('pay');
     return {
       checkoutId: generateEntityId('chk'),
-      paymentId: generateEntityId('pay'),
-      paymentUrl: `/gateway/vnpay/${generateEntityId('pay')}`,
+      paymentId: demoPaymentId,
+      paymentUrl: demoPaymentUrl(demoPaymentId),
       totalAmount: 0,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     };

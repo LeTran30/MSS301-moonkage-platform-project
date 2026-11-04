@@ -42,9 +42,6 @@ export const routes = {
     verify: '/tai-khoan/xac-minh', // M6.4
     profile: '/tai-khoan/thong-tin', // M6.5
   },
-  gateway: {
-    vnpay: (paymentId: string) => `/gateway/vnpay/${paymentId}`, // M4.2
-  },
   vendor: {
     overview: '/kenh-ban', // B1.0
     fee: '/kenh-ban/phi-mo-ban', // B1.1
@@ -101,7 +98,6 @@ export const ROUTES = {
   NOTIFICATIONS: routes.base.notifications,
   SELL_INTRO: routes.base.sellIntro,
   SELL_REGISTER: routes.base.sellRegister,
-  VNPAY_SANDBOX: '/gateway/vnpay/sim-01',
 
   LOGIN: routes.auth.login,
   REGISTER: routes.auth.register,

@@ -4,7 +4,7 @@ import { useAction } from '@/shared/lib';
 import { formatCurrency, formatDate } from '@/shared/utils';
 import { type Quote, type QuoteRequest, useVendorRequestList } from '@/entities/request';
 import { useCurrentUser } from '@/entities/user';
-import { useMyVendorId } from '@/entities/vendor';
+import { useOwnVendorId } from '@/entities/vendor';
 import { SubmitQuoteModal } from '@/features/respond-to-quote-request';
 import { useWithdrawQuote } from '@/features/withdraw-quote';
 import { useDeclineInvitation } from '@/features/decline-invitation';
@@ -20,8 +20,7 @@ export function VendorRequestsPage() {
   // FR-36: the requests sent to the caller's vendor. The backend filters them
   // by the vendor of the token.
   const user = useCurrentUser();
-  const myVendorId = useMyVendorId();
-  const vendorId = user.vendorId || (myVendorId.kind === 'loaded' ? myVendorId.data ?? '' : '');
+  const vendorId = useOwnVendorId(user.vendorId);
   const asyncRequests = useVendorRequestList(vendorId);
   const requests = asyncRequests.kind === 'loaded' ? asyncRequests.data : [];
 

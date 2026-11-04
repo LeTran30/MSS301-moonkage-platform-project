@@ -1,29 +1,19 @@
+import { FEATURED_DELIVERY_PROVINCE_CODES, provinceNameOf } from '@/shared/config';
 import { Modal, Icon } from '@/shared/ui';
 import styles from './Header.module.css';
 
-const PROVINCES = [
-  'Hà Nội',
-  'TP. Hồ Chí Minh',
-  'Đà Nẵng',
-  'Hải Phòng',
-  'Bắc Ninh',
-  'Hưng Yên',
-  'Cần Thơ',
-  'Bình Dương',
-  'Đồng Nai',
-];
-
 interface LocationPickerModalProps {
   open: boolean;
-  selectedProvince: string;
-  onSelect: (province: string) => void;
+  /** Code of the current delivery province (`01` for Hà Nội). */
+  selectedCode: string;
+  onSelect: (provinceCode: string) => void;
   onClose: () => void;
 }
 
 /** Modal M1.1: chọn khu vực nhận hàng. */
 export function LocationPickerModal({
   open,
-  selectedProvince,
+  selectedCode,
   onSelect,
   onClose,
 }: LocationPickerModalProps) {
@@ -35,16 +25,16 @@ export function LocationPickerModal({
       description="Moonkage lọc và ưu tiên các sản phẩm giao nhanh được tới địa phương của bạn."
     >
       <div className={styles.provinceGrid}>
-        {PROVINCES.map((p) => (
+        {FEATURED_DELIVERY_PROVINCE_CODES.map((code) => (
           <button
-            key={p}
+            key={code}
             type="button"
-            className={`${styles.provinceCard} ${selectedProvince === p ? styles.provinceSelected : ''}`}
-            onClick={() => onSelect(p)}
+            className={`${styles.provinceCard} ${selectedCode === code ? styles.provinceSelected : ''}`}
+            onClick={() => onSelect(code)}
           >
             <Icon name="mapPin" size={18} />
-            <span>{p}</span>
-            {selectedProvince === p && <Icon name="check" size={16} className={styles.checkIcon} />}
+            <span>{provinceNameOf(code)}</span>
+            {selectedCode === code && <Icon name="check" size={16} className={styles.checkIcon} />}
           </button>
         ))}
       </div>

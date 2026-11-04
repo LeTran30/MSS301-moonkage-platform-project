@@ -86,3 +86,11 @@ export function provinceNameOf(code: string | undefined | null): string {
 }
 
 export const ALL_PROVINCE_NAMES: readonly string[] = PROVINCE_ITEMS.map((p) => p.name);
+
+/**
+ * Provinces offered first in the header picker (M1.1), by code so every entry
+ * maps to a province the backend knows (Bình Dương is part of TP Hồ Chí Minh now).
+ */
+export const FEATURED_DELIVERY_PROVINCE_CODES: readonly string[] = [
+  '01', '79', '48', '31', '24', '33', '92', '75',
+];

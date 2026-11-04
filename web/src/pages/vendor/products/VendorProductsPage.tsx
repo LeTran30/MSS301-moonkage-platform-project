@@ -1,113 +1,31 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { routes } from '@/shared/config';
 import { AsyncState, Button, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
+import { useTaxonomy } from '@/entities/product';
 import { useCurrentUser } from '@/entities/user';
-import { useMyVendorId, useVendorProducts, type VendorProductDto } from '@/entities/vendor';
+import { useOwnVendorId, useVendorProducts, type VendorProductDto } from '@/entities/vendor';
 import { VendorProductCard } from '@/entities/vendor';
-import { useTaxonomy, type CakeCrust, type CakeFilling } from '@/entities/product';
-import {
-  ProductFormModal,
-  useChangeProductStatus,
-  useLoadVendorProduct,
-  useSaveProduct,
-} from '@/features/edit-product';
-import { useUploadProductImage } from '@/features/upload-product-image';
+import { useChangeProductStatus } from '@/features/edit-product';
 import styles from './VendorProductsPage.module.css';
 
+/**
+ * B4.0 — sản phẩm của gian hàng (FR-30, FR-34). Thêm và sửa mở form B4.1.
+ */
 export function VendorProductsPage() {
+  const navigate = useNavigate();
   const user = useCurrentUser();
   // FR-29: `vendorId` là id gian hàng của chủ Shop; backend tự lấy từ token,
   // nên ta hỏi `GET /api/vendors/by-owner` để có id thật.
-  const myVendorId = useMyVendorId();
-  const vendorId = user.vendorId || (myVendorId.kind === 'loaded' ? myVendorId.data ?? '' : '');
-  const { crusts, fillings } = useTaxonomy();
+  const vendorId = useOwnVendorId(user.vendorId);
   const { busy, run, error } = useAction();
-  const saveProduct = useSaveProduct();
   const changeProductStatus = useChangeProductStatus();
-  const loadVendorProduct = useLoadVendorProduct();
-  const uploadProductImage = useUploadProductImage();
+  const { crusts, fillings } = useTaxonomy();
+  const attributeName = (code: string) =>
+    [...crusts, ...fillings].find((item) => item.code === code)?.name ?? code;
 
   // FR-30: `GET /api/vendors/{vendorId}/products` — mọi trạng thái, mới nhất trước.
   const listQuery = useVendorProducts(vendorId);
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<VendorProductDto | null>(null);
-
-  // Form fields
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('135000');
-  const [stock, setStock] = useState('100');
-  const [selectedCrusts, setSelectedCrusts] = useState<CakeCrust[]>([]);
-  const [selectedFillings, setSelectedFillings] = useState<CakeFilling[]>([]);
-  const [description, setDescription] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // FR-29: ảnh của sản phẩm — `tempKey` của file vừa tải lên, hoặc key đã lưu.
-  const [imageKeys, setImageKeys] = useState<string[]>([]);
-  const [uploadingImage, setUploadingImage] = useState(false);
-
-  const handleOpenAdd = () => {
-    setEditing(null);
-    setName('');
-    setPrice('135000');
-    setStock('150');
-    setSelectedCrusts([]);
-    setSelectedFillings([]);
-    setDescription('Bánh trung thu nướng truyền thống chuẩn vị cổ truyền.');
-    setErrorMessage(null);
-    setImageKeys([]);
-    setModalOpen(true);
-  };
-
-  const handleOpenEdit = async (product: VendorProductDto) => {
-    setErrorMessage(null);
-    // FR-30: đọc phiên bản trước khi sửa; gửi lại khi thay thế (409 VENDOR_027 nếu có người sửa trước).
-    const full = (await loadVendorProduct(vendorId, product.id)) ?? product;
-    setEditing(full);
-    setName(full.name ?? '');
-    setPrice(String(full.listPrice ?? 0));
-    setStock(String(full.stock ?? 0));
-    setSelectedCrusts((full.crustCodes ?? []) as CakeCrust[]);
-    setSelectedFillings((full.fillingCodes ?? []) as CakeFilling[]);
-    setDescription(full.description ?? '');
-    // FR-29: giữ lại key của ảnh đã có, để không mất ảnh khi thay thế sản phẩm.
-    setImageKeys((full.images ?? []).map((image) => image.key));
-    setModalOpen(true);
-  };
-
-  /** FR-29: tải ảnh lên kho lưu trữ rồi giữ `tempKey` để gửi kèm sản phẩm. */
-  const handleUploadImage = async (file: File) => {
-    setUploadingImage(true);
-    setErrorMessage(null);
-    try {
-      const key = await uploadProductImage(vendorId, file);
-      if (!key) {
-        setErrorMessage('Máy chủ không trả về khóa ảnh. Vui lòng thử lại.');
-        return;
-      }
-      setImageKeys((prev) => [...prev, key]);
-      toast.success('Đã tải ảnh lên. Nhớ bấm "Lưu sản phẩm" để gắn ảnh vào sản phẩm.');
-    } catch (e) {
-      setErrorMessage(e instanceof Error ? e.message : 'Không tải được ảnh lên.');
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleRemoveImage = (key: string) => {
-    setImageKeys((prev) => prev.filter((k) => k !== key));
-  };
-
-  const handleToggleCrust = (c: CakeCrust) => {
-    setSelectedCrusts((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
-    );
-  };
-
-  const handleToggleFilling = (f: CakeFilling) => {
-    setSelectedFillings((prev) =>
-      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
-    );
-  };
 
   const handleToggleVisibility = (product: VendorProductDto) => {
     void run(async () => {
@@ -119,51 +37,6 @@ export function VendorProductsPage() {
           ? `Đã bật hiển thị sản phẩm "${product.name}".`
           : `Đã ẩn sản phẩm "${product.name}".`
       );
-      listQuery.reload();
-    });
-  };
-
-  const handleSaveProduct = () => {
-    if (!name.trim()) {
-      setErrorMessage('Vui lòng nhập tên sản phẩm.');
-      return;
-    }
-    if (selectedCrusts.length === 0) {
-      setErrorMessage('Quy định FR-54: Sản phẩm bắt buộc phải gắn ít nhất 1 loại Vỏ bánh.');
-      return;
-    }
-    if (selectedFillings.length === 0) {
-      setErrorMessage('Quy định FR-54: Sản phẩm bắt buộc phải gắn ít nhất 1 loại Nhân bánh.');
-      return;
-    }
-
-    void run(async () => {
-      const payload = {
-        name: name.trim(),
-        description: description.trim(),
-        listPrice: Number(price),
-        stock: Number(stock),
-        crustCodes: selectedCrusts,
-        fillingCodes: selectedFillings,
-        // FR-29: `imageKeys` là `tempKey` của file vừa tải lên, không phải URL.
-        imageKeys,
-      };
-
-      if (editing) {
-        // FR-30, FR-32, FR-33: thay thế cả sản phẩm kèm phiên bản đã đọc.
-        await saveProduct(vendorId, editing.id, {
-          ...payload,
-          version: editing.version,
-        });
-        toast.success(`Đã cập nhật sản phẩm "${name}" thành công!`);
-      } else {
-        // FR-29: sản phẩm mới đã mở bán ngay (BR-24).
-        await saveProduct(vendorId, null, payload);
-        toast.success(`Đã thêm mới sản phẩm "${name}" vào danh mục shop!`);
-      }
-
-      setModalOpen(false);
-      listQuery.reload();
     });
   };
 
@@ -177,7 +50,7 @@ export function VendorProductsPage() {
             hàng.
           </p>
         </div>
-        <Button variant="primary" onClick={handleOpenAdd} disabled={!vendorId}>
+        <Button variant="primary" onClick={() => navigate(routes.vendor.productNew)} disabled={!vendorId}>
           + Thêm sản phẩm mới
         </Button>
       </div>
@@ -213,40 +86,13 @@ export function VendorProductsPage() {
                 product={p}
                 busy={busy}
                 onToggleVisibility={handleToggleVisibility}
-                onEdit={(product) => void handleOpenEdit(product)}
+                onEdit={(product) => navigate(routes.vendor.product(product.id))}
+                attributeName={attributeName}
               />
             ))}
           </div>
         )}
       </AsyncState>
-
-      {/* Modal Add / Edit (B4.1, FR-54) */}
-      <ProductFormModal
-        open={modalOpen}
-        editingName={editing?.name}
-        name={name}
-        price={price}
-        stock={stock}
-        description={description}
-        selectedCrusts={selectedCrusts}
-        selectedFillings={selectedFillings}
-        crusts={crusts}
-        fillings={fillings}
-        imageKeys={imageKeys}
-        uploadingImage={uploadingImage}
-        busy={busy}
-        errorMessage={errorMessage}
-        onNameChange={setName}
-        onPriceChange={setPrice}
-        onStockChange={setStock}
-        onDescriptionChange={setDescription}
-        onToggleCrust={handleToggleCrust}
-        onToggleFilling={handleToggleFilling}
-        onUploadImage={(file) => void handleUploadImage(file)}
-        onRemoveImage={handleRemoveImage}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleSaveProduct}
-      />
     </div>
   );
 }

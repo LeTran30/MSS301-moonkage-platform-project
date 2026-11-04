@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
 import { Badge, Breadcrumbs, Button, ButtonLink, Card, Icon, toast } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
+import { openPaymentPage, useAction } from '@/shared/lib';
 import { useQuoteRequest } from '@/entities/request';
 import { useAcceptQuote } from '@/features/accept-quote';
 
@@ -57,13 +57,7 @@ export function DepositPaymentPage() {
         // FR-19 / BR-04: the acceptance already created the payment; the buyer
         // pays the deposit at the gateway, the order exists after it succeeds.
         const acceptance = await acceptQuote(req!.id, acceptedQuote.id);
-        navigate(routes.gateway.vnpay(acceptance.paymentId || acceptance.acceptanceId), {
-          state: {
-            amount: acceptance.depositAmount || depositAmount,
-            orderIds: [req!.id],
-            type: 'BULK_DEPOSIT',
-          },
-        });
+        openPaymentPage(acceptance.paymentUrl);
         return;
       }
       toast.success('Đã ghi nhận yêu cầu chuyển khoản VietQR. Xưởng sẽ liên hệ để xác nhận.');

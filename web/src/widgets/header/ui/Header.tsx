@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { Icon, toast } from '@/shared/ui';
 import { CartBadge } from '@/entities/cart';
+import { setDeliveryProvince, useDeliveryProvinceCode, useDeliveryProvinceName } from '@/entities/region';
 import { useTheme } from '@/shared/lib/theme';
 import { switchDemoActor, useCurrentUser } from '@/entities/user';
 import { ActorSwitcherModal } from './ActorSwitcherModal';
@@ -18,7 +19,9 @@ export function Header() {
   const user = useCurrentUser();
   const [theme, toggleTheme] = useTheme();
   const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [selectedProvince, setSelectedProvince] = useState('Hà Nội');
+  // The catalog, the cart and checkout read the same store (FR-06, BR-30).
+  const provinceCode = useDeliveryProvinceCode();
+  const provinceName = useDeliveryProvinceName();
   const [actorSwitcherOpen, setActorSwitcherOpen] = useState(false);
 
   return (
@@ -42,7 +45,7 @@ export function Header() {
           <HeaderSearch />
 
           <HeaderNav
-            selectedProvince={selectedProvince}
+            selectedProvince={provinceName}
             onOpenLocation={() => setLocationModalOpen(true)}
           />
 
@@ -80,9 +83,9 @@ export function Header() {
 
       <LocationPickerModal
         open={locationModalOpen}
-        selectedProvince={selectedProvince}
-        onSelect={(province) => {
-          setSelectedProvince(province);
+        selectedCode={provinceCode}
+        onSelect={(code) => {
+          setDeliveryProvince(code);
           setLocationModalOpen(false);
         }}
         onClose={() => setLocationModalOpen(false)}

@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -48,6 +49,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ApiResponse<Void>> handleUnreadable(Exception ex, HttpServletRequest request) {
         return build(ErrorCode.MALFORMED_JSON, request);
+    }
+
+    /** Without this a missing {@code @RequestParam} fell through to the 500 handler. */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String message = localize(ErrorCode.PARAMETER_REQUIRED, new Object[] {ex.getParameterName()});
+        return build(
+                ErrorCode.PARAMETER_REQUIRED,
+                message,
+                List.of(new ApiResponse.FieldError(ex.getParameterName(), message)),
+                request);
     }
 
     @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})

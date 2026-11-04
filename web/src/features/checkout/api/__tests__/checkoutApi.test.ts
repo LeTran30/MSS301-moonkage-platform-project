@@ -19,7 +19,8 @@ describe('Feature checkout - checkoutApi (FR-08)', () => {
     });
     expect(result.checkoutId).toMatch(/^chk_/);
     expect(result.paymentId).toMatch(/^pay_/);
-    expect(result.paymentUrl).toContain('/gateway/vnpay/');
+    // Demo mode has no gateway: the link opens the result page for that payment.
+    expect(result.paymentUrl).toBe(`/thanh-toan/ket-qua?paymentId=${result.paymentId}`);
   });
 
   it('checkoutOrder() trả về paymentUrl và paymentId của backend', async () => {

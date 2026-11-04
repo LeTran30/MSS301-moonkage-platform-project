@@ -1,5 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
 import { isDemoMode } from '@/shared/config';
+import { demoPaymentUrl } from '@/shared/lib';
 import { generateEntityId } from '@/shared/utils';
 import type { PaymentLinkResponse } from '@/entities/order';
 
@@ -17,9 +18,10 @@ import type { PaymentLinkResponse } from '@/entities/order';
  */
 export async function payOrderRemainder(orderId: string): Promise<PaymentLinkResponse> {
   if (isDemoMode()) {
+    const demoPaymentId = generateEntityId('pay');
     return {
-      paymentId: generateEntityId('pay'),
-      paymentUrl: `/gateway/vnpay/${generateEntityId('pay')}`,
+      paymentId: demoPaymentId,
+      paymentUrl: demoPaymentUrl(demoPaymentId),
     };
   }
   const res = await apiClient.post<unknown>(GATEWAY.ORDER.PAY_REMAINDER(orderId));

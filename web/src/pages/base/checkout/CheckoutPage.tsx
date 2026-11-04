@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { routes, provinceCodeOf } from '@/shared/config';
+import { isDemoMode, routes } from '@/shared/config';
 import { toast } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
+import { openPaymentPage, useAction, useAsync } from '@/shared/lib';
+import { toNationalPhone } from '@/shared/utils';
+import { addressApi, type Address } from '@/entities/address';
 import { useCart, clearCart } from '@/entities/cart';
 import { CartSummary } from '@/entities/cart';
+import { setDeliveryProvince, useDeliveryProvinceCode } from '@/entities/region';
 import { useCurrentUser } from '@/entities/user';
 import { orderStore, type Order } from '@/entities/order';
 import {
@@ -30,19 +33,32 @@ export function CheckoutPage() {
   const { busy, run, error } = useAction();
   const checkoutOrder = useCheckout();
 
+  // The cart was priced to the delivery province (BR-30), so the order ships there.
+  const provinceCode = useDeliveryProvinceCode();
   const [receiver, setReceiver] = useState(user.name);
   const [phone, setPhone] = useState(user.phone);
-  const [address, setAddress] = useState('180 Triệu Việt Vương, Hai Bà Trưng');
-  const [provinceCode, setProvinceCode] = useState(() => provinceCodeOf('Hà Nội'));
+  const [address, setAddress] = useState('');
+
+  // FR-03: start from the buyer's saved address in that province, the default one first.
+  const savedAddresses = useAsync<Address[]>(() => addressApi.list(), []);
+  const [prefilled, setPrefilled] = useState(false);
+  if (!prefilled && savedAddresses.kind === 'loaded') {
+    setPrefilled(true);
+    const inProvince = savedAddresses.data.filter((a) => a.provinceCode === provinceCode);
+    const saved = inProvince.find((a) => a.isDefault) ?? inProvince[0];
+    if (saved) {
+      setReceiver(saved.recipientName);
+      setPhone(toNationalPhone(saved.recipientPhone));
+      setAddress(saved.wardName ? `${saved.detail}, ${saved.wardName}` : saved.detail);
+    }
+  }
 
   // Hóa đơn doanh nghiệp (FR-09, FR-24: nhập 1 lần cho mọi đơn trong lượt thanh toán)
   const [needInvoice, setNeedInvoice] = useState(false);
-  const [companyName, setCompanyName] = useState('Công ty Cổ phần Công nghệ Aurora Global');
-  const [taxCode, setTaxCode] = useState('0109988776');
-  const [companyAddress, setCompanyAddress] = useState(
-    'Tầng 18, Tòa tháp Capital Place, 29 Liễu Giai, Hà Nội'
-  );
-  const [companyEmail, setCompanyEmail] = useState('finance@auroraglobal.vn');
+  const [companyName, setCompanyName] = useState('');
+  const [taxCode, setTaxCode] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyEmail, setCompanyEmail] = useState('');
 
   const subtotal = cart.groups.reduce(
     (acc, g) => acc + g.items.reduce((s, it) => s + it.price * it.quantity, 0),
@@ -75,7 +91,14 @@ export function CheckoutPage() {
         invoiceInfo,
       });
 
-      // Đơn chỉ tồn tại sau khi thanh toán thành công; bản ghi cục bộ giữ cho UI demo.
+      if (!isDemoMode()) {
+        // FR-09, BR-25: the orders exist once the IPN marks the payment paid; the
+        // server empties the cart then. VNPay brings the buyer back to M4.3.
+        openPaymentPage(checkout.paymentUrl);
+        return;
+      }
+
+      // Demo mode has no server: keep a local record of the orders for the demo screens.
       const createdOrders: Order[] = cart.groups.map((group) => ({
         id: checkout.checkoutId,
         type: 'RETAIL',
@@ -102,15 +125,12 @@ export function CheckoutPage() {
 
       orderStore.set((prev) => [...createdOrders, ...prev]);
       clearCart();
-
-      // Chuyển sang cổng VNPay (M4.2, Flow 1).
-      navigate(routes.gateway.vnpay(checkout.paymentId), {
+      navigate(routes.base.paymentResult, {
         state: {
           paymentId: checkout.paymentId,
           checkoutId: checkout.checkoutId,
           amount: checkout.totalAmount || total,
           orderIds: createdOrders.map((o) => o.id),
-          type: 'RETAIL',
         },
       });
     });
@@ -133,7 +153,7 @@ export function CheckoutPage() {
             onReceiverChange={setReceiver}
             onPhoneChange={setPhone}
             onAddressChange={setAddress}
-            onProvinceCodeChange={setProvinceCode}
+            onProvinceCodeChange={setDeliveryProvince}
           />
 
           <InvoiceRequestForm

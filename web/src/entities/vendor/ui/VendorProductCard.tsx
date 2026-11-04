@@ -10,6 +10,8 @@ interface VendorProductCardProps {
   onToggleVisibility: (product: VendorProductDto) => void;
   /** Mở form sửa sản phẩm (FR-30). */
   onEdit: (product: VendorProductDto) => void;
+  /** The name of a crust or filling code, from the cake taxonomy (FR-54). */
+  attributeName: (code: string) => string;
 }
 
 /** Thẻ sản phẩm trong danh mục của gian hàng (B4.0). */
@@ -18,6 +20,7 @@ export function VendorProductCard({
   busy,
   onToggleVisibility,
   onEdit,
+  attributeName,
 }: VendorProductCardProps) {
   return (
     <Card className={styles.productCard}>
@@ -46,7 +49,7 @@ export function VendorProductCard({
           <span className={styles.tagLabel}>Vỏ:</span>
           {(product.crustCodes ?? []).map((c) => (
             <span key={c} className={styles.tag}>
-              {c}
+              {attributeName(c)}
             </span>
           ))}
         </div>
@@ -55,7 +58,7 @@ export function VendorProductCard({
           <span className={styles.tagLabel}>Nhân:</span>
           {(product.fillingCodes ?? []).map((f) => (
             <span key={f} className={styles.tag}>
-              {f}
+              {attributeName(f)}
             </span>
           ))}
         </div>

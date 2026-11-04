@@ -12,7 +12,7 @@ export const FLOWS: SitemapFlow[] = [
       { code: 'M2.1', title: 'Chi tiết sản phẩm & Thêm giỏ', link: `${routes.base.catalog}/banh-nuong-thap-cam-lap-xuong-ga-quay` },
       { code: 'M4.0', title: 'Giỏ hàng tách đơn theo Shop (FR-08)', link: routes.base.cart },
       { code: 'M4.1', title: 'Thanh toán & Hóa đơn VAT chung (FR-24)', link: routes.base.checkout },
-      { code: 'M4.2', title: 'Cổng VNPAY Sandbox', link: routes.gateway.vnpay('sim-01') },
+      { code: 'M4.2', title: 'Cổng VNPAY (trang của VNPay, mở từ M4.1)', link: routes.base.checkout },
       { code: 'M4.3', title: 'Xác nhận tách đơn độc lập (BR-25)', link: routes.base.paymentResult },
     ],
   },

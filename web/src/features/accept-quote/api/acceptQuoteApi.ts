@@ -1,5 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
 import { isDemoMode } from '@/shared/config';
+import { demoPaymentUrl } from '@/shared/lib';
 import { generateEntityId } from '@/shared/utils';
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 import type { AcceptQuoteResponseDto, InvoiceInfoPayload } from '@/entities/request';
@@ -33,12 +34,13 @@ export async function acceptQuote(
   trackEvent(ANALYTICS_EVENTS.acceptQuote, { request_id: requestId });
 
   if (isDemoMode()) {
+    const demoPaymentId = generateEntityId('pay');
     return {
       acceptanceId: generateEntityId('acc'),
       status: 'PENDING_PAYMENT',
       depositAmount: 0,
-      paymentId: generateEntityId('pay'),
-      paymentUrl: `/gateway/vnpay/${generateEntityId('pay')}`,
+      paymentId: demoPaymentId,
+      paymentUrl: demoPaymentUrl(demoPaymentId),
     };
   }
   const res = await apiClient.post<unknown>(

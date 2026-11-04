@@ -18,7 +18,9 @@ import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
 import com.moonkage.order.dto.event.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.UpdateOrderRequest;
+import com.moonkage.order.dto.response.OrderResponse;
 import com.moonkage.order.entity.Order;
+import com.moonkage.order.entity.OrderItem;
 import com.moonkage.order.enums.MockupReviewStatus;
 import com.moonkage.order.enums.OrderKind;
 import com.moonkage.order.enums.OrderStatus;
@@ -41,6 +43,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.PageImpl;
 
 class OrderServiceImplTest {
 
@@ -88,6 +91,32 @@ class OrderServiceImplTest {
         when(orderItemRepository.findByOrderId(ORDER_ID)).thenReturn(List.of());
         when(vendorDirectory.ownedVendorId(OWNER.accountId())).thenReturn(Optional.of(VENDOR_ID));
         when(vendorDirectory.ownedVendorId(BUYER.accountId())).thenReturn(Optional.empty());
+    }
+
+    @Test
+    void theOrderListCarriesEachOrdersOwnItemsFromOneQuery() {
+        Order other = new Order();
+        other.setId("order-2");
+        other.setKind(OrderKind.BUY_NOW);
+        other.setStatus(OrderStatus.PAID);
+        other.setBuyerAccountId(BUYER.accountId());
+        other.setVendorId(VENDOR_ID);
+        other.setItemsAmount(0L);
+        other.setTotalAmount(0L);
+        when(orderRepository.search(eq(BUYER.accountId()), any(), any(), any(), any(), eq(false), eq(false), any()))
+                .thenReturn(new PageImpl<>(List.of(order, other)));
+        when(orderItemRepository.findByOrderIdIn(List.of(ORDER_ID, "order-2")))
+                .thenReturn(List.of(item(order, "p-1", 2), item(order, "p-2", 1)));
+
+        var page = service.list(BUYER, null, null, null, null, false, false, 0, 20);
+
+        assertEquals(
+                List.of("p-1", "p-2"),
+                page.content().get(0).items().stream()
+                        .map(OrderResponse.Item::productId)
+                        .toList());
+        assertTrue(page.content().get(1).items().isEmpty());
+        verify(orderItemRepository, never()).findByOrderId(anyString());
     }
 
     @Test
@@ -200,6 +229,17 @@ class OrderServiceImplTest {
         service.createFromQuote(quoteAccepted());
 
         verify(entityManager, never()).persist(any());
+    }
+
+    private static OrderItem item(Order of, String productId, int quantity) {
+        OrderItem item = new OrderItem();
+        item.setOrder(of);
+        item.setProductId(productId);
+        item.setProductName(productId);
+        item.setQuantity(quantity);
+        item.setUnitPrice(100_000L);
+        item.setSubtotal(quantity * 100_000L);
+        return item;
     }
 
     private static UpdateOrderRequest step(OrderStatus status, String trackingCode) {
