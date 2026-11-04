@@ -9,10 +9,12 @@ describe('Cart Entity - cartApi (T-01)', () => {
     vi.restoreAllMocks();
   });
 
-  it('cartApi.getMine() trả về dữ liệu cartStore khi isDemoMode() = true', async () => {
+  it('cartApi.getMine() đọc giỏ của máy chủ cả khi bật chế độ demo (luồng 1 không còn mock)', async () => {
     vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
+    const get = vi.spyOn(apiClient, 'get').mockResolvedValue(envelope({ provinceCode: '01', groups: [] }));
     const cart = await cartApi.getMine();
-    expect(cart).toHaveProperty('groups');
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(cart).toEqual({ groups: [] });
   });
 
   it('cartApi.getMine() bóc envelope của backend và gửi provinceCode bắt buộc', async () => {

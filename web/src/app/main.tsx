@@ -5,7 +5,7 @@ import './styles/tokens-dark.css';
 import './styles/reset.css';
 import './styles/global.css';
 import { migrateLegacyTokens } from './providers';
-import { applyCspMeta, setRuntimeFlags, type FeatureFlag } from '@/shared/config';
+import { ENV, apiConnectSources, applyCspMeta, setRuntimeFlags, type FeatureFlag } from '@/shared/config';
 import {
   ANALYTICS_HOST,
   ANALYTICS_MEASUREMENT_ID,
@@ -33,7 +33,8 @@ migrateLegacyTokens();
 // Ở production, header HTTP ở web server vẫn là cách đúng; thẻ `<meta>` ở đây
 // chỉ là lớp phòng thủ thứ hai cho nơi không cấu hình được header.
 if (import.meta.env.PROD) {
-  applyCspMeta();
+  // The gateway may live on another origin (VITE_API_BASE_URL): allow it, or every call is blocked.
+  applyCspMeta(apiConnectSources(ENV.apiBaseUrl));
 }
 
 // Đường tắt tính năng không cần deploy: hệ thống config tập trung gọi

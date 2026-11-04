@@ -51,12 +51,12 @@ describe('Product Entity - productApi (T-01)', () => {
     expect(item).toEqual({ code: 'nuong', name: 'Bánh nướng', type: 'crust', order: 1, isActive: true });
   });
 
-  it('productApi.getProducts() trả về mock data khi isDemoMode() = true', async () => {
+  it('productApi.getProducts() đọc catalog của máy chủ cả khi bật chế độ demo (luồng 1 không còn mock)', async () => {
     vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
+    const get = vi.spyOn(apiClient, 'get').mockResolvedValue(envelope(page([])));
     const products = await productApi.getProducts();
-    expect(products.length).toBeGreaterThan(0);
-    expect(products[0]).toHaveProperty('id');
-    expect(products[0]).toHaveProperty('price');
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(products).toEqual([]);
   });
 
   it('productApi.getProducts() bóc envelope phân trang và gửi provinceCode bắt buộc', async () => {

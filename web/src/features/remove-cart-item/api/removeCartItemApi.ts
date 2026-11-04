@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * The write side of the cart (FR-08, BR-28).
@@ -16,8 +15,5 @@ import { isDemoMode } from '@/shared/config';
  * unwrap.
  */
 export async function removeCartItem(itemId: string): Promise<void> {
-  if (isDemoMode()) {
-    return;
-  }
   await apiClient.delete(GATEWAY.ORDER.CART_ITEM(itemId));
 }

@@ -7,6 +7,7 @@ export {
   apiCredentials,
   buildCspHeader,
   applyCspMeta,
+  apiConnectSources,
   CSP_DIRECTIVES,
   SECURITY_HEADERS,
   type AuthMode,

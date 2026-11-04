@@ -1,6 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode, provinceCodeOf } from '@/shared/config';
-import { cartStore, type CartState } from '../model/cartStore';
+import { provinceCodeOf } from '@/shared/config';
+import type { CartState } from '../model/cartStore';
 import type { CartItem } from '../model/cartStore';
 
 /**
@@ -61,9 +61,6 @@ export const cartApi = {
    * (package-architecture §3 — `api/` of a feature holds the writes).
    */
   async getMine(province?: string): Promise<CartState> {
-    if (isDemoMode()) {
-      return cartStore.get();
-    }
     const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
     const res = await apiClient.get<unknown>(`${GATEWAY.ORDER.CART}?${params.toString()}`);
     const dto = unwrap<CartDto>(res);

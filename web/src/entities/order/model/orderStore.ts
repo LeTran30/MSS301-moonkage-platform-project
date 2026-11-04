@@ -2,6 +2,11 @@ import { createStore } from '@/shared/lib';
 import { isDemoMode } from '@/shared/config';
 import type { Order } from './types';
 
+/**
+ * Demo orders for the flows that still run on demo data: MK-1042 is the
+ * delivered order of the dispute demo (F5, `DISP-088`), MK-9821 the custom
+ * order of F2. Flow 1 has no demo data: it reads the real order-service.
+ */
 export const MOCK_ORDERS: Order[] = [
   {
     id: 'MK-1042',

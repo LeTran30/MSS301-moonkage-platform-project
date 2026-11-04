@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 import type { CreateReviewPayload, ProductReview, ReviewDto } from '@/entities/order';
 
 /**
@@ -15,15 +14,6 @@ export async function createProductReview(
   orderId: string,
   payload: CreateReviewPayload
 ): Promise<ProductReview> {
-  if (isDemoMode()) {
-    return {
-      id: `rev_${Date.now()}`,
-      productId: payload.productId,
-      rating: payload.rating,
-      content: payload.content ?? '',
-      createdAt: new Date().toISOString(),
-    };
-  }
   const res = await apiClient.post<unknown>(GATEWAY.ORDER.REVIEWS(orderId), payload);
   const dto = unwrap<ReviewDto>(res);
   if (!dto) {

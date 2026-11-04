@@ -13,8 +13,8 @@ import styles from './ProductDetailPage.module.css';
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const provinceCode = useDeliveryProvinceCode();
-  const asyncProduct = useProductDetail(id || 'prod_01', provinceCode);
-  const asyncReviews = useProductReviews(id || 'prod_01');
+  const asyncProduct = useProductDetail(id ?? '', provinceCode);
+  const asyncReviews = useProductReviews(id ?? '');
   const user = useCurrentUser();
   const navigate = useNavigate();
   const { crusts: crustTypes } = useTaxonomy();

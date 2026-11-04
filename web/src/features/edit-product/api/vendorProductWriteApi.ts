@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 import type {
   SaveVendorProductPayload,
@@ -24,9 +23,6 @@ export async function createVendorProduct(
   // tên hay giá sản phẩm (NFR-03).
   trackEvent(ANALYTICS_EVENTS.saveProduct, { action: 'create' });
 
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.PRODUCTS(vendorId), payload);
   return unwrap<VendorProductDto>(res);
 }
@@ -42,9 +38,6 @@ export async function replaceVendorProduct(
 ): Promise<VendorProductDto | null> {
   trackEvent(ANALYTICS_EVENTS.saveProduct, { action: 'update' });
 
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.put<unknown>(
     GATEWAY.VENDOR.PRODUCT_BY_ID(vendorId, productId),
     payload
@@ -64,9 +57,6 @@ export async function updateVendorProductStatus(
     action: payload.status,
   });
 
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.patch<unknown>(
     GATEWAY.VENDOR.PRODUCT_BY_ID(vendorId, productId),
     payload

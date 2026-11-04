@@ -1,15 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { isDemoMode, routes } from '@/shared/config';
 import { toast } from '@/shared/ui';
 import { openPaymentPage, useAction, useAsync } from '@/shared/lib';
 import { toNationalPhone } from '@/shared/utils';
 import { addressApi, type Address } from '@/entities/address';
-import { useCart, clearCart } from '@/entities/cart';
+import { useCart } from '@/entities/cart';
 import { CartSummary } from '@/entities/cart';
 import { setDeliveryProvince, useDeliveryProvinceCode } from '@/entities/region';
 import { useCurrentUser } from '@/entities/user';
-import { orderStore, type Order } from '@/entities/order';
 import {
   InvoiceRequestForm,
   PaymentMethodPanel,
@@ -29,7 +26,6 @@ interface CheckoutInvoiceInfo {
 export function CheckoutPage() {
   const cart = useCart();
   const user = useCurrentUser();
-  const navigate = useNavigate();
   const { busy, run, error } = useAction();
   const checkoutOrder = useCheckout();
 
@@ -91,48 +87,9 @@ export function CheckoutPage() {
         invoiceInfo,
       });
 
-      if (!isDemoMode()) {
-        // FR-09, BR-25: the orders exist once the IPN marks the payment paid; the
-        // server empties the cart then. VNPay brings the buyer back to M4.3.
-        openPaymentPage(checkout.paymentUrl);
-        return;
-      }
-
-      // Demo mode has no server: keep a local record of the orders for the demo screens.
-      const createdOrders: Order[] = cart.groups.map((group) => ({
-        id: checkout.checkoutId,
-        type: 'RETAIL',
-        buyerId: user.id,
-        buyerName: user.name,
-        vendorId: group.vendorId,
-        vendorName: group.vendorName,
-        createdAt: new Date().toISOString(),
-        subtotal: group.items.reduce((s, it) => s + it.price * it.quantity, 0),
-        shippingFee: group.shippingFee,
-        total: group.items.reduce((s, it) => s + it.price * it.quantity, 0) + group.shippingFee,
-        status: 'PAID',
-        items: group.items.map((it) => ({
-          name: it.name,
-          quantity: it.quantity,
-          price: it.price,
-          image: it.image,
-        })),
-        shippingAddress: { receiver, phone, address, province: provinceCode },
-        disputeDeadline: new Date(Date.now() + 3 * 86400000).toISOString(),
-        hasInvoice: needInvoice,
-        invoiceCompanyInfo: invoiceInfo,
-      }));
-
-      orderStore.set((prev) => [...createdOrders, ...prev]);
-      clearCart();
-      navigate(routes.base.paymentResult, {
-        state: {
-          paymentId: checkout.paymentId,
-          checkoutId: checkout.checkoutId,
-          amount: checkout.totalAmount || total,
-          orderIds: createdOrders.map((o) => o.id),
-        },
-      });
+      // FR-09, BR-25: the orders exist once the IPN marks the payment paid; the
+      // server empties the cart then. VNPay brings the buyer back to M4.3.
+      openPaymentPage(checkout.paymentUrl);
     });
   }
 
