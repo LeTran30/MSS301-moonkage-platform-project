@@ -5,11 +5,12 @@ import { formatCurrency } from '@/shared/utils';
 import { Button, ButtonLink, Card, Breadcrumbs, Input, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
+import { useOwnVendorId } from '@/entities/vendor';
 import { useSaveDeliveryAreas, useUpdateVendor } from '@/features/edit-vendor-settings';
 
 export function VendorZonesSettingsPage() {
   const user = useCurrentUser();
-  const vendorId = user.vendorId || 'ven_hoa';
+  const vendorId = useOwnVendorId(user.vendorId);
 
   const [selectedCodes, setSelectedCodes] = useState<string[]>(['01', '24', '33', '31']);
   const [localDeliveryFee, setLocalDeliveryFee] = useState('25000');

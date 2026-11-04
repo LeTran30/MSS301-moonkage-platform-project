@@ -64,7 +64,6 @@ const NfcVerifyPage = page(() => import('@/pages/account/nfc-verify'), 'NfcVerif
 const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage');
 
 // Gateway Pages
-const VnPaySandboxPage = page(() => import('@/pages/gateway/vnpay'), 'VnPaySandboxPage');
 
 // Vendor Pages
 const VendorOverviewPage = page(() => import('@/pages/vendor/overview'), 'VendorOverviewPage');
@@ -104,18 +103,6 @@ const AdminVouchersPage = page(() => import('@/pages/admin/vouchers'), 'AdminVou
 // Bảng route của ứng dụng. Tách ra thành hằng riêng để có thể tham chiếu
 // từ nơi khác (ví dụ kiểm thử) mà không phải export toàn bộ module.
 const ROUTE_TABLE = [
-  // Gateway sandbox (isolated view)
-  {
-    path: '/gateway/vnpay/:paymentId',
-    element: withSuspense(VnPaySandboxPage),
-    errorElement: <RouteErrorBoundary />,
-  },
-  {
-    path: '/gateway/vnpay',
-    element: withSuspense(VnPaySandboxPage),
-    errorElement: <RouteErrorBoundary />,
-  },
-
   // Base Customer Experience (Zone M & Base)
   {
     path: '/',

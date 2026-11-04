@@ -5,12 +5,12 @@ import { formatCurrency } from '@/shared/utils';
 import { Button, ButtonLink, Card, Breadcrumbs, Input, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
-import { useOrderProfile } from '@/entities/vendor';
+import { useOwnVendorId, useOrderProfile } from '@/entities/vendor';
 import { useSaveOrderProfile } from '@/features/edit-vendor-settings';
 
 export function VendorBulkTermsSettingsPage() {
   const user = useCurrentUser();
-  const vendorId = user.vendorId || 'ven_hoa';
+  const vendorId = useOwnVendorId(user.vendorId);
 
   // FR-35: `GET /api/vendors/{vendorId}/order-profile` — điều kiện nhận đặt hàng.
   const asyncProfile = useOrderProfile(vendorId);

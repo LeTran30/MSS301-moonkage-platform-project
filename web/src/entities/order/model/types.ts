@@ -52,6 +52,8 @@ export type Order = {
   remainingPaid?: boolean;
   status: RetailOrderStatus | BulkOrderStatus;
   items: Array<{
+    /** The catalogue product; a review names it (FR-11). Absent on demo orders. */
+    productId?: string;
     name: string;
     quantity: number;
     price: number;
@@ -64,6 +66,8 @@ export type Order = {
     province: string;
   };
   trackingCode?: string; // Có nếu liên tỉnh
+  /** The shop and the buyer are in different provinces: shipping needs a tracking code (AC-32.3). */
+  interprovince?: boolean;
   deliveredAt?: string;
   disputeDeadline?: string; // 3 ngày nội thành, 7 ngày liên tỉnh/đặt hàng (Q-10)
   hasDispute?: boolean;

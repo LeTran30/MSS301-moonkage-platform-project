@@ -1,5 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
 import { isDemoMode } from '@/shared/config';
+import { toNationalPhone } from '@/shared/utils';
 import { clearTokens, getAccessToken, storeTokens } from '@/shared/api/tokenVault';
 import { userStore } from '../model/userStore';
 import type { User, UserRole } from '../model/types';
@@ -34,7 +35,7 @@ export function mapAccountToUser(dto: AccountDto): User {
     id: dto.accountId,
     name: dto.fullName || dto.email || 'Người dùng Moonkage',
     email: dto.email,
-    phone: dto.phoneNumber,
+    phone: toNationalPhone(dto.phoneNumber),
     role: mapRole(dto.role),
     nfcStatus: 'UNVERIFIED',
   };

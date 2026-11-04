@@ -21,7 +21,7 @@ export const ALL_PAGES: SitemapPageNode[] = [
   { code: 'M3.4', name: 'Gửi yêu cầu chỉ định riêng (Flow 3)', route: `${routes.base.vendors}/v-dong-phuong/yeu-cau-bao-gia`, desc: 'Gửi riêng cho xưởng đã chọn, kiểm tra chủ shop không tự gửi (BR-22)', zone: 'M', brList: ['BR-22'] },
   { code: 'M4.0', name: 'Giỏ hàng đa xưởng', route: routes.base.cart, desc: 'Tách đơn theo từng shop (FR-08), cảnh báo ngưỡng mua sỉ nếu số lượng lớn', zone: 'M', frList: ['FR-08'], brList: ['BR-25'] },
   { code: 'M4.1', name: 'Thanh toán & Hóa đơn VAT', route: routes.base.checkout, desc: 'Nhập thông tin xuất hóa đơn VAT doanh nghiệp chung 1 lần (FR-24)', zone: 'M', frList: ['FR-09', 'FR-24'] },
-  { code: 'M4.2', name: 'Cổng thanh toán giả lập VNPAY', route: routes.gateway.vnpay('sim-01'), desc: 'Mô phỏng thanh toán bán lẻ, thanh toán cọc, thanh toán phần còn lại', zone: 'M', frList: ['FR-10'] },
+  { code: 'M4.2', name: 'Cổng thanh toán VNPAY', route: routes.base.checkout, desc: 'Trang của VNPay, mở bằng link máy chủ trả về khi thanh toán bán lẻ, cọc, phần còn lại; VNPay đưa người mua về M4.3', zone: 'M', frList: ['FR-10'] },
   { code: 'M4.3', name: 'Kết quả thanh toán đơn hàng', route: routes.base.paymentResult, desc: 'Thông báo xác nhận thanh toán, tách đơn hàng độc lập (BR-25)', zone: 'M', brList: ['BR-25'] },
   { code: 'M5.1', name: 'Đăng nhập tài khoản', route: routes.auth.login, desc: 'Đăng nhập SĐT hoặc chuyển nhanh 6 Persona theo tài liệu IA', zone: 'M' },
   { code: 'M5.2', name: 'Đăng ký tài khoản', route: routes.auth.register, desc: 'Tạo tài khoản người mua cá nhân / doanh nghiệp mới', zone: 'M' },

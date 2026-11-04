@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { routes } from '@/shared/config';
 import { formatCurrency, formatDate } from '@/shared/utils';
 import { Badge, ButtonLink, Card, Icon, Tabs } from '@/shared/ui';
-import { useOrders } from '@/entities/order';
+import { orderStatusLabel, useOrders } from '@/entities/order';
 import styles from './OrdersListPage.module.css';
 
 export function OrdersListPage() {
@@ -52,13 +52,7 @@ export function OrdersListPage() {
                         : 'neutral'
                     }
                   >
-                    {order.status === 'DELIVERED'
-                      ? 'Đã giao hàng'
-                      : order.status === 'SHIPPING'
-                      ? 'Đang giao'
-                      : order.status === 'PAID'
-                      ? 'Đã thanh toán'
-                      : order.status}
+                    {orderStatusLabel(order.status)}
                   </Badge>
                 </div>
               </div>

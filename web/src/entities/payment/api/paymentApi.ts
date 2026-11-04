@@ -25,11 +25,16 @@ export interface PaymentDto {
  * The result page polls this endpoint: a payment created by the checkout only
  * becomes `SUCCEEDED` when the VNPay IPN arrives (BR-25).
  */
+/** Demo mode has no gateway and no IPN: every payment the demo opens is paid. */
+function demoPaidPayment(paymentId: string): PaymentDto {
+  return { paymentId, purpose: 'CHECKOUT', amount: 0, status: 'SUCCEEDED', paidAt: new Date().toISOString() };
+}
+
 export const paymentApi = {
   /** The state of one payment of the caller. */
   async getById(paymentId: string): Promise<PaymentDto | null> {
     if (isDemoMode()) {
-      return null;
+      return demoPaidPayment(paymentId);
     }
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.PAYMENT_BY_ID(paymentId));
     const dto = unwrap<PaymentDto>(res);
@@ -46,7 +51,8 @@ export const paymentApi = {
    */
   async readVnpayReturn(callback: Record<string, string>): Promise<PaymentDto | null> {
     if (isDemoMode()) {
-      return null;
+      // demoPaymentUrl() names the payment in `paymentId`.
+      return callback.paymentId ? demoPaidPayment(callback.paymentId) : null;
     }
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(callback)) {

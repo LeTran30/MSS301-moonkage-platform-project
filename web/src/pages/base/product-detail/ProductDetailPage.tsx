@@ -4,7 +4,7 @@ import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
 import { useDeliveryProvinceCode } from '@/entities/region';
 import { AsyncState, Badge, Button, ButtonLink, Card, Icon, Breadcrumbs } from '@/shared/ui';
-import { type Product, useProductDetail, useProductReviews } from '@/entities/product';
+import { type Product, useProductDetail, useProductReviews, useTaxonomy } from '@/entities/product';
 import { ProductReviewList } from '@/entities/product';
 import { AddToCartButton } from '@/features/add-to-cart';
 import { useCurrentUser } from '@/entities/user';
@@ -17,6 +17,7 @@ export function ProductDetailPage() {
   const asyncReviews = useProductReviews(id || 'prod_01');
   const user = useCurrentUser();
   const navigate = useNavigate();
+  const { crusts: crustTypes } = useTaxonomy();
   const [quantity, setQuantity] = useState(1);
 
   function handleBuyNow() {
@@ -194,16 +195,22 @@ export function ProductDetailPage() {
             <div className={styles.specList}>
               <div className={styles.specItem}>
                 <span className={styles.specLabel}>Vỏ bánh:</span>
-                <span>{product.crusts.map((c) => (c === 'nuong' ? 'Bánh nướng' : c === 'deo' ? 'Bánh dẻo' : 'Bánh lạnh')).join(', ')}</span>
+                <span>
+                  {product.crusts
+                    .map((code) => crustTypes.find((c) => c.code === code)?.name ?? code)
+                    .join(', ')}
+                </span>
               </div>
               <div className={styles.specItem}>
                 <span className={styles.specLabel}>Hạn sử dụng:</span>
                 <span>{product.expiryDate}</span>
               </div>
-              <div className={styles.specItem}>
-                <span className={styles.specLabel}>Khu vực tiệm:</span>
-                <span>{product.province}</span>
-              </div>
+              {product.manufactureLocation && (
+                <div className={styles.specItem}>
+                  <span className={styles.specLabel}>Xuất xứ:</span>
+                  <span>{product.manufactureLocation}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

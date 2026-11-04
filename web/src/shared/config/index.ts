@@ -24,5 +24,6 @@ export {
   provinceCodeOf,
   provinceNameOf,
   ALL_PROVINCE_NAMES,
+  FEATURED_DELIVERY_PROVINCE_CODES,
   type ProvinceItem,
 } from './provinces';

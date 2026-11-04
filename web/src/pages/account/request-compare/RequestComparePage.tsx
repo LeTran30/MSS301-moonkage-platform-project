@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
 import { Badge, Button, Card, Icon } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
+import { openPaymentPage, useAction } from '@/shared/lib';
 import { type Quote, useQuoteRequest } from '@/entities/request';
 import { useCurrentUser } from '@/entities/user';
 import { useAcceptQuote } from '@/features/accept-quote';
@@ -48,13 +48,7 @@ export function RequestComparePage() {
       const acceptance = await acceptQuote(request.id, quote.id);
 
       if (acceptance.paymentUrl) {
-        navigate(routes.gateway.vnpay(acceptance.paymentId || acceptance.acceptanceId), {
-          state: {
-            amount: acceptance.depositAmount || quote.depositAmount,
-            orderIds: [request.id],
-            type: 'BULK_DEPOSIT',
-          },
-        });
+        openPaymentPage(acceptance.paymentUrl);
         return;
       }
       navigate(routes.account.requestDeposit(request.id));

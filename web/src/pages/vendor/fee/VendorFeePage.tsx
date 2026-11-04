@@ -6,13 +6,13 @@ import { formatCurrency } from '@/shared/utils';
 import { Button, Card, Badge, Icon, Breadcrumbs, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
-import { useRegistrationFeeConfig } from '@/entities/vendor';
+import { useOwnVendorId, useRegistrationFeeConfig } from '@/entities/vendor';
 import { usePayVendorFee } from '@/features/pay-vendor-fee';
 
 export function VendorFeePage() {
   const user = useCurrentUser();
   const navigate = useNavigate();
-  const vendorId = user.vendorId || 'ven_hoa';
+  const vendorId = useOwnVendorId(user.vendorId);
   const { busy, run, error } = useAction();
   const payVendorFee = usePayVendorFee(vendorId);
 

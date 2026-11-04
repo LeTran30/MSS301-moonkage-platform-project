@@ -1,3 +1,4 @@
+import { provinceNameOf } from '@/shared/config';
 import type { Order } from '../model/types';
 import type { OrderDto, ProgressUpdate, ProgressUpdateDto, UiOrderStatus, BackendOrderStatus } from './orderDto';
 const STATUS_MAP: Record<string, UiOrderStatus> = {
@@ -77,13 +78,15 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
     disputeDeadline: dto.complaintDeadline,
     hasDispute: false,
     trackingCode: dto.trackingCode,
+    interprovince: dto.interprovince === true,
     shippingAddress: {
       receiver: dto.recipientName || 'Khách hàng Moonkage',
       phone: dto.recipientPhone || '',
       address: dto.addressDetail || '',
-      province: dto.provinceCode || '',
+      province: provinceNameOf(dto.provinceCode) || dto.provinceCode || '',
     },
     items: (dto.items ?? []).map((item) => ({
+      productId: item.productId,
       name: item.productName,
       quantity: item.quantity,
       price: item.unitPrice,

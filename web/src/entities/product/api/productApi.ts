@@ -72,8 +72,9 @@ export function mapProductDtoToEntity(dto: ProductDto): Product {
     images: images.length > 0 ? images : ['/images/banh-nuong.jpg'],
     description: dto.description || '',
     expiryDate: dto.expiryDate ? formatExpiry(dto.expiryDate) : '',
-    deliveryTag: dto.deliveryLabel === 'GIAO_NOI_THANH' ? 'Giao nội thành' : 'Giao toàn quốc',
-    province: dto.origin || 'Hà Nội',
+    // Catalog `DeliveryLabel` is LOCAL or NATIONWIDE (BR-13).
+    deliveryTag: dto.deliveryLabel === 'LOCAL' ? 'Giao nội thành' : 'Giao toàn quốc',
+    province: dto.origin || '',
     rating: dto.ratingAvg ?? 0,
     reviewCount: dto.ratingCount ?? 0,
     crusts: (dto.crustCodes ?? []) as Product['crusts'],

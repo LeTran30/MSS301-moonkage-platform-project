@@ -61,6 +61,26 @@ Hậu quả: tiền cọc vào, acceptance đứng PENDING mãi, người mua kh
 | `GET /api/carts/me` thiếu `provinceCode` trả 500 | Web luôn gửi tham số nên chưa gặp; client khác sẽ nhận lỗi sai mã | **Đã sửa 04/11/2026.** `GlobalExceptionHandler` của order-service trả 400 `COMMON_400_PARAM`, nêu tên tham số thiếu |
 | `docker compose up --build` hỏng | Không build lại được image backend nào | **Đã sửa 04/11/2026.** Module `common-observability` (thêm ở #91) chưa được `COPY` trong Dockerfile của các service |
 
+### 3. F1 trên web nối API thật (04/11/2026)
+
+Chạy cả luồng bằng trình duyệt trên `localhost:5173`, không bật chế độ demo. Kết quả: 31/31 bước qua. Thanh toán dừng ở trang VNPay sandbox (lỗi 71, xem dưới), nên IPN được gửi giả có chữ ký đúng.
+
+| Lỗi trên web | Đã sửa |
+| --- | --- |
+| Form sản phẩm (modal B4.0 và trang B4.1) thiếu thương hiệu, hạn dùng, nhãn giao, nguồn hàng, ảnh; backend trả 400 | Một form B4.1 duy nhất đủ trường theo `ProductDetails`; B4.0 mở form đó. Danh sách tải lại sau khi lưu |
+| Chọn tỉnh giao ở header không đổi giá, giỏ, catalog | Header đọc và ghi `entities/region` |
+| Thanh toán đi qua trang VNPay giả lập `/gateway/vnpay`, ghi đơn PAID giả vào store | Bỏ trang giả lập; web mở `paymentUrl` của máy chủ. Đơn giả chỉ còn ở chế độ demo |
+| Trang thanh toán điền sẵn địa chỉ, tỉnh, thông tin hóa đơn mẫu | Lấy tỉnh giao hiện tại và địa chỉ đã lưu; hóa đơn để trống |
+| SĐT hiện 9 số; `vendorId`, trạng thái NFC rỗng sau đăng nhập | Thêm số 0 đầu; đăng nhập đọc gian hàng và NFC |
+| Chi tiết sản phẩm: nhãn giao luôn "toàn quốc", vỏ bánh sai tên | Đọc `LOCAL`/`NATIONWIDE`, tên vỏ từ danh mục |
+| Đơn của Shop không có nút chuyển bước, nhãn PAID là "Hoàn tất", tỉnh hiện mã | Nút "Xử lý đơn" mở B2.1 chuyển đúng bước kế (kèm mã vận đơn khi liên tỉnh); nhãn và tên tỉnh đúng |
+| Người mua không có chỗ viết đánh giá | Form đánh giá ở tab Đánh giá khi đơn đã giao |
+
+Còn lại:
+
+- VNPay sandbox trả lỗi 71 "Website này chưa được phê duyệt": cấu hình merchant (`VNPAY_TMN_CODE`, URL trả về đăng ký với VNPay), không sửa bằng code. IPN thật cũng không tới được `localhost`, cần tunnel khi thử với VNPay.
+- Chi tiết sản phẩm không hiện khu vực của tiệm: listing của catalog không có tỉnh của Shop, còn `GET /api/vendors/{id}` chỉ cho chủ Shop và admin. Cần thêm tỉnh vào projection của catalog.
+
 ## Việc tiếp theo
 
 1. Sửa lỗ hổng 1, chạy thật F2 rồi F3.

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatDateTime } from '@/shared/utils';
 import { Badge, Button, ButtonLink, Tabs, Breadcrumbs, toast } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
+import { openPaymentPage, useAction } from '@/shared/lib';
 import {
   approveMaket,
   requestMaketRevision,
@@ -22,6 +22,7 @@ import {
 } from '@/entities/order';
 import { useConfirmDelivery } from '@/features/confirm-delivery';
 import { usePayRemainder } from '@/features/pay-remainder';
+import { ReviewForm } from '@/features/write-review';
 import { MaketReviewPanel, useGetInvoiceLink, useReviewMockup } from '@/features/fulfill-order';
 import styles from './OrderDetailPage.module.css';
 
@@ -31,7 +32,6 @@ export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = id || '';
   const order = useOrder(orderId || 'MK-1042');
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<DetailTab>('progress');
   const { busy, run, error } = useAction();
   const confirmDelivery = useConfirmDelivery();
@@ -115,13 +115,7 @@ export function OrderDetailPage() {
     if (!order) return;
     void run(async () => {
       const link = await payRemainder(order.id);
-      navigate(routes.gateway.vnpay(link.paymentId), {
-        state: {
-          amount: order.remainingAmount || 0,
-          orderIds: [order.id],
-          type: 'REMAINDER',
-        },
-      });
+      openPaymentPage(link.paymentUrl);
     });
   }
 
@@ -235,6 +229,16 @@ export function OrderDetailPage() {
       {/* Tab 5: Đánh giá (FR-11) */}
       {activeTab === 'reviews' && (
         <div className={styles.tabSection}>
+          {!isBulk && (order.status === 'DELIVERED' || order.status === 'COMPLETED') && (
+            <ReviewForm
+              orderId={order.id}
+              products={order.items.flatMap((it) =>
+                it.productId && !reviews.some((r) => r.productId === it.productId)
+                  ? [{ productId: it.productId, name: it.name }]
+                  : []
+              )}
+            />
+          )}
           <OrderReviewList
             reviews={reviews}
             state={asyncReviews.kind}

@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap, unwrapList } from '@/shared/api';
-import { isDemoMode, provinceCodeOf } from '@/shared/config';
+import { isDemoMode, provinceCodeOf, provinceNameOf } from '@/shared/config';
 import { vendorStore, type Vendor } from '../model/vendorStore';
 import type {
   OrderProfileDto,
@@ -19,7 +19,8 @@ export function mapSupplierToVendor(dto: SupplierDto): Vendor {
     representativeName: '',
     idCardNumberMasked: '',
     address: '',
-    province: dto.deliveryAreas?.[0] || 'Hà Nội',
+    // Delivery areas are province codes; keep the value as is when it is not one.
+    province: provinceNameOf(dto.deliveryAreas?.[0]) || dto.deliveryAreas?.[0] || '',
     phone: '',
     email: '',
     sellingMode: dto.ordersOnly ? 'CUSTOM_ORDER' : 'BOTH',
@@ -54,7 +55,7 @@ export function mapVendorDetailToVendor(dto: VendorDetailDto): Vendor {
     representativeName: dto.representativeName || '',
     idCardNumberMasked: dto.representativeIdMasked || '',
     address: dto.address || '',
-    province: dto.provinceCode || '',
+    province: provinceNameOf(dto.provinceCode),
     phone: '',
     email: '',
     sellingMode:

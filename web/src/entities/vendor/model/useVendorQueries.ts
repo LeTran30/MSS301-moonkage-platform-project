@@ -16,6 +16,16 @@ export function useMyVendorId() {
 }
 
 /**
+ * The signed-in seller's shop id: the one the session already knows, else the
+ * one the backend answers; empty while unknown or when the account has no shop.
+ */
+export function useOwnVendorId(sessionVendorId: string | undefined): string {
+  const myVendorId = useMyVendorId();
+  if (sessionVendorId) return sessionVendorId;
+  return myVendorId.kind === 'loaded' ? (myVendorId.data ?? '') : '';
+}
+
+/**
  * The shop of the signed-in seller, with the documents the admin asked for.
  *
  * `vendorId` is the id the backend needs, so the caller resolves it first.
