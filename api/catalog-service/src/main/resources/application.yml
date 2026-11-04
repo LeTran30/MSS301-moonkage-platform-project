@@ -36,6 +36,8 @@ spring:
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
 
+# values come from the repo-root .env (see .env.example)
+# catalog only renders the public image URLs of the products it copies; it never touches MinIO itself (BE-09).
 catalog:
   projections:
     capture-enabled: true
@@ -60,13 +62,16 @@ eureka:
     # register the container IP, not its random hostname, so the gateway can reach it inside Docker
     prefer-ip-address: true
 
-# only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
+# health for the container healthcheck (RT-05); prometheus for the metrics (BE-11b)
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

@@ -1,0 +1,31 @@
+/* Bố cục trang dùng design token của hệ thống (không dùng inline style). */
+
+.page {
+  padding: 64px 16px;
+  display: flex;
+  justify-content: center;
+}
+.forbiddenCard {
+  max-width: 500px;
+  text-align: center;
+  border-top: 4px solid var(--color-danger);
+}
+.forbiddenIcon {
+  color: var(--color-danger);
+  margin-bottom: 16px;
+}
+.forbiddenTitle {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+.forbiddenText {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.forbiddenActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}

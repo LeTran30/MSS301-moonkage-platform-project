@@ -1,1 +1,1 @@
-export * from './NewQuoteRequestPage';
+export { NewQuoteRequestPage } from './NewQuoteRequestPage';

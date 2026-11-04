@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,6 +20,7 @@ import com.moonkage.quotation.client.PaymentClient;
 import com.moonkage.quotation.common.exception.AppException;
 import com.moonkage.quotation.common.exception.ErrorCode;
 import com.moonkage.quotation.config.QuotationProperties;
+import com.moonkage.quotation.config.RabbitConfig;
 import com.moonkage.quotation.dto.client.CreatePaymentRequest;
 import com.moonkage.quotation.dto.client.CreatePaymentResponse;
 import com.moonkage.quotation.dto.client.CreateRefundRequest;
@@ -39,6 +41,7 @@ import com.moonkage.quotation.repository.QuoteRepository;
 import com.moonkage.quotation.repository.QuoteRequestRepository;
 import com.moonkage.quotation.repository.RequestInvitationRepository;
 import com.moonkage.quotation.repository.VendorSnapshotRepository;
+import com.moonkage.quotation.service.InboxService;
 import com.moonkage.quotation.service.OutboxService;
 import java.time.Clock;
 import java.time.Duration;
@@ -87,12 +90,17 @@ class QuoteAcceptanceServiceImplTest {
     @Mock
     private OutboxService outboxService;
 
+    @Mock
+    private InboxService inboxService;
+
     private QuoteAcceptanceServiceImpl service;
     private QuoteRequest request;
     private Quote quote;
 
     @BeforeEach
     void setUp() {
+        // the inbox marks the event as handled; only the redelivery tests flip it to false
+        lenient().when(inboxService.markProcessed(anyString(), anyString())).thenReturn(true);
         VendorDirectory vendorDirectory = new VendorDirectory(vendorSnapshotRepository, new ObjectMapper());
         RequestAccessPolicy policy =
                 new RequestAccessPolicy(quoteRequestRepository, requestInvitationRepository, vendorDirectory);
@@ -104,6 +112,7 @@ class QuoteAcceptanceServiceImplTest {
                 identityClient,
                 paymentClient,
                 outboxService,
+                inboxService,
                 new QuotationProperties(DEPOSIT_TIMEOUT),
                 Clock.fixed(NOW, ZoneOffset.UTC));
         request = Fixtures.request(REQUEST, RequestType.OPEN, 100, Set.of());
@@ -114,12 +123,13 @@ class QuoteAcceptanceServiceImplTest {
     void acceptFreezesABindingCopyAndChargesExactlyItsDeposit() {
         givenAcceptableQuote(OWNER);
         when(quoteAcceptanceRepository.saveAndFlush(any())).thenAnswer(inv -> withId(inv.getArgument(0)));
-        when(paymentClient.createPayment(any())).thenReturn(new CreatePaymentResponse("pay-1", "https://vnpay/pay-1"));
+        when(paymentClient.createPayment(anyString(), any()))
+                .thenReturn(new CreatePaymentResponse("pay-1", "https://vnpay/pay-1"));
 
         AcceptQuoteResponse response = service.accept(BUYER, REQUEST, "q1", null);
 
         ArgumentCaptor<CreatePaymentRequest> payment = ArgumentCaptor.forClass(CreatePaymentRequest.class);
-        verify(paymentClient).createPayment(payment.capture());
+        verify(paymentClient).createPayment(eq("acc-1"), payment.capture());
         assertThat(payment.getValue().purpose()).isEqualTo(CreatePaymentRequest.DEPOSIT);
         assertThat(payment.getValue().referenceId()).isEqualTo("acc-1");
         assertThat(payment.getValue().amount()).isEqualTo(3_609_000);
@@ -141,7 +151,7 @@ class QuoteAcceptanceServiceImplTest {
         ReflectionTestUtils.setField(quote, "validUntil", NOW.plus(Duration.ofMinutes(5)));
         givenAcceptableQuote(OWNER);
         when(quoteAcceptanceRepository.saveAndFlush(any())).thenAnswer(inv -> withId(inv.getArgument(0)));
-        when(paymentClient.createPayment(any())).thenReturn(new CreatePaymentResponse("pay-1", "url"));
+        when(paymentClient.createPayment(anyString(), any())).thenReturn(new CreatePaymentResponse("pay-1", "url"));
 
         AcceptQuoteResponse response = service.accept(BUYER, REQUEST, "q1", null);
 
@@ -153,7 +163,7 @@ class QuoteAcceptanceServiceImplTest {
         givenAcceptableQuote(BUYER);
 
         assertError(() -> service.accept(BUYER, REQUEST, "q1", null), ErrorCode.SELF_DEALING);
-        verify(paymentClient, never()).createPayment(any());
+        verify(paymentClient, never()).createPayment(anyString(), any());
     }
 
     @Test
@@ -185,7 +195,7 @@ class QuoteAcceptanceServiceImplTest {
         when(quoteRepository.findByRequestIdOrderBySubmittedAtAsc(REQUEST)).thenReturn(List.of(quote, other));
 
         Instant paidAt = NOW.plusSeconds(60);
-        service.recordDepositPaid("acc-1", paidAt);
+        service.recordDepositPaid("evt-1", "acc-1", paidAt);
 
         assertThat(acceptance.getStatus()).isEqualTo(AcceptanceStatus.SUCCEEDED);
         assertThat(acceptance.getPaidAt()).isEqualTo(paidAt);
@@ -196,16 +206,65 @@ class QuoteAcceptanceServiceImplTest {
     }
 
     @Test
+    void aRedeliveredPaymentEventChangesNothing() {
+        QuoteAcceptance acceptance = pendingAcceptance();
+        when(inboxService.markProcessed("evt-1", RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY))
+                .thenReturn(false);
+
+        service.recordDepositPaid("evt-1", "acc-1", NOW.plusSeconds(60));
+
+        assertThat(acceptance.getStatus()).isEqualTo(AcceptanceStatus.PENDING_PAYMENT);
+        assertThat(request.getStatus()).isEqualTo(RequestStatus.OPEN);
+        verify(outboxService, never()).enqueue(anyString(), anyString(), any());
+    }
+
+    @Test
+    void aFailedDepositUnlocksTheQuote() {
+        QuoteAcceptance acceptance = givenPendingAcceptance();
+
+        service.recordDepositFailed("evt-2", "acc-1");
+
+        assertThat(acceptance.getStatus()).isEqualTo(AcceptanceStatus.FAILED);
+        verify(outboxService, never()).enqueue(anyString(), anyString(), any());
+    }
+
+    @Test
+    void aRedeliveredFailureEventChangesNothing() {
+        QuoteAcceptance acceptance = pendingAcceptance();
+        when(inboxService.markProcessed("evt-2", RabbitConfig.PAYMENT_FAILED_ROUTING_KEY))
+                .thenReturn(false);
+
+        service.recordDepositFailed("evt-2", "acc-1");
+
+        assertThat(acceptance.getStatus()).isEqualTo(AcceptanceStatus.PENDING_PAYMENT);
+    }
+
+    @Test
     void depositArrivingAfterTheAcceptanceExpiredIsRefunded() {
         QuoteAcceptance acceptance = givenPendingAcceptance();
         ReflectionTestUtils.setField(acceptance, "status", AcceptanceStatus.EXPIRED);
         when(quoteRepository.findById("q1")).thenReturn(Optional.of(quote));
 
-        service.recordDepositPaid("acc-1", NOW.plusSeconds(60));
+        service.recordDepositPaid("evt-1", "acc-1", NOW.plusSeconds(60));
 
         verify(paymentClient).createRefund(CreateRefundRequest.quoteExpired("pay-1", 3_609_000));
         assertThat(request.getStatus()).isEqualTo(RequestStatus.OPEN);
         assertThat(quote.getStatus()).isEqualTo(QuoteStatus.SUBMITTED);
+        verify(outboxService, never()).enqueue(anyString(), anyString(), any());
+    }
+
+    @Test
+    void aDepositOfAQuoteThatLostTheRequestIsRefunded() {
+        QuoteAcceptance acceptance = givenPendingAcceptance();
+        when(quoteRepository.findById("q1")).thenReturn(Optional.of(quote));
+        when(quoteAcceptanceRepository.existsByRequestIdAndStatus(REQUEST, AcceptanceStatus.SUCCEEDED))
+                .thenReturn(true);
+
+        service.recordDepositPaid("evt-1", "acc-1", NOW.plusSeconds(60));
+
+        verify(paymentClient).createRefund(CreateRefundRequest.quoteExpired("pay-1", 3_609_000));
+        assertThat(acceptance.getStatus()).isEqualTo(AcceptanceStatus.FAILED);
+        assertThat(request.getStatus()).isEqualTo(RequestStatus.OPEN);
         verify(outboxService, never()).enqueue(anyString(), anyString(), any());
     }
 
@@ -219,14 +278,21 @@ class QuoteAcceptanceServiceImplTest {
     }
 
     private QuoteAcceptance givenPendingAcceptance() {
+        QuoteAcceptance acceptance = pendingAcceptance();
+        when(quoteAcceptanceRepository.findRequestIdById("acc-1")).thenReturn(Optional.of(REQUEST));
+        when(quoteRequestRepository.findByIdForUpdate(REQUEST)).thenReturn(Optional.of(request));
+        when(quoteAcceptanceRepository.findById("acc-1")).thenReturn(Optional.of(acceptance));
+        // only the paid path reads the request itself; a failure path does not
+        lenient().when(quoteRequestRepository.findById(REQUEST)).thenReturn(Optional.of(request));
+        return acceptance;
+    }
+
+    /** The acceptance alone, without any repository stub: used where the inbox stops the handling. */
+    private QuoteAcceptance pendingAcceptance() {
         AcceptanceParties parties = new AcceptanceParties("NGUYEN THI LAN", "********0001", "Tiệm", "0312345678", null);
         QuoteAcceptance acceptance = withId(QuoteAcceptance.pending(
                 quote, BUYER, parties, new AcceptanceCopy("{}", "0".repeat(64), NOW.plus(DEPOSIT_TIMEOUT)), NOW));
         acceptance.attachPayment("pay-1");
-        when(quoteAcceptanceRepository.findRequestIdById("acc-1")).thenReturn(Optional.of(REQUEST));
-        when(quoteRequestRepository.findByIdForUpdate(REQUEST)).thenReturn(Optional.of(request));
-        when(quoteAcceptanceRepository.findById("acc-1")).thenReturn(Optional.of(acceptance));
-        when(quoteRequestRepository.findById(REQUEST)).thenReturn(Optional.of(request));
         return acceptance;
     }
 

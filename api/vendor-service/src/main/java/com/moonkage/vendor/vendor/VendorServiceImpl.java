@@ -308,6 +308,7 @@ class VendorServiceImpl implements VendorService {
         vendor.checkRegistrationFeePayable();
         Price fee = registrationFeeService.getCurrentFee();
         CreatePaymentResponse payment = paymentClient.createPayment(
+                vendorId,
                 new CreatePaymentRequest(PaymentPurpose.REGISTRATION_FEE, vendorId, caller.accountId(), fee.value()));
         return new RegistrationFeePaymentLinkResponse(payment.paymentId(), fee.value(), payment.paymentUrl());
     }

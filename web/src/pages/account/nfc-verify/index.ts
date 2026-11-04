@@ -1,0 +1,1 @@
+export { NfcVerifyPage } from './NfcVerifyPage';

@@ -12,6 +12,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.identity.common.config.RabbitConfig;
+import com.moonkage.observability.OutboxMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +41,8 @@ class OutboxRelayTest {
         when(rabbitTemplate.invoke(any()))
                 .thenAnswer(inv -> inv.<RabbitOperations.OperationsCallback<?>>getArgument(0)
                         .doInRabbit(ops));
-        relay = new OutboxRelay(repository, rabbitTemplate, new OutboxProperties());
+        relay = new OutboxRelay(
+                repository, rabbitTemplate, new OutboxProperties(), new OutboxMetrics(new SimpleMeterRegistry()));
     }
 
     @Test

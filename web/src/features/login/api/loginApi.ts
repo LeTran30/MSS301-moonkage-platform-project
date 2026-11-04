@@ -1,38 +1,68 @@
-import { authApi, DEMO_ACCOUNT_KEY, DEMO_PASSWORD, demoAccount, nfcDemoAccountKey, type LoginResponse } from '@/entities/user';
-import { apiClient, ApiError, type ApiResponse } from '@/shared/api/client';
-import { demoStore } from '@/shared/api/demo';
-import { config } from '@/shared/config/env';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
+import { storeTokens, userStore, type User } from '@/entities/user';
 
-const DEMO_DELAY_MS = 300;
+/**
+ * The write side of signing in (FR-01).
+ *
+ * The user entity owns the read (`getMyAccount`) and the shape of the user;
+ * the write lives here because it starts the session, not the user data
+ * (package-architecture §3 — `api/` of a feature holds the writes).
+ */
 
-function demoLogin(username: string, password: string): Promise<LoginResponse> {
-  const account = demoAccount(username);
-  return new Promise((resolve, reject) =>
-    setTimeout(() => {
-      if (!account || password !== DEMO_PASSWORD) {
-        reject(new ApiError(401, 'AUTH_001', 'Sai email/số điện thoại hoặc mật khẩu. Tài khoản demo dùng mật khẩu "demo".'));
-        return;
-      }
-      demoStore.set(DEMO_ACCOUNT_KEY, account.username);
-      demoStore.set('name', account.fullName);
-      // the NFC demo reads this key; seeded once so a verification made during the demo survives a new login
-      const nfcKey = nfcDemoAccountKey();
-      if (demoStore.get<boolean | null>(nfcKey, null) === null) demoStore.set(nfcKey, account.nfcVerified);
-      resolve({
-        token: `demo-${account.username}`,
-        refreshToken: 'demo',
-        accountId: account.username,
-        email: account.username,
-        fullName: account.fullName,
-        role: account.role,
-      });
-    }, DEMO_DELAY_MS),
-  );
+/**
+ * Sign in.
+ *
+ * The backend answers `LoginResponse` with the access token, the refresh token and the
+ * account profile. The tokens are kept in `localStorage` because the Axios
+ * interceptor reads them from there.
+ */
+export async function login(username: string, password: string): Promise<User> {
+  if (isDemoMode()) {
+    const demo = userStore.get();
+    return { ...demo, phone: username || demo.phone };
+  }
+  const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.LOGIN, { username, password });
+  const dto = unwrap<{
+    token: string;
+    refreshToken: string;
+    accountId: string;
+    email: string;
+    phoneNumber: string;
+    fullName: string;
+    role: string;
+  }>(res);
+  if (!dto || !dto.token) {
+    throw new Error('Máy chủ không trả về phiên đăng nhập.');
+  }
+
+  storeTokens(dto.token, dto.refreshToken);
+
+  // Funnel đăng nhập (FR-01). Chỉ ghi vai trò — không ghi tên, email hay
+  // số điện thoại (NFR-03).
+  trackEvent(ANALYTICS_EVENTS.login, { role: mapRole(dto.role) });
+
+  return {
+    id: dto.accountId,
+    name: dto.fullName || dto.email || 'Người dùng Moonkage',
+    email: dto.email,
+    phone: dto.phoneNumber,
+    role: mapRole(dto.role),
+    nfcStatus: 'UNVERIFIED',
+  };
 }
 
-/** `username` is the e-mail or the phone number (FR-02). */
-export async function login(username: string, password: string): Promise<LoginResponse> {
-  if (config.demoMode) return demoLogin(username, password);
-  const response = await apiClient.post<ApiResponse<LoginResponse>>(`${authApi}/login`, { username, password });
-  return response.data.data;
+/** Map the backend role to the UI role; unknown roles become `BUYER`. */
+function mapRole(role: string | undefined): User['role'] {
+  switch (role?.toUpperCase()) {
+    case 'VENDOR':
+      return 'VENDOR';
+    case 'ADMIN':
+      return 'ADMIN';
+    case 'GUEST':
+      return 'GUEST';
+    default:
+      return 'BUYER';
+  }
 }

@@ -1,1 +1,1 @@
-export { ReadyOrderView } from './ui/ReadyOrderView';
+export { useConfirmDelivery } from './model/useConfirmDelivery';

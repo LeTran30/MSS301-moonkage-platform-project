@@ -1,70 +1,71 @@
-import { apiClient, type ApiResponse } from '@/shared/api/client';
-import { identityApi, vendorsApi } from '@/shared/api/gateway';
-import { config } from '@/shared/config/env';
-import type { VendorStatus } from '../model/userContext';
-import { currentDemoAccount } from './demoAccounts';
-import type { AccountInfo, LoginResponse } from './types';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import { clearTokens, getAccessToken, storeTokens } from '@/shared/api/tokenVault';
+import { userStore } from '../model/userStore';
+import type { User, UserRole } from '../model/types';
 
-/** identity-service `/api/auth/*`. */
-export const authApi = `${identityApi}/auth`;
-const accountsMeApi = `${identityApi}/accounts/me`;
-
-export async function refreshAuthToken(refreshToken: string): Promise<LoginResponse> {
-  if (config.demoMode) {
-    const acc = currentDemoAccount();
-    return {
-      token: `demo-${acc?.username ?? 'guest'}`,
-      refreshToken: 'demo',
-      accountId: acc?.username ?? 'guest',
-      email: acc?.username,
-      fullName: acc?.fullName,
-      role: acc?.role ?? 'BUYER',
-    };
-  }
-  const response = await apiClient.post<ApiResponse<LoginResponse>>(`${authApi}/refresh-token`, { refreshToken });
-  return response.data.data;
+/**
+ * Wire shape of `com.moonkage.identity.account.dto.AccountResponse`.
+ */
+export interface AccountDto {
+  accountId: string;
+  email: string;
+  phoneNumber: string;
+  fullName: string;
+  role: string;
 }
 
-export async function getMyAccount(): Promise<AccountInfo> {
-  if (config.demoMode) {
-    const acc = currentDemoAccount();
-    return {
-      accountId: acc?.username ?? '',
-      email: acc?.username ?? '',
-      fullName: acc?.fullName ?? '',
-      role: acc?.role ?? 'BUYER',
-    };
-  }
-  const response = await apiClient.get<ApiResponse<AccountInfo>>(accountsMeApi);
-  return response.data.data;
+export { clearTokens, getAccessToken, storeTokens };
+
+/** Map the backend role to the UI role; unknown roles become `BUYER`. */
+export function mapRole(role: string | undefined): UserRole {
+  if (!role) return 'BUYER';
+  const ROLE_MAP: Record<string, UserRole> = {
+    BUYER: 'BUYER',
+    VENDOR: 'VENDOR',
+    ADMIN: 'ADMIN',
+    GUEST: 'GUEST',
+  };
+  return ROLE_MAP[role.toUpperCase()] ?? 'BUYER';
 }
 
-interface VendorSummaryDto {
-  id: string;
-  status: string;
+export function mapAccountToUser(dto: AccountDto): User {
+  return {
+    id: dto.accountId,
+    name: dto.fullName || dto.email || 'Người dùng Moonkage',
+    email: dto.email,
+    phone: dto.phoneNumber,
+    role: mapRole(dto.role),
+    nfcStatus: 'UNVERIFIED',
+  };
 }
 
-interface VendorDetailDto {
-  id: string;
-  status: string;
-  canOperate: boolean;
-}
-
-/** Resolves whether the logged-in account has no vendor ('none'), a pending/approved-unpaid profile ('pending'), or an open shop ('open'). */
-export async function fetchMyVendorStatus(): Promise<VendorStatus> {
-  if (config.demoMode) return currentDemoAccount()?.vendorStatus ?? 'none';
-  try {
-    const listRes = await apiClient.get<ApiResponse<VendorSummaryDto[]>>(vendorsApi, {
-      params: { ownerAccountId: 'me' },
-    });
-    const first = listRes.data.data?.[0];
-    if (!first) return 'none';
-    if (first.status === 'APPROVED') {
-      const detailRes = await apiClient.get<ApiResponse<VendorDetailDto>>(`${vendorsApi}/${encodeURIComponent(first.id)}`);
-      return detailRes.data.data?.canOperate ? 'open' : 'pending';
+/**
+ * The read side of the session.
+ *
+ * The writes (`login`, `registerAccount`, `verifyAccount`, `resetPassword`)
+ * belong to the `login`, `register`, `verify-account` and `reset-password`
+ * features (package-architecture §3 — `api/` of a feature holds the writes).
+ */
+export const sessionApi = {
+  /** The signed-in account profile. */
+  async getMyAccount(): Promise<User> {
+    if (isDemoMode()) {
+      return userStore.get();
     }
-    return 'pending';
-  } catch {
-    return 'none';
-  }
-}
+    const res = await apiClient.get<unknown>(GATEWAY.IDENTITY.ME);
+    const dto = unwrap<AccountDto>(res);
+    if (!dto) {
+      throw new Error('Máy chủ không trả về thông tin tài khoản.');
+    }
+    return mapAccountToUser(dto);
+  },
+
+  /** Sign out: drop the tokens and the cached profile. */
+  async logout(): Promise<void> {
+    clearTokens();
+    if (!isDemoMode()) {
+      return;
+    }
+  },
+};

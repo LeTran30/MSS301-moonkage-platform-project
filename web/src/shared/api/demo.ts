@@ -1,19 +1,45 @@
-import { readJson, writeJson } from '../utils/storage';
+import { isDemoMode } from '@/shared/config/env';
 
-/**
- * Small persistent store for demo mode (`config.demoMode`): what a backend would remember between reloads
- * (who is logged in, which account verified its CCCD…). Feature `api/` files read and write it; nothing else does.
- */
-const STORAGE_KEY = 'moonkage.demo';
+export interface DemoAdapter {
+  getProducts: <T = unknown>() => Promise<T[]>;
+  getOrders: <T = unknown>() => Promise<T[]>;
+  getQuoteRequests: <T = unknown>() => Promise<T[]>;
+  getVendors: <T = unknown>() => Promise<T[]>;
+  registerProvider: (key: string, provider: () => Promise<unknown[]>) => void;
+}
 
-type DemoState = Record<string, unknown>;
+const providers: Record<string, () => Promise<unknown[]>> = {};
 
-export const demoStore = {
-  get<T>(key: string, fallback: T): T {
-    const state = readJson<DemoState>(STORAGE_KEY, {});
-    return key in state ? (state[key] as T) : fallback;
+export const demoAdapter: DemoAdapter = {
+  registerProvider(key, provider) {
+    providers[key] = provider;
   },
-  set(key: string, value: unknown) {
-    writeJson(STORAGE_KEY, { ...readJson<DemoState>(STORAGE_KEY, {}), [key]: value });
+  async getProducts<T = unknown>() {
+    return (providers.products ? await providers.products() : []) as T[];
+  },
+  async getOrders<T = unknown>() {
+    return (providers.orders ? await providers.orders() : []) as T[];
+  },
+  async getQuoteRequests<T = unknown>() {
+    return (providers.quoteRequests ? await providers.quoteRequests() : []) as T[];
+  },
+  async getVendors<T = unknown>() {
+    return (providers.vendors ? await providers.vendors() : []) as T[];
   },
 };
+
+/**
+ * Thực thi gọi API thật hoặc Demo theo cấu hình chủ động (isDemoMode).
+ * TUYỆT ĐỐI KHÔNG nuốt lỗi API để fallback về demo (Luật L1 & L5).
+ * Nếu isDemoMode=false, mọi lỗi mạng/500/404 phải nổi lên để UI xử lý (ErrorState).
+ */
+export function executeWithDemoMode<T>(
+  apiCall: () => Promise<T>,
+  demoCall: () => Promise<T>
+): Promise<T> {
+  if (isDemoMode()) {
+    return demoCall();
+  }
+  return apiCall();
+}
+

@@ -5,6 +5,7 @@ import com.moonkage.quotation.client.PaymentClient;
 import com.moonkage.quotation.common.exception.AppException;
 import com.moonkage.quotation.common.exception.ErrorCode;
 import com.moonkage.quotation.config.QuotationProperties;
+import com.moonkage.quotation.config.RabbitConfig;
 import com.moonkage.quotation.dto.client.CreatePaymentRequest;
 import com.moonkage.quotation.dto.client.CreatePaymentResponse;
 import com.moonkage.quotation.dto.client.CreateRefundRequest;
@@ -27,6 +28,7 @@ import com.moonkage.quotation.enums.RequestStatus;
 import com.moonkage.quotation.mapper.AcceptanceMapper;
 import com.moonkage.quotation.repository.QuoteAcceptanceRepository;
 import com.moonkage.quotation.repository.QuoteRepository;
+import com.moonkage.quotation.service.InboxService;
 import com.moonkage.quotation.service.OutboxService;
 import com.moonkage.quotation.service.QuoteAcceptanceService;
 import com.moonkage.quotation.service.impl.RequestAccessPolicy.Viewer;
@@ -56,6 +58,7 @@ public class QuoteAcceptanceServiceImpl implements QuoteAcceptanceService {
     private final IdentityClient identityClient;
     private final PaymentClient paymentClient;
     private final OutboxService outboxService;
+    private final InboxService inboxService;
     private final QuotationProperties properties;
     private final Clock clock;
 
@@ -84,9 +87,12 @@ public class QuoteAcceptanceServiceImpl implements QuoteAcceptanceService {
                 new AcceptanceCopy(json, AgreementHasher.sha256Hex(json), paymentExpiresAt),
                 now));
 
-        // a failed call rolls the acceptance back, so the buyer simply accepts again
-        CreatePaymentResponse payment = paymentClient.createPayment(CreatePaymentRequest.deposit(
-                acceptance.getId(), accountId, acceptance.getDepositAmount(), paymentExpiresAt));
+        // a failed call rolls the acceptance back, so the buyer simply accepts again.
+        // The acceptance id is the idempotency key (BE-08b): a retry answers the same payment.
+        CreatePaymentResponse payment = paymentClient.createPayment(
+                acceptance.getId(),
+                CreatePaymentRequest.deposit(
+                        acceptance.getId(), accountId, acceptance.getDepositAmount(), paymentExpiresAt));
         acceptance.attachPayment(payment.paymentId());
 
         return AcceptanceMapper.toAcceptResponse(acceptance, payment.paymentUrl());
@@ -110,7 +116,10 @@ public class QuoteAcceptanceServiceImpl implements QuoteAcceptanceService {
 
     @Override
     @Transactional
-    public void recordDepositPaid(String acceptanceId, Instant paidAt) {
+    public void recordDepositPaid(String eventId, String acceptanceId, Instant paidAt) {
+        if (!inboxService.markProcessed(eventId, RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY)) {
+            return;
+        }
         QuoteAcceptance acceptance = lockAcceptance(acceptanceId);
         if (acceptance.getStatus() == AcceptanceStatus.SUCCEEDED) {
             return;
@@ -136,12 +145,12 @@ public class QuoteAcceptanceServiceImpl implements QuoteAcceptanceService {
                 .forEach(Quote::close);
         request.award();
 
-        String eventId = UUID.randomUUID().toString();
+        String acceptedEventId = UUID.randomUUID().toString();
         outboxService.enqueue(
-                eventId,
-                QuoteAcceptedEvent.ROUTING_KEY,
+                acceptedEventId,
+                RabbitConfig.QUOTE_ACCEPTED_ROUTING_KEY,
                 new QuoteAcceptedEvent(
-                        eventId,
+                        acceptedEventId,
                         clock.instant(),
                         acceptance.getId(),
                         quote.getId(),
@@ -156,7 +165,10 @@ public class QuoteAcceptanceServiceImpl implements QuoteAcceptanceService {
 
     @Override
     @Transactional
-    public void recordDepositFailed(String acceptanceId) {
+    public void recordDepositFailed(String eventId, String acceptanceId) {
+        if (!inboxService.markProcessed(eventId, RabbitConfig.PAYMENT_FAILED_ROUTING_KEY)) {
+            return;
+        }
         QuoteAcceptance acceptance = lockAcceptance(acceptanceId);
         if (acceptance.isPending()) {
             acceptance.fail();

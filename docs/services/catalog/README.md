@@ -8,7 +8,11 @@ Contract v1 đã duyệt; Phase D xong phần adapter, `acceptsOrders`, tìm ki�
 
 [Kế hoạch C0–C5](implementation-plan.md) là bản phân chia scope sau khi đối chiếu IA và hai bộ wireframe. **C1** đã push riêng (`3cbb1ff`). Snapshot C2 đã commit **local** `1e160ae`, merge develop local `3227fed` theo master prompt Phase A–C. C2 còn chờ contract producer, chưa hoàn thành consumer nghiệp vụ/full replay. Không push, merge vào develop/main hoặc deploy; Phase D chờ xác nhận nhóm duyệt contract.
 
-Runtime mặc định chỉ scan entity `ProductListing` @Immutable và repository chỉ đọc của view V2. Lê Trần đã cho phép cô lập writer/entity/repository cũ vào profile `legacy-writer`; giữ nguyên nghiệp vụ và 11 test ảnh, không xóa, không chuyển DB, không tạo lại bảng legacy. Profile đó **không dùng được với V2**; không bật nó để chạy catalog mới. Hibernate vẫn `ddl-auto: validate`. common-storage vẫn ở dependency cho code legacy, nhưng auto-config upload/MinIO chỉ được import khi bật legacy; read side chỉ dựng URL công khai, không cần credentials/upload hay gọi MinIO khi startup.
+Runtime mặc định chỉ scan entity `ProductListing` @Immutable và repository chỉ đọc của view V2.
+
+**BE-09 (04/11/2026): profile `legacy-writer` đã bị xoá.** Writer/entity/repository/controller cũ (`ProductController`, `SellerProductController`, `ProductServiceImpl`, `Product`, `ProductPriceTier`, `ProductRepository`, `ProductMapper` và các DTO của chúng) đã bị gỡ khỏi source. Lý do: profile đó **không dùng được với V2** — nó là dead configuration, không phải feature; và để nó tồn tại là để mở đường ghi thứ hai vào cùng bảng, nên drift không kiểm soát được (trái L-18: catalog chỉ là read model).
+
+Hệ quả: catalog-service **không còn gọi MinIO** (không upload ảnh sản phẩm, không cần credentials), **không còn gọi vendor-service** (bỏ Feign), và **không còn endpoint ghi sản phẩm** — `/api/products` chỉ có GET (đọc), `/api/seller/products` đã bị xoá hoàn toàn. Việc ghi sản phẩm thuộc `vendor-service` (writer theo L-18). Dependency `common-storage` và `spring-cloud-starter-openfeign` đã bị gỡ khỏi pom của catalog; user MinIO `catalog` cũng bị gỡ khỏi `infra/minio/init.sh`. Hibernate vẫn `ddl-auto: validate`.
 
 ## C2: đã xác nhận và còn chờ
 
@@ -69,7 +73,9 @@ Chỉ ON_SALE + canOperate + sellsShop + giao được tới tỉnh; LOCAL ngoà
 
 Qua discovery route gateway `/catalog-service/api/products`; endpoint service giữ `/api/products` (root gateway/facets đầy đủ thuộc C3). GET list yêu cầu `provinceCode` hợp lệ trong 34 mã, hỗ trợ q theo name/brand, vendorId, page/size (1–100), sort cố định updatedAt rồi id. Chỉ ON_SALE + canOperate + sellsShop + giao được; LOCAL ngoài vùng không lọt ra. GET detail/reviews chặn hàng không công khai, detail chưa chọn tỉnh không trả shippingFee giả bằng 0. Phí/snapshot đầy đủ thuộc C4.
 
-Response mới có envelope và record ProductListingResponse: giữ id, thêm vendorName/rating/isOwn, ảnh có imageKeys/imageUrls. Sau merge develop Phase A, read row/DTO dùng `crustCodes[]`, `fillingCodes[]` thay cakeType theo migration L-19 đã merge; chỉ tương thích schema, chưa làm bộ lọc C3. priceTiers là JSON nguyên trạng từ read model, chưa suy diễn schema item tier của event. Không cam kết tương thích hoàn toàn frontend cũ; chưa làm nhiều bộ lọc/facets hoặc quyền quản lý mọi trạng thái của C3. Không có lệnh ghi sản phẩm trong runtime mặc định; legacy controller vẫn còn trong source/profile.
+Response mới có envelope và record ProductListingResponse: giữ id, thêm vendorName/rating/isOwn, ảnh có imageKeys/imageUrls. Sau merge develop Phase A, read row/DTO dùng `crustCodes[]`, `fillingCodes[]` thay cakeType theo migration L-19 đã merge; chỉ tương thích schema, chưa làm bộ lọc C3. priceTiers là JSON nguyên trạng từ read model, chưa suy diễn schema item tier của event. Không cam kết tương thích hoàn toàn frontend cũ; chưa làm nhiều bộ lọc/facets hoặc quyền quản lý mọi trạng thái của C3. Không có lệnh ghi sản phẩm trong runtime: **BE-09 đã xoá hẳn legacy controller**, `/api/seller/products` không còn tồn tại.
+
+**BE-04 (04/11/2026): `ProductListingResponse` có `vendorAcceptsOrders`.** Trước đây web phải suy ra "hiệu có nhận đơn riêng" từ `quoteThreshold` — nhưng ngưỡng báo giá là "từ bao nhiêu hộp thì cần báo giá", không phải "có nhận đơn riêng hay không", nên câu trả lời luôn sai. Cờ đúng được copy từ `VendorSnapshot.acceptsOrders` của vendor-service qua projection (`vendor_snapshots.accepts_orders`, migration `V2026_11_02_1000__vendor_accepts_orders.sql`) và đi vào DTO qua view `product_listings` (cột `vendor_accepts_orders`). Web đọc `dto.vendorAcceptsOrders` và tự đặt tên hiển thị là `acceptsCustomOrder`.
 
 ## API C1
 

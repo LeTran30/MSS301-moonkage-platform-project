@@ -1,1 +1,1 @@
-export * from './AdminReconciliationPage';
+export { AdminReconciliationPage } from './AdminReconciliationPage';

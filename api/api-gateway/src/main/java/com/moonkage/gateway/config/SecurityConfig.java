@@ -5,6 +5,7 @@ import java.util.Base64;
 import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +42,7 @@ import org.springframework.web.server.ServerWebExchange;
  */
 @Configuration
 @EnableWebFluxSecurity
+@EnableConfigurationProperties(RateLimitProperties.class)
 public class SecurityConfig {
 
     /** No longer set; still stripped so a client cannot smuggle it to a service that reads it. */

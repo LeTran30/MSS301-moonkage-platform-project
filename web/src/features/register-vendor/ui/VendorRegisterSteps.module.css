@@ -1,0 +1,23 @@
+.wizardSteps {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+.stepPill {
+  flex: 1;
+  padding: var(--space-2);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.stepActive {
+  background: var(--color-gold-soft);
+  color: var(--color-gold-hover);
+  font-weight: var(--weight-bold);
+}
+.stepDone {
+  background: var(--color-surface-3);
+  color: var(--color-text);
+}

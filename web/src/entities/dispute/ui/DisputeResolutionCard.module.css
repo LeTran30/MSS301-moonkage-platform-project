@@ -1,0 +1,48 @@
+.resolvedCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.resolvedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed var(--color-border);
+  padding-bottom: var(--space-3);
+}
+.disputeId {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.orderRef {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.resolutionDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.resRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: var(--text-sm);
+}
+.refundVal {
+  color: var(--color-primary);
+  font-size: var(--text-base);
+}
+.payoutVal {
+  color: var(--color-success-ink);
+  font-size: var(--text-base);
+}
+.adminNote {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-bg-alt);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  margin-top: 4px;
+}

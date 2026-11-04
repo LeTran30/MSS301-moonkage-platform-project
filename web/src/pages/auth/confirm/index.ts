@@ -1,0 +1,1 @@
+export { RegisterConfirmPage } from './RegisterConfirmPage';

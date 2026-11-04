@@ -1,15 +1,20 @@
-import { ledgerPath, payoutStore } from '@/entities/payout';
-import { apiClient } from '@/shared/api/client';
-import { mockResponse } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import type { PayoutDto } from '@/entities/payment';
 
-/** FR-48: pays each order's vendor once; the server refuses one that is not payable (dispute, window open). */
-export async function payOut(orderIds: string[]): Promise<void> {
-  if (!config.demoMode) {
-    // one by one: a refusal stops the batch with the server's reason, the orders before it stay paid
-    for (const orderId of orderIds) await apiClient.put(`${ledgerPath(orderId)}/payout`);
-    return;
+/**
+ * The write side of the payout (FR-48).
+ *
+ * The payment entity owns the read and the shape of the money; the write lives
+ * here because it moves the money, not the ledger data
+ * (package-architecture §3 — `api/` of a feature holds the writes).
+ */
+
+/** FR-48: an admin pays the vendor what is held, once per order. */
+export async function payOutLedger(orderId: string): Promise<PayoutDto | null> {
+  if (isDemoMode()) {
+    return null;
   }
-  payoutStore.update((list) => list.map((p) => (orderIds.includes(p.orderId) ? { ...p, paid: true } : p)));
-  await mockResponse(true);
+  const res = await apiClient.put<unknown>(GATEWAY.PAYMENT.LEDGER_PAYOUT(orderId));
+  return unwrap<PayoutDto>(res);
 }

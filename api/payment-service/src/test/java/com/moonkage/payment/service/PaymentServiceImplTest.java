@@ -13,11 +13,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.payment.config.RabbitConfig;
 import com.moonkage.payment.config.VnpayProperties;
 import com.moonkage.payment.dto.event.PaymentFailedEvent;
 import com.moonkage.payment.dto.request.CreatePaymentRequest;
 import com.moonkage.payment.dto.request.CreatePaymentRequest.AllocationRequest;
+import com.moonkage.payment.dto.response.CreatePaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
 import com.moonkage.payment.entity.Payment;
 import com.moonkage.payment.entity.PaymentAllocation;
@@ -31,6 +33,7 @@ import com.moonkage.payment.gateway.VnpaySigner;
 import com.moonkage.payment.repository.PaymentAllocationRepository;
 import com.moonkage.payment.repository.PaymentRepository;
 import com.moonkage.payment.service.impl.PaymentServiceImpl;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -73,7 +76,8 @@ class PaymentServiceImplTest {
                 outboxService,
                 new VnpayGateway(properties),
                 properties,
-                new TransactionTemplate(mock(PlatformTransactionManager.class)));
+                new TransactionTemplate(mock(PlatformTransactionManager.class)),
+                new MoneyMetrics(new SimpleMeterRegistry()));
 
         payment = new Payment();
         payment.setId(PAYMENT_ID);
@@ -163,11 +167,14 @@ class PaymentServiceImplTest {
     void aCheckoutMustSplitItsWholeAmountOverDistinctOrders() {
         AppException wrongTotal = assertThrows(
                 AppException.class,
-                () -> service.create(checkout(List.of(new AllocationRequest("order-1", 100_000L)))));
+                () -> service.create(checkout(List.of(new AllocationRequest("order-1", 100_000L))), "checkout-1"));
         AppException sameOrderTwice = assertThrows(
                 AppException.class,
-                () -> service.create(checkout(List.of(
-                        new AllocationRequest("order-1", 100_000L), new AllocationRequest("order-1", 150_000L)))));
+                () -> service.create(
+                        checkout(List.of(
+                                new AllocationRequest("order-1", 100_000L),
+                                new AllocationRequest("order-1", 150_000L))),
+                        "checkout-1"));
 
         assertEquals(ErrorCode.ALLOCATIONS_INVALID, wrongTotal.getErrorCode());
         assertEquals(ErrorCode.ALLOCATIONS_INVALID, sameOrderTwice.getErrorCode());
@@ -190,7 +197,7 @@ class PaymentServiceImplTest {
                 Instant.now().plus(10, ChronoUnit.MINUTES),
                 null);
 
-        String url = service.create(deposit).paymentUrl();
+        String url = service.create(deposit, "acceptance-1").paymentUrl();
 
         ArgumentCaptor<PaymentAllocation> share = ArgumentCaptor.forClass(PaymentAllocation.class);
         verify(allocationRepository).save(share.capture());
@@ -198,6 +205,55 @@ class PaymentServiceImplTest {
         assertEquals(75_000L, share.getValue().getAmount());
         assertTrue(url.contains("vnp_Amount=7500000"));
         assertTrue(url.contains(VnpaySigner.SECURE_HASH + "="));
+    }
+
+    /**
+     * BE-08b: a retried POST /internal/payments (the answer was lost) must answer the payment that already exists,
+     * not create a second one for the same deposit.
+     */
+    @Test
+    void aRepeatedCallWithTheSameKeyAnswersThePaymentThatAlreadyExists() {
+        when(paymentRepository.findPendingByIdempotencyKey("acceptance-1")).thenReturn(Optional.of(pendingDeposit()));
+
+        CreatePaymentResponse answer = service.create(depositRequest(75_000L), "acceptance-1");
+
+        assertEquals(PAYMENT_ID, answer.paymentId());
+        assertTrue(answer.paymentUrl().contains("vnp_Amount=7500000"));
+        verify(paymentRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(allocationRepository);
+    }
+
+    /** BE-08b: the same key with another amount is another request and must not become the first payment. */
+    @Test
+    void theSameKeyWithAnotherAmountIsNotAnsweredTheFirstPayment() {
+        when(paymentRepository.findPendingByIdempotencyKey("acceptance-1")).thenReturn(Optional.of(pendingDeposit()));
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(call -> call.getArgument(0));
+
+        service.create(depositRequest(80_000L), "acceptance-1");
+
+        verify(paymentRepository).saveAndFlush(any(Payment.class));
+    }
+
+    /** A payment that already failed may not be answered again: the payer may start a new attempt. */
+    @Test
+    void aFailedPaymentIsNotAnsweredAgain() {
+        when(paymentRepository.findPendingByIdempotencyKey("acceptance-1")).thenReturn(Optional.empty());
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(call -> call.getArgument(0));
+
+        service.create(depositRequest(75_000L), "acceptance-1");
+
+        verify(paymentRepository).saveAndFlush(any(Payment.class));
+    }
+
+    /** Without a key every call is its own attempt: the caller did not ask for idempotency. */
+    @Test
+    void withoutAKeyEveryCallCreatesItsOwnPayment() {
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(call -> call.getArgument(0));
+
+        service.create(depositRequest(75_000L), null);
+
+        verify(paymentRepository).saveAndFlush(any(Payment.class));
+        verify(paymentRepository, never()).findPendingByIdempotencyKey(anyString());
     }
 
     @Test
@@ -208,10 +264,37 @@ class PaymentServiceImplTest {
 
         AppException error = assertThrows(
                 AppException.class,
-                () -> service.create(checkout(List.of(
-                        new AllocationRequest("order-1", 100_000L), new AllocationRequest("order-2", 150_000L)))));
+                () -> service.create(
+                        checkout(List.of(
+                                new AllocationRequest("order-1", 100_000L),
+                                new AllocationRequest("order-2", 150_000L))),
+                        "checkout-1"));
         assertEquals(ErrorCode.PAYMENT_ALREADY_PAID, error.getErrorCode());
         verify(ledgerService, never()).collect(anyString(), anyLong(), anyString());
+    }
+
+    /** The deposit of acceptance-1, still open. */
+    private static Payment pendingDeposit() {
+        Payment existing = new Payment();
+        existing.setId(PAYMENT_ID);
+        existing.setPurpose(PaymentPurpose.DEPOSIT);
+        existing.setReferenceId("acceptance-1");
+        existing.setAmount(75_000L);
+        existing.setGatewayTxnRef(TXN_REF);
+        existing.setStatus(PaymentStatus.PENDING);
+        existing.setExpiresAt(Instant.now().plus(10, ChronoUnit.MINUTES));
+        existing.setCreatedAt(Instant.now());
+        return existing;
+    }
+
+    private static CreatePaymentRequest depositRequest(long amount) {
+        return new CreatePaymentRequest(
+                PaymentPurpose.DEPOSIT,
+                "acceptance-1",
+                "buyer-1",
+                amount,
+                Instant.now().plus(10, ChronoUnit.MINUTES),
+                null);
     }
 
     private static CreatePaymentRequest checkout(List<AllocationRequest> allocations) {

@@ -1,2 +1,1 @@
-export * from './PaymentResultPage';
-export * from './VnpayReturnPage';
+export { PaymentResultPage } from './PaymentResultPage';

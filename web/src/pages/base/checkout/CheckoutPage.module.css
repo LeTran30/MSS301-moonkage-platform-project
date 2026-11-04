@@ -1,0 +1,31 @@
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4) var(--space-12);
+  width: 100%;
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-1);
+}
+.subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-6);
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--space-8);
+  align-items: start;
+}
+.formCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.summaryCol {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+}

@@ -1,1 +1,1 @@
-export * from './VnpayPage';
+export { VnPaySandboxPage } from './VnPaySandboxPage';

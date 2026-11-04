@@ -1,1 +1,1 @@
-export * from './AdminVendorPage';
+export { AdminVendorDetailPage } from './AdminVendorDetailPage';

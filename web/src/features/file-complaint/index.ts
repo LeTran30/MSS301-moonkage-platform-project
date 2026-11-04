@@ -1,1 +1,1 @@
-export { ComplaintView } from './ui/ComplaintView';
+export { useOpenDispute } from './model/useOpenDispute';

@@ -1,6 +1,15 @@
 package com.moonkage.quotation.repository;
 
 import com.moonkage.quotation.entity.OutboxEvent;
+import java.util.List;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface OutboxEventRepository extends JpaRepository<OutboxEvent, String> {}
+public interface OutboxEventRepository extends JpaRepository<OutboxEvent, String> {
+
+    /** Oldest first, so the events of one request reach consumers in the order they happened. */
+    List<OutboxEvent> findByPublishedAtIsNullOrderByCreatedAtAsc(Pageable page);
+
+    /** How many events are written but not published yet: the sign that the relay is stuck (BE-11b). */
+    long countByPublishedAtIsNull();
+}

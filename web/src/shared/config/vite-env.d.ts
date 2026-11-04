@@ -1,9 +1,14 @@
-/** Types for the `VITE_*` variables read in `env.ts`; merges into the `ImportMetaEnv` from `vite/client` (tsconfig `types`). */
+/// <reference types="vite/client" />
+
 interface ImportMetaEnv {
+  /** API Gateway của backend Moonkage (rỗng khi chạy demo mode). */
   readonly VITE_API_BASE_URL?: string;
-  readonly VITE_NFC_POLL_INTERVAL_MS?: string;
-  readonly VITE_NFC_POLL_INTERVAL_CONNECTED_MS?: string;
-  readonly VITE_PAYMENT_POLL_INTERVAL_MS?: string;
-  readonly VITE_PAYMENT_POLL_ATTEMPTS?: string;
+  /** Bật chế độ demo (dữ liệu mock trong bộ nhớ). */
   readonly VITE_DEMO_MODE?: string;
+  /** WebSocket realtime của backend (FR-27). */
+  readonly VITE_WS_URL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }

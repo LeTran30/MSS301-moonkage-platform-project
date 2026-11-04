@@ -51,4 +51,13 @@ public class OutboxEvent {
         event.payload = payload;
         return event;
     }
+
+    /** Null until the broker confirmed it. */
+    public void markPublished(Instant timestamp) {
+        this.publishedAt = timestamp;
+    }
+
+    public void incrementAttempts() {
+        this.attempts++;
+    }
 }

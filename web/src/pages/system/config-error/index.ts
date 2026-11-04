@@ -1,1 +1,1 @@
-export * from './ConfigErrorPage';
+export { ConfigErrorPage } from './ConfigErrorPage';
