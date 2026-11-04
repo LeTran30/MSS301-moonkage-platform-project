@@ -20,7 +20,7 @@ develop  ────●────●────●────●───�
 | `develop` | `main` | Nhánh làm việc | Squash and merge |
 | Nhánh làm việc | **`develop`** | `develop` | Squash and merge |
 
-> Nhánh làm việc **luôn** tạo từ `develop`, không phải từ `main`. Xem [mục 6](#6--tôi-tạo-nhánh-từ-main-rồi-sau-này-sửa-sao).
+> Nhánh làm việc **luôn** tạo từ `develop`, không phải từ `main`. Xem [mục 6](#6-tôi-tạo-nhánh-từ-main-rồi-sau-này-sửa-sao).
 
 ---
 
