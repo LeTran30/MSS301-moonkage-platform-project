@@ -1,12 +1,3 @@
-export {
-  addressesPath,
-  addressStore,
-  fetchAddress,
-  formatAddress,
-  formatAddressDetail,
-  fromAddressDto,
-  toSaveAddressDto,
-  type Address,
-  type AddressResponseDto,
-} from './api/addressApi';
-export { useAddress, useAddresses } from './model/useAddresses';
+export type { Address, AddressPayload } from './model/types';
+export { addressApi, mapAddressDtoToEntity } from './api/addressApi';
+export type { AddressDto } from './api/addressApi';

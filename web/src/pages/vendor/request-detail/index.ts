@@ -1,1 +1,1 @@
-export * from './VendorRequestPage';
+export { VendorRequestDetailPage } from './VendorRequestDetailPage';

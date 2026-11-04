@@ -1,1 +1,1 @@
-export * from './AdminConfigPage';
+export { AdminConfigPage } from './AdminConfigPage';

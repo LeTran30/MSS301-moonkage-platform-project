@@ -1,1 +1,1 @@
-export * from './AddressFormPage';
+export { AddressFormPage } from './AddressFormPage';

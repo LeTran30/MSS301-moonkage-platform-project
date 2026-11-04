@@ -1,48 +1,117 @@
 .footer {
-  background: var(--brand);
-  color: var(--on-brand);
-  margin-top: var(--space-20);
+  position: relative;
+  background:
+    radial-gradient(1000px 300px at 50% 0%, color-mix(in srgb, var(--color-gold-bright) 12%, transparent), transparent 70%),
+    var(--color-surface-2);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-12) 0 var(--space-6);
+  margin-top: auto;
+  overflow: hidden;
 }
 
-.footerInner {
-  max-width: 1200px;
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+.container {
+  max-width: var(--container);
   margin: 0 auto;
-  padding-inline: var(--space-6);
-  box-sizing: border-box;
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
+  padding: 0 var(--space-4);
+  position: relative;
+  z-index: 1;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: var(--space-8);
-  padding-block: var(--space-12);
+  margin-bottom: var(--space-10);
 }
-
-.footerBrand {
+.brandCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 380px;
+}
+.logo {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: var(--space-2);
 }
-
-.footerNote {
-  font: var(--text-body-sm);
-  max-width: 320px;
-  margin: 0;
+.logoEmblem {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-ember);
+  color: var(--color-white);
+  display: grid;
+  place-items: center;
 }
-
-.footerLogo {
-  width: 96px;
-  height: auto;
-  aspect-ratio: 360 / 441;
+.brandName {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: var(--weight-bold);
+  color: var(--color-primary);
 }
-
-.footerLinks {
+.tagline {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+.badges {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-6);
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
 }
-
-.footerLinks a {
-  font: var(--text-label);
-  color: var(--on-brand);
+.verifyBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-gold);
+  font-weight: var(--weight-medium);
+}
+.linkCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.colTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.linkList a {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  transition: color var(--duration-fast);
+}
+.linkList a:hover {
+  color: var(--color-primary);
+}
+.bottomBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.metaFlags {
+  color: var(--color-gold);
+  font-weight: var(--weight-medium);
 }

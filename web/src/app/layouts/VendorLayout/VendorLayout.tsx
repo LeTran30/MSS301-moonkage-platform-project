@@ -1,18 +1,29 @@
-import { Outlet, ScrollRestoration } from 'react-router-dom';
-import { VendorBar } from '@/widgets/vendor-bar';
-import { VendorChannelGate } from '@/widgets/vendor-channel-gate';
+import { Outlet } from 'react-router-dom';
+import { Header } from '@/widgets/header';
+import { VendorSidebar } from '@/widgets/sidebar';
+import { useCurrentUser } from '@/entities/user';
+import { CommandPalette } from '@/widgets/command-palette';
+import { LayoutErrorBoundary } from '../LayoutErrorBoundary';
+import styles from './VendorLayout.module.css';
 
-/** Frame of Kênh người bán: only for vendor accounts (VendorChannelGate), VendorBar widget, main content. */
 export function VendorLayout() {
+  const user = useCurrentUser();
+
   return (
-    <VendorChannelGate>
-      <div className="shop">
-        <ScrollRestoration />
-        <VendorBar />
-        <main className="shop__inner page">
-          <Outlet />
+    <div className={styles.layout} data-zone="vendor">
+      <Header />
+      <div className={styles.body}>
+        <VendorSidebar
+          hasShop={user.hasShop !== false}
+          acceptsCustomOrders={user.acceptsCustomOrders !== false}
+        />
+        <main className={styles.content}>
+          <LayoutErrorBoundary areaName="Kênh Người Bán">
+            <Outlet />
+          </LayoutErrorBoundary>
         </main>
       </div>
-    </VendorChannelGate>
+      <CommandPalette />
+    </div>
   );
 }

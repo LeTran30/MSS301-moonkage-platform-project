@@ -1,0 +1,104 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.urgentCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border: 2px solid var(--color-gold);
+}
+.urgentHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-gold-hover);
+}
+.urgentHeader h3 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  margin: 0;
+}
+.urgentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.urgentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.statIcon {
+  color: var(--color-gold);
+}
+.statNumber {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary);
+}
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+.cardHeader h3 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  margin: 0;
+}
+.viewAll {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+}
+.recentOrders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.recentRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+.orderSub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.recentRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}

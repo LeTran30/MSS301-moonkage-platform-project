@@ -1,0 +1,69 @@
+/* Bố cục trang dùng design token của hệ thống (không dùng inline style). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0px;
+  font-family: var(--font-heading);
+}
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+.tableWrap {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--text-sm);
+}
+.tableHead {
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.tableHeaderCell {
+  padding: 12px 16px;
+}
+.tableRow {
+  border-bottom: 1px solid var(--color-border);
+}
+.tableCellStrong {
+  padding: 14px 16px;
+  font-weight: 600;
+}
+.tableCell {
+  padding: 14px 16px;
+}
+.tableCellMoney {
+  padding: 14px 16px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.tableCellMuted {
+  padding: 14px 16px;
+  color: var(--color-text-muted);
+}
+.mutedSmall {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+}

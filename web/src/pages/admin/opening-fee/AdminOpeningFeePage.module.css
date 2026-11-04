@@ -1,0 +1,51 @@
+/* Bố cục trang dùng design token của hệ thống (không dùng inline style). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0px;
+  font-family: var(--font-heading);
+}
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+.form {
+  max-width: 640px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: inherit;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}

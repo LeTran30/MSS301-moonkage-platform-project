@@ -1,0 +1,141 @@
+/* Bố cục trang dùng design token của hệ thống (không dùng inline style). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0px;
+  font-family: var(--font-heading);
+}
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+.gridTwo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sectionTitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.productRow {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+}
+.productImage {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.productInfo {
+  flex: 1;
+}
+.productName {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.productMeta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.priceStrong {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.summaryBox {
+  background: var(--color-surface-2);
+  padding: 16px;
+  border-radius: 8px;
+}
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: var(--text-sm);
+}
+.summaryRight {
+  max-width: 280px;
+  text-align: right;
+}
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+}
+.totalStrong {
+  color: var(--color-green);
+  font-weight: 600;
+}
+.stackWide {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.progressRow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.timelineRow {
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.stepBadge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+.stepBadgeDone {
+  background: var(--color-gold);
+  color: var(--color-white);
+}
+.stepBadgePending {
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+}
+.stepTitle {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: inherit;
+}
+.stepTitlePending {
+  color: var(--color-text-muted);
+}
+

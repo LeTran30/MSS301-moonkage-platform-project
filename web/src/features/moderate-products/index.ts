@@ -1,1 +1,2 @@
-export { AdminProducts } from './ui/AdminProducts';
+export { usePlatformProducts } from './model/usePlatformProducts';
+export type { AdminProductRow } from './model/usePlatformProducts';

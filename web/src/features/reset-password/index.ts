@@ -1,1 +1,1 @@
-export { ForgotPasswordForm, ResetPasswordForm } from './ui/ResetPasswordForms';
+export { useResetPassword, useSendResetOtp } from './model/useResetPassword';

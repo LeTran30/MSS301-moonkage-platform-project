@@ -1,0 +1,48 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.title {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: var(--space-1);
+}
+.desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.deferredCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.deferredHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.deferredTitle {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.deferredActions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}

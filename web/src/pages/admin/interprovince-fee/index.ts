@@ -1,0 +1,1 @@
+export { AdminInterprovinceFeePage } from './AdminInterprovinceFeePage';

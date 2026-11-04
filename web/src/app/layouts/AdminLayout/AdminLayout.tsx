@@ -1,18 +1,23 @@
-import { Outlet, ScrollRestoration } from 'react-router-dom';
-import { RequireAdmin } from '@/entities/user';
-import { AdminBar } from '@/widgets/admin-bar';
+import { Outlet } from 'react-router-dom';
+import { Header } from '@/widgets/header';
+import { AdminSidebar } from '@/widgets/sidebar';
+import { CommandPalette } from '@/widgets/command-palette';
+import { LayoutErrorBoundary } from '../LayoutErrorBoundary';
+import styles from './AdminLayout.module.css';
 
-/** Frame of Quản trị: admin accounts only (RequireAdmin), AdminBar widget, main content. */
 export function AdminLayout() {
   return (
-    <RequireAdmin>
-      <div className="shop">
-        <ScrollRestoration />
-        <AdminBar />
-        <main className="shop__inner page">
-          <Outlet />
+    <div className={styles.layout} data-zone="admin">
+      <Header />
+      <div className={styles.body}>
+        <AdminSidebar />
+        <main className={styles.content}>
+          <LayoutErrorBoundary areaName="Quản Trị Hệ Thống">
+            <Outlet />
+          </LayoutErrorBoundary>
         </main>
       </div>
-    </RequireAdmin>
+      <CommandPalette />
+    </div>
   );
 }

@@ -1,147 +1,207 @@
-import { apiClient, type ApiResponse } from '@/shared/api/client';
-import { catalogProductsApi } from '@/shared/api/gateway';
-import { mockResponse } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
-import { ALL_PROVINCE_NAMES } from '@/shared/config/provinces';
-import type { ProductDetail, ProductSummary, Review } from '../model/types';
-import { mockProducts } from './mockData';
+import { apiClient, GATEWAY, unwrap, unwrapList, unwrapPage } from '@/shared/api';
+import { isDemoMode, provinceCodeOf } from '@/shared/config';
+import { MOCK_PRODUCTS } from '../model/productStore';
+import { INITIAL_CRUSTS, INITIAL_FILLINGS } from '../model/types';
+import type { Product, CakeTaxonomyItem } from '../model/types';
 
-export interface PageResponse<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
-
-export interface ProductListingDto {
+/**
+ * Wire shape of `com.moonkage.catalog.dto.response.ProductListingResponse`.
+ *
+ * The backend names the money field `listPrice` and the taxonomy fields `crustCodes` /
+ * `fillingCodes` — mapping the old names (`price`, `crusts`, `fillings`) silently produced
+ * `undefined` for every product.
+ */
+export interface ProductDto {
   id: string;
-  vendorId: string;
-  vendorName: string;
+  vendorId?: string;
+  vendorName?: string;
   name: string;
-  description: string;
-  crustCodes: string[];
-  fillingCodes: string[];
-  brand: string;
-  origin: string | null;
-  piecesPerBox: number;
+  description?: string;
+  crustCodes?: string[];
+  fillingCodes?: string[];
+  brand?: string;
+  origin?: string | null;
+  piecesPerBox?: number;
   listPrice: number;
-  stock: number;
-  inStock: boolean;
-  expiryDate: string;
-  deliveryLabel: string;
-  quoteThreshold: number | null;
-  status: string;
-  imageKeys: string[];
-  imageUrls: string[];
-  priceTiers: string | null;
-  ratingAvg: number | null;
-  ratingCount: number;
-  /** The Shop takes custom orders: the detail page offers a request to it (M2.1). */
-  vendorAcceptsOrders: boolean;
-  isOwn: boolean;
-  updatedAt: string;
+  stock?: number;
+  inStock?: boolean;
+  expiryDate?: string;
+  deliveryLabel?: string;
+  quoteThreshold?: number | null;
+  status?: 'ON_SALE' | 'HIDDEN' | 'REMOVED';
+  imageKeys?: string[];
+  imageUrls?: string[];
+  ratingAvg?: number | null;
+  ratingCount?: number;
+  isOwn?: boolean;
+  /**
+   * Whether the Shop takes custom orders (BE-04). The backend field is named after the vendor snapshot it
+   * comes from; the UI calls it `acceptsCustomOrder` because that is what the buyer sees.
+   */
+  vendorAcceptsOrders?: boolean;
+  updatedAt?: string;
 }
 
-export interface ProductReviewDto {
+/** Wire shape of `com.moonkage.vendor.cakeattribute.dto.CakeAttributeResponse`. */
+export interface CakeAttributeDto {
   id: string;
-  buyerName: string;
-  rating: number;
-  comment: string | null;
-  createdAt: string;
+  group: 'CRUST' | 'FILLING';
+  code: string;
+  label: string;
+  sortOrder: number;
+  active: boolean;
 }
 
-function formatIsoDate(iso: string | null | undefined): string {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return iso;
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  } catch {
-    return iso;
-  }
-}
+/**
+ * Backend `ProductStatus` is `ON_SALE | HIDDEN | REMOVED`; the UI uses
+ * `ACTIVE | HIDDEN | REMOVED`. `ON_SALE` maps to `ACTIVE` — mapping it to `HIDDEN`
+ * hid every product in the catalog.
+ */
+export function mapProductDtoToEntity(dto: ProductDto): Product {
+  const images = dto.imageUrls && dto.imageUrls.length > 0 ? dto.imageUrls : [];
+  const stock = dto.stock ?? 0;
 
-function initialsOf(name: string): string {
-  const words = (name || 'K').trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return 'KH';
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
-}
-
-export function mapDtoToSummary(dto: ProductListingDto, area?: string): ProductSummary {
-  const deliverTo = area ? [area, ...ALL_PROVINCE_NAMES.filter((p) => p !== area)] : [...ALL_PROVINCE_NAMES];
   return {
     id: dto.id,
     name: dto.name,
-    shopId: dto.vendorId,
-    shopName: dto.vendorName,
-    brand: dto.brand || dto.vendorName,
-    district: dto.origin || '',
-    deliverTo,
-    pack: `${dto.piecesPerBox || 4} bánh/hộp`,
-    price: dto.listPrice,
-    stock: dto.stock,
-    rating: dto.ratingAvg !== null && dto.ratingAvg !== undefined ? Number(dto.ratingAvg) : null,
+    vendorId: dto.vendorId || '',
+    vendorName: dto.vendorName || 'Xưởng bánh',
+    brand: dto.brand || 'Moonkage',
+    price: dto.listPrice ?? 0,
+    stock,
+    images: images.length > 0 ? images : ['/images/banh-nuong.jpg'],
+    description: dto.description || '',
+    expiryDate: dto.expiryDate ? formatExpiry(dto.expiryDate) : '',
+    deliveryTag: dto.deliveryLabel === 'GIAO_NOI_THANH' ? 'Giao nội thành' : 'Giao toàn quốc',
+    province: dto.origin || 'Hà Nội',
+    rating: dto.ratingAvg ?? 0,
     reviewCount: dto.ratingCount ?? 0,
-    crustCodes: dto.crustCodes ?? [],
-    fillingCodes: dto.fillingCodes ?? [],
-    images: dto.imageUrls ?? [],
+    crusts: (dto.crustCodes ?? []) as Product['crusts'],
+    fillings: (dto.fillingCodes ?? []) as Product['fillings'],
+    status: dto.status === 'ON_SALE' ? 'ACTIVE' : dto.status === 'REMOVED' ? 'REMOVED' : 'HIDDEN',
+    soldCount: 0,
+    bulkQuoteThreshold: dto.quoteThreshold ?? undefined,
+    minBulkQuantity: dto.quoteThreshold ?? undefined,
+    // A Shop that does not take orders must not show the "custom order" box (BE-04).
+    acceptsCustomOrder: dto.vendorAcceptsOrders === true,
+    manufactureLocation: dto.origin ?? undefined,
   };
 }
 
-export function mapDtoToDetail(dto: ProductListingDto, reviewDtos: ProductReviewDto[] = []): ProductDetail {
-  const sum = mapDtoToSummary(dto);
-  const specs: { label: string; value: string }[] = [
-    { label: 'Quy cách', value: `${dto.piecesPerBox || 4} bánh/hộp` },
-    { label: 'Thương hiệu', value: dto.brand || dto.vendorName },
-    ...(dto.origin ? [{ label: 'Xuất xứ', value: dto.origin }] : []),
-    ...(dto.expiryDate ? [{ label: 'Hạn sử dụng', value: formatIsoDate(dto.expiryDate) }] : []),
-    ...(dto.description ? [{ label: 'Mô tả', value: dto.description }] : []),
-  ];
-  const reviews: Review[] = reviewDtos.map((r) => ({
-    initial: initialsOf(r.buyerName),
-    name: r.buyerName,
-    stars: r.rating,
-    date: formatIsoDate(r.createdAt),
-    text: r.comment || '',
-  }));
+/** Backend sends `LocalDate` (ISO `yyyy-MM-dd`); the UI shows `DD/MM/YYYY`. */
+function formatExpiry(iso: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return iso;
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+/** Map a `CakeAttributeResponse` to the UI taxonomy item. */
+export function mapCakeAttributeDto(dto: CakeAttributeDto): CakeTaxonomyItem {
   return {
-    ...sum,
-    shippingFrom: 25000,
-    specs,
-    shopTakesCustom: dto.vendorAcceptsOrders,
-    reviews,
+    code: dto.code,
+    name: dto.label,
+    type: dto.group === 'CRUST' ? 'crust' : 'filling',
+    order: dto.sortOrder,
+    isActive: dto.active,
   };
 }
 
-/** Resolves to null when there is no such product. */
-export async function fetchProduct(productId: string): Promise<ProductDetail | null> {
-  if (config.demoMode) {
-    return mockResponse(mockProducts.find((p) => p.id === productId) ?? null);
-  }
-  try {
-    const [prodRes, revRes] = await Promise.all([
-      apiClient.get<ApiResponse<ProductListingDto>>(`${catalogProductsApi}/${encodeURIComponent(productId)}`),
-      apiClient
-        .get<ApiResponse<PageResponse<ProductReviewDto>>>(
-          `${catalogProductsApi}/${encodeURIComponent(productId)}/reviews?size=20`,
-        )
-        .catch(() => null),
-    ]);
-    const dto = prodRes.data.data;
-    if (!dto) return null;
-    return mapDtoToDetail(dto, revRes?.data?.data?.content ?? []);
-  } catch {
-    return mockProducts.find((p) => p.id === productId) ?? null;
-  }
+/**
+ * Wire shape of `com.moonkage.catalog.dto.response.ProductReviewResponse`.
+ *
+ * The reviews of a product live in catalog-service: the buyer reads them
+ * there, not from the order they were written in (AC-11.3).
+ */
+export interface ProductReviewDto {
+  reviewId: string;
+  rating: number;
+  content?: string;
+  createdAt?: string;
 }
 
-/** Details of several products (cart, checkout); unknown ids are left out. */
-export async function fetchProductsByIds(ids: string[]): Promise<ProductDetail[]> {
-  if (config.demoMode) {
-    return mockResponse(mockProducts.filter((p) => ids.includes(p.id)));
-  }
-  const results = await Promise.all(ids.map((id) => fetchProduct(id)));
-  return results.filter((p): p is ProductDetail => p !== null);
+/** One review of a product, as the product page shows it. */
+export interface ProductReview {
+  id: string;
+  rating: number;
+  content: string;
+  createdAt: string;
 }
+
+/** Map a backend review to the UI review. */
+export function mapProductReviewDto(dto: ProductReviewDto): ProductReview {
+  return {
+    id: dto.reviewId,
+    rating: dto.rating,
+    content: dto.content ?? '',
+    createdAt: dto.createdAt ?? new Date().toISOString(),
+  };
+}
+
+export const productApi = {
+  /**
+   * Products delivered to `province`.
+   *
+   * `provinceCode` is mandatory on the backend (`@RequestParam String provinceCode`),
+   * so omitting it answers 400.
+   */
+  async getProducts(province?: string, options?: { vendorId?: string; q?: string }): Promise<Product[]> {
+    if (isDemoMode()) {
+      return MOCK_PRODUCTS;
+    }
+    const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
+    if (options?.vendorId) params.set('vendorId', options.vendorId);
+    if (options?.q) params.set('q', options.q);
+    params.set('size', '100');
+
+    const res = await apiClient.get<unknown>(`${GATEWAY.CATALOG.PRODUCTS}?${params.toString()}`);
+    return unwrapPage<ProductDto>(res).map(mapProductDtoToEntity);
+  },
+
+  async getProductById(id: string, province?: string): Promise<Product | null> {
+    if (isDemoMode()) {
+      return MOCK_PRODUCTS.find((p) => p.id === id) || null;
+    }
+    const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
+    const res = await apiClient.get<unknown>(`${GATEWAY.CATALOG.PRODUCT_BY_ID(id)}?${params.toString()}`);
+    // ProductReadController.getProduct trả về MỘT `ProductListingResponse` trong
+    // envelope; `unwrapList` trả về mảng rỗng nên chi tiết sản phẩm luôn trống.
+    const dto = unwrap<ProductDto>(res);
+    return dto ? mapProductDtoToEntity(dto) : null;
+  },
+
+  /**
+   * The reviews of a product (AC-11.3).
+   *
+   * `GET /api/products/{productId}/reviews` — the read model of catalog; the
+   * buyer sees every review of the product, not only the ones of one order.
+   */
+  async getReviews(productId: string): Promise<ProductReview[]> {
+    if (isDemoMode()) {
+      return [];
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.CATALOG.PRODUCT_REVIEWS(productId));
+    return unwrapPage<ProductReviewDto>(res).map(mapProductReviewDto);
+  },
+
+  /**
+   * The crust / filling catalog.
+   *
+   * Errors are NOT swallowed: a failing call must surface as an `ErrorState` so the user
+   * knows the filter list is unreliable instead of seeing a silent default list.
+   */
+  async getTaxonomy(): Promise<{ crusts: CakeTaxonomyItem[]; fillings: CakeTaxonomyItem[] }> {
+    if (isDemoMode()) {
+      return { crusts: INITIAL_CRUSTS, fillings: INITIAL_FILLINGS };
+    }
+
+    const res = await apiClient.get<unknown>(`${GATEWAY.CATALOG.CAKE_ATTRIBUTES}`);
+    const attributes = unwrapList<CakeAttributeDto>(res).map(mapCakeAttributeDto);
+    const crusts = attributes.filter((a) => a.type === 'crust');
+    const fillings = attributes.filter((a) => a.type === 'filling');
+
+    return {
+      crusts: crusts.length > 0 ? crusts : INITIAL_CRUSTS,
+      fillings: fillings.length > 0 ? fillings : INITIAL_FILLINGS,
+    };
+  },
+};

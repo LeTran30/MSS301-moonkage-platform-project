@@ -1,38 +1,22 @@
-/** Build-time settings from `.env*` (see `.env.example`). Nothing here has a hidden default URL. */
-
-function readPositiveInt(raw: string | undefined, fallback: number): number {
-  const value = Number(raw);
-  return Number.isInteger(value) && value > 0 ? value : fallback;
+export interface AppConfig {
+  apiBaseUrl: string;
+  isDemoMode: boolean;
+  wsUrl: string;
 }
 
-/** Poll every 2 s unless configured: well within NFR-10 (under a minute). */
-const DEFAULT_NFC_POLL_INTERVAL_MS = 2000;
-/** While the WebSocket is up the push does the work; the poll only covers a missed message. */
-const DEFAULT_NFC_POLL_INTERVAL_CONNECTED_MS = 15000;
-/** The VNPay IPN usually lands within seconds; 15 × 2 s covers a slow one before the page gives up waiting. */
-const DEFAULT_PAYMENT_POLL_INTERVAL_MS = 2000;
-const DEFAULT_PAYMENT_POLL_ATTEMPTS = 15;
+const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : ({} as Record<string, string | undefined>);
 
-export const config = {
-  apiBaseUrl: (import.meta.env.VITE_API_BASE_URL ?? '').trim(),
-  /** `npm run dev:demo` (.env.demo): every screen runs on seed data and demo accounts, nothing calls the backend. */
-  demoMode: import.meta.env.VITE_DEMO_MODE === 'true',
-  nfcPollIntervalMs: readPositiveInt(import.meta.env.VITE_NFC_POLL_INTERVAL_MS, DEFAULT_NFC_POLL_INTERVAL_MS),
-  nfcPollIntervalConnectedMs: readPositiveInt(
-    import.meta.env.VITE_NFC_POLL_INTERVAL_CONNECTED_MS,
-    DEFAULT_NFC_POLL_INTERVAL_CONNECTED_MS,
-  ),
-  paymentPollIntervalMs: readPositiveInt(import.meta.env.VITE_PAYMENT_POLL_INTERVAL_MS, DEFAULT_PAYMENT_POLL_INTERVAL_MS),
-  paymentPollAttempts: readPositiveInt(import.meta.env.VITE_PAYMENT_POLL_ATTEMPTS, DEFAULT_PAYMENT_POLL_ATTEMPTS),
+export const ENV: AppConfig = {
+  apiBaseUrl: (env.VITE_API_BASE_URL ?? '').trim(),
+  isDemoMode: env.VITE_DEMO_MODE === 'true', // Mặc định tắt (opt-in explicit giống web/)
+  wsUrl: (env.VITE_WS_URL ?? '').trim(),
 };
 
-/** False when VITE_API_BASE_URL is missing or not an http(s) URL: the app shows a configuration error. */
+export function isDemoMode(): boolean {
+  return ENV.isDemoMode;
+}
+
 export function isConfigValid(): boolean {
-  if (config.demoMode) return true;
-  try {
-    const url = new URL(config.apiBaseUrl);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
+  // Hợp lệ nếu bật demoMode có chủ đích hoặc đã cung cấp URL API Gateway
+  return ENV.isDemoMode || Boolean(ENV.apiBaseUrl);
 }

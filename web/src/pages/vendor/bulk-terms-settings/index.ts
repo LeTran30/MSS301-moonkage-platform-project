@@ -1,0 +1,1 @@
+export { VendorBulkTermsSettingsPage } from './VendorBulkTermsSettingsPage';

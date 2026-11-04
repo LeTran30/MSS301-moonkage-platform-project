@@ -1,42 +1,78 @@
 .tabs {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
-  flex-wrap: wrap;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
 }
-
-.count {
-  opacity: 0.8;
-}
-
-.sectionTabs {
-  display: grid;
-  gap: var(--space-5);
-  align-content: start;
-}
-
-.tabList {
-  display: flex;
-  gap: var(--space-6);
-  border-bottom: var(--border-thin) solid var(--line);
-}
-
 .tab {
-  font: var(--text-label);
-  color: var(--ink-muted);
-  background: none;
-  border: 0;
-  padding: var(--space-3) 0;
-  cursor: pointer;
-  border-bottom: var(--border-thick) solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+  border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+  white-space: nowrap;
+  transition: all var(--duration-fast);
+}
+.tab:hover:not(:disabled) {
+  color: var(--color-text);
+}
+.tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: var(--weight-semibold);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  line-height: 1;
+  background: var(--color-surface-3);
+  color: var(--color-text-muted);
+}
+.tab.active .badge {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
-.tab[aria-selected="true"] {
-  color: var(--brand);
-  border-bottom-color: var(--brand);
+/* Pills variant */
+.pills {
+  border-bottom: 0;
+  gap: var(--space-2);
+  background: var(--color-surface-2);
+  padding: var(--space-1);
+  border-radius: var(--radius-full);
+}
+.pills .tab {
+  border-bottom: 0;
+  margin: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+}
+.pills .tab.active {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-xs);
 }
 
-.tab:focus-visible {
-  outline: var(--border-thick) solid var(--focus);
-  outline-offset: var(--border-thick);
+/* Enclosed variant */
+.enclosed {
+  gap: 0;
+}
+.enclosed .tab {
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.enclosed .tab.active {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  border-bottom-color: var(--color-surface);
 }

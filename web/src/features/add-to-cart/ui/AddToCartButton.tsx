@@ -1,77 +1,54 @@
-import { useEffect, useState } from 'react';
-import { useCart } from '@/entities/cart';
-import { ApiError } from '@/shared/api/client';
-import { addToCartStrings } from '../strings';
-import styles from './AddToCartButton.module.css';
+import { useState } from 'react';
+import { addToCart } from '@/entities/cart';
+import { type Product } from '@/entities/product';
+import { Button, toast } from '@/shared/ui';
+import { syncCartAddToBackend } from '../model/useCartSync';
 
-/**
- * Adds `quantity` boxes. A guest has no cart: `onNeedLogin` runs instead (login, then back, AC-02.3).
- * On a card it is the DS outline button; on the product page the primary one (DS v2: buying is `primary`, not red).
- * The label names the product, since a grid has many buttons with the same text.
- */
-const CONFIRM_MS = 2000;
+interface Props {
+  product: Product;
+  quantity?: number;
+  className?: string;
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+}
 
 export function AddToCartButton({
-  productId,
-  productName,
+  product,
   quantity = 1,
-  loggedIn,
-  onNeedLogin,
+  className,
+  variant = 'primary',
   size = 'md',
-}: {
-  productId: string;
-  productName: string;
-  quantity?: number;
-  loggedIn: boolean;
-  onNeedLogin: () => void;
-  size?: 'sm' | 'md';
-}) {
-  const { add } = useCart();
-  const [added, setAdded] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+}: Props) {
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!added) return;
-    const timer = setTimeout(() => setAdded(false), CONFIRM_MS);
-    return () => clearTimeout(timer);
-  }, [added]);
-
-  const onClick = async () => {
-    if (!loggedIn) return onNeedLogin();
-    setBusy(true);
-    setError(null);
-    try {
-      await add(productId, quantity);
-      setAdded(true);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : addToCartStrings.failed);
-    } finally {
-      setBusy(false);
-    }
+  const handleAdd = () => {
+    setLoading(true);
+    addToCart(
+      {
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0] || '/images/banh-nuong.jpg',
+        vendorId: product.vendorId,
+        vendorName: product.vendorName,
+        stock: product.stock,
+      },
+      quantity
+    );
+    syncCartAddToBackend(product.id, quantity);
+    toast.success(`Đã thêm ${quantity}x "${product.name}" vào giỏ hàng!`);
+    setTimeout(() => setLoading(false), 300);
   };
 
-  const cls = size === 'sm' ? 'mk-btn mk-btn--outline mk-btn--sm' : `mk-btn mk-btn--primary ${styles.buttonBlock} buy-box__add`;
   return (
-    <>
-      <button
-        type="button"
-        className={cls}
-        onClick={onClick}
-        disabled={busy}
-        aria-busy={busy || undefined}
-        aria-label={size === 'sm' ? addToCartStrings.addNamed(productName) : undefined}
-      >
-        {added ? addToCartStrings.added : addToCartStrings.add}
-      </button>
-      <span className="mk-sr" role="status">
-        {added ? addToCartStrings.addedAnnounce(quantity) : ''}
-      </span>
-      {error && (
-        <p className="error-text" role="alert">
-          {error}
-        </p>
-      )}
-    </>
+    <Button
+      variant={variant}
+      size={size}
+      className={className}
+      disabled={loading || product.stock === 0}
+      onClick={handleAdd}
+    >
+      {product.stock === 0 ? 'Tạm hết hàng' : '🛒 Thêm vào giỏ'}
+    </Button>
   );
 }

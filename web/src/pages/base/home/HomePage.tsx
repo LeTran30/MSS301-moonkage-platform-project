@@ -1,79 +1,195 @@
-import { ProductGrid, productStrings, useFeaturedProducts } from '@/entities/product';
-import { useCurrentUser } from '@/entities/user';
-import { vendorDirectoryStrings, useFeaturedVendors, VendorTile } from '@/entities/vendor';
-import { AddToCartButton } from '@/features/add-to-cart';
-import { AreaPicker, areaStrings, useDeliveryArea } from '@/features/choose-delivery-area';
-import { QuickFilters } from '@/features/filter-products';
-import { useLoginRedirect } from '@/features/login';
-import { routes } from '@/shared/config/routes';
-import heroPhoto from '@/shared/assets/hero-banner.jpg';
-import { ErrorState, LoadingState, SectionHeader } from '@/shared/ui';
-import { HomeHero, MoneyFlow } from '@/widgets/buying-guide';
+import { routes } from '@/shared/config';
+import { Badge, ButtonLink, Card, Icon } from '@/shared/ui';
+import { ProductCard, useProducts } from '@/entities/product';
+import { useVendors } from '@/entities/vendor';
 import styles from './HomePage.module.css';
 
-/**
- * M1.0, five blocks: hero photo · quick search · available in [area] · vendors taking custom orders ·
- * where your money goes.
- */
 export function HomePage() {
-  const session = useCurrentUser();
-  const { area, chosen } = useDeliveryArea();
-  const products = useFeaturedProducts(area);
-  const vendors = useFeaturedVendors();
-  const toLogin = useLoginRedirect();
+  const products = useProducts().filter((p) => p.status === 'ACTIVE');
+  const vendors = useVendors().filter((v) => v.status === 'APPROVED');
 
   return (
-    <div className="home">
-      <HomeHero
-        area={area}
-        photo={heroPhoto}
-        areaPrompt={
-          !chosen && (
-            <div className="home-hero__prompt">
-              {areaStrings.prompt} <AreaPicker variant="link" /> {areaStrings.promptTail}
+    <div className={styles.home}>
+      {/* Hero Banner (FR-05, M1.0) */}
+      <section className={styles.heroSection}>
+        <div className={styles.heroContainer}>
+          <div className={styles.heroContent}>
+            <div className={styles.heroBadge}>
+              <Icon name="sparkle" size={14} /> MÙA TRĂNG RẰM 2026 · VỊ TRUYỀN THỐNG &amp; HIỆN ĐẠI
             </div>
-          )
-        }
-      />
+            <h1 className={styles.heroTitle}>
+              Thưởng thức tinh hoa <br />
+              <span className={styles.heroAccent}>Bánh Trung Thu</span> thủ công
+            </h1>
+            <p className={styles.heroLead}>
+              Moonkage kết nối trực tiếp bạn với các nghệ nhân bánh phố cổ, xưởng bánh gia truyền và xưởng sản xuất hộp quà doanh nghiệp in logo riêng.
+            </p>
 
-      <div className={`shop__inner ${styles.homeBody}`}>
-        <QuickFilters />
+            <div className={styles.heroActions}>
+              <ButtonLink to={routes.base.catalog} variant="primary" size="lg" iconRight="arrowRight">
+                Mua lẻ cho gia đình
+              </ButtonLink>
+              <ButtonLink to={routes.base.bulk} variant="gold" size="lg" iconLeft="package">
+                Đặt số lượng lớn (Doanh nghiệp)
+              </ButtonLink>
+            </div>
 
-        {/* the whole block is hidden when nothing is delivered to the area (wireframe M1.0) */}
-        {!(products.kind === 'loaded' && products.data.length === 0) && (
-        <section aria-labelledby="available-heading">
-          <SectionHeader id="available-heading" title={productStrings.homeSection(area)} linkTo={routes.base.products} linkLabel={productStrings.seeAll} />
-          {products.kind === 'loading' && <LoadingState />}
-          {products.kind === 'error' && <ErrorState message={products.message} onRetry={products.reload} />}
-          {products.kind === 'loaded' && (
-            <ProductGrid
-              labelledBy="available-heading"
-              products={products.data}
-              renderAction={(p) => (
-                <AddToCartButton productId={p.id} productName={p.name} size="sm" loggedIn={Boolean(session)} onNeedLogin={toLogin} />
-              )}
-            />
-          )}
-        </section>
-        )}
+            <div className={styles.heroStats}>
+              <div className={styles.statItem}>
+                <span className={styles.statNum}>100%</span>
+                <span className={styles.statLabel}>Bánh tươi mới nướng</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statItem}>
+                <span className={styles.statNum}>NFC</span>
+                <span className={styles.statLabel}>Định danh an toàn</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statItem}>
+                <span className={styles.statNum}>VNPay</span>
+                <span className={styles.statLabel}>Giữ tiền đảm bảo</span>
+              </div>
+            </div>
+          </div>
 
-        <section aria-labelledby="vendors-heading">
-          <SectionHeader id="vendors-heading" title={vendorDirectoryStrings.homeSection} linkTo={routes.base.vendorDirectory} linkLabel={vendorDirectoryStrings.seeAll} />
-          {vendors.kind === 'loading' && <LoadingState />}
-          {vendors.kind === 'error' && <ErrorState message={vendors.message} onRetry={vendors.reload} />}
-          {vendors.kind === 'loaded' && (
-            <ul className={styles.vendorGrid}>
-              {vendors.data.map((s) => (
-                <li key={s.id}>
-                  <VendorTile vendor={s} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          <div className={styles.heroMedia}>
+            <div className={styles.imageFrame}>
+              <img
+                src="/images/hero.jpg"
+                alt="Bánh trung thu Moonkage"
+                className={styles.heroImage}
+              />
+              {/* Con dấu triện đỏ son Moonkage */}
+              <div className={styles.sealStamp} title="Bảo chứng thủ công Moonkage">
+                <span className={styles.sealText}>MOONKAGE</span>
+                <span className={styles.sealSub}>NGUYỆT ĐOÀN VIÊN</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <MoneyFlow />
-      </div>
+      {/* Entry Choice Banner: Mua lẻ vs Đặt số lượng lớn (BR-01, M3.0) */}
+      <section className={styles.choiceSection}>
+        <div className={styles.choiceGrid}>
+          <Card padding="lg" interactive className={styles.choiceCard}>
+            <div className={styles.choiceIcon}>
+              <Icon name="cake" size={32} />
+            </div>
+            <div className={styles.choiceText}>
+              <Badge tone="red" size="sm">CÁCH 1: MUA LẺ</Badge>
+              <h2 className={styles.choiceTitle}>Mua vài hộp thưởng thức &amp; biếu tặng</h2>
+              <p className={styles.choiceDesc}>
+                Chọn từng vị bánh yêu thích, lọc theo nhân và vỏ, giỏ hàng tự tách theo từng tiệm, thanh toán nhanh nhận trong ngày.
+              </p>
+              <ButtonLink to={routes.base.catalog} variant="secondary" iconRight="chevronRight">
+                Xem sản phẩm đang bán
+              </ButtonLink>
+            </div>
+          </Card>
+
+          <Card padding="lg" interactive tone="gold" className={styles.choiceCard}>
+            <div className={styles.choiceIconGold}>
+              <Icon name="factory" size={32} />
+            </div>
+            <div className={styles.choiceText}>
+              <Badge tone="gold" size="sm">CÁCH 2: SỐ LƯỢNG LỚN</Badge>
+              <h2 className={styles.choiceTitle}>Yêu cầu báo giá in logo doanh nghiệp</h2>
+              <p className={styles.choiceDesc}>
+                Gửi 1 yêu cầu để nhiều xưởng cạnh tranh báo giá, duyệt maket thiết kế trực tuyến, thanh toán cọc an toàn giữ qua sàn.
+              </p>
+              <ButtonLink to={routes.base.quoteRequestNew} variant="gold" iconRight="arrowRight">
+                Tạo yêu cầu báo giá ngay
+              </ButtonLink>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Featured Products Grid (M1.0, M2.0) */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <span className={styles.sectionEyebrow}>SẢN PHẨM NỔI BẬT</span>
+            <h2 className={styles.sectionTitle}>Bánh ngon được yêu thích nhất</h2>
+          </div>
+          <ButtonLink to={routes.base.catalog} variant="ghost" iconRight="chevronRight">
+            Xem tất cả bánh
+          </ButtonLink>
+        </div>
+
+        <div className={styles.productGrid}>
+          {products.slice(0, 4).map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      </section>
+
+      {/* Featured Vendors (M1.0, M3.2) */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <span className={styles.sectionEyebrow}>ĐƠN VỊ CUNG CẤP &amp; XƯỞNG BÁNH</span>
+            <h2 className={styles.sectionTitle}>Các hiệu bánh và xưởng làm bánh tiêu biểu</h2>
+          </div>
+          <ButtonLink to={routes.base.vendors} variant="ghost" iconRight="chevronRight">
+            Xem toàn bộ đơn vị
+          </ButtonLink>
+        </div>
+
+        <div className={styles.vendorGrid}>
+          {vendors.map((v) => (
+            <Card key={v.id} padding="md" interactive className={styles.vendorCard}>
+              <div className={styles.vendorBannerWrap}>
+                <img
+                  src={v.bannerImage || '/images/xuong.jpg'}
+                  alt={v.name}
+                  className={styles.vendorBanner}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div className={styles.vendorModeBadge}>
+                  <Badge tone={v.sellingMode === 'CUSTOM_ORDER' ? 'gold' : 'green'} size="sm">
+                    {v.sellingMode === 'CUSTOM_ORDER'
+                      ? 'Chỉ nhận đặt hàng'
+                      : v.sellingMode === 'BOTH'
+                      ? 'Có Shop & Nhận đặt'
+                      : 'Có hàng sẵn'}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className={styles.vendorBody}>
+                <h3 className={styles.vendorName}>{v.name}</h3>
+                <div className={styles.vendorMeta}>
+                  <span><Icon name="mapPin" size={13} /> {v.province}</span>
+                  <span>•</span>
+                  <span><Icon name="star" size={13} className={styles.star} /> {v.rating} ({v.reviewCount} đánh giá)</span>
+                </div>
+                <p className={styles.vendorIntro}>{v.introduction}</p>
+
+                {v.bulkMinQuantity && (
+                  <div className={styles.vendorBulkInfo}>
+                    <Icon name="sparkle" size={14} /> Nhận đặt từ <strong>{v.bulkMinQuantity} hộp</strong> · Chuẩn bị trong {v.bulkLeadTimeDays} ngày
+                  </div>
+                )}
+
+                <div className={styles.vendorActionRow}>
+                  <ButtonLink to={routes.base.vendor(v.id)} variant="secondary" size="sm" block>
+                    Xem xưởng &amp; hồ sơ
+                  </ButtonLink>
+                  {v.sellingMode !== 'RETAIL_SHOP' && (
+                    <ButtonLink to={routes.base.vendorRequest(v.id)} variant="primary" size="sm" block>
+                      Gửi yêu cầu riêng
+                    </ButtonLink>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
+
