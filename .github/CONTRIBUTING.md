@@ -41,6 +41,7 @@ git push -u origin feat/tao-bao-gia         # rồi mở PR vào develop trên G
 | [`docs/conventions/coding-rules.md`](../docs/conventions/coding-rules.md) | Cách viết Java hằng ngày: package, đặt tên class/method/field, thứ tự trong class, 4 nhịp của method, comment, tài liệu pseudocode |
 | [`docs/conventions/code-quality-rules.md`](../docs/conventions/code-quality-rules.md) | Bộ luật chất lượng API: ID, mức cưỡng chế, công cụ chặn, ngưỡng, ngoại lệ, checklist review |
 | [`docs/guides/database.md`](../docs/guides/database.md) | Migration và seed |
+| [`docs/guides/git-workflow.md`](../docs/guides/git-workflow.md) | Thao tác Git hằng ngày: tách nhánh, rebase, đồng bộ remote, dọn dẹp, xử lý sự cố |
 
 ---
 

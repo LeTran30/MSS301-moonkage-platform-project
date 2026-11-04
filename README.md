@@ -33,12 +33,12 @@
 - 🚧 Địa chỉ, đăng ký nhà bán (vendor), khu vực giao hàng, đánh giá
 - 🚧 Đấu thầu: yêu cầu báo giá, báo giá, mùa bán hàng
 - 🚧 Giỏ hàng, đơn hàng, thanh toán ký quỹ, mockup, khiếu nại, voucher, đối soát, hoa hồng
-- 🚧 Web portal (hiện mới có khung React)
+- ✅ Web portal: 73 màn hình theo IA (4 khu vực M/B/Q/V), 7 luồng nghiệp vụ F1–F7, chế độ demo chạy độc lập
 
 ## Tech Stack
 | Tầng | Công nghệ |
 |---|---|
-| Frontend | React 19, TypeScript, Vite, TailwindCSS 4, React Router, Axios |
+| Frontend | React 19, TypeScript, Vite, FSD 2.0 (app → pages → widgets → features → entities → shared), CSS Modules + CSS Tokens, React Router, TanStack Query, Axios |
 | Backend | Java 21, Spring Boot, Spring Cloud (Eureka, Gateway, OpenFeign), Spring Data JPA, Spring Security, springdoc-openapi |
 | Database | PostgreSQL 17, mỗi service một database |
 | Lưu trữ file | MinIO (S3-compatible) |
@@ -130,7 +130,7 @@ cd web && npm install && npm run dev   # http://localhost:5173
 │   ├── orchestrator-service/   # Audit log (RabbitMQ), thông báo
 │       (mỗi service có Dockerfile riêng, build context = api/;
 │        schema ở src/main/resources/db/migration, dữ liệu mẫu ở db/seed)
-├── web/                        # React SPA (web portal)
+├── web/                        # React SPA (web portal) — FSD 2.0, 73 màn hình IA
 ├── docs/                       # Toàn bộ tài liệu, mục lục ở docs/README.md
 ├── infra/minio/init.sh         # Tạo bucket, user, policy MinIO (container minio-init)
 ├── .githooks/pre-commit        # kiểm tra format/style trước mỗi commit
@@ -153,7 +153,7 @@ Mục lục đầy đủ: [docs/README.md](docs/README.md).
 
 ## CI/CD
 - Workflow [`code-quality.yml`](.github/workflows/code-quality.yml) chạy `./mvnw clean verify` trên JDK 21 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `api`.
-- Workflow [`web-quality.yml`](.github/workflows/web-quality.yml) chạy `npm ci`, `oxlint --deny-warnings` và `npm run build` (type-check + build) trên Node 24 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `web/`.
+- Workflow [`web-quality.yml`](.github/workflows/web-quality.yml) chạy `npm ci`, `oxlint --deny-warnings`, kiểm tra CSS Modules + encoding UTF-8, `npm run build` (type-check + build), ngân sách bundle, `npm test`, ngưỡng coverage và E2E Playwright trên Node 24 cho mọi pull request và mỗi lần push lên `main`/`develop` có thay đổi trong `web/`.
 - Chưa có môi trường deploy, hệ thống chạy local bằng Docker Compose.
 
 ## Roadmap
@@ -165,7 +165,7 @@ Mục lục đầy đủ: [docs/README.md](docs/README.md).
 - [ ] Đấu thầu: yêu cầu báo giá, lời mời, báo giá
 - [ ] Giỏ hàng, đơn hàng, thanh toán ký quỹ, mockup, theo dõi sản xuất
 - [ ] Khiếu nại, voucher, đối soát, hoa hồng
-- [ ] Giao diện web portal
+- [x] Giao diện web portal (73 màn hình IA, 7 luồng F1–F7)
 
 ## Đóng góp
 Quy trình branch, commit, PR và review: [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md). Trước khi push: `cd api && ./mvnw clean verify` (giống CI).
