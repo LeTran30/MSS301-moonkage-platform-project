@@ -16,12 +16,14 @@ COPY quotation-service/pom.xml quotation-service/
 COPY order-service/pom.xml order-service/
 COPY common-storage/pom.xml common-storage/
 COPY common-reference/pom.xml common-reference/
+COPY common-observability/pom.xml common-observability/
 COPY vendor-service/pom.xml vendor-service/
 COPY payment-service/pom.xml payment-service/
 COPY orchestrator-service/pom.xml orchestrator-service/
 # every service gets the shared libraries, so depending on one later never breaks the image
 COPY common-storage/src common-storage/src
 COPY common-reference/src common-reference/src
+COPY common-observability/src common-observability/src
 COPY api-gateway/src api-gateway/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl api-gateway -am package -DskipTests -Dspotless.check.skip=true -Dcheckstyle.skip=true
 

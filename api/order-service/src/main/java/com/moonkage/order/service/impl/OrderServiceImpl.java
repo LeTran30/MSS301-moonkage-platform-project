@@ -36,8 +36,11 @@ import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,9 +90,14 @@ public class OrderServiceImpl implements OrderService {
             buyerAccountId = caller.accountId();
         }
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
-        return PageResponse.from(orderRepository
-                .search(buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable)
-                .map(order -> toResponse(order, List.of())));
+        Page<Order> orders = orderRepository.search(
+                buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable);
+        Map<String, List<OrderItem>> itemsByOrder = orders.isEmpty()
+                ? Map.of()
+                : orderItemRepository.findByOrderIdIn(orders.map(Order::getId).toList()).stream()
+                        .collect(Collectors.groupingBy(item -> item.getOrder().getId()));
+        return PageResponse.from(
+                orders.map(order -> toResponse(order, itemsByOrder.getOrDefault(order.getId(), List.of()))));
     }
 
     @Override

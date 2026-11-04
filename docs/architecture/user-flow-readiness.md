@@ -1,6 +1,6 @@
 # Backend đã đủ cho các luồng người dùng chưa
 
-> **Trạng thái:** Đang làm (rà soát ngày 02/11/2026, trên `develop` `01a45fc`). Thuộc giai đoạn 4 của [api-db-alignment-plan.md](api-db-alignment-plan.md#4-luồng-nghiệp-vụ-theo-thứ-tự-phụ-thuộc). Khi mọi luồng đã chạy thật thì chuyển vào `archive/`.
+> **Trạng thái:** Đang làm (rà soát ngày 02/11/2026, trên `develop` `01a45fc`; F1 chạy lại ngày 04/11/2026). Thuộc giai đoạn 4 của [api-db-alignment-plan.md](api-db-alignment-plan.md#4-luồng-nghiệp-vụ-theo-thứ-tự-phụ-thuộc). Khi mọi luồng đã chạy thật thì chuyển vào `archive/`.
 
 Danh sách luồng lấy từ sheet "User flows" của `web/docs/information-architecture.xlsx` (F1–F7, mã trang M/B/Q/V theo IA).
 
@@ -13,7 +13,7 @@ Danh sách luồng lấy từ sheet "User flows" của `web/docs/information-arc
 
 | Luồng | Backend | Chạy thật | Ghi chú |
 | --- | --- | --- | --- |
-| F1 Mua hàng có sẵn | Đủ | Có, 02/11/2026 | Vendor đăng sản phẩm → listing/chi tiết → giỏ → checkout → IPN → PAID → giao → nhận → đánh giá hiện ở catalog |
+| F1 Mua hàng có sẵn | Đủ | Có, 02/11/2026; chạy lại 04/11/2026 | Vendor đăng sản phẩm → listing/chi tiết → giỏ → checkout → IPN → PAID → giao → nhận → đánh giá hiện ở catalog. Lần chạy lại trên image build từ `develop` `cad5df1`: 25/25 bước qua, kể cả IPN gửi lặp trả `02` |
 | F2 Yêu cầu báo giá có in logo | **Đứt ở bước đặt cọc** | Chưa | Xem [Lỗ hổng 1](#1-cọc-đã-trả-nhưng-không-có-đơn-đặt-riêng) |
 | F3 Gửi yêu cầu cho một đơn vị | **Đứt ở bước đặt cọc** | Chưa | Nối vào F2 từ M6.2 nên đứt cùng chỗ |
 | F4 Trở thành người bán | Đủ | Chưa | Nộp hồ sơ (`POST /api/vendors`, giấy tờ), admin quyết định (`POST /api/vendors/{id}/reviews`: duyệt, yêu cầu bổ sung, từ chối), nộp lại, phí đăng ký qua VNPay (vendor-service nghe `payment.succeeded`) |
@@ -57,12 +57,12 @@ Hậu quả: tiền cọc vào, acceptance đứng PENDING mãi, người mua kh
 
 | Lỗi | Ảnh hưởng | Ghi chú |
 | --- | --- | --- |
-| Danh sách đơn của người mua trả `items: []` | Trang danh sách đơn không hiện dòng hàng; chi tiết đơn vẫn đúng | Chưa tìm nguyên nhân |
-| `GET /api/carts/me` thiếu `provinceCode` trả 500 | Web luôn gửi tham số nên chưa gặp; client khác sẽ nhận lỗi sai mã | Nên trả 400 khi thiếu tham số, như catalog |
+| Danh sách đơn của người mua trả `items: []` | Trang danh sách đơn không hiện dòng hàng; chi tiết đơn vẫn đúng | **Đã sửa 04/11/2026.** `OrderServiceImpl.list` cố ý truyền danh sách rỗng; nay nạp dòng hàng của cả trang bằng một truy vấn (`OrderItemRepository.findByOrderIdIn`) |
+| `GET /api/carts/me` thiếu `provinceCode` trả 500 | Web luôn gửi tham số nên chưa gặp; client khác sẽ nhận lỗi sai mã | **Đã sửa 04/11/2026.** `GlobalExceptionHandler` của order-service trả 400 `COMMON_400_PARAM`, nêu tên tham số thiếu |
+| `docker compose up --build` hỏng | Không build lại được image backend nào | **Đã sửa 04/11/2026.** Module `common-observability` (thêm ở #91) chưa được `COPY` trong Dockerfile của các service |
 
 ## Việc tiếp theo
 
 1. Sửa lỗ hổng 1, chạy thật F2 rồi F3.
 2. Chạy thật F4, F5, F7 qua gateway như F1; F6 khi có app mobile.
-3. Sửa hai lỗi nhỏ ở mục 2.
-4. Cập nhật bảng kết quả sau mỗi lần chạy.
+3. Cập nhật bảng kết quả sau mỗi lần chạy.
