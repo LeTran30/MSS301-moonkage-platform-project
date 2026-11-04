@@ -1,0 +1,132 @@
+.disputeCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px dashed var(--color-border);
+  padding-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.titleMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.disputeId {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.orderRef {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.escrowBox {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 20%, transparent);
+}
+.escrowLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.escrowVal {
+  font-size: var(--text-lg);
+  color: var(--color-secondary-dark);
+}
+.escrowSub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.disputeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+@media (max-width: 768px) {
+  .disputeGrid {
+    grid-template-columns: 1fr;
+  }
+}
+.partyBox {
+  background: var(--color-bg-alt);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.partyHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.partyBadge {
+  background: var(--color-primary);
+  color: var(--color-white);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+.partyBadgeVendor {
+  background: var(--color-secondary);
+  color: var(--color-white);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+.reasonTag {
+  font-size: var(--text-xs);
+  color: var(--color-text);
+}
+.statementText {
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+.evidenceImages {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+.evidenceThumb {
+  width: 70px;
+  height: 70px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+.timeTag {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: auto;
+}
+.noResponse {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.deadlineInfo {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

@@ -128,6 +128,25 @@
           }
         ]
       }
+    },
+    {
+      "files": ["src/pages/**/__tests__/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/features/*/**", "@/entities/*/**", "@/widgets/*/**"],
+                "message": "Không import sâu vào nội bộ slice. Chỉ import qua Public API (index.ts) của slice."
+              },
+              { "group": ["@/app", "@/app/*"], "message": "Không được import ngược lên tầng app/." },
+              { "group": ["@/pages", "@/pages/**"], "message": "Page không import page khác. Phần dùng chung đưa xuống widgets, features hoặc entities." },
+              { "group": ["../../**"], "message": "Không dùng đường dẫn tương đối ra khỏi slice. Import tầng khác qua alias @/." }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

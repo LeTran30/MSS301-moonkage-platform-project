@@ -9,7 +9,10 @@ export interface RealtimeContextValue {
   subscribe: <T>(destination: string, onMessage: (body: T) => void) => Unsubscribe;
 }
 
-/** Without a provider (logged out, tests) nothing is pushed and pages rely on polling. */
+/**
+ * Without a provider (logged out, demo mode, tests) nothing is pushed and the
+ * screens rely on polling.
+ */
 export const offlineRealtime: RealtimeContextValue = {
   connected: false,
   subscribe: () => () => {},

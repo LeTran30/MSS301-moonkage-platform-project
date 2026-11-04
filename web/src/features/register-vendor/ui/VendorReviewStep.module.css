@@ -1,0 +1,33 @@
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.stepContent h3 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+.reviewBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-surface-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+.nfcWarn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-danger);
+  font-size: var(--text-xs);
+}
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}

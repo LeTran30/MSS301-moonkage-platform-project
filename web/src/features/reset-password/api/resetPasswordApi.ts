@@ -1,24 +1,32 @@
-import { authApi } from '@/entities/user';
-import { apiClient, ApiError, type ApiResponse } from '@/shared/api/client';
-import { config } from '@/shared/config/env';
+import { apiClient, GATEWAY } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
 
-const DEMO_DELAY_MS = 250;
-const OTP_LENGTH = 6;
+/**
+ * The write side of the password reset (AC-01.6).
+ *
+ * The user entity owns the read and the shape of the user; the writes live
+ * here because they change the credentials, not the user data
+ * (package-architecture §3 — `api/` of a feature holds the writes).
+ */
 
-export async function requestPasswordResetOtp(email: string): Promise<void> {
-  if (config.demoMode) return new Promise((resolve) => setTimeout(resolve, DEMO_DELAY_MS));
-  await apiClient.post<ApiResponse<void>>(`${authApi}/send-reset-password-otp`, { email: email.trim() });
+/**
+ * Send the OTP that authorises a password reset (AC-01.6).
+ */
+export async function sendResetPasswordOtp(email: string): Promise<void> {
+  if (isDemoMode()) {
+    return;
+  }
+  await apiClient.post(GATEWAY.IDENTITY.SEND_RESET_PASSWORD_OTP, { email });
 }
 
-export async function confirmPasswordReset(email: string, otp: string, newPassword: string): Promise<void> {
-  if (config.demoMode) {
-    return new Promise((resolve, reject) =>
-      setTimeout(() => (otp.trim().length === OTP_LENGTH ? resolve() : reject(new ApiError(400, 'OTP_INVALID', 'Mã xác nhận gồm 6 chữ số.'))), DEMO_DELAY_MS),
-    );
+/** Set a new password with the OTP (AC-01.6). */
+export async function resetPassword(
+  email: string,
+  otp: string,
+  newPassword: string
+): Promise<void> {
+  if (isDemoMode()) {
+    return;
   }
-  await apiClient.post<ApiResponse<void>>(`${authApi}/reset-password`, {
-    email: email.trim(),
-    otp: otp.trim(),
-    newPassword,
-  });
+  await apiClient.post(GATEWAY.IDENTITY.RESET_PASSWORD, { email, otp, newPassword });
 }

@@ -1,0 +1,47 @@
+/* Confirm page — OTP box, submit button and the resend / change-phone row. */
+
+.otpInput {
+  text-align: center;
+  letter-spacing: 8px;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.submitButton {
+  width: 100%;
+}
+
+.actionRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-2);
+}
+
+.resendButton {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  padding: 0;
+}
+
+.resendButton:hover {
+  text-decoration: underline;
+}
+
+.resendButton:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.changePhoneLink {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.changePhoneLink:hover {
+  text-decoration: underline;
+}

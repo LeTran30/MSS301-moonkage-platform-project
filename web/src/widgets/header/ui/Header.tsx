@@ -1,104 +1,102 @@
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { CartLink } from '@/entities/cart';
-import { NotificationBell } from '@/entities/notification';
-import { useCurrentUser } from '@/entities/user';
-import { SellEntryLink } from '@/entities/vendor';
-import { AreaPicker } from '@/features/choose-delivery-area';
-import { ProductSearchBox } from '@/features/search-products';
-import logoMark from '@/shared/assets/moonkage-mark.png';
-import { routes } from '@/shared/config/routes';
-import { useDisclosure } from '@/shared/lib';
-import { AccountMenu } from './AccountMenu';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { routes } from '@/shared/config';
+import { Icon, toast } from '@/shared/ui';
+import { CartBadge } from '@/entities/cart';
+import { useTheme } from '@/shared/lib/theme';
+import { switchDemoActor, useCurrentUser } from '@/entities/user';
+import { ActorSwitcherModal } from './ActorSwitcherModal';
+import { HeaderNav } from './HeaderNav';
+import { HeaderNotifications } from './HeaderNotifications';
+import { HeaderSearch } from './HeaderSearch';
+import { HeaderTopBar } from './HeaderTopBar';
+import { HeaderUserMenu } from './HeaderUserMenu';
+import { LocationPickerModal } from './LocationPickerModal';
 import styles from './Header.module.css';
 
-const headerStrings = {
-  appName: 'Moonkage',
-  utility: 'Tiện ích',
-  main: 'Điều hướng chính',
-  available: 'Sản phẩm có sẵn',
-  custom: 'Đặt theo yêu cầu',
-  customDesc: 'Hộp và bánh làm riêng, đặt số lượng lớn, in tên hoặc biểu trưng.',
-  newQuoteRequest: 'Gửi yêu cầu báo giá',
-  newQuoteRequestHint: 'Các nhà cung cấp phù hợp sẽ gửi đề xuất',
-  vendors: 'Tìm nhà cung cấp nhận đặt riêng',
-  vendorsHint: 'Xem xưởng và làm việc trực tiếp',
-  policy: 'Quy định và giải quyết khiếu nại',
-  login: 'Đăng nhập',
-} as const;
-
-/** "Đặt theo yêu cầu ▾": the description line and its ways in. */
-function CustomOrderMenu() {
-  const { open, toggle, close, ref, id } = useDisclosure();
-  const location = useLocation();
-  const active = location.pathname.startsWith(routes.base.customOrder) || location.pathname.startsWith(routes.base.vendorDirectory);
-  return (
-    <div className="nav-menu" ref={ref}>
-      <button type="button" className="nav-menu__toggle" aria-current={active ? 'page' : undefined} aria-expanded={open} aria-controls={id} onClick={toggle}>
-        {headerStrings.custom}
-        <svg className="mk-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </button>
-      {open && (
-        <div id={id} className="dropdown">
-          <p className="dropdown__desc">{headerStrings.customDesc}</p>
-          <Link to={routes.base.customOrder} className="dropdown__item" onClick={close}>
-            {headerStrings.custom}
-          </Link>
-          <Link to={routes.base.newQuoteRequest} className="dropdown__item" onClick={close}>
-            {headerStrings.newQuoteRequest} <small>{headerStrings.newQuoteRequestHint}</small>
-          </Link>
-          <Link to={routes.base.vendorDirectory} className="dropdown__item" onClick={close}>
-            {headerStrings.vendors} <small>{headerStrings.vendorsHint}</small>
-          </Link>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function Header() {
-  const session = useCurrentUser();
-  const vendorStatus = session?.vendorStatus ?? 'none';
+  const user = useCurrentUser();
+  const [theme, toggleTheme] = useTheme();
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState('Hà Nội');
+  const [actorSwitcherOpen, setActorSwitcherOpen] = useState(false);
 
   return (
-    <header className={`${styles.nav} mk-nav`}>
-      <div className={`${styles.topbar} mk-topbar`}>
-        <div className={`${styles.topbarInner} mk-topbar__in`}>
-          <nav aria-label={headerStrings.utility} className={`${styles.topbarLinks} topbar-links`}>
-            <SellEntryLink status={vendorStatus} />
-          </nav>
-          <AreaPicker />
+    <header className={styles.header}>
+      <HeaderTopBar user={user} onOpenActorSwitcher={() => setActorSwitcherOpen(true)} />
+
+      {/* Main Header Row */}
+      <div className={styles.mainRow}>
+        <div className={styles.mainInner}>
+          {/* Logo Moonkage */}
+          <Link to={routes.base.home} className={styles.logo}>
+            <span className={styles.logoEmblem}>
+              <Icon name="lantern" size={26} />
+            </span>
+            <div className={styles.logoText}>
+              <span className={styles.brandName}>Moonkage</span>
+              <span className={styles.brandTagline}>Sàn Bánh Trung Thu</span>
+            </div>
+          </Link>
+
+          <HeaderSearch />
+
+          <HeaderNav
+            selectedProvince={selectedProvince}
+            onOpenLocation={() => setLocationModalOpen(true)}
+          />
+
+          <div className={styles.actionGroup}>
+            <HeaderNotifications />
+
+            {/* Theme Toggle (Trăng Rằm / Đêm Hội) */}
+            <button
+              type="button"
+              className={styles.themeToggleBtn}
+              onClick={() => {
+                toggleTheme();
+                toast.info(
+                  theme === 'dark'
+                    ? 'Đã bật chế độ Sáng Trăng Rằm'
+                    : 'Đã bật chế độ Đêm Hội Trăng Rằm'
+                );
+              }}
+              title={
+                theme === 'dark'
+                  ? 'Chuyển sang chế độ Sáng Trăng Rằm'
+                  : 'Chuyển sang chế độ Đêm Hội Trăng Rằm'
+              }
+              aria-label="Đổi giao diện sáng tối"
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+            </button>
+
+            <CartBadge />
+
+            <HeaderUserMenu user={user} />
+          </div>
         </div>
       </div>
-      <div className={`${styles.navInner} mk-nav__in`}>
-        <Link to={routes.base.home} className={`${styles.brand} mk-nav__brand`} aria-label={`${headerStrings.appName}, trang chủ`}>
-          <img src={logoMark} alt="" className={styles.brandLogo} />
-          {headerStrings.appName}
-        </Link>
-        <nav className={`${styles.links} mk-nav__links`} aria-label={headerStrings.main}>
-          <NavLink to={routes.base.products}>{headerStrings.available}</NavLink>
-          <CustomOrderMenu />
-        </nav>
-        <ProductSearchBox />
-        <div className={`${styles.actions} mk-nav__actions`}>
-          <CartLink />
-          {session ? (
-            <>
-              <NotificationBell />
-              <AccountMenu />
-            </>
-          ) : (
-            <Link to={routes.auth.login}>
-              <svg className="mk-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
-              </svg>
-              {headerStrings.login}
-            </Link>
-          )}
-        </div>
-      </div>
+
+      <LocationPickerModal
+        open={locationModalOpen}
+        selectedProvince={selectedProvince}
+        onSelect={(province) => {
+          setSelectedProvince(province);
+          setLocationModalOpen(false);
+        }}
+        onClose={() => setLocationModalOpen(false)}
+      />
+
+      <ActorSwitcherModal
+        open={actorSwitcherOpen}
+        currentUserId={user.id}
+        onSelect={(key) => {
+          switchDemoActor(key);
+          setActorSwitcherOpen(false);
+        }}
+        onClose={() => setActorSwitcherOpen(false)}
+      />
     </header>
   );
 }

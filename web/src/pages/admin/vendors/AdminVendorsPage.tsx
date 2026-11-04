@@ -1,4 +1,164 @@
-import { VendorApplications } from '@/entities/vendor';
+import { useState } from 'react';
+import { Tabs, toast, AsyncState } from '@/shared/ui';
+import { useAction } from '@/shared/lib';
+import { useVendorSearch, type VendorDetailDto, type VendorResponseDto } from '@/entities/vendor';
+import { VendorApplicationCard, type VendorStatus } from '@/entities/vendor';
+import { useLoadVendorDetail, useReviewApplication, VendorReviewModal } from '@/features/review-applications';
+import { AttachVendorDocumentModal } from '@/features/attach-vendor-document';
+import styles from './AdminVendorsPage.module.css';
 
-/** Q2.0 */
-export const AdminVendorsPage = () => <VendorApplications />;
+type AdminVendorTab = 'PENDING' | 'APPROVED' | 'ALL';
+
+export function AdminVendorsPage() {
+  const [activeTab, setActiveTab] = useState<AdminVendorTab>('PENDING');
+  const [selectedVendor, setSelectedVendor] = useState<VendorDetailDto | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [licenseChecked, setLicenseChecked] = useState(false);
+  const [registryChecked, setRegistryChecked] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [feeInvoiceVendor, setFeeInvoiceVendor] = useState<VendorResponseDto | null>(null);
+
+  // FR-45: the admin list of registered vendors, filtered by status.
+  const listQuery = useVendorSearch(
+    activeTab === 'ALL' ? undefined : { status: activeTab as VendorStatus },
+  );
+
+  const { busy, run, error } = useAction();
+  const reviewApplication = useReviewApplication();
+  const loadVendorDetail = useLoadVendorDetail();
+
+  const handleOpenReview = (vendor: VendorResponseDto) => {
+    setSelectedVendor(null);
+    setRejectReason('');
+    setLicenseChecked(false);
+    setRegistryChecked(false);
+    setReviewModalOpen(true);
+    // The list answers summaries only; the legal profile, the documents and the
+    // owner check come from the vendor detail.
+    void loadVendorDetail(vendor.id).then((detail) => {
+      if (detail) setSelectedVendor(detail);
+    });
+  };
+
+  const handleApprove = () => {
+    if (!selectedVendor) return;
+    void run(async () => {
+      // AC-45.5: approving needs the licence checked, and the registry checked
+      // for a sole proprietorship.
+      const review = await reviewApplication(selectedVendor.id, {
+        decision: 'APPROVE',
+        licenseChecked,
+        registryChecked: selectedVendor.entityType === 'SOLE_PROPRIETORSHIP' ? registryChecked : false,
+      });
+      if (!review) return;
+      setSuccessMsg(`Đã phê duyệt hồ sơ người bán "${selectedVendor.businessName}" thành công!`);
+      toast.success('Đã phê duyệt hồ sơ người bán!');
+      setReviewModalOpen(false);
+      listQuery.reload();
+    });
+  };
+
+  const handleReject = () => {
+    if (!selectedVendor) return;
+    if (!rejectReason.trim()) {
+      toast.warning('Vui lòng nhập lý do từ chối hồ sơ để người bán bổ sung.');
+      return;
+    }
+    void run(async () => {
+      // AC-45.2: NEEDS_INFO and REJECT both need a reason the owner reads.
+      const review = await reviewApplication(selectedVendor.id, {
+        decision: 'REJECT',
+        reason: rejectReason.trim(),
+        licenseChecked,
+      });
+      if (!review) return;
+      setSuccessMsg(
+        `Đã từ chối hồ sơ "${selectedVendor.businessName}". Lý do: ${rejectReason.trim()}`
+      );
+      toast.success('Đã gửi kết quả thẩm định tới người bán.');
+      setReviewModalOpen(false);
+      listQuery.reload();
+    });
+  };
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Quản lý &amp; Duyệt hồ sơ người bán (Q2.0, Q2.1)</h1>
+          <p className={styles.desc}>
+            Thẩm định tính pháp lý Hộ kinh doanh / DNTN (BR-33), đối chiếu dữ liệu định danh sinh
+            trắc CCCD chip NFC.
+          </p>
+        </div>
+        <div className={styles.ruleBadge}>
+          🛡️ Quy định BR-33: Bắt buộc mô hình HKD hoặc DNTN
+        </div>
+      </div>
+
+      {successMsg && (
+        <div className={styles.alertSuccess}>
+          ✓ {successMsg}
+        </div>
+      )}
+
+      <Tabs<AdminVendorTab>
+        items={[
+          { id: 'PENDING', label: 'Chờ duyệt hồ sơ' },
+          { id: 'APPROVED', label: 'Đang hoạt động' },
+          { id: 'ALL', label: 'Tất cả cơ sở' },
+        ]}
+        activeId={activeTab}
+        onChange={setActiveTab}
+      />
+
+      <AsyncState
+        state={listQuery}
+        loadingMessage="Đang tải danh sách người bán..."
+        onRetry={listQuery.reload}
+        isEmpty={(data) => data.length === 0}
+        empty={<p className={styles.desc}>Không có hồ sơ nào trong trạng thái này.</p>}
+      >
+        {(vendors) => (
+          <div className={styles.vendorList}>
+            {vendors.map((vendor) => (
+              <VendorApplicationCard
+                key={vendor.id}
+                vendor={vendor}
+                onReview={handleOpenReview}
+                onAttachFeeInvoice={setFeeInvoiceVendor}
+              />
+            ))}
+          </div>
+        )}
+      </AsyncState>
+
+      {/* Modal Review (Q2.1) */}
+      <VendorReviewModal
+        open={reviewModalOpen}
+        vendor={selectedVendor}
+        licenseChecked={licenseChecked}
+        registryChecked={registryChecked}
+        rejectReason={rejectReason}
+        busy={busy}
+        error={error}
+        onLicenseCheckedChange={setLicenseChecked}
+        onRegistryCheckedChange={setRegistryChecked}
+        onRejectReasonChange={setRejectReason}
+        onClose={() => setReviewModalOpen(false)}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
+
+      {/* Modal gắn hoá đơn phí đăng ký (Q-36, AC-27.6) */}
+      <AttachVendorDocumentModal
+        open={feeInvoiceVendor !== null}
+        vendorId={feeInvoiceVendor?.id ?? null}
+        vendorName={feeInvoiceVendor?.businessName}
+        onClose={() => setFeeInvoiceVendor(null)}
+        onAttached={listQuery.reload}
+      />
+    </div>
+  );
+}

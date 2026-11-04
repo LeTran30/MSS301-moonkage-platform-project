@@ -1,11 +1,62 @@
-import { ApiError, apiClient, type ApiResponse } from '@/shared/api/client';
-import { ordersPath } from '@/shared/api/gateway';
-import { HTTP_NOT_FOUND } from '@/shared/api/httpStatus';
-import { provinceNameOf } from '@/shared/config/provinces';
-import { formatDate, formatDateTime } from '@/shared/utils/format';
+import type { Order } from '../model/types';
 
-/** order-service `OrderStatus` (7.1). */
-export type OrderStatusDto =
+/**
+ * Wire shapes of the order-service contracts.
+ *
+ * Split out of the API module so the DTO catalogue stays readable and the API
+ * module stays focused on the requests.
+ */
+
+/**
+ * Wire shape of `com.moonkage.order.dto.response.OrderResponse`.
+ *
+ * The backend names the money fields `itemsAmount` / `totalAmount` and the buyer
+ * `buyerAccountId`; the UI used `subtotal` / `total` / `buyerId`.
+ */
+export interface OrderDto {
+  id: string;
+  kind?: 'BUY_NOW' | 'CUSTOM_ORDER';
+  status?: string;
+  buyerAccountId?: string;
+  vendorId?: string;
+  vendorName?: string;
+  paymentGroupId?: string;
+  quoteId?: string;
+  itemsAmount?: number;
+  shippingFee?: number;
+  discountAmount?: number;
+  totalAmount?: number;
+  depositAmount?: number | null;
+  remainingAmount?: number | null;
+  interprovince?: boolean;
+  hasCustom?: boolean;
+  recipientName?: string;
+  recipientPhone?: string;
+  provinceCode?: string;
+  addressDetail?: string;
+  deliveryDate?: string;
+  deliveryMethod?: string;
+  trackingCode?: string;
+  invoiceInfo?: { name: string; taxCode: string; address: string; email: string };
+  hasInvoiceFile?: boolean;
+  deliveredAt?: string;
+  receivedConfirmedAt?: string;
+  complaintDeadline?: string;
+  createdAt?: string;
+  items?: Array<{
+    productId: string;
+    productName: string;
+    unitPrice: number;
+    quantity: number;
+    subtotal: number;
+  }>;
+}
+
+/**
+ * Backend `OrderStatus` is `PAID | CONFIRMED | SHIPPING | DEPOSITED |
+ * AWAITING_MOCKUP_APPROVAL | IN_PRODUCTION | READY_TO_SHIP | DELIVERED | COMPLETED`.
+ */
+export type BackendOrderStatus =
   | 'PAID'
   | 'CONFIRMED'
   | 'SHIPPING'
@@ -16,173 +67,77 @@ export type OrderStatusDto =
   | 'DELIVERED'
   | 'COMPLETED';
 
-/** order-service `OrderResponse`; `items` is empty in a list. */
-export interface OrderDto {
-  id: string;
-  kind: 'BUY_NOW' | 'CUSTOM_ORDER';
-  status: OrderStatusDto;
-  buyerAccountId: string;
-  vendorId: string;
-  paymentGroupId: string | null;
-  quoteId: string | null;
-  itemsAmount: number;
-  shippingFee: number;
-  discountAmount: number;
+/** The UI order status set (retail + bulk). */
+export type UiOrderStatus = Order['status'];
+
+/**
+ * Wire shape of `com.moonkage.order.dto.response.CreateCheckoutResponse`.
+ */
+export interface CheckoutResponse {
+  checkoutId: string;
+  paymentId: string;
+  paymentUrl: string;
   totalAmount: number;
-  depositAmount: number | null;
-  remainingAmount: number | null;
-  interprovince: boolean;
-  hasCustom: boolean;
+  expiresAt: string;
+}
+
+/**
+ * Wire shape of `com.moonkage.order.dto.response.CheckoutResponse`.
+ *
+ * `orderIds` holds one id per Shop, filled once the checkout succeeded
+ * (AC-09.7); it is empty while the payment is still pending.
+ */
+export interface CheckoutDto {
+  checkoutId: string;
+  status: 'PENDING_PAYMENT' | 'SUCCEEDED' | 'FAILED' | 'EXPIRED' | 'REFUND_REQUESTED';
+  totalAmount: number;
+  paymentId: string;
+  expiresAt?: string | null;
+  orderIds?: string[];
+}
+
+/**
+ * Wire shape of `com.moonkage.order.dto.request.CreateCheckoutRequest`.
+ *
+ * `provinceCode` decides the delivery fee of each Shop (BR-30); `invoiceInfo`
+ * is copied into every order of the checkout (BR-29).
+ */
+export interface CreateCheckoutPayload {
   recipientName: string;
   recipientPhone: string;
   provinceCode: string;
   addressDetail: string;
-  deliveryDate: string | null;
-  deliveryMethod: string | null;
-  trackingCode: string | null;
-  invoiceInfo: { name: string; taxCode: string; address: string; email: string } | null;
-  hasInvoiceFile: boolean;
-  deliveredAt: string | null;
-  receivedConfirmedAt: string | null;
-  complaintDeadline: string | null;
-  createdAt: string;
-  items: { productId: string; productName: string; unitPrice: number; quantity: number; subtotal: number }[];
+  invoiceInfo?: {
+    name: string;
+    taxCode: string;
+    address: string;
+    email: string;
+  };
 }
 
+/**
+ * Wire shape of `com.moonkage.order.dto.response.ProgressUpdateResponse`.
+ *
+ * One step of the order's history: the status it reached, the vendor's note and
+ * the photos of the step (FR-21, FR-40).
+ */
 export interface ProgressUpdateDto {
-  milestone: OrderStatusDto;
-  note: string | null;
+  milestone: string;
+  note?: string | null;
+  photoKeys?: string[];
+  createdAt?: string;
+}
+
+/** One step of the order's history. */
+export type ProgressUpdate = {
+  milestone: string;
+  note?: string;
   photoKeys: string[];
   createdAt: string;
-}
-
-export type MockupReviewStatusDto = 'PENDING_REVIEW' | 'APPROVED' | 'CHANGES_REQUESTED';
-
-export interface MockupDto {
-  versionNo: number;
-  downloadUrl: string;
-  reviewStatus: MockupReviewStatusDto;
-  reviewNote: string | null;
-  uploadedAt: string;
-  reviewedAt: string | null;
-}
-
-/** An order with what its detail views need besides the order itself. */
-export interface OrderBundle {
-  order: OrderDto;
-  progress: ProgressUpdateDto[];
-  mockups: MockupDto[];
-}
-
-interface PageDto<T> {
-  content: T[];
-}
-
-/** Far above the orders of one account or Shop in the pilot; the list has no paging UI. */
-const ORDER_PAGE_SIZE = 100;
-const DAY_MS = 86_400_000;
-
-const milestoneLabel: Record<OrderStatusDto, string> = {
-  PAID: 'Thanh toán thành công',
-  CONFIRMED: 'Shop xác nhận đơn',
-  SHIPPING: 'Đang giao',
-  DEPOSITED: 'Đặt cọc',
-  AWAITING_MOCKUP_APPROVAL: 'Gửi maket',
-  IN_PRODUCTION: 'Bắt đầu sản xuất',
-  READY_TO_SHIP: 'Sản xuất xong, chờ giao',
-  DELIVERED: 'Đã giao',
-  COMPLETED: 'Hoàn tất',
 };
 
-export const orderPath = (orderId: string) => `${ordersPath}/${encodeURIComponent(orderId)}`;
-
-/** Oldest first, as the server answers. */
-export function historyOf(progress: ProgressUpdateDto[]): { label: string; at: string }[] {
-  return progress.map((p) => ({
-    label: p.note ? `${milestoneLabel[p.milestone]} · ${p.note}` : milestoneLabel[p.milestone],
-    at: formatDateTime(p.createdAt),
-  }));
-}
-
-export const dateOf = (iso: string | null) => (iso ? formatDate(iso) : undefined);
-
-/** Whole days between delivery and the end of the complaint window (D-13); 0 before delivery. */
-export function complaintDaysOf(o: OrderDto): number {
-  if (!o.deliveredAt || !o.complaintDeadline) return 0;
-  return Math.round((new Date(o.complaintDeadline).getTime() - new Date(o.deliveredAt).getTime()) / DAY_MS);
-}
-
-/** A custom order's title: what was quoted, from its lines. */
-export const titleOf = (o: OrderDto) => o.items.map((i) => `${i.quantity} ${i.productName}`).join(', ');
-
-/** Deposit share of the order value, unrounded so `depositAmount()` gives back the server's amount. */
-export const depositPercentOf = (o: OrderDto) => (o.totalAmount > 0 ? ((o.depositAmount ?? 0) * 100) / o.totalAmount : 0);
-
-export const deliverToOf = (o: OrderDto) => provinceNameOf(o.provinceCode);
-
-export const linesOf = (o: OrderDto) => o.items.map((i) => ({ name: i.productName, price: i.unitPrice, quantity: i.quantity }));
-
-/** Newest version first, as the views show them. */
-export const newestFirst = (mockups: MockupDto[]) => [...mockups].sort((a, b) => b.versionNo - a.versionNo);
-
-async function fetchBundle(orderId: string, kind?: OrderDto['kind']): Promise<OrderBundle> {
-  const [order, progress] = await Promise.all([
-    apiClient.get<ApiResponse<OrderDto>>(orderPath(orderId)).then((r) => r.data.data),
-    apiClient.get<ApiResponse<ProgressUpdateDto[]>>(`${orderPath(orderId)}/progress-updates`).then((r) => r.data.data ?? []),
-  ]);
-  const mockups =
-    (kind ?? order.kind) === 'CUSTOM_ORDER'
-      ? await apiClient.get<ApiResponse<MockupDto[]>>(`${orderPath(orderId)}/mockups`).then((r) => r.data.data ?? [])
-      : [];
-  return { order, progress, mockups };
-}
-
-/** One order with its history and mockups; null when the caller has no such order. */
-export async function fetchOrderBundle(orderId: string): Promise<OrderBundle | null> {
-  try {
-    return await fetchBundle(orderId);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === HTTP_NOT_FOUND) return null;
-    throw e;
-  }
-}
-
-/** The list has no lines (items empty): each order is read again with them. */
-export async function fetchOrderBundles(params: Record<string, string> = {}): Promise<OrderBundle[]> {
-  const res = await apiClient.get<ApiResponse<PageDto<OrderDto>>>(ordersPath, { params: { ...params, size: ORDER_PAGE_SIZE } });
-  return Promise.all((res.data.data.content ?? []).map((o) => fetchBundle(o.id, o.kind)));
-}
-
-/** order-service `DisputeResponse`: the dispute of an order with both parties' evidence (AC-49.1). */
-export interface DisputeDto {
-  disputeId: string;
-  orderId: string;
-  reason: string;
-  description: string;
-  status: 'OPEN' | 'RESOLVED';
-  decision: 'FULL_REFUND' | 'PARTIAL_REFUND' | 'REJECTED' | null;
-  refundAmount: number | null;
-  decisionReason: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
-  evidences: { party: 'BUYER' | 'VENDOR'; downloadUrl: string; note: string | null; createdAt: string }[];
-}
-
-/** The order's latest dispute, null when it never had one. */
-export async function fetchDispute(orderId: string): Promise<DisputeDto | null> {
-  try {
-    const res = await apiClient.get<ApiResponse<DisputeDto>>(`${orderPath(orderId)}/dispute`);
-    return res.data.data;
-  } catch (e) {
-    if (e instanceof ApiError && e.status === HTTP_NOT_FOUND) return null;
-    throw e;
-  }
-}
-
-/** Ids of the orders with an open dispute among those `params` select (FR-49). */
-export async function fetchOpenDisputeOrderIds(params: Record<string, string> = {}): Promise<Set<string>> {
-  const res = await apiClient.get<ApiResponse<PageDto<OrderDto>>>(ordersPath, {
-    params: { ...params, disputeStatus: 'OPEN', size: ORDER_PAGE_SIZE },
-  });
-  return new Set((res.data.data.content ?? []).map((o) => o.id));
+/** Wire shape of `com.moonkage.order.dto.response.PaymentLinkResponse`. */
+export interface PaymentLinkResponse {
+  paymentId: string;
+  paymentUrl: string;
 }

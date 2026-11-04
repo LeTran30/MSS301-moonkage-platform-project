@@ -1,0 +1,22 @@
+/* Tạo tự động từ inline style của SubmitQuoteModal.tsx. */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.summary {
+  font-size: 0.875rem;
+}
+.error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}

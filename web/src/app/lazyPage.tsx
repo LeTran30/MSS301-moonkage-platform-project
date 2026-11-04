@@ -1,34 +1,37 @@
 import { lazy, Suspense, type ComponentType } from 'react';
-import { LoadingState } from '@/shared/ui';
+import { PageLoader } from '@/shared/ui';
 
-/** Element of a lazily loaded page: each page is its own chunk; `name` is the page's named export. */
-export function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
-  const Page = lazy(async () => {
+const RELOAD_KEY = 'moonkage_chunk_reload_lock';
+
+/**
+ * lazyPage: Lazy load React component với cơ chế Chunk-Reload Recovery
+ * Khi deploy bản mới, các hash chunk cũ trên CDN có thể bị 404.
+ * Hàm này sẽ tự động thử reload lại trang một lần để lấy bundle mới nhất
+ * và dùng sessionStorage để chặn vòng lặp reload bất tận.
+ */
+export function lazyPage<T extends ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+): ComponentType {
+  const LazyComponent = lazy(async () => {
     try {
-      const module = await load();
-      return { default: module[name] as ComponentType };
+      const module = await factory();
+      sessionStorage.removeItem(RELOAD_KEY);
+      return module;
     } catch (error) {
-      // If dynamic import failed (e.g. Vite dev server restart or new chunk deploy), auto-reload once
-      const isChunkError =
-        error instanceof Error &&
-        /loading dynamically imported module|failed to fetch dynamically imported module/i.test(error.message);
-      const key = `chunk_reload_${name}`;
-      if (isChunkError && !sessionStorage.getItem(key)) {
-        sessionStorage.setItem(key, '1');
+      const hasReloaded = sessionStorage.getItem(RELOAD_KEY);
+      if (!hasReloaded) {
+        sessionStorage.setItem(RELOAD_KEY, 'true');
         window.location.reload();
       }
       throw error;
     }
   });
-  return (
-    <Suspense
-      fallback={
-        <div className="shop__inner page page--loading">
-          <LoadingState />
-        </div>
-      }
-    >
-      <Page />
-    </Suspense>
-  );
+
+  return function SuspenseWrappedPage(props: any) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <LazyComponent {...props} />
+      </Suspense>
+    );
+  };
 }

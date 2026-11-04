@@ -1,15 +1,16 @@
-import { useCallback, useState } from 'react';
-import { ApiError } from '../api/client';
+import { useState, useCallback } from 'react';
+import { ApiError } from '@/shared/api';
 
-const ACTION_FAILED_MSG = 'Chưa thực hiện được. Thử lại sau ít phút.';
+const ACTION_FAILED_MSG = 'Thao tác không thành công. Vui lòng kiểm tra lại kết nối và thử lại.';
 
 /**
- * One user action at a time: `busy` while it runs, and the server's message when it is refused. `run` answers
- * whether the action went through.
+ * Hook useAction chống click đúp / gửi trùng (Idempotency)
+ * Tuân thủ Luật L4: Mọi hành động ghi phải có busy + finally
  */
 export function useAction() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const run = useCallback(async (fn: () => Promise<unknown>): Promise<boolean> => {
     setBusy(true);
     setError(null);
@@ -17,11 +18,18 @@ export function useAction() {
       await fn();
       return true;
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : ACTION_FAILED_MSG);
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : ACTION_FAILED_MSG;
+      setError(msg);
       return false;
     } finally {
       setBusy(false);
     }
   }, []);
-  return { busy, error, run };
+
+  return { busy, error, setError, run };
 }

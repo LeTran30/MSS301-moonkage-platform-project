@@ -1,64 +1,42 @@
-import { useId, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { cn } from '@/shared/lib';
 import styles from './Tabs.module.css';
 
-/** Tabs as DS chips: one row of toggles above a panel. `count` shows after the label. */
-export function Tabs<K extends string>({
-  tabs,
-  current,
-  onChange,
-  label,
-}: {
-  tabs: { key: K; label: string; count?: number }[];
-  current: K;
-  onChange: (key: K) => void;
-  label: string;
-}) {
-  return (
-    <div className={styles.tabs} role="group" aria-label={label}>
-      {tabs.map((t) => (
-        <button key={t.key} type="button" className="mk-chip" aria-pressed={t.key === current} onClick={() => onChange(t.key)}>
-          {t.label}
-          {t.count !== undefined && <span className={`${styles.count} mk-num`}> {t.count}</span>}
-        </button>
-      ))}
-    </div>
-  );
-}
+export type TabItem<T extends string = string> = {
+  id: T;
+  label: ReactNode;
+  badge?: ReactNode;
+  disabled?: boolean;
+};
 
-/** Underlined section switcher inside a page (order detail: Maket / Tiến độ / Thanh toán). */
-export function SectionTabs<K extends string>({
-  tabs,
-  current,
-  onChange,
-  children,
-}: {
-  tabs: { key: K; label: string }[];
-  current: K;
-  onChange: (key: K) => void;
-  children: ReactNode;
-}) {
-  const id = useId();
+type Props<T extends string = string> = {
+  items: TabItem<T>[];
+  activeId: T;
+  onChange: (id: T) => void;
+  variant?: 'underline' | 'pills' | 'enclosed';
+  className?: string;
+};
+
+export function Tabs<T extends string = string>({ items, activeId, onChange, variant = 'underline', className }: Props<T>) {
   return (
-    <div className={styles.sectionTabs}>
-      <div role="tablist" className={styles.tabList}>
-        {tabs.map((t) => (
+    <div className={cn(styles.tabs, styles[variant], className)} role="tablist">
+      {items.map((tab) => {
+        const isActive = tab.id === activeId;
+        return (
           <button
-            key={t.key}
-            role="tab"
+            key={tab.id}
             type="button"
-            id={`${id}-${t.key}`}
-            aria-selected={t.key === current}
-            aria-controls={`${id}-panel`}
-            className={styles.tab}
-            onClick={() => onChange(t.key)}
+            role="tab"
+            aria-selected={isActive}
+            disabled={tab.disabled}
+            className={cn(styles.tab, isActive && styles.active)}
+            onClick={() => onChange(tab.id)}
           >
-            {t.label}
+            <span>{tab.label}</span>
+            {tab.badge !== undefined && <span className={styles.badge}>{tab.badge}</span>}
           </button>
-        ))}
-      </div>
-      <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current}`}>
-        {children}
-      </div>
+        );
+      })}
     </div>
   );
 }

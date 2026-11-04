@@ -62,4 +62,11 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
                 Timestamp.from(at),
                 eventId);
     }
+
+    @Override
+    public long countUnpublished() {
+        Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_events WHERE published_at IS NULL", Long.class);
+        return count == null ? 0L : count;
+    }
 }

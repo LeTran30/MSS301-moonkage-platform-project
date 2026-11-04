@@ -63,10 +63,30 @@ Class nặng: [QuoteRequestServiceImpl](classes/QuoteRequestServiceImpl.md), [Qu
 
 quotation không gọi vendor-service: mọi thông tin người bán đọc từ `vendor_snapshots`, bản sao cập nhật từ sự kiện `vendor.updated`. Migration `V2026_10_26_0900` thêm `tax_code` vì bản chép ràng buộc phải ghi mã số thuế người bán. Trong lúc vendor-service chưa phát sự kiện, seed dev chép tay hai người bán mẫu (Trăng Vàng nhận đặt hàng từ 50 hộp, giao TP.HCM; Bánh Quê chờ duyệt).
 
+## BE-01 (04/11/2026): relay + consumer đã nối cả hai chiều
+
+Trước đây `quotation-service` là service **duy nhất** ghi vào outbox mà không có đường đọc ra —
+nghĩa là đường tiền của đơn đặt hàng **bị đứt**: khách đã trả cọc nhưng không có đơn, acceptance
+kẹt ở `PENDING_PAYMENT`, và không ai biết vì không có log lẫn metric.
+
+Đã đóng cả hai chiều:
+
+| Phần | Hiện trạng |
+| --- | --- |
+| **Relay (publish)** | `messaging/OutboxRelay.java` — cũ nhất trước, chỉ đánh dấu đã gửi sau publisher confirm, dừng tại event lỗi để giữ thứ tự. |
+| **Consumer (subscribe)** | `messaging/PaymentEventListener.java` nghe `payment.succeeded` / `payment.failed` → `QuoteAcceptanceService.recordDepositPaid / recordDepositFailed`. |
+| **Idempotency** | `InboxService.markProcessed(eventId, routingKey)` + bảng `processed_events` — lặp lại IPN không tạo trùng. |
+| **Hạ tầng** | `config/RabbitConfig.java` — exchange `moonkage.events` + queue `quotation-service.payment-succeeded` / `.payment-failed`. |
+
+Kịch bản đã chốt bằng test: IPN gửi **2 lần** → chỉ **1** acceptance chuyển `SUCCEEDED`,
+không tạo trùng ledger; deposit đến **sau** `paymentExpiresAt` → refund `QUOTE_EXPIRED`.
+
 ## Chưa làm
 
-- Consumer RabbitMQ: `vendor.updated`, `vendor.locked` → `vendor_snapshots`; `payment.succeeded`, `payment.failed` (`DEPOSIT`) → `QuoteAcceptanceService.recordDepositPaid / recordDepositFailed` (đã có, chỉ chưa nối).
-- Outbox relay: sự kiện đã ghi vào `outbox_events` trong cùng transaction nhưng chưa có tác vụ đẩy lên `moonkage.events`.
-- `POST /internal/payments`, `POST /internal/refunds` chưa có ở payment-service: chấp nhận báo giá trả 503 cho tới khi có.
+- Consumer RabbitMQ: `vendor.updated`, `vendor.locked` → `vendor_snapshots`.
+- 4 routing key ghi vào outbox nhưng chưa có consumer: `quote.submitted`, `quote.withdrawn`,
+  `request.created`, `request.declined`. Cần chốt với team: **có chủ ý** (thì bổ sung consumer
+  để orchestrator gửi notification) hay **không** (thì bỏ `enqueue` để khỏi ghi ra sự kiện
+  không ai nghe)? Hiện chưa quyết — mất thông báo, **không mất tiền**.
 - Tải logo (`POST /api/quote-requests/uploads`, bảng `request_logos`), xuất file (FR-18), đặt lại (FR-23), lịch công suất (FR-37).
 - Gateway còn bắt đăng nhập cho `/api/suppliers`; thiết kế cho khách xem (K).

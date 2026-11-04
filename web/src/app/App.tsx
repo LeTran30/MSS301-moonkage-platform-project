@@ -1,18 +1,27 @@
-import { RouterProvider } from 'react-router-dom';
+import { isConfigValid } from '@/shared/config';
 import { ConfigErrorPage } from '@/pages/system/config-error';
-import { isConfigValid } from '@/shared/config/env';
+import { AppRouter } from './routes';
 import { AppProviders } from './providers';
-import { router } from './routes';
 
-/** Providers of the whole app, outermost first: session, its realtime connection, delivery area, cart. */
+/**
+ * The root of the application.
+ *
+ * `isConfigValid()` is checked first: without `VITE_API_BASE_URL` (and without
+ * demo mode) every screen would fail with an opaque network error, so the app
+ * shows a screen that says which key is missing instead of a blank page.
+ */
 export function App() {
-  if (!isConfigValid()) return <ConfigErrorPage />;
+  if (!isConfigValid()) {
+    return (
+      <AppProviders>
+        <ConfigErrorPage />
+      </AppProviders>
+    );
+  }
 
   return (
     <AppProviders>
-      <RouterProvider router={router} />
+      <AppRouter />
     </AppProviders>
   );
 }
-
-export default App;

@@ -7,11 +7,13 @@ Mọi tài liệu của dự án nằm trong `docs/`, xếp theo **loại**: m�
 | … | Đọc |
 |---|---|
 | Chạy dự án lần đầu | [guides/getting-started.md](guides/getting-started.md) |
+| Tách nhánh, commit, đồng bộ git | [guides/git-workflow.md](guides/git-workflow.md) |
 | Đổi schema DB, viết dữ liệu mẫu, biết tài khoản mẫu | [guides/database.md](guides/database.md) |
 | Biết hệ thống phải làm gì (FR, AC, BR) | [product/requirements.md](product/requirements.md) |
 | Biết hệ thống được xây ra sao (service, API, sự kiện, quyết định D-xx) | [architecture/software-design.md](architecture/software-design.md) |
 | Viết code đúng quy ước (đặt tên, thứ tự, comment) | [conventions/coding-rules.md](conventions/coding-rules.md) |
 | Mở branch, commit, PR, review | [../.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) |
+| Thao tác git: tách nhánh, rebase, đồng bộ, dọn dẹp | [guides/git-workflow.md](guides/git-workflow.md) |
 | Hiểu một service: luồng, API, class nặng | [services/](#services) |
 | Gọi thử API | Swagger `http://localhost:8080/swagger-ui.html` · Postman [api/mk-auth.json](api/mk-auth.json) |
 

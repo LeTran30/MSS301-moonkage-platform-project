@@ -1,110 +1,111 @@
-import { ApiError, apiClient, type ApiResponse } from '@/shared/api/client';
-import { ledgersPath, ordersPath } from '@/shared/api/gateway';
-import { HTTP_NOT_FOUND } from '@/shared/api/httpStatus';
-import { mockResponse, seedStore } from '@/shared/api/mock';
-import { fetchVendorNames } from '@/shared/api/vendors';
-import { disputeDecisionLabel, disputeReasonLabel } from '@/shared/config/disputes';
-import { config } from '@/shared/config/env';
-import { formatDate } from '@/shared/utils/format';
-import type { Dispute } from '../model/types';
-import { seedDisputes } from './seed';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import { orderApi } from '@/entities/order/@x/dispute';
+import {
+  disputeStore,
+  type Dispute,
+  type DisputeDecision,
+  type DisputeEvidence,
+  type DisputeParty,
+  type DisputeReason,
+  type DisputeStatus,
+} from '../model/disputeStore';
 
-/** Demo mode: complaints a buyer escalated, decided by an admin (Q5). */
-export const disputeStore = seedStore('admin-disputes', seedDisputes);
-
-/** order-service `DisputeResponse`. */
-interface DisputeDto {
+/**
+ * Wire shape of `com.moonkage.order.dto.response.DisputeResponse`.
+ *
+ * The backend names the money of a dispute nowhere: the refundable amount comes
+ * from the payment ledger, not from the dispute itself. The UI therefore keeps
+ * its escrow amounts locally and only reads `decision` / `refundAmount` back.
+ */
+export interface DisputeDto {
   disputeId: string;
   orderId: string;
-  reason: string;
+  reason: DisputeReason;
   description: string;
-  status: 'OPEN' | 'RESOLVED';
-  decision: string | null;
-  refundAmount: number | null;
-  decisionReason: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
-  evidences: { party: 'BUYER' | 'VENDOR'; downloadUrl: string; note: string | null; createdAt: string }[];
+  status: DisputeStatus;
+  decision?: DisputeDecision | null;
+  refundAmount?: number | null;
+  decisionReason?: string | null;
+  createdAt?: string;
+  resolvedAt?: string | null;
+  evidences?: Array<{
+    party: DisputeParty;
+    downloadUrl: string;
+    note?: string;
+    createdAt?: string;
+  }>;
 }
 
-/** order-service `OrderResponse`, the fields the decision shows. */
-interface DisputedOrderDto {
-  id: string;
-  vendorId: string;
-  recipientName: string;
-  shippingFee: number;
-  items: { productName: string; quantity: number; subtotal: number }[];
-}
+/** Map a backend dispute to the UI entity. */
+export function mapDisputeDtoToEntity(dto: DisputeDto, fallbackOrderId?: string): Dispute {
+  const existing = disputeStore.get().find((d) => d.id === dto.disputeId);
+  const evidences: DisputeEvidence[] = (dto.evidences ?? []).map((e) => ({
+    party: e.party,
+    downloadUrl: e.downloadUrl,
+    note: e.note,
+    createdAt: e.createdAt,
+  }));
 
-/** payment-service `LedgerResponse`, what the platform holds for the order. */
-interface LedgerMoneyDto {
-  held: number;
-  paidOut: number;
-}
-
-/** Far above the open disputes of the pilot; the list has no paging UI. */
-const PAGE_SIZE = 100;
-
-const orderPath = (orderId: string) => `${ordersPath}/${encodeURIComponent(orderId)}`;
-
-const get = <T>(url: string) => apiClient.get<ApiResponse<T>>(url).then((r) => r.data.data);
-
-function toDispute(d: DisputeDto, o: DisputedOrderDto, money: LedgerMoneyDto, vendorName: string): Dispute {
-  const vendorEvidences = d.evidences.filter((e) => e.party === 'VENDOR');
   return {
-    id: d.disputeId,
-    orderId: d.orderId,
-    openedAt: formatDate(d.createdAt),
-    buyer: o.recipientName,
-    vendor: vendorName,
-    reason: disputeReasonLabel(d.reason),
-    buyerText: d.description,
-    buyerPhotoUrls: d.evidences.filter((e) => e.party === 'BUYER').map((e) => e.downloadUrl),
-    vendorReplies: vendorEvidences.map((e) => ({ note: e.note ?? '', fileUrl: e.downloadUrl, at: formatDate(e.createdAt) })),
-    lines: [...o.items.map((i) => ({ name: `${i.productName} × ${i.quantity}`, amount: i.subtotal })), { name: 'Phí giao', amount: o.shippingFee }],
-    held: money.held,
-    paidOut: money.paidOut,
-    history: [
-      ...(d.resolvedAt ? [{ label: 'Quản trị quyết định', at: formatDate(d.resolvedAt) }] : []),
-      ...vendorEvidences.map((e) => ({ label: 'Người bán phản hồi', at: formatDate(e.createdAt) })).reverse(),
-      { label: 'Người mua báo vấn đề · tiền bị giữ', at: formatDate(d.createdAt) },
-    ],
-    state: d.status === 'OPEN' ? 'open' : 'decided',
-    decision:
-      d.status === 'RESOLVED' && d.decision
-        ? { kind: disputeDecisionLabel(d.decision), amount: d.refundAmount ?? 0, note: d.decisionReason ?? '', at: formatDate(d.resolvedAt) }
-        : undefined,
+    id: dto.disputeId,
+    orderId: dto.orderId || fallbackOrderId || '',
+    buyerId: existing?.buyerId ?? '',
+    buyerName: existing?.buyerName ?? '',
+    vendorId: existing?.vendorId ?? '',
+    vendorName: existing?.vendorName ?? '',
+    reason: dto.reason,
+    description: dto.description,
+    images: evidences.map((e) => e.downloadUrl),
+    evidences,
+    createdAt: dto.createdAt ?? new Date().toISOString(),
+    status: dto.status,
+    resolvedAt: dto.resolvedAt ?? undefined,
+    orderTotalAmount: existing?.orderTotalAmount ?? 0,
+    escrowHoldingAmount: existing?.escrowHoldingAmount ?? 0,
+    disbursedAmount: existing?.disbursedAmount ?? 0,
+    maxRefundableAmount: existing?.maxRefundableAmount ?? 0,
+    decision: dto.decision ?? undefined,
+    refundAmount: dto.refundAmount ?? undefined,
+    adminNote: dto.decisionReason ?? existing?.adminNote,
+    decidedAt: dto.resolvedAt ?? existing?.decidedAt,
   };
 }
 
-async function fetchOne(orderId: string, names: Map<string, string>): Promise<Dispute | null> {
-  let dispute: DisputeDto;
-  try {
-    dispute = await get<DisputeDto>(`${orderPath(orderId)}/dispute`);
-  } catch (e) {
-    if (e instanceof ApiError && e.status === HTTP_NOT_FOUND) return null;
-    throw e;
-  }
-  const [order, money] = await Promise.all([
-    get<DisputedOrderDto>(orderPath(orderId)),
-    get<LedgerMoneyDto>(`${ledgersPath}/${encodeURIComponent(orderId)}`),
-  ]);
-  return toDispute(dispute, order, money, names.get(order.vendorId) ?? order.vendorId);
-}
+/**
+ * The read side of the disputes (FR-49, Q5.0).
+ *
+ * The writes (`openDispute`, `addDisputeEvidence`, `resolveDispute`) belong to
+ * the `file-complaint` and `resolve-disputes` features
+ * (package-architecture §3 — `api/` of a feature holds the writes).
+ */
+export const disputeApi = {
+  /**
+   * The open disputes of the platform (FR-49, Q5.0).
+   *
+   * `GET /api/orders?disputeStatus=OPEN` lists the orders waiting for a
+   * decision; `GET /api/orders/{orderId}/dispute` reads the dispute of each.
+   */
+  async listOpen(): Promise<Dispute[]> {
+    if (isDemoMode()) {
+      return disputeStore.get().filter((d) => d.status === 'OPEN');
+    }
+    const orders = await orderApi.getOrders({ openDispute: true });
+    const disputes: Dispute[] = [];
+    for (const order of orders) {
+      const dispute = await disputeApi.getByOrderId(order.id);
+      if (dispute) disputes.push(dispute);
+    }
+    return disputes;
+  },
 
-/** FR-49, admin: the orders waiting for a dispute decision. Decided disputes are not listed by the server. */
-export async function fetchDisputes(): Promise<Dispute[]> {
-  if (config.demoMode) return mockResponse(disputeStore.get());
-  const [open, names] = await Promise.all([
-    get<{ content: { id: string }[] }>(`${ordersPath}?disputeStatus=OPEN&size=${PAGE_SIZE}`),
-    fetchVendorNames(),
-  ]);
-  const disputes = await Promise.all((open.content ?? []).map((o) => fetchOne(o.id, names)));
-  return disputes.filter((d): d is Dispute => d !== null);
-}
-
-/** The dispute of one order (the admin route names the order: the server reads a dispute by its order). */
-export async function fetchDispute(orderId: string): Promise<Dispute | null> {
-  if (config.demoMode) return mockResponse(disputeStore.get().find((d) => d.orderId === orderId) ?? null);
-  return fetchOne(orderId, await fetchVendorNames());
-}
+  /** The one dispute of an order (the backend allows only one open dispute per order). */
+  async getByOrderId(orderId: string): Promise<Dispute | null> {
+    if (isDemoMode()) {
+      return disputeStore.get().find((d) => d.orderId === orderId) ?? null;
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.ORDER.DISPUTE(orderId));
+    const dto = unwrap<DisputeDto>(res);
+    return dto ? mapDisputeDtoToEntity(dto, orderId) : null;
+  },
+};

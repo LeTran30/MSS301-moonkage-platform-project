@@ -1,0 +1,100 @@
+.orderCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed var(--color-border);
+  padding-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.orderMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.orderId {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+.orderDate {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.orderStatusBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.orderBody {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+@media (max-width: 768px) {
+  .orderBody {
+    grid-template-columns: 1fr;
+  }
+}
+.buyerInfo {
+  font-size: var(--text-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.invoiceTag {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--color-secondary-dark);
+  font-size: var(--text-xs);
+}
+.itemsSummary {
+  background: var(--color-bg-alt);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+  font-weight: 600;
+}
+.totalAmount {
+  color: var(--color-primary);
+  font-size: var(--text-base);
+}
+.cardActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.actionNotes {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.btnGroup {
+  display: flex;
+  gap: var(--space-2);
+}

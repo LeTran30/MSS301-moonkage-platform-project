@@ -1,21 +1,35 @@
-import { orderPath, orderStore } from '@/entities/order';
-import { apiClient } from '@/shared/api/client';
-import { mockResponse } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
-import { nowStamp, today } from '@/shared/utils/format';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import { orderStore, type Order } from '@/entities/order';
+import { mapOrderDtoToEntity, type OrderDto } from '@/entities/order';
 
-/** FR-11: the buyer confirms receipt; on the server this completes a buy-now order. */
-export async function confirmReceived(orderId: string): Promise<void> {
-  if (!config.demoMode) {
-    await apiClient.patch(orderPath(orderId), { receivedConfirmed: true });
-    return;
+/**
+ * The write side of the delivery confirmation (FR-11).
+ *
+ * The order entity owns the read and the shape of the order; the write lives
+ * here because it confirms the receipt, not the order data
+ * (package-architecture §3 — `api/` of a feature holds the writes).
+ */
+
+/**
+ * FR-11: the buyer confirms the reception of a delivered order.
+ */
+export async function confirmOrderReceived(orderId: string): Promise<Order> {
+  if (isDemoMode()) {
+    const current = orderStore.get().find((o) => o.id === orderId);
+    if (current) {
+      orderStore.set((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: 'COMPLETED' } : o))
+      );
+    }
+    return current as Order;
   }
-  orderStore.update((list) =>
-    list.map((o) =>
-      o.id === orderId && o.kind === 'ready'
-        ? { ...o, status: 'delivered', deliveredAt: today(), history: [{ label: 'Bạn xác nhận đã nhận hàng', at: nowStamp() }, ...o.history] }
-        : o,
-    ),
-  );
-  await mockResponse(null);
+  const res = await apiClient.patch<unknown>(GATEWAY.ORDER.ORDER_UPDATE(orderId), {
+    receivedConfirmed: true,
+  });
+  const dto = unwrap<OrderDto>(res);
+  if (!dto) {
+    throw new Error('Máy chủ không trả về trạng thái đơn hàng.');
+  }
+  return mapOrderDtoToEntity(dto);
 }

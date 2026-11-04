@@ -16,6 +16,8 @@ git config core.hooksPath .githooks   # bật pre-commit kiểm tra format/style
 
 Windows: nếu `git clone` báo `Filename too long`, chạy `git config --global core.longpaths true` rồi clone lại.
 
+Sau khi clone, làm theo [git-workflow.md](git-workflow.md) §2 để bật hook và cấu hình git cho đúng chuẩn repo.
+
 ## Cách A: chạy toàn bộ backend bằng Docker
 ```bash
 docker compose up -d --build

@@ -6,6 +6,14 @@ server:
 spring:
   application:
     name: quotation-service
+  # RabbitMQ (domain events, Software Design 5.4)
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    # OutboxRelay waits for the broker's confirm before marking an event sent
+    publisher-confirm-type: simple
   datasource:
     url: "jdbc:postgresql://${QUOTATION_DB_HOST}:${QUOTATION_DB_PORT}/quotation_db"
     username: ${DB_USERNAME}
@@ -34,16 +42,19 @@ eureka:
     # register the container IP, not its random hostname, so the gateway can reach it inside Docker
     prefer-ip-address: true
 
-# only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
+# health for the container healthcheck (RT-05); prometheus for the metrics (BE-11b)
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 moonkage:
   quotation:
@@ -51,3 +62,9 @@ moonkage:
     deposit-payment-timeout: ${QUOTATION_DEPOSIT_PAYMENT_TIMEOUT:15m}
     # how often unpaid acceptances and quotes past validity are marked EXPIRED
     expiry-check-interval: PT1M
+
+# domain events go through the outbox_events table (Software Design 6)
+outbox:
+  relay-interval: 2s
+  batch-size: 100
+  confirm-timeout: 5s

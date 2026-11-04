@@ -1,22 +1,22 @@
-import { Outlet, ScrollRestoration } from 'react-router-dom';
-import { Footer } from '@/widgets/footer';
+import type { ReactNode } from 'react';
+import { Outlet } from 'react-router-dom';
 import { Header } from '@/widgets/header';
+import { Footer } from '@/widgets/footer';
+import { CommandPalette } from '@/widgets/command-palette';
+import { LayoutErrorBoundary } from '../LayoutErrorBoundary';
 import styles from './BaseLayout.module.css';
 
-/**
- * Frame of the base area on the DS NavBar: Header widget, main content, and Footer widget.
- */
-export function BaseLayout() {
+export function BaseLayout({ children }: { children?: ReactNode }) {
   return (
-    <div className={styles.base}>
-      <ScrollRestoration />
+    <div className={styles.layout} data-zone="base">
       <Header />
-
       <main className={styles.main}>
-        <Outlet />
+        <LayoutErrorBoundary areaName="Chung">
+          {children ?? <Outlet />}
+        </LayoutErrorBoundary>
       </main>
-
       <Footer />
+      <CommandPalette />
     </div>
   );
 }

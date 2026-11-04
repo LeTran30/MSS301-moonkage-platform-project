@@ -47,6 +47,12 @@ public class OutboxDeliveryServiceImpl implements OutboxDeliveryService {
         return true;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public long countUnpublished() {
+        return outboxRepository.countUnpublished();
+    }
+
     private boolean send(OutboxEvent event) {
         MessageProperties messageProperties = new MessageProperties();
         messageProperties.setContentType(MessageProperties.CONTENT_TYPE_JSON);

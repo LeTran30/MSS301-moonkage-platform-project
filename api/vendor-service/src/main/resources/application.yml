@@ -88,13 +88,16 @@ vendor:
   bank-account:
     encryption-key: ${BANK_ACCOUNT_ENC_KEY_V1:}
 
-# only health is exposed; liveness/readiness groups for the container healthcheck (RT-05)
+# health for the container healthcheck (RT-05); prometheus for the metrics (BE-11b)
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

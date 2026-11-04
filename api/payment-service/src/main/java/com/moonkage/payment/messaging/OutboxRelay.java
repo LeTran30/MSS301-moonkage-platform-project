@@ -1,5 +1,6 @@
 package com.moonkage.payment.messaging;
 
+import com.moonkage.observability.OutboxMetrics;
 import com.moonkage.payment.config.RabbitConfig;
 import com.moonkage.payment.entity.OutboxEvent;
 import com.moonkage.payment.repository.OutboxEventRepository;
@@ -31,16 +32,19 @@ public class OutboxRelay {
     private final RabbitTemplate rabbitTemplate;
     private final int batchSize;
     private final Duration confirmTimeout;
+    private final OutboxMetrics outboxMetrics;
 
     public OutboxRelay(
             OutboxEventRepository outboxEventRepository,
             RabbitTemplate rabbitTemplate,
             @Value("${outbox.batch-size:100}") int batchSize,
-            @Value("${outbox.confirm-timeout:5s}") Duration confirmTimeout) {
+            @Value("${outbox.confirm-timeout:5s}") Duration confirmTimeout,
+            OutboxMetrics outboxMetrics) {
         this.outboxEventRepository = outboxEventRepository;
         this.rabbitTemplate = rabbitTemplate;
         this.batchSize = batchSize;
         this.confirmTimeout = confirmTimeout;
+        this.outboxMetrics = outboxMetrics;
     }
 
     @Scheduled(fixedDelayString = "${outbox.relay-interval:2s}")
@@ -60,9 +64,16 @@ public class OutboxRelay {
                         event.getRoutingKey(),
                         event.getAttempts(),
                         e.getMessage());
+                publishUnpublishedCount();
                 return;
             }
         }
+        publishUnpublishedCount();
+    }
+
+    /** BE-11b: the gauge that shows the relay is stuck before a customer asks about it. */
+    private void publishUnpublishedCount() {
+        outboxMetrics.setUnpublished(outboxEventRepository.countByPublishedAtIsNull());
     }
 
     private void send(OutboxEvent event) {

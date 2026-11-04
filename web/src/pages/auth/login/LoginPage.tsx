@@ -1,15 +1,107 @@
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useCurrentUser } from '@/entities/user';
-import { LoginForm } from '@/features/login';
-import { homeRoute } from '@/shared/config/routes';
+import { useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { routes } from '@/shared/config';
+import { Button, Input } from '@/shared/ui';
+import { validators, useAction } from '@/shared/lib';
+import { useLogin } from '@/features/login';
+import { QuickPersonaSelector } from '@/features/switch-persona';
+import { AuthShell, authShellStyles } from '@/widgets/auth-shell';
 
 export function LoginPage() {
-  const session = useCurrentUser();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? homeRoute;
+  const [phone, setPhone] = useState('0912839102');
+  const [password, setPassword] = useState('password123');
+  const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
 
-  if (session) return <Navigate to={from} replace />;
+  const { busy, run, error } = useAction();
+  const login = useLogin();
 
-  return <LoginForm onLoggedIn={() => navigate(from, { replace: true })} />;
+  const handleLogin = (e: FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      const phoneErr = validators.phoneVN(phone);
+      const passErr = validators.password(password);
+
+      if (phoneErr || passErr) {
+        setErrors({ phone: phoneErr ?? undefined, password: passErr ?? undefined });
+        return;
+      }
+      setErrors({});
+      await login(phone, password);
+      navigate(routes.account.overview);
+    });
+  };
+
+  return (
+    <AuthShell
+      icon="🥮"
+      title="Đăng nhập Moonkage"
+      subtitle="Sàn thương mại điện tử chuyên biệt Bánh Trung Thu"
+    >
+      <form onSubmit={handleLogin} className={authShellStyles.form} noValidate>
+        <div className={authShellStyles.formGroup}>
+          <label htmlFor="login-phone" className={authShellStyles.label}>Số điện thoại</label>
+          <Input
+            id="login-phone"
+            value={phone}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+            }}
+            placeholder="0912 345 678"
+            aria-invalid={Boolean(errors.phone)}
+            aria-describedby={errors.phone ? 'login-phone-err' : undefined}
+          />
+          {errors.phone && (
+            <span id="login-phone-err" className={authShellStyles.errorText} role="alert">
+              {errors.phone}
+            </span>
+          )}
+        </div>
+
+        <div className={authShellStyles.formGroup}>
+          <div className={authShellStyles.passHeader}>
+            <label htmlFor="login-pass" className={authShellStyles.label}>Mật khẩu</label>
+            <Link to={routes.auth.forgotPassword} className={authShellStyles.forgotPass}>
+              Quên mật khẩu?
+            </Link>
+          </div>
+          <Input
+            id="login-pass"
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+            }}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? 'login-pass-err' : undefined}
+          />
+          {errors.password && (
+            <span id="login-pass-err" className={authShellStyles.errorText} role="alert">
+              {errors.password}
+            </span>
+          )}
+        </div>
+
+        <Button type="submit" variant="primary" size="lg" loading={busy}>
+          Đăng nhập
+        </Button>
+
+        {error && (
+          <div className={authShellStyles.errorText} role="alert">
+            {error}
+          </div>
+        )}
+
+        <p className={authShellStyles.switchAuth}>
+          Chưa có tài khoản? <Link to={routes.auth.register}>Đăng ký ngay</Link>
+        </p>
+      </form>
+
+      <div className={authShellStyles.quickPersonas}>
+        <QuickPersonaSelector />
+      </div>
+    </AuthShell>
+  );
 }

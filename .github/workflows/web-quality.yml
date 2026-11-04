@@ -1,13 +1,24 @@
-# Final gate for the web portal: every pull request must pass oxlint + type-check + build.
-# Git hooks can be skipped (git commit --no-verify); CI cannot.
+# Quality gate for the Moonkage web portal.
+#
+# Every pull request must pass lint + CSS/encoding checks + type-check + unit
+# tests + build + bundle budget + E2E. Git hooks can be skipped
+# (git commit --no-verify); CI cannot.
+#
+# Lịch sử: workflow này từng chạy cho `temp/web-temp/moonkage-web` trong
+# `temp-web-quality.yml`. Bản `temp` đã được đổi thành `web/` (thư mục `web`
+# cũ đã bị thay thế), nên hai workflow được gộp lại thành một.
 name: Web quality
 
 on:
   pull_request:
-    paths: ['web/**', '.github/workflows/web-quality.yml']
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-quality.yml'
   push:
     branches: [main, develop]
-    paths: ['web/**', '.github/workflows/web-quality.yml']
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-quality.yml'
 
 jobs:
   verify:
@@ -30,6 +41,52 @@ jobs:
       - name: Lint (oxlint)
         run: npm run lint -- --deny-warnings
 
-      # build: tsc -b (type-check) then vite build
+      # Guards the CSS Modules tokens: a class used in TSX but missing in the
+      # stylesheet (or the other way round) is a silent visual bug.
+      - name: CSS modules check
+        run: node scripts/check-css-modules.mjs
+
+      # The UI is Vietnamese; a broken byte sequence would ship mojibake.
+      - name: Encoding check (UTF-8)
+        run: node scripts/check-encoding.mjs
+
+      # build: tsc -b (type-check, strict mode) then vite build
       - name: Type-check and build
         run: npm run build
+
+      # The bundle must stay inside its budget: a heavy new dependency would
+      # otherwise only be noticed by users complaining that the app got slow.
+      - name: Bundle size budget
+        run: node scripts/check-bundle-size.mjs
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      # Coverage must not fall below the ratchet floor set in vite.config.ts.
+      - name: Coverage threshold
+        run: npm run coverage
+
+      # E2E: the 7 core business flows. Chromium only, to keep the runtime
+      # bounded; the suite runs against the built app in demo mode.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests (Playwright)
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
+
+      # The coverage report shows which parts of the app are still untested.
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: web/coverage/
+          retention-days: 7

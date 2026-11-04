@@ -1,1 +1,1 @@
-export * from './PolicyPage';
+export { PolicyPage } from './PolicyPage';

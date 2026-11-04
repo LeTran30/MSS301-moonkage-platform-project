@@ -1,1 +1,1 @@
-export { ConfirmAccountForm, RegisterForm } from './ui/RegisterForms';
+export { useRegister } from './model/useRegister';

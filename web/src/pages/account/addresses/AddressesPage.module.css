@@ -1,0 +1,60 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.topRow strong {
+  font-size: var(--text-sm);
+}
+.topRow p {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.badgeDef {
+  font-size: 0.6875rem;
+  background: var(--color-gold-soft);
+  color: var(--color-gold-hover);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: var(--weight-semibold);
+}
+.bottomRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+}
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+.editBtn {
+  color: var(--color-primary);
+}
+.delBtn {
+  color: var(--color-danger);
+}
