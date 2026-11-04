@@ -53,6 +53,16 @@ public class Payment {
     @Column(unique = true)
     private String gatewayTxnRef;
 
+    /**
+     * The caller's key for this payment (BE-08b): the acceptanceId, the checkoutId, the vendorId.
+     *
+     * <p>Unique among the PENDING payments, so a retried POST /internal/payments answers the payment that already
+     * exists instead of creating a second one (a lost answer must not charge the buyer twice). A payment that already
+     * failed does not hold the key: the payer may start a new attempt.
+     */
+    @Column(name = "idempotency_key", length = 64)
+    private String idempotencyKey;
+
     /** The gateway's own transaction number. */
     @Column(length = 64)
     private String gatewayTxnNo;

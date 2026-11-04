@@ -1,6 +1,7 @@
 package com.moonkage.identity.outbox;
 
 import com.moonkage.identity.common.config.RabbitConfig;
+import com.moonkage.observability.OutboxMetrics;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -28,6 +29,7 @@ class OutboxRelay {
     private final OutboxEventRepository outboxEventRepository;
     private final RabbitTemplate rabbitTemplate;
     private final OutboxProperties properties;
+    private final OutboxMetrics outboxMetrics;
 
     @Scheduled(fixedDelayString = "${outbox.relay-interval}")
     @Transactional
@@ -46,9 +48,16 @@ class OutboxRelay {
                         event.getRoutingKey(),
                         event.getAttempts(),
                         e.getMessage());
+                publishUnpublishedCount();
                 return;
             }
         }
+        publishUnpublishedCount();
+    }
+
+    /** BE-11b: the gauge that shows the relay is stuck before a customer asks about it. */
+    private void publishUnpublishedCount() {
+        outboxMetrics.setUnpublished(outboxEventRepository.countByPublishedAtIsNull());
     }
 
     private void send(OutboxEvent event) {

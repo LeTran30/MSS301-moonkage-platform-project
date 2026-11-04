@@ -6,6 +6,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+/**
+ * catalog-service is a read model (L-18): it copies the products of vendor-service through the projection and
+ * serves them. It never writes a product itself.
+ */
 @EnableScheduling
 @ConfigurationPropertiesScan
 @SpringBootApplication

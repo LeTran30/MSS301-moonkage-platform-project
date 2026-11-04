@@ -1,5 +1,6 @@
 package com.moonkage.payment.service.impl;
 
+import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.payment.config.RabbitConfig;
 import com.moonkage.payment.config.VnpayProperties;
 import com.moonkage.payment.dto.event.PaymentFailedEvent;
@@ -54,10 +55,11 @@ public class PaymentServiceImpl implements PaymentService {
     private final VnpayGateway vnpayGateway;
     private final VnpayProperties vnpayProperties;
     private final TransactionTemplate transactionTemplate;
+    private final MoneyMetrics moneyMetrics;
 
     @Override
     @Transactional
-    public CreatePaymentResponse create(CreatePaymentRequest request) {
+    public CreatePaymentResponse create(CreatePaymentRequest request, String idempotencyKey) {
         Instant now = Instant.now();
         Instant expiresAt =
                 request.expiresAt() != null ? request.expiresAt() : now.plus(vnpayProperties.getDefaultLifetime());
@@ -73,6 +75,12 @@ public class PaymentServiceImpl implements PaymentService {
         if (!vnpayProperties.isConfigured()) {
             throw new AppException(ErrorCode.GATEWAY_NOT_CONFIGURED);
         }
+        // BE-08b: the same key answers the payment that already exists. A retried call (a lost answer) must not
+        // create a second payment for the same deposit.
+        Payment reused = findReusable(idempotencyKey, request);
+        if (reused != null) {
+            return new CreatePaymentResponse(reused.getId(), payUrlOf(reused));
+        }
         // 32 hex characters: unique, and only characters VNPay accepts in vnp_TxnRef
         String txnRef = UUID.randomUUID().toString().replace("-", "");
         Payment payment = new Payment();
@@ -82,6 +90,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setAmount(request.amount());
         payment.setMethod("VNPAY");
         payment.setGatewayTxnRef(txnRef);
+        payment.setIdempotencyKey(idempotencyKey);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setExpiresAt(expiresAt);
         Payment saved = paymentRepository.saveAndFlush(payment);
@@ -95,10 +104,42 @@ public class PaymentServiceImpl implements PaymentService {
         return new CreatePaymentResponse(paymentId, payUrl);
     }
 
+    /**
+     * The payment a repeated call may answer, or null when there is none (BE-08b).
+     *
+     * <p>Only a payment for the same purpose, reference and amount may be answered: the same key with another amount
+     * is a different request and must not silently become the first one. A payment that already failed (the payer
+     * cancelled, the deadline passed) is not answered either — the caller may start a new attempt.
+     */
+    private Payment findReusable(String idempotencyKey, CreatePaymentRequest request) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return null;
+        }
+        return paymentRepository
+                .findPendingByIdempotencyKey(idempotencyKey)
+                .filter(payment -> payment.getPurpose() == request.purpose())
+                .filter(payment -> payment.getReferenceId().equals(request.referenceId()))
+                .filter(payment -> payment.getAmount() == request.amount())
+                .orElse(null);
+    }
+
+    /** The VNPay link of an existing payment, rebuilt the same way it was first built (BE-08b). */
+    private String payUrlOf(Payment payment) {
+        Instant createdAt = payment.getCreatedAt() != null ? payment.getCreatedAt() : Instant.now();
+        return vnpayGateway.payUrl(
+                payment.getGatewayTxnRef(),
+                payment.getAmount(),
+                "Moonkage " + payment.getPurpose() + " " + payment.getGatewayTxnRef(),
+                createdAt,
+                payment.getExpiresAt());
+    }
+
     @Override
     public VnpayIpnResponse handleIpn(Map<String, String> callback) {
         if (!vnpayGateway.isAuthentic(callback)) {
             log.warn("VNPay IPN with an invalid signature for {}", callback.get(VnpayGateway.TXN_REF));
+            // BE-11b: a rising count here means someone is forging IPNs, or the key was rotated wrongly
+            moneyMetrics.ipnSignatureInvalid();
             return VnpayIpnResponse.INVALID_SIGNATURE;
         }
         try {
@@ -175,6 +216,8 @@ public class PaymentServiceImpl implements PaymentService {
         } else if (payment.getStatus() == PaymentStatus.PENDING) {
             fail(payment, PaymentFailedEvent.DECLINED, Instant.now());
         }
+        // BE-11b: the IPN was understood, whatever the outcome was
+        moneyMetrics.ipnConfirmed();
         return VnpayIpnResponse.CONFIRMED;
     }
 
@@ -201,6 +244,8 @@ public class PaymentServiceImpl implements PaymentService {
         allocationRepository
                 .findByPaymentId(payment.getId())
                 .forEach(share -> ledgerService.collect(share.getOrderId(), share.getAmount(), payment.getId()));
+        // BE-11b: the counter that is compared with order.created to catch money without an order
+        moneyMetrics.paymentSucceeded(payment.getPurpose().name());
         PaymentSucceededEvent event = new PaymentSucceededEvent(
                 UUID.randomUUID().toString(),
                 payment.getId(),

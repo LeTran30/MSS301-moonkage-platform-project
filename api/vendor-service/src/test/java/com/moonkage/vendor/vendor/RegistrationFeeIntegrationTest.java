@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -103,7 +104,7 @@ class RegistrationFeeIntegrationTest {
                 .thenAnswer(call -> call.<String>getArgument(0).startsWith(TEMP_PREFIX));
         when(objectStorage.moveUploadedFile(anyString(), any(), any(), anyString()))
                 .thenAnswer(call -> call.<String>getArgument(3) + "/" + UUID.randomUUID());
-        when(paymentClient.createPayment(any()))
+        when(paymentClient.createPayment(anyString(), any()))
                 .thenReturn(new CreatePaymentResponse("payment-1", "https://sandbox.vnpayment.vn/pay"));
     }
 
@@ -165,7 +166,8 @@ class RegistrationFeeIntegrationTest {
 
         verify(paymentClient)
                 .createPayment(
-                        new CreatePaymentRequest(PaymentPurpose.REGISTRATION_FEE, vendorId, ownerId, DEFAULT_FEE));
+                        eq(vendorId),
+                        eq(new CreatePaymentRequest(PaymentPurpose.REGISTRATION_FEE, vendorId, ownerId, DEFAULT_FEE)));
     }
 
     @Test
@@ -175,7 +177,7 @@ class RegistrationFeeIntegrationTest {
         mvc.perform(asOwner(post("/api/vendors/{id}/registration-fee-payments", vendorId)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("VENDOR_012"));
-        verify(paymentClient, never()).createPayment(any());
+        verify(paymentClient, never()).createPayment(anyString(), any());
     }
 
     @Test

@@ -17,7 +17,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-/** Central error boundary: the ApiResponse envelope on /api/products and /api/interprovince-fees. */
+/**
+ * Central error boundary of catalog-service: the ApiResponse envelope on /api/products and /api/interprovince-fees.
+ *
+ * <p>BE-09: catalog is a read model, so there is no file upload and no call to another service any more - the
+ * handlers for those two cases are gone with the writer they belonged to.
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {

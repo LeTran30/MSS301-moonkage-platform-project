@@ -22,6 +22,17 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     Optional<Payment> findByGatewayTxnRef(String gatewayTxnRef);
 
+    /**
+     * The open payment a repeated call for the same key must answer instead of creating a second one (BE-08b).
+     *
+     * <p>Only a PENDING payment holds the key: one that already failed does not, so the payer may try again.
+     */
+    @Query("""
+            select p from Payment p
+            where p.idempotencyKey = :idempotencyKey and p.status = com.moonkage.payment.enums.PaymentStatus.PENDING
+            """)
+    Optional<Payment> findPendingByIdempotencyKey(String idempotencyKey);
+
     /** Admin list (AC-51.3), newest first; {@code purpose} null = every purpose. */
     @Query("""
             select p from Payment p

@@ -1,5 +1,6 @@
 package com.moonkage.order.service.impl;
 
+import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
 import com.moonkage.order.client.dto.CreatePaymentRequest;
 import com.moonkage.order.client.dto.CreatePaymentResponse;
@@ -59,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderProperties properties;
     private final EntityManager entityManager;
     private final OrderFileService fileService;
+    private final MoneyMetrics moneyMetrics;
 
     @Override
     @Transactional(readOnly = true)
@@ -147,13 +149,15 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
         try {
-            CreatePaymentResponse payment = paymentClient.createPayment(new CreatePaymentRequest(
-                    CreatePaymentRequest.REMAINDER,
+            CreatePaymentResponse payment = paymentClient.createPayment(
                     orderId,
-                    caller.accountId(),
-                    order.getRemainingAmount(),
-                    null,
-                    null));
+                    new CreatePaymentRequest(
+                            CreatePaymentRequest.REMAINDER,
+                            orderId,
+                            caller.accountId(),
+                            order.getRemainingAmount(),
+                            null,
+                            null));
             return new PaymentLinkResponse(payment.paymentId(), payment.paymentUrl());
         } catch (FeignException.Conflict e) {
             // P-03: already paid; payment.succeeded completes the order
@@ -199,6 +203,8 @@ public class OrderServiceImpl implements OrderService {
         entityManager.persist(order);
         quote.items().forEach(line -> orderItemRepository.save(toItem(order, event.quoteId(), line)));
         entityManager.flush();
+        // BE-11b: the counter that is compared with payment.succeeded to catch money without an order
+        moneyMetrics.orderCreated(OrderKind.CUSTOM_ORDER.name());
         orderEvents.announce(RabbitConfig.ORDER_CREATED_ROUTING_KEY, order);
     }
 

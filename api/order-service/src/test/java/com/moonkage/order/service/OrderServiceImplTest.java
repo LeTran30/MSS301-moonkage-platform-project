@@ -12,6 +12,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
@@ -30,6 +31,7 @@ import com.moonkage.order.repository.ProgressUpdateRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.security.Role;
 import com.moonkage.order.service.impl.OrderServiceImpl;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.time.Instant;
@@ -72,7 +74,8 @@ class OrderServiceImplTest {
                 mock(PaymentClient.class),
                 new OrderProperties(),
                 entityManager,
-                mock(OrderFileService.class));
+                mock(OrderFileService.class),
+                new MoneyMetrics(new SimpleMeterRegistry()));
         order = new Order();
         order.setId(ORDER_ID);
         order.setKind(OrderKind.BUY_NOW);
