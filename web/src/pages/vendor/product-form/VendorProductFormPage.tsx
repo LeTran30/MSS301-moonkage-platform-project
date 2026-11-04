@@ -121,10 +121,9 @@ export function VendorProductFormPage() {
       return 'Bánh bán lại cần ghi rõ thương hiệu và xuất xứ (BR-12).';
     }
     if (!expiryDate) return 'Vui lòng chọn hạn sử dụng.';
+    if (selectedCrusts.length === 0) return 'FR-54: Sản phẩm bắt buộc gắn ít nhất 1 loại Vỏ bánh.';
+    if (selectedFillings.length === 0) return 'FR-54: Sản phẩm bắt buộc gắn ít nhất 1 loại Nhân bánh.';
     if (images.length === 0) return `Sản phẩm cần ít nhất 1 ảnh (tối đa ${MAX_PRODUCT_IMAGES}).`;
-    if (selectedCrusts.length === 0 || selectedFillings.length === 0) {
-      return 'FR-54: Sản phẩm bắt buộc phải gắn ít nhất 1 loại Vỏ và 1 loại Nhân.';
-    }
     if (!description.trim()) return 'Vui lòng nhập mô tả sản phẩm.';
     return null;
   }
@@ -223,13 +222,6 @@ export function VendorProductFormPage() {
             onPiecesPerBoxChange={setPiecesPerBox}
           />
 
-          <ProductImagesField
-            images={images}
-            uploading={uploading}
-            onUpload={(file) => void handleUploadImage(file)}
-            onRemove={(key) => setImages((prev) => prev.filter((image) => image.key !== key))}
-          />
-
           <ProductTaxonomyPicker
             crusts={taxonomyCrusts}
             fillings={taxonomyFillings}
@@ -237,6 +229,13 @@ export function VendorProductFormPage() {
             selectedFillings={selectedFillings}
             onToggleCrust={toggleCrust}
             onToggleFilling={toggleFilling}
+          />
+
+          <ProductImagesField
+            images={images}
+            uploading={uploading}
+            onUpload={(file) => void handleUploadImage(file)}
+            onRemove={(key) => setImages((prev) => prev.filter((image) => image.key !== key))}
           />
 
           <ProductDeliveryDescription
