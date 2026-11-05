@@ -1,6 +1,6 @@
 # Đối chiếu tuân thủ chuẩn kiến trúc
 
-> **Trạng thái:** Rà soát (2026-11-05) · **Đợt xử lý 2026-11-05 đã đóng 31/32 phát hiện** (mọi phát hiện trừ B-02 — file `check-no-spec-ids.mjs` đã tạo nhưng chưa `git add`) + 1 hạng mục mới (quét responsive toàn diện). Đối chiếu mã nguồn thực tế với [chuẩn kiến trúc](architecture-standards.md).
+> **Trạng thái:** Rà soát (2026-11-05) · **Đợt xử lý 2026-11-05 đã đóng 32/32 phát hiện** + 1 hạng mục mới (quét responsive toàn diện). Đối chiếu mã nguồn thực tế với [chuẩn kiến trúc](architecture-standards.md).
 > **Phạm vi:** `api/` (14 module Maven), `web/src` (570 file TS/TSX), `docs/` (72 file Markdown), hạ tầng repo.
 > **Cách đọc:** mỗu phát hiện đều có đường dẫn + số dòng đã kiểm chứng bằng đọc file, không suy đoán.
 > **Lưu ý:** các agent khác đang sửa `web/src/**` và `api/**` song song. Số dòng trong báo cáo này phản ánh trạng thái tại thời điểm rà soát; trước khi xử lý, kiểm lại file.
@@ -32,7 +32,7 @@
 | **Repo hygiene** | Đạt phần lớn. `.env` không commit, `target/` và `dist/` không commit, `debug.log` không tồn tại, 8 file scratch đã được ignore |
 | **Tài liệu** | **Đạt 2026-11-05.** `docs/README.md` bỏ trống cột Tổng quan của `catalog` (→ đã sửa); `api-db/README.md` ghi "L-01 → L-18" (→ đã sửa); 10 file tài liệu web dùng tên `UPPER_SNAKE_CASE` (→ đã đổi kebab-case); 4 service chưa có `docs/services/<service>/README.md` (→ đã sửa: thêm `order`, `payment`, `orchestrator`, `common-storage`; 7 module còn lại trong `api/pom.xml` cố ý không có README vì là hạ tầng/thư viện — đã ghi rõ trong `docs/README.md`); 20 file tài liệu class chưa có quy trình cập nhật (→ đã sửa: quy tắc 9 + gate `check-class-docs.mjs` trong CI); `docs/services/identity/README.md` mô tả `Role` cũ `CUSTOMER`/`SELLER` (→ đã sửa theo D-19: `MEMBER`/`ADMIN`) |
 
-**Tổng số phát hiện: 32** — 3 Blocker, 10 High, 12 Medium, 7 Low. **Đã đóng 2026-11-05: 31 phát hiện**; còn **1 nợ** (B-02 — file `check-no-spec-ids.mjs` cần `git add`, xem §8).
+**Tổng số phát hiện: 32** — 3 Blocker, 10 High, 12 Medium, 7 Low. **Đã đóng 2026-11-05: 32/32 phát hiện** (commit `9deb6dd`); không còn nợ trong báo cáo này.
 
 ---
 
@@ -41,13 +41,13 @@
 | # | Mức | Vùng | Phát hiện | Vị trí |
 |---|---|---|---|---|
 | B-01 | Blocker | Tài liệu | Bảng "Services" trong `docs/README.md` bỏ trống cột Tổng quan của `catalog` dù file có thật — **đã sửa 2026-11-05** | `docs/README.md` (bảng "Services") |
-| B-02 | Blocker | CI | `check-no-spec-ids.mjs` được `package.json` và CI gọi nhưng **chưa được commit** — file đã tạo, cần `git add` | `web/package.json:12`, `.github/workflows/web-quality.yml:52` |
+| B-02 | Blocker | CI | `check-no-spec-ids.mjs` được `package.json` và CI gọi nhưng **chưa được commit** — **đã sửa 2026-11-05** (file đã `git add`, commit `9deb6dd`) | `web/package.json:12`, `.github/workflows/web-quality.yml:52` |
 | B-03 | Blocker | Tài liệu | `api-db/README.md` ghi "Quyết định L-01 → L-18" trong khi `decisions.md` đã có L-19 — **đã sửa 2026-11-05** | `docs/architecture/api-db/README.md:17` |
 | H-01 | High | Backend | 7 bản `ApiResponse` không đồng nhất (2 bản thiếu trường `errors`) — **đã sửa 2026-11-05** (chỉ còn 1 bản ở `common-api`) | 7 file, xem §4.1 |
 | H-02 | High | Backend | 7 bản xử lý lỗi trùng logic (6 `GlobalExceptionHandler` + 1 `ApiExceptionHandler`), mỗi bản một kiểu — **đã sửa 2026-11-05** | xem §4.2 |
 | H-03 | High | Backend | 5 bản `ErrorCode` với tập mã `COMMON_*` khác nhau giữa các service — **đã sửa 2026-11-05** | xem §4.3 |
 | H-04 | High | Backend | 5 bản `OutboxRelay` + 5 bản `OutboxServiceImpl` — 6 service cùng chạy outbox — **đã sửa 2026-11-05** (chỉ còn 1 bản `OutboxRelay` ở `common-outbox`) | xem §4.4 |
-| H-05 | High | Backend | `show-sql: true` hardcode ở 3 service, 4 service còn lại dùng biến môi trường | xem §4.5 |
+| H-05 | High | Backend | `show-sql: true` hardcode ở 3 service, 4 service còn lại dùng biến môi trường — **đã sửa 2026-11-05** (`${JPA_SHOW_SQL:false}` ở cả 7) | xem §4.5 |
 | H-06 | High | Frontend | 19 file `.module.css` không có file `.tsx`/`.ts` tương ứng — **đã sửa 2026-11-05** (gate `check-orphan-css.mjs` xanh; 12 stylesheet còn lại đều có call site thật) | xem §4.6 |
 | H-07 | High | Frontend | 2 slice đã bị xoá nhưng còn sót file CSS mồ côi — **đã sửa 2026-11-05** | `web/src/entities/sitemap/ui/sitemapUi.module.css`, `web/src/features/switch-persona/ui/QuickPersonaSelector.module.css` |
 | H-08 | High | Tài liệu | 5 service chưa có `docs/services/<service>/README.md` — **đã sửa 2026-11-05** | xem §4.7 |
