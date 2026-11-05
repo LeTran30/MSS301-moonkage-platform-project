@@ -1,6 +1,6 @@
 # Đối chiếu tuân thủ chuẩn kiến trúc
 
-> **Trạng thái:** Rà soát (2026-11-05) · **Đợt xử lý 2026-11-05 đã đóng 32/32 phát hiện** + 1 hạng mục mới (quét responsive toàn diện). Đối chiếu mã nguồn thực tế với [chuẩn kiến trúc](architecture-standards.md).
+> **Trạng thái:** Rà soát (2026-11-05) · **Đợt xử lý 2026-11-05 đã đóng 32/32 phát hiện** + 1 hạng mục mới (quét responsive toàn diện) + **1 phát hiện M-13 đóng 2026-11-06** (CSP chặn request ở môi trường HTTP). Đối chiếu mã nguồn thực tế với [chuẩn kiến trúc](architecture-standards.md).
 > **Phạm vi:** `api/` (14 module Maven), `web/src` (570 file TS/TSX), `docs/` (72 file Markdown), hạ tầng repo.
 > **Cách đọc:** mỗu phát hiện đều có đường dẫn + số dòng đã kiểm chứng bằng đọc file, không suy đoán.
 > **Lưu ý:** các agent khác đang sửa `web/src/**` và `api/**` song song. Số dòng trong báo cáo này phản ánh trạng thái tại thời điểm rà soát; trước khi xử lý, kiểm lại file.
@@ -32,7 +32,7 @@
 | **Repo hygiene** | Đạt phần lớn. `.env` không commit, `target/` và `dist/` không commit, `debug.log` không tồn tại, 8 file scratch đã được ignore |
 | **Tài liệu** | **Đạt 2026-11-05.** `docs/README.md` bỏ trống cột Tổng quan của `catalog` (→ đã sửa); `api-db/README.md` ghi "L-01 → L-18" (→ đã sửa); 10 file tài liệu web dùng tên `UPPER_SNAKE_CASE` (→ đã đổi kebab-case); 4 service chưa có `docs/services/<service>/README.md` (→ đã sửa: thêm `order`, `payment`, `orchestrator`, `common-storage`; 7 module còn lại trong `api/pom.xml` cố ý không có README vì là hạ tầng/thư viện — đã ghi rõ trong `docs/README.md`); 20 file tài liệu class chưa có quy trình cập nhật (→ đã sửa: quy tắc 9 + gate `check-class-docs.mjs` trong CI); `docs/services/identity/README.md` mô tả `Role` cũ `CUSTOMER`/`SELLER` (→ đã sửa theo D-19: `MEMBER`/`ADMIN`) |
 
-**Tổng số phát hiện: 32** — 3 Blocker, 10 High, 12 Medium, 7 Low. **Đã đóng 2026-11-05: 32/32 phát hiện** (commit `9deb6dd`); không còn nợ trong báo cáo này.
+**Tổng số phát hiện: 33** — 3 Blocker, 10 High, 13 Medium, 7 Low. **Đã đóng 2026-11-05: 32/32 phát hiện** (commit `9deb6dd`); **+1 phát hiện M-13 đóng 2026-11-06** (CSP chặn request ở môi trường HTTP + E2E pass giả do `reuseExistingServer`); không còn nợ trong báo cáo này.
 
 ---
 
@@ -65,6 +65,7 @@
 | M-10 | Medium | Tài liệu | `docs/services/*/classes/*.md` (20 file) là tài liệu sinh tay theo class, không có quy trình cập nhật — **đã sửa 2026-11-05** | xem §5.8 |
 | M-11 | Medium | Dữ liệu | Sổ ID không ghi `000300000101` (bậc giá) và `000900000001` (outbox event) — **đã sửa 2026-11-05** | xem §5.9 |
 | M-12 | Medium | Tài liệu | `docs/services/identity/README.md` mô tả `Role` cũ (`CUSTOMER`/`SELLER`) — **đã sửa 2026-11-05** | xem §5.10 |
+| M-13 | Medium | Frontend | CSP meta chứa `upgrade-insecure-requests` ở môi trường HTTP ⇒ trình duyệt nâng request `http://` của gateway lên `https://` rồi chặn ⇒ danh mục rỗng, E2E fail — **đã sửa 2026-11-06** | xem §5.11 |
 | L-01 | Low | Repo | `api/quotation-service/.LCKpom.xml~` — file backup của editor nằm trong cây module — **đã sửa 2026-11-05** | xem §6.1 |
 | L-02 | Low | Frontend | `web/playwright.config.ts` không khai báo `testIgnore` — file `*_tmp-*.spec.ts` sẽ chạy trong CI — **đã sửa 2026-11-05** | xem §6.2 |
 | L-03 | Low | Backend | `VendorServiceImpl.java` 490 dòng — vượt ngưỡng 400 — **đã sửa 2026-11-05** (490 → 272 dòng, tách 4 lớp trách nhiệm) | xem §6.3 |
@@ -932,6 +933,38 @@ Dòng cuối của §5 cũng trỏ tới D-26 trong `api-db/decisions.md` để 
 
 **Nỗ lực:** 1 giờ. **Chủ sở hữu:** người giữ tài liệu. **Trạng thái: đã xong 2026-11-05.**
 
+### M-13 — CSP meta chứa `upgrade-insecure-requests` ở môi trường HTTP làm chặn request tới API gateway
+
+**Vị trí:** `web/src/shared/config/security.ts` (`CSP_DIRECTIVES`, `applyCspMeta()`, `cspConnectSources()`), `web/src/app/main.tsx:46`, `web/playwright.config.ts` (`webServer.reuseExistingServer`).
+
+**Vấn đề.** `upgrade-insecure-requests` nằm chung trong `CSP_DIRECTIVES`, nên thẻ `<meta>` sinh ra ở bản build (`import.meta.env.PROD` → `applyCspMeta()`) cũng chứa directive này.
+
+Bản E2E được phục vụ bằng `vite preview` tại `http://127.0.0.1:4173`. Origin loopback là "potentially trustworthy" nên vẫn là secure context ⇒ trình duyệt **vẫn áp dụng** `upgrade-insecure-requests` ⇒ mọi request `http://127.0.0.1:8080` (API gateway trong docker compose, chỉ phục vụ HTTP) bị nâng thành `https://127.0.0.1:8080`. Nhưng `connect-src` chỉ khai `http://127.0.0.1:8080` ⇒ trình duyệt chặn request:
+
+```text
+Connecting to 'https://127.0.0.1:8080/api/products?provinceCode=01&size=100'
+violates the following Content Security Policy directive:
+"connect-src 'self' http://127.0.0.1:8080 ws://127.0.0.1:8080". The action has been blocked.
+```
+
+Hậu quả: danh mục rỗng (`locator('article')` không tìm thấy), timeout mở trang chi tiết, và 3 test "không có lỗi console" đỏ.
+
+**Vấn đề thứ hai, cùng lúc phát hiện.** `playwright.config.ts` đặt `reuseExistingServer: !process.env.CI` ⇒ khi đã có `vite preview` cũ ở port 4173, Playwright **không chạy** lệnh `command` (vốn gồm `npm run build`) và phục vụ bundle cũ. Lần E2E "xanh" trước đó thực ra là **pass giả** trên bundle cũ; lỗi chỉ lộ ra ở lần build lại.
+
+**Đã xử lý (2026-11-06).**
+
+| Vị trí | Trước | Sau |
+|---|---|---|
+| `CSP_DIRECTIVES` | chứa `'upgrade-insecure-requests'` | không chứa; directive tách thành hằng `UPGRADE_INSECURE_REQUESTS` kèm docblock giải thích **vì sao** không được thêm lại |
+| `buildCspHeader()` | gián tiếp qua `CSP_DIRECTIVES` | thêm `UPGRADE_INSECURE_REQUESTS` tường minh — header HTTP production **giữ** directive này |
+| `applyCspMeta()` | luôn kèm directive | chỉ kèm khi `isSecureOrigin()` (`window.location.protocol === 'https:'`) |
+| `cspConnectSources()` | khai `http://`/`ws://` | khai **cả hai** biến thể `http://`+`https://` và `ws://`+`wss://` cho cùng host, để CSP không lệch với `upgrade-insecure-requests` khi deploy qua HTTPS |
+| `web/playwright.config.ts` | `reuseExistingServer: !process.env.CI` | `reuseExistingServer: false` — luôn build + start preview mới, không còn pass giả trên bundle cũ |
+
+Kiểm chứng: `npm run check` xanh (87 file test / 362 test pass); `npm run e2e` **45 passed / 5 skipped / 0 failed**; `rg -o 'https?://127\.0\.0\.1:8080' dist` xác nhận bundle build đúng gateway. Test khoá hành vi mới nằm ở `web/src/shared/config/__tests__/security.test.ts` (meta CSP trên origin http không có directive; `buildCspHeader()` có; `cspConnectSources()` có cả `https://` variant).
+
+**Nỗ lực:** 2 giờ. **Trạng thái: đã xong 2026-11-06.**
+
 ---
 
 ## 6. Phát hiện Low
@@ -1050,7 +1083,7 @@ Gateway định tuyến theo Eureka nên đường dẫn thực tế vẫn là `
 
 Đây là điểm D-24 đã ghi "**Mở: code lệch D-18**" — chưa chốt hướng đi.
 
-**Đã đề xuất (2026-11-05).** Xem ADR [D-30](api-db/decisions.md#d-30-gateway-định-tuyến-theo-aggregate-root-tắt-discoverylocator-theo-từng-service) trong `docs/architecture/api-db/decisions.md`: giữ locator tắt dần theo từng service, mỗi service chuyển xong thì đường dẫn cũ trả `301` về đường dẫn mới trong 1 release, rồi tắt locator.
+**Đã đề xuất (2026-11-05).** Xem ADR [D-30](api-db/decisions.md#d-30-gateway-định-tuyến-theo-aggregate-root-tắt-discoverylocator-theo-từng-service) trong `docs/architecture/api-db/decisions.md`: giữ locator tắt dần theo từng service, mỗi service chuyển xong thì đường dẫn cũ trả `308` về đường dẫn mới trong 1 release, rồi tắt locator.
 
 **Đã làm 2026-11-05 — phần an toàn của D-30.** `api/api-gateway/src/main/java/com/moonkage/gateway/config/LegacyPathRedirectFilter.java` — một `WebFilter` ở `Ordered.HIGHEST_PRECEDENCE` trả **308** kèm header `Location` cho dạng cũ `/<service>/api/...` của 3 service đã migrate:
 
@@ -1162,6 +1195,7 @@ Ghi nhận những phần đã đúng, để các đợt refactor sau không ph�
 | P2-13 | Mới (M-03) | Một hình dạng lỗi duy nhất cho catalog — **đã xong 2026-11-05** (mọi path trả envelope `ApiResponse`; `ErrorResponse.java` đã xoá; mã `CAT_001`…`CAT_010` và HTTP status **không đổi**; web đã kiểm chứng không phụ thuộc hình dạng cũ) | BE lead | 0,5 ngày |
 | P2-14 | Mới (M-05) | Dọn bảng `products` cũ của catalog — **đã xong 2026-11-05** (migration mới `V2026_11_06_1000__drop_legacy_products_table.sql`, idempotent; `V1__baseline.sql` không bị sửa vì Flyway ghi checksum; test `LegacyProductsTableMigrationTest` ghim trạng thái cuối) | Người phụ trách catalog | 2 giờ |
 | P2-15 | Mới (M-06) | Tách upload thành feature — **đã xong 2026-11-05** (feature mới `web/src/features/file-upload/`: `api/uploadFile.ts` + `model/useFileUpload.ts` + `index.ts`; `shared/api` chỉ giữ phần transport; 3 call site migrate, trong đó `LegalProfileForm` dùng hook riêng vì FSD cấm feature→feature) | FE lead | 0,5 ngày |
+| P2-16 | Mới (M-13) | CSP không nâng request HTTP lên HTTPS ở môi trường không phải production — **đã xong 2026-11-06** (`upgrade-insecure-requests` tách khỏi `CSP_DIRECTIVES`, meta CSP chỉ thêm khi origin HTTPS; `connect-src` khai cả `http://`+`https://`; `reuseExistingServer: false` để E2E không chạy bundle cũ) | FE lead | 2 giờ |
 
 ---
 
@@ -1172,7 +1206,7 @@ Những điểm dưới đây cần kiểm tra thủ công hoặc chạy môi tr
 | Điểm | Vì sao chưa kiểm chứng được | Cách kiểm chứng |
 |---|---|---|
 | **`testMatch` của Playwright có nhặt `_tmp-debug2.spec.ts` không** | **Đã kiểm chứng 2026-11-05:** đã thêm `testIgnore: ['**/_tmp*/**', '**/_tmp-*', '**/tmp-*']`; `npx playwright test --list` vẫn báo đúng **50 test / 9 file** khi có 3 file debug tạm trong `web/e2e/` → spec tạm bị loại | — |
-| **Hành vi thực tế của `npm run check` và `./mvnw verify`** | **Đã kiểm chứng 2026-11-05 (lần cuối):** `cd web && npm run check` → exit 0 (**87 file / 356 test**, build 1028 kB / ngân sách 1100 kB); `npm run e2e` → 45 pass / 5 skip; `cd api && mvn -B clean test` → **BUILD SUCCESS** 15/15 module, **926 test**, 0 failure / 0 error (14:04); `mvn -B verify -DskipTests` → exit 0 (Spotless + Checkstyle + Error Prone + ArchUnit xanh) | — |
+| **Hành vi thực tế của `npm run check` và `./mvnw verify`** | **Đã kiểm chứng 2026-11-06 (lần cuối):** `cd web && npm run check` → exit 0 (**87 file / 362 test**, build 1028.4 kB / ngân sách 1100 kB); `npm run e2e` → **45 pass / 5 skip / 0 fail** (build mới nhất, `reuseExistingServer: false`); `cd api && mvn -B clean test` → **BUILD SUCCESS** 15/15 module, **926 test**, 0 failure / 0 error (14:04); `mvn -B verify -DskipTests` → exit 0 (Spotless + Checkstyle + Error Prone + ArchUnit xanh) | — |
 | **`vendor-service` có `GlobalExceptionHandler` riêng không** | **Đã kiểm chứng:** có — `api/vendor-service/src/main/java/com/moonkage/vendor/common/exception/GlobalExceptionHandler.java:25` có `@RestControllerAdvice`. Vì vậy tổng số bản xử lý lỗi là 7, không phải 5 | — |
 | **Số lượng `product.upserted` thực tế trong seed** | Không chạy DB | Dựng `docker compose up -d` rồi đếm `SELECT count(*) FROM outbox_events WHERE event_type='product.upserted'` |
 | **`R__provinces.sql` có đúng 34 đơn vị không** | **Đã kiểm chứng:** đếm `('NN'` trong `api/catalog-service/src/main/resources/db/migration/R__provinces.sql` → **34 dòng**; enum `com.moonkage.reference.Province` → **34 hằng** (`HA_NOI` … `CA_MAU`). Hai bên khớp | — |
