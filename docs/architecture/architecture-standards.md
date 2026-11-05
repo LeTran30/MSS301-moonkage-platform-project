@@ -788,10 +788,27 @@ connect-src 'self' <gateway origin> <ws origin>
 object-src 'none'
 base-uri 'self'
 form-action 'self'
-upgrade-insecure-requests
+upgrade-insecure-requests   ← CHỈ có trong header HTTP production
 ```
 
 `frame-ancestors 'none'` chỉ dùng được qua **header HTTP**, không dùng được trong thẻ `<meta>`.
+
+#### Quy tắc `upgrade-insecure-requests` (dễ tái phát — đọc trước khi sửa CSP)
+
+`upgrade-insecure-requests` bảo trình duyệt nâng mọi request `http://` lên `https://`. Nó chỉ đúng khi **trang** được phục vụ qua HTTPS và mọi backend đã sẵn sàng phục vụ HTTPS.
+
+Vì vậy:
+
+| Nơi áp dụng | `upgrade-insecure-requests` | Lý do |
+|---|---|---|
+| Header HTTP ở nginx/CDN (`buildCspHeader()`) | **CÓ** | Đây là chuẩn production — trang chạy qua HTTPS. |
+| Thẻ `<meta>` ở bản build (`applyCspMeta()`) | **CHỈ khi origin là HTTPS** | Ở origin HTTP (local/CI/E2E) directive này nâng request `http://` của gateway lên `https://` và chặn chính request đó. |
+
+Origin loopback (`http://127.0.0.1:4173`) là "potentially trustworthy" nên vẫn là secure context ⇒ trình duyệt vẫn áp dụng `upgrade-insecure-requests` cho bản build E2E phục vụ bằng `vite preview`. Hậu quả nếu meta CSP chứa directive này ở môi trường HTTP: mọi `fetch`/`axios` tới `http://127.0.0.1:8080` bị trình duyệt chặn ⇒ danh mục rỗng, màn hình trắng, log console đầy lỗi CSP.
+
+Vì vậy **không** đặt `upgrade-insecure-requests` trong `CSP_DIRECTIVES` dùng chung; dùng hằng `UPGRADE_INSECURE_REQUESTS` và hàm `isSecureOrigin()`.
+
+Kèm theo đó, `connect-src` phải khai báo **cả hai** biến thể `http://` và `https://` (và `ws://`/`wss://`) cho cùng host, để CSP không lệch với `upgrade-insecure-requests` khi deploy thật qua HTTPS (`cspConnectSources()` tự sinh cả hai).
 
 Header khác phải gửi ở production: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Strict-Transport-Security`.
 

@@ -53,7 +53,6 @@ export function SidebarDrawer({
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         setOpen(false);
-        triggerRef.current?.focus();
       }
     }
 
@@ -70,9 +69,31 @@ export function SidebarDrawer({
     };
   }, [open]);
 
+  /*
+   * Trả tiêu điểm về nút đã mở khi drawer đóng.
+   *
+   * Vì sao là `useEffect` chứ không gọi `triggerRef.current?.focus()` ngay trong
+   * `close()`: `close` được truyền cho `children` (render prop) nên hàm này
+   * chạy trong lúc render — đọc `ref.current` lúc đó bị React Compiler chặn
+   * (lint `react(refs)`). Chuyển việc focus sang effect giữ đúng hành vi mà
+   * không đọc ref trong render.
+   *
+   * `wasOpenRef` chặn lần chạy đầu tiên (drawer vốn đã đóng khi mount) để
+   * không giành tiêu điểm khi trang vừa tải.
+   */
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    if (open) {
+      wasOpenRef.current = true;
+      return;
+    }
+    if (!wasOpenRef.current) return;
+    wasOpenRef.current = false;
+    triggerRef.current?.focus();
+  }, [open]);
+
   function close() {
     setOpen(false);
-    triggerRef.current?.focus();
   }
 
   return (

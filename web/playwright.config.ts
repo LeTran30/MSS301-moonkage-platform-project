@@ -69,7 +69,18 @@ export default defineConfig({
     // `vite preview` chạy bản build thật — gần với production hơn `vite dev`.
     command: 'npm run build && npx vite preview --port 4173 --host 127.0.0.1',
     url: 'http://127.0.0.1:4173',
-    reuseExistingServer: !process.env.CI,
+    /*
+     * LUÔN build + start preview mới; không bao giờ dùng lại server đang chạy.
+     *
+     * Lý do: `reuseExistingServer: true` (mặc định khi không phải CI) khiến
+     * Playwright **không chạy lệnh `command`**, nên bundle cũ vẫn được phục vụ.
+     * Test có thể xanh với code cũ ⇒ "pass giả", và lỗi thật chỉ lộ ra ở
+     * lần chạy sau khi build lại. Đó là cách E2E trở nên không đáng tin.
+     *
+     * `command` đã gồm `npm run build` ⇒ mỗi lần chạy E2E đều build lại từ
+     * code hiện tại.
+     */
+    reuseExistingServer: false,
     timeout: 120_000,
     env: {
       VITE_API_BASE_URL: API_BASE_URL,

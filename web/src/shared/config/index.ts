@@ -10,6 +10,8 @@ export {
   cspConnectSources,
   cspImageSources,
   CSP_DIRECTIVES,
+  UPGRADE_INSECURE_REQUESTS,
+  isSecureOrigin,
   SECURITY_HEADERS,
   type AuthMode,
 } from './security';

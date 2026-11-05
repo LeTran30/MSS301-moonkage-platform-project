@@ -260,7 +260,9 @@ Phía web, `web/src/shared/api/gateway.ts` đang trộn **cả hai** kiểu đư
    - Chuyển toàn bộ hằng số đường dẫn trong `web/src/shared/api/gateway.ts` sang dạng `/api/...`.
    - Cập nhật `SecurityConfig` của gateway: `permitAll()` chỉ liệt kê dạng mới (dạng cũ sẽ bị xoá khi locator tắt).
    - Chạy E2E trên `vite preview` (`web/playwright.config.ts` — `webServer.command` dựng bản build thật rồi chạy `vite preview --port 4173`) để chắc chắn không đường dẫn nào bị bỏ sót.
-3. **Đường dẫn cũ trả `301` trong một release**, rồi mới tắt `discovery.locator`. Không cắt thẳng: app mobile và tài liệu cũ còn gọi dạng có tên service.
+3. **Đường dẫn cũ trả `308` trong một release**, rồi mới tắt `discovery.locator`. Không cắt thẳng: app mobile và tài liệu cũ còn gọi dạng có tên service.
+   - `308` chứ không phải `301`: dạng cũ được gọi bằng method khác GET (bảng phí đổi bằng `PUT`), mà `301` khiến trình duyệt đổi thành GET và mất body. `308` giữ nguyên method và body nên caller không cảm nhận được khác biệt.
+   - Trả redirect bằng `WebFilter` ở `Ordered.HIGHEST_PRECEDENCE` (`api/api-gateway/src/main/java/com/moonkage/gateway/config/LegacyPathRedirectFilter.java`), **trước** chuỗi Spring Security: một `GlobalFilter` của gateway chạy sau security nên đường dẫn cũ cần token (bảng phí `PUT` chỉ admin) sẽ bị `403` trước khi tới được redirect.
 4. **Mỗi aggregate root thuộc đúng một service**; không có hai service cùng phục vụ `/api/<root>`. Đây là điều kiện để viết route tường minh mà không phải cân bằng đường dẫn.
 5. **`/internal/...` không bao giờ có route công khai.** Gateway tiếp tục `denyAll()` cho `/internal/**` và `/*/internal/**` (`SecurityConfig.java:68`) bất kể locator còn bật hay không — vì đường dẫn nội bộ của service đã nằm dưới `/internal/` nên nó đã bị chặn sẵn, không phụ thuộc vào việc tắt locator.
 6. **Đường dẫn có tên service chỉ được dùng trong code nội bộ** (OpenFeign gọi thẳng `lb://<service>/internal/...` qua `path = "/internal"` trong `@FeignClient`, ví dụ `api/order-service/src/main/java/com/moonkage/order/client/PaymentClient.java:12`) — không phải trong hợp đồng API công khai.
@@ -268,7 +270,7 @@ Phía web, `web/src/shared/api/gateway.ts` đang trộn **cả hai** kiểu đư
 **Consequences.**
 
 - Trong giai đoạn chuyển, hệ thống phục vụ **hai** dạng đường dẫn cho cùng một tài nguyên; bảng `SecurityConfig` phải cập nhật theo từng đợt, và cần nhớ rằng mọi `permitAll()` phải liệt kê cả hai dạng cho tới khi dạng cũ bị bỏ.
-- Việc tắt `discovery.locator` là một thay đổi có tác động lớn nhất: mọi đường dẫn không khai báo route tường minh sẽ trả 404. Vì vậy thứ tự bắt buộc là: khai báo route → chuyển client → chạy E2E → chuyển `301` → tắt locator.
+- Việc tắt `discovery.locator` là một thay đổi có tác động lớn nhất: mọi đường dẫn không khai báo route tường minh sẽ trả 404. Vì vậy thứ tự bắt buộc là: khai báo route → chuyển client → chạy E2E → chuyển `308` → tắt locator.
 - `web/src/shared/api/gateway.ts` là nơi tập trung đường dẫn; sau khi chuyển xong, file này chỉ còn `/api/...` và có thể kiểm bằng một test đơn giản: không hằng số nào chứa `"-service/api/"`.
 - Chưa chốt được ngày tắt locator vì còn phụ thuộc tiến độ app mobile — app Flutter gọi dạng có tên service và nằm ngoài repo này, nên không thể kiểm chứng từ đây.
 

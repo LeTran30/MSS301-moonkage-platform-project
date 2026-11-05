@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
  *
  * <p>Decision D-18 fixed the public path of a resource as {@code /api/<resource>/...}, without the name of the
  * service. The gateway still routes by the name of the service for some services, because their canonical path is
- * not served yet - see {@code application.yml}. D-30 asks for the old path to answer {@code 301} for one release
+ * not served yet - see {@code application.yml}. D-30 asks for the old path to answer {@code 308} for one release
  * before {@code discovery.locator} is turned off, so that a client that still calls the old form (the mobile app
  * lives outside this repository) is sent to the new one instead of breaking.
  *
