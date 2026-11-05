@@ -82,6 +82,9 @@
   color: var(--color-text-muted);
   margin-top: 2px;
 }
+.radioInput {
+  margin-top: 2px;
+}
 .hint {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
@@ -105,3 +108,4 @@
   background: var(--color-surface);
   color: var(--color-text);
 }
+

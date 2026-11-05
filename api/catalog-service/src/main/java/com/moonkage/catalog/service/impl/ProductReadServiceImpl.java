@@ -1,8 +1,8 @@
 package com.moonkage.catalog.service.impl;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.catalog.config.PublicImageProperties;
 import com.moonkage.catalog.dto.request.ProductSearchRequest;
-import com.moonkage.catalog.dto.response.PageResponse;
 import com.moonkage.catalog.dto.response.ProductFacetsResponse;
 import com.moonkage.catalog.dto.response.ProductListingResponse;
 import com.moonkage.catalog.dto.response.ProductReviewResponse;

@@ -22,24 +22,24 @@
   color: var(--color-text);
 }
 .tab.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  color: var(--color-zone);
+  border-bottom-color: var(--color-zone);
   font-weight: var(--weight-semibold);
 }
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   line-height: 1;
   background: var(--color-surface-3);
   color: var(--color-text-muted);
 }
 .tab.active .badge {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  background: var(--color-zone-soft);
+  color: var(--color-zone);
 }
 
 /* Pills variant */

@@ -60,7 +60,7 @@ export function VendorLedgerTable({ ledgers }: VendorLedgerTableProps) {
               <td className={styles.date}>{l.expectedPayoutDate || '—'}</td>
               <td className={styles.note}>
                 {l.disputeOpen
-                  ? 'Tạm khóa do khách gửi khiếu nại (FR-49)'
+                  ? 'Tạm khóa do khách gửi khiếu nại'
                   : l.payable
                     ? 'Đủ điều kiện giải ngân — gửi yêu cầu rút tiền'
                     : 'Chờ người mua xác nhận nhận hàng'}

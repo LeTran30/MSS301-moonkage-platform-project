@@ -14,14 +14,31 @@ type NavItem = {
 type Props = {
   hasShop?: boolean;
   acceptsCustomOrders?: boolean;
+  /** Gọi khi người dùng chọn một mục (dùng để đóng drawer trên mobile). */
+  onNavigate?: () => void;
+  /** Ẩn phần đầu (nhãn khu + trạng thái) — dùng khi nằm trong drawer đã có tiêu đề. */
+  showHeader?: boolean;
 };
 
-export function VendorSidebar({ hasShop = true, acceptsCustomOrders = true }: Props) {
+/**
+ * Nội dung menu kênh người bán — dùng chung cho sidebar cột cố định (desktop)
+ * và drawer trượt (mobile).
+ */
+export function VendorSidebarContent({
+  hasShop = true,
+  acceptsCustomOrders = true,
+  onNavigate,
+  showHeader = true,
+}: Props) {
   const location = useLocation();
 
   // Sitemap IA: Kênh người bán: Tổng quan · Đơn hàng · Yêu cầu báo giá · Sản phẩm · Tiền · Cài đặt bán hàng
   const items: NavItem[] = [
-    { title: 'Tổng quan bán hàng', path: routes.vendor.overview, icon: 'dashboard' },
+    {
+      title: 'Tổng quan bán hàng',
+      path: routes.vendor.overview,
+      icon: 'dashboard',
+    },
     { title: 'Đơn hàng của Shop', path: routes.vendor.orders, icon: 'package' },
     {
       title: 'Yêu cầu báo giá',
@@ -35,34 +52,55 @@ export function VendorSidebar({ hasShop = true, acceptsCustomOrders = true }: Pr
       icon: 'cake',
       condition: hasShop, // Ẩn khi không có Shop (IA)
     },
-    { title: 'Dòng tiền & Giải ngân', path: routes.vendor.disbursements, icon: 'wallet' },
-    { title: 'Đối soát tài khoản', path: routes.vendor.reconciliation, icon: 'receipt' },
-    { title: 'Cài đặt bán hàng', path: routes.vendor.settings, icon: 'settings' },
-    // M6.6 dùng chung cho người mua và chủ người bán (IA: "Người mua, Chủ người bán"):
-    // hộp thư thuộc về chính tài khoản đã đăng nhập, nên xưởng mở từ đây thay vì
+    {
+      title: 'Dòng tiền & Giải ngân',
+      path: routes.vendor.disbursements,
+      icon: 'wallet',
+    },
+    {
+      title: 'Đối soát tài khoản',
+      path: routes.vendor.reconciliation,
+      icon: 'receipt',
+    },
+    {
+      title: 'Cài đặt bán hàng',
+      path: routes.vendor.settings,
+      icon: 'settings',
+    },
+    // Hộp thư thuộc về chính tài khoản đã đăng nhập, nên xưởng mở từ đây thay vì
     // cần một hộp thư riêng.
-    { title: 'Thông báo cửa hàng', path: routes.base.notifications, icon: 'bell' },
+    {
+      title: 'Thông báo cửa hàng',
+      path: routes.base.notifications,
+      icon: 'bell',
+    },
   ];
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.header}>
-        <div className={styles.zoneTag}>KÊNH NGƯỜI BÁN</div>
-        <div className={styles.shopStatus}>
-          <span className={styles.onlineDot} /> Đang hoạt động
+    <>
+      {showHeader && (
+        <div className={styles.header}>
+          <div className={styles.zoneTag}>KÊNH NGƯỜI BÁN</div>
+          <div className={styles.shopStatus}>
+            <span className={styles.onlineDot} /> Đang hoạt động
+          </div>
         </div>
-      </div>
+      )}
 
-      <nav className={styles.nav}>
+      <nav className={styles.nav} aria-label="Điều hướng kênh người bán">
         {items
           .filter((it) => it.condition !== false)
           .map((it) => {
-            const isActive = location.pathname === it.path || (it.path !== routes.vendor.overview && location.pathname.startsWith(it.path));
+            const isActive =
+              location.pathname === it.path ||
+              (it.path !== routes.vendor.overview && location.pathname.startsWith(it.path));
             return (
               <Link
                 key={it.path}
                 to={it.path}
                 className={`${styles.navLink} ${isActive ? styles.active : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+                onClick={onNavigate}
               >
                 <Icon name={it.icon} size={18} />
                 <span className={styles.navLabel}>{it.title}</span>
@@ -73,10 +111,22 @@ export function VendorSidebar({ hasShop = true, acceptsCustomOrders = true }: Pr
       </nav>
 
       <div className={styles.footerLink}>
-        <Link to={routes.base.home} className={styles.backHomeBtn}>
-          <Icon name="arrowLeft" size={16} /> ↩ Về trang mua hàng
+        <Link to={routes.base.home} className={styles.backHomeBtn} onClick={onNavigate}>
+          <Icon name="arrowLeft" size={16} /> Về trang mua hàng
         </Link>
       </div>
+    </>
+  );
+}
+
+/**
+ * Sidebar cột cố định của kênh người bán (chỉ hiện từ breakpoint `lg` trở lên).
+ * Ở màn hình hẹp, `SidebarDrawer` hiển thị cùng nội dung trong drawer trượt.
+ */
+export function VendorSidebar(props: Props) {
+  return (
+    <aside className={styles.sidebar} aria-label="Kênh người bán">
+      <VendorSidebarContent {...props} />
     </aside>
   );
 }

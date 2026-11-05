@@ -1,8 +1,7 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
-import { mapAccountToUser, mapRole, storeTokens, userStore, type User } from '@/entities/user';
 
+import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
+import { mapAccountToUser, mapRole, storeTokens, type User } from '@/entities/user';
 /**
  * The write side of signing in (FR-01).
  *
@@ -19,11 +18,10 @@ import { mapAccountToUser, mapRole, storeTokens, userStore, type User } from '@/
  * interceptor reads them from there.
  */
 export async function login(username: string, password: string): Promise<User> {
-  if (isDemoMode()) {
-    const demo = userStore.get();
-    return { ...demo, phone: username || demo.phone };
-  }
-  const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.LOGIN, { username, password });
+  const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.LOGIN, {
+    username,
+    password,
+  });
   const dto = unwrap<{
     token: string;
     refreshToken: string;

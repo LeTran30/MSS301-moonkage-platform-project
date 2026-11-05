@@ -1,11 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { routes, provinceCodeOf, provinceNameOf, isDemoMode } from '@/shared/config';
-import { generateEntityId } from '@/shared/utils';
+import { routes, DEFAULT_PROVINCE_CODE } from '@/shared/config';
 import { Card, toast } from '@/shared/ui';
 import { useAction, validators } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
-import { vendorStore, type Vendor } from '@/entities/vendor';
 import {
   useRegisterVendor,
   VendorBusinessTypeStep,
@@ -35,18 +33,28 @@ export function SellRegisterPage() {
 
   const [form, setForm] = useState<VendorRegistrationForm>(() => ({
     businessType: 'HKD',
-    shopName: 'Tiệm Bánh Thủ Công Hương Xưa',
-    legalName: 'Hộ Kinh Doanh Bánh Thủ Công Hương Xưa',
-    taxCode: '0109988112',
+    /*
+     * Chỉ những trường mà máy chủ / hồ sơ tài khoản đã có mới được điền sẵn.
+     * Trước đây form tự điền tên shop, MST, CCCD, số tài khoản ngân hàng và
+     * địa chỉ giả — người dùng có thể submit nguyên xi hồ sơ bịa mà không
+     * hề biết. Nay mọi trường phải do người dùng tự nhập.
+     */
+    shopName: '',
+    legalName: '',
+    taxCode: '',
     representativeName: user.name,
-    idCardNumber: user.idCardNumberMasked || '079203009988',
+    idCardNumber: user.idCardNumberMasked ?? '',
     phone: user.phone,
-    address: 'Phố Cổ, Quận Hoàn Kiếm, Hà Nội',
+    address: '',
     sellingMode: 'BOTH',
     sourceType: 'Tự sản xuất',
-    provinceCode: provinceCodeOf('Hà Nội'),
-    bankName: 'MB Bank',
-    bankAccountNumber: '0123456789',
+    /*
+     * Tỉnh mặc định của sàn (`DEFAULT_PROVINCE_CODE`), không phải dữ liệu ảo:
+     * người bán chọn tỉnh thật ở bước 2.
+     */
+    provinceCode: DEFAULT_PROVINCE_CODE,
+    bankName: '',
+    bankAccountNumber: '',
     bankAccountHolder: user.name,
     businessLicenseKey: '',
     foodSafetyKey: '',
@@ -125,42 +133,18 @@ export function SellRegisterPage() {
         bankAccountHolder: form.bankAccountHolder,
         documents: [
           ...(form.businessLicenseKey
-            ? [{ kind: 'BUSINESS_LICENSE' as const, objectKey: form.businessLicenseKey }]
+            ? [
+                {
+                  kind: 'BUSINESS_LICENSE' as const,
+                  objectKey: form.businessLicenseKey,
+                },
+              ]
             : []),
           ...(form.foodSafetyKey
             ? [{ kind: 'FOOD_SAFETY' as const, objectKey: form.foodSafetyKey }]
             : []),
         ],
       });
-
-      // Chỉ trong chế độ demo mới giữ bản ghi cục bộ; ở chế độ API thật,
-      // màn hình đọc lại từ `GET /api/vendors` sau khi nộp hồ sơ.
-      if (isDemoMode()) {
-        const newVendorId = generateEntityId('ven');
-        const newVendor: Vendor = {
-          id: newVendorId,
-          name: form.shopName,
-          legalName: form.legalName,
-          businessType: form.businessType,
-          taxCode: form.taxCode,
-          representativeName: form.representativeName,
-          idCardNumberMasked: form.idCardNumber,
-          address: form.address,
-          province: provinceNameOf(form.provinceCode) || 'Hà Nội',
-          phone: form.phone,
-          email: user.email,
-          sellingMode: form.sellingMode,
-          sourceType: form.sourceType,
-          status: 'PENDING', // Đang chờ quản trị duyệt (FR-27)
-          hasOpeningFeePaid: false, // Chưa nộp phí mở bán 200.000đ (FR-53)
-          rating: 5.0,
-          reviewCount: 0,
-          introduction: 'Bánh trung thu truyền thống chuẩn hương vị phố cổ.',
-          deliveryProvinces: [provinceNameOf(form.provinceCode) || 'Hà Nội'],
-        };
-
-        vendorStore.set((prev) => [newVendor, ...prev]);
-      }
 
       // Chuyển tới B1.0: Kênh bán hàng (Trạng thái đang chờ duyệt hồ sơ)
       toast.success('Hồ sơ đăng ký người bán đã được nộp! Đội vận hành sẽ đối chiếu và phê duyệt.');
@@ -171,11 +155,11 @@ export function SellRegisterPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>ĐĂNG KÝ BÁN HÀNG TRÊN MOONKAGE (M7.1, FLOW 4, FR-26)</div>
+        <div className={styles.eyebrow}>ĐĂNG KÝ BÁN HÀNG TRÊN MOONKAGE</div>
         <h1 className={styles.title}>Khai Hồ Sơ Pháp Lý Đơn Vị Kinh Doanh</h1>
         <p className={styles.lead}>
-          Hồ sơ chỉ áp dụng cho Hộ kinh doanh cá thể và Doanh nghiệp tư nhân (BR-33). Doanh nghiệp
-          lớn vui lòng liên hệ đội vận hành sàn.
+          Hồ sơ chỉ áp dụng cho Hộ kinh doanh cá thể và Doanh nghiệp tư nhân. Doanh nghiệp lớn vui
+          lòng liên hệ đội vận hành sàn.
         </p>
       </div>
 
@@ -205,7 +189,7 @@ export function SellRegisterPage() {
           />
         )}
 
-        {/* Bước 3: Nguồn hàng & Cách bán (BR-21, FR-26) */}
+        {/* Bước 3: Nguồn hàng & Cách bán */}
         {step === 3 && (
           <VendorSellingModeStep
             form={form}

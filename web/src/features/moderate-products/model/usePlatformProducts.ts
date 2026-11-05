@@ -18,7 +18,10 @@ export function usePlatformProducts() {
     const perVendor = await Promise.all(
       vendors.map(async (vendor): Promise<AdminProductRow[]> => {
         const products = await vendorProductApi.getProducts(vendor.id);
-        return products.map((product) => ({ ...product, vendorName: vendor.businessName || '' }));
+        return products.map((product) => ({
+          ...product,
+          vendorName: vendor.businessName || '',
+        }));
       }),
     );
     return perVendor.flat();

@@ -46,7 +46,7 @@ export function RegisterConfirmPage() {
 
   return (
     <AuthShell
-      icon="🔐"
+      icon="lock"
       title="Xác Nhận Tài Khoản"
       subtitle={
         <>

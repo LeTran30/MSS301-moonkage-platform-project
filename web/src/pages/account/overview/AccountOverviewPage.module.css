@@ -16,7 +16,7 @@
   color: var(--color-gold-hover);
 }
 .urgentHeader h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   margin: 0;
 }
@@ -37,7 +37,7 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-4);
 }
 .statCard {
@@ -46,7 +46,7 @@
   gap: var(--space-4);
 }
 .statIcon {
-  color: var(--color-gold);
+  color: var(--color-gold-text);
 }
 .statNumber {
   font-family: var(--font-display);
@@ -72,7 +72,7 @@
   padding-bottom: var(--space-2);
 }
 .cardHeader h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   margin: 0;
 }

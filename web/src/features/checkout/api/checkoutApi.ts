@@ -1,4 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 import type { CheckoutResponse, CreateCheckoutPayload } from '@/entities/order';
 
@@ -17,7 +18,9 @@ import type { CheckoutResponse, CreateCheckoutPayload } from '@/entities/order';
 export async function checkoutOrder(payload: CreateCheckoutPayload): Promise<CheckoutResponse> {
   // Funnel: bắt đầu thanh toán. Không ghi tổng tiền, tên hay số điện thoại
   // người nhận — đó là dữ liệu tài chính và PII của đơn hàng (NFR-03).
-  trackEvent(ANALYTICS_EVENTS.beginCheckout, { has_invoice: Boolean(payload.invoiceInfo) });
+  trackEvent(ANALYTICS_EVENTS.beginCheckout, {
+    has_invoice: Boolean(payload.invoiceInfo),
+  });
 
   const res = await apiClient.post<unknown>(GATEWAY.ORDER.CHECKOUT, payload);
   const data = unwrap<CheckoutResponse>(res);

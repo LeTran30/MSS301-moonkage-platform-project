@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Button, Input, Modal } from '@/shared/ui';
+import { Button, Input, Modal, Radio, Textarea } from '@/shared/ui';
 import type { DisputeDecision } from '@/entities/dispute';
 import styles from './DisputeResolutionModal.module.css';
 
@@ -42,7 +42,7 @@ export function DisputeResolutionModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Ra phán quyết phân xử khiếu nại (Q5.1 - FR-49)"
+      title="Ra phán quyết phân xử khiếu nại"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -66,11 +66,12 @@ export function DisputeResolutionModal({
           </label>
           <div className={styles.radioOptions} role="radiogroup" aria-labelledby="decision-label">
             <label className={styles.radioItem}>
-              <input
-                type="radio"
+              <Radio
                 name="decision"
                 checked={decision === 'PARTIAL_REFUND'}
                 onChange={() => onDecisionChange('PARTIAL_REFUND')}
+                inputClassName={styles.radioInput}
+                aria-label="Hoàn tiền một phần"
               />
               <div>
                 <strong>Hoàn tiền một phần (Được khuyến nghị)</strong>
@@ -79,11 +80,12 @@ export function DisputeResolutionModal({
             </label>
 
             <label className={styles.radioItem}>
-              <input
-                type="radio"
+              <Radio
                 name="decision"
                 checked={decision === 'FULL_REFUND'}
                 onChange={() => onDecisionChange('FULL_REFUND')}
+                inputClassName={styles.radioInput}
+                aria-label="Hoàn 100% tiền đang giữ"
               />
               <div>
                 <strong>Hoàn 100% tiền đang giữ ({formatCurrency(maxRefundAllowed)})</strong>
@@ -92,11 +94,12 @@ export function DisputeResolutionModal({
             </label>
 
             <label className={styles.radioItem}>
-              <input
-                type="radio"
+              <Radio
                 name="decision"
                 checked={decision === 'REJECTED'}
                 onChange={() => onDecisionChange('REJECTED')}
+                inputClassName={styles.radioInput}
+                aria-label="Bác khiếu nại, giải ngân toàn bộ cho người bán"
               />
               <div>
                 <strong>Bác khiếu nại (Giải ngân toàn bộ cho người bán)</strong>
@@ -118,7 +121,7 @@ export function DisputeResolutionModal({
               min={0}
               max={maxRefundAllowed}
               onChange={(e) => onRefundAmountChange(e.target.value)}
-              placeholder="135000"
+              placeholder="Ví dụ: 1350000"
             />
             <span className={styles.hint}>
               Xưởng sẽ nhận:{' '}
@@ -133,9 +136,8 @@ export function DisputeResolutionModal({
           <label className={styles.label} htmlFor="decision-reason">
             Căn cứ &amp; Lý giải phán quyết (Gửi cả 2 bên) *
           </label>
-          <textarea
+          <Textarea
             id="decision-reason"
-            className={styles.textarea}
             rows={3}
             value={adminNote}
             maxLength={2000}

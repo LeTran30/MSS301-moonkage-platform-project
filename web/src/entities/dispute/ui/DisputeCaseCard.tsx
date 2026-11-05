@@ -22,12 +22,16 @@ export function DisputeCaseCard({ dispute, onResolve }: DisputeCaseCardProps) {
         <div className={styles.titleMeta}>
           <span className={styles.disputeId}>#{dispute.id}</span>
           <h3 className={styles.orderRef}>Đơn hàng liên kết: #{dispute.orderId}</h3>
-          <Badge tone="red">Đang chờ Admin phân xử (FR-49)</Badge>
+          <Badge tone="red">Đang chờ Admin phân xử</Badge>
         </div>
         <div className={styles.escrowBox}>
           <span className={styles.escrowLabel}>Tiền đang giữ (Escrow):</span>
-          <strong className={styles.escrowVal}>{formatCurrency(dispute.escrowHoldingAmount)}</strong>
-          <span className={styles.escrowSub}>Giá trị đơn: {formatCurrency(dispute.orderTotalAmount)}</span>
+          <strong className={styles.escrowVal}>
+            {formatCurrency(dispute.escrowHoldingAmount)}
+          </strong>
+          <span className={styles.escrowSub}>
+            Giá trị đơn: {formatCurrency(dispute.orderTotalAmount)}
+          </span>
         </div>
       </div>
 
@@ -79,10 +83,10 @@ export function DisputeCaseCard({ dispute, onResolve }: DisputeCaseCardProps) {
 
       <div className={styles.cardFooter}>
         <div className={styles.deadlineInfo}>
-          ⏳ Thời hạn khiếu nại: Còn <strong>18 giờ</strong> để Admin ra quyết định cuối cùng.
+          ⏳ Thời hạn phân xử: Admin cần ra quyết định cuối cùng để giải ngân ký quỹ.
         </div>
         <Button variant="primary" size="md" onClick={onResolve}>
-          Ra phán quyết giải quyết tranh chấp (Q5.1)
+          Ra phán quyết giải quyết tranh chấp
         </Button>
       </div>
     </Card>

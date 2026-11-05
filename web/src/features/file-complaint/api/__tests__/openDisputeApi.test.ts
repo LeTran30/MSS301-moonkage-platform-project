@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { openDispute, addDisputeEvidence } from '../openDisputeApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -10,7 +9,6 @@ describe('Feature file-complaint - openDisputeApi (FR-12, AC-49.1)', () => {
   });
 
   it('openDispute() gửi đúng payload OpenDisputeRequest', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(
       envelope({
         disputeId: 'DISP-10',
@@ -18,7 +16,7 @@ describe('Feature file-complaint - openDisputeApi (FR-12, AC-49.1)', () => {
         reason: 'DAMAGED',
         description: 'Bánh vỡ',
         status: 'OPEN',
-      })
+      }),
     );
 
     await openDispute('ORD-10', {
@@ -35,7 +33,6 @@ describe('Feature file-complaint - openDisputeApi (FR-12, AC-49.1)', () => {
   });
 
   it('addDisputeEvidence() dùng đúng endpoint evidences', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(
       envelope({
         disputeId: 'DISP-12',
@@ -43,7 +40,7 @@ describe('Feature file-complaint - openDisputeApi (FR-12, AC-49.1)', () => {
         reason: 'DAMAGED',
         description: 'Bánh vỡ',
         status: 'OPEN',
-      })
+      }),
     );
 
     await addDisputeEvidence('ORD-12', { tempKey: 'tmp/2', note: 'Ảnh mới' });

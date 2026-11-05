@@ -1,9 +1,8 @@
-import { Card, Icon } from '@/shared/ui';
+import { Card, Icon, Textarea } from '@/shared/ui';
 import { CUSTOM_TYPES, CUSTOM_TYPE_LABELS, type CustomType } from '@/entities/request';
 import styles from './QuoteRequestCards.module.css';
 
 interface QuoteRequestPackagingCardProps {
-  customLogoName: string;
   customTypes: CustomType[];
   onToggleCustomType: (type: CustomType) => void;
   customRequirements: string;
@@ -14,7 +13,6 @@ interface QuoteRequestPackagingCardProps {
  * Step 3 of the quote request form: the packaging customisations (BR-14).
  */
 export function QuoteRequestPackagingCard({
-  customLogoName,
   customTypes,
   onToggleCustomType,
   customRequirements,
@@ -24,19 +22,26 @@ export function QuoteRequestPackagingCard({
     <Card padding="lg" className={styles.card}>
       <h3 className={styles.cardTitle}>3. Yêu cầu tùy chỉnh bao bì &amp; in ấn (Custom Logo)</h3>
 
+      {/*
+        `CreateQuoteRequestRequest` không có trường tệp logo, và
+        `quotation-service` chưa có endpoint tải tệp lên cho yêu cầu báo giá.
+        Trước đây khối này hiện một "tệp" cứng là "logo_aurora_vector.pdf" —
+        một tệp không tồn tại, khiến người mua tin rằng logo đã được gửi kèm.
+        Nay khối upload chỉ nói rõ điều gì thật sự có thể làm.
+      */}
       <div className={styles.uploadBox}>
         <Icon name="upload" size={28} />
         <div>
-          <strong>Tải lên logo doanh nghiệp / Bản vẽ phác thảo</strong>
-          <p>Hỗ trợ định dạng PDF, AI, PNG, JPG tối đa 20MB</p>
-        </div>
-        <div className={styles.filePill}>
-          <Icon name="file" size={14} /> {customLogoName}
+          <strong>Tệp logo doanh nghiệp</strong>
+          <p>
+            Yêu cầu báo giá hiện chưa nhận kèm tệp. Bạn mô tả quy cách in ấn ở ô bên dưới;
+            xưởng sẽ dựng maket và gửi lại để bạn duyệt trước khi sản xuất.
+          </p>
         </div>
       </div>
 
       <fieldset className={styles.fieldset}>
-        <legend className={styles.label}>Loại tùy chỉnh cần làm (BR-14)</legend>
+        <legend className={styles.label}>Loại tùy chỉnh cần làm</legend>
         <div className={styles.chipRow}>
           {CUSTOM_TYPES.map((type) => {
             const active = customTypes.includes(type);
@@ -56,12 +61,9 @@ export function QuoteRequestPackagingCard({
       </fieldset>
 
       <div className={styles.field}>
-        <label className={styles.label} htmlFor="custom-requirements">
-          Mô tả quy cách in ấn &amp; thiệp chúc mừng
-        </label>
-        <textarea
+        <Textarea
           id="custom-requirements"
-          className={styles.textarea}
+          label="Mô tả quy cách in ấn & thiệp chúc mừng"
           rows={3}
           value={customRequirements}
           onChange={(e) => onCustomRequirementsChange(e.target.value)}

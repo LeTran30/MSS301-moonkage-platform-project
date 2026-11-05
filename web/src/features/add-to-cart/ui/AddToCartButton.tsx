@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { addToCart } from '@/entities/cart';
 import { type Product } from '@/entities/product';
 import { Button, toast } from '@/shared/ui';
-import { syncCartAddToBackend } from '../model/useCartSync';
+import { useCartSync } from '../model/useCartSync';
 
 interface Props {
   product: Product;
@@ -20,24 +19,18 @@ export function AddToCartButton({
   size = 'md',
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const { addLine } = useCartSync();
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     setLoading(true);
-    addToCart(
-      {
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images[0] || '/images/banh-nuong.jpg',
-        vendorId: product.vendorId,
-        vendorName: product.vendorName,
-        stock: product.stock,
-      },
-      quantity
-    );
-    syncCartAddToBackend(product.id, quantity);
-    toast.success(`Đã thêm ${quantity}x "${product.name}" vào giỏ hàng!`);
-    setTimeout(() => setLoading(false), 300);
+    try {
+      await addLine(product.id, quantity);
+      toast.success(`Đã thêm ${quantity}x "${product.name}" vào giỏ hàng!`);
+    } catch {
+      toast.error('Không thêm vào giỏ hàng được. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,10 +38,12 @@ export function AddToCartButton({
       variant={variant}
       size={size}
       className={className}
+      loading={loading}
       disabled={loading || product.stock === 0}
-      onClick={handleAdd}
+      onClick={() => void handleAdd()}
+      iconLeft={product.stock === 0 ? undefined : 'cart'}
     >
-      {product.stock === 0 ? 'Tạm hết hàng' : '🛒 Thêm vào giỏ'}
+      {product.stock === 0 ? 'Tạm hết hàng' : 'Thêm vào giỏ'}
     </Button>
   );
 }

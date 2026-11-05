@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { refundApi } from '../refundApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -19,12 +18,17 @@ const REFUND_DTO = {
 describe('Payment Entity - refundApi (AC-49.3)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('list mặc định lấy các hoàn tiền cần xử lý tay', async () => {
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
-      envelope({ content: [REFUND_DTO], page: 0, size: 100, totalElements: 1, totalPages: 1 }) as never,
+      envelope({
+        content: [REFUND_DTO],
+        page: 0,
+        size: 100,
+        totalElements: 1,
+        totalPages: 1,
+      }) as never,
     );
 
     const refunds = await refundApi.list();

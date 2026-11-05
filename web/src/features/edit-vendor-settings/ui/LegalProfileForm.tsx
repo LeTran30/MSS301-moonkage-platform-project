@@ -4,9 +4,9 @@ import { Button, ButtonLink, Card, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
 import type { VendorDetailDto, VendorDocumentKind } from '@/entities/vendor';
-import { uploadFile } from '@/shared/api';
 import { DOCUMENT_LABELS } from '../model/documentLabels';
 import { useResubmitVendorProfile } from '../model/useVendorSettingsActions';
+import { useUploadVendorDocument } from '../model/useUploadVendorDocument';
 import { LegalBankFields } from './LegalBankFields';
 import { LegalDocumentsField } from './LegalDocumentsField';
 import { LegalIdentityFields } from './LegalIdentityFields';
@@ -28,6 +28,7 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
   const user = useCurrentUser();
   const { busy, run } = useAction();
   const resubmitVendorProfile = useResubmitVendorProfile();
+  const uploadVendorDocument = useUploadVendorDocument();
 
   // Khởi tạo form trực tiếp từ hồ sơ đã tải (không dùng effect để setState).
   const [businessName, setBusinessName] = useState(detail.businessName ?? '');
@@ -38,10 +39,10 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
   const [bankName, setBankName] = useState(detail.bankAccount?.bankName ?? '');
   const [bankAccountHolder, setBankAccountHolder] = useState(detail.bankAccount?.holder ?? '');
   const [supplySource, setSupplySource] = useState<'SELF_PRODUCED' | 'RESELL' | 'BOTH'>(
-    detail.supplySource ?? 'SELF_PRODUCED'
+    detail.supplySource ?? 'SELF_PRODUCED',
   );
   const [entityType, setEntityType] = useState<'HOUSEHOLD_BUSINESS' | 'SOLE_PROPRIETORSHIP'>(
-    detail.entityType ?? 'HOUSEHOLD_BUSINESS'
+    detail.entityType ?? 'HOUSEHOLD_BUSINESS',
   );
   const [sellsShop] = useState(detail.sellsShop ?? true);
   const [acceptsOrders] = useState(detail.acceptsOrders ?? true);
@@ -52,9 +53,9 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
   const handleUpload = (kind: VendorDocumentKind, file: File | undefined) => {
     if (!file) return;
     void run(async () => {
-      const uploaded = await uploadFile('VENDOR', file);
+      const uploaded = await uploadVendorDocument(file);
       if (!uploaded) {
-        toast.info('Chế độ demo: bỏ qua bước tải tệp lên.');
+        toast.error('Không tải được tệp lên kho lưu trữ.');
         return;
       }
       setTempKeys((prev) => ({ ...prev, [kind]: uploaded }));

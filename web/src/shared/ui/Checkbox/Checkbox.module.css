@@ -1,0 +1,72 @@
+/* Ô chọn — giữ input native, chỉ tô màu theo token để đồng bộ bảng màu. */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+/* Không có nhãn/thông báo ⇒ bỏ vỏ, ô chọn nằm thẳng trong layout của cha. */
+.wrapperBare {
+  display: contents;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.rowBare {
+  display: contents;
+}
+.input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.input:disabled {
+  cursor: not-allowed;
+}
+.label {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  min-width: 0;
+}
+.req {
+  color: var(--color-danger);
+}
+.endLabel {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  flex: none;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.disabled {
+  opacity: 0.6;
+}
+.disabled .label {
+  cursor: not-allowed;
+}
+.hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.error {
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+  font-weight: var(--weight-medium);
+}

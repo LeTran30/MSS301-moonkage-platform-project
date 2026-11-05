@@ -30,10 +30,16 @@ const CartPage = page(() => import('@/pages/base/cart'), 'CartPage');
 const CheckoutPage = page(() => import('@/pages/base/checkout'), 'CheckoutPage');
 const PaymentResultPage = page(() => import('@/pages/base/payment-result'), 'PaymentResultPage');
 const BulkHubPage = page(() => import('@/pages/base/bulk'), 'BulkHubPage');
-const NewQuoteRequestPage = page(() => import('@/pages/base/new-quote-request'), 'NewQuoteRequestPage');
+const NewQuoteRequestPage = page(
+  () => import('@/pages/base/new-quote-request'),
+  'NewQuoteRequestPage',
+);
 const VendorsListPage = page(() => import('@/pages/base/vendors'), 'VendorsListPage');
 const VendorDetailPage = page(() => import('@/pages/base/vendor-detail'), 'VendorDetailPage');
-const DirectQuoteRequestPage = page(() => import('@/pages/base/direct-quote-request'), 'DirectQuoteRequestPage');
+const DirectQuoteRequestPage = page(
+  () => import('@/pages/base/direct-quote-request'),
+  'DirectQuoteRequestPage',
+);
 const SellIntroPage = page(() => import('@/pages/base/sell-intro'), 'SellIntroPage');
 const SellRegisterPage = page(() => import('@/pages/base/sell-register'), 'SellRegisterPage');
 const PolicyPage = page(() => import('@/pages/base/policy'), 'PolicyPage');
@@ -47,7 +53,6 @@ const ForgotPasswordPage = page(() => import('@/pages/auth/forgot-password'), 'F
 const ResetPasswordPage = page(() => import('@/pages/auth/reset-password'), 'ResetPasswordPage');
 
 // System Pages
-const SitemapPage = page(() => import('@/pages/system/sitemap'), 'SitemapPage');
 const NotFoundPage = page(() => import('@/pages/system/not-found'), 'NotFoundPage');
 
 // Account Pages
@@ -56,8 +61,14 @@ const OrdersListPage = page(() => import('@/pages/account/orders'), 'OrdersListP
 const OrderDetailPage = page(() => import('@/pages/account/order-detail'), 'OrderDetailPage');
 const OrderDisputePage = page(() => import('@/pages/account/order-dispute'), 'OrderDisputePage');
 const RequestsListPage = page(() => import('@/pages/account/requests'), 'RequestsListPage');
-const RequestComparePage = page(() => import('@/pages/account/request-compare'), 'RequestComparePage');
-const DepositPaymentPage = page(() => import('@/pages/account/deposit-payment'), 'DepositPaymentPage');
+const RequestComparePage = page(
+  () => import('@/pages/account/request-compare'),
+  'RequestComparePage',
+);
+const DepositPaymentPage = page(
+  () => import('@/pages/account/deposit-payment'),
+  'DepositPaymentPage',
+);
 const AddressesPage = page(() => import('@/pages/account/addresses'), 'AddressesPage');
 const AddressFormPage = page(() => import('@/pages/account/address-form'), 'AddressFormPage');
 const NfcVerifyPage = page(() => import('@/pages/account/nfc-verify'), 'NfcVerifyPage');
@@ -69,35 +80,77 @@ const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage')
 const VendorOverviewPage = page(() => import('@/pages/vendor/overview'), 'VendorOverviewPage');
 const VendorFeePage = page(() => import('@/pages/vendor/fee'), 'VendorFeePage');
 const VendorOrdersPage = page(() => import('@/pages/vendor/orders'), 'VendorOrdersPage');
-const VendorOrderDetailPage = page(() => import('@/pages/vendor/order-detail'), 'VendorOrderDetailPage');
+const VendorOrderDetailPage = page(
+  () => import('@/pages/vendor/order-detail'),
+  'VendorOrderDetailPage',
+);
 const VendorRequestsPage = page(() => import('@/pages/vendor/requests'), 'VendorRequestsPage');
-const VendorRequestDetailPage = page(() => import('@/pages/vendor/request-detail'), 'VendorRequestDetailPage');
+const VendorRequestDetailPage = page(
+  () => import('@/pages/vendor/request-detail'),
+  'VendorRequestDetailPage',
+);
 const VendorProductsPage = page(() => import('@/pages/vendor/products'), 'VendorProductsPage');
-const VendorProductFormPage = page(() => import('@/pages/vendor/product-form'), 'VendorProductFormPage');
+const VendorProductFormPage = page(
+  () => import('@/pages/vendor/product-form'),
+  'VendorProductFormPage',
+);
 const VendorMoneyPage = page(() => import('@/pages/vendor/money'), 'VendorMoneyPage');
-const VendorReconciliationPage = page(() => import('@/pages/vendor/reconciliation'), 'VendorReconciliationPage');
-const VendorDisbursementsPage = page(() => import('@/pages/vendor/disbursements'), 'VendorDisbursementsPage');
+const VendorReconciliationPage = page(
+  () => import('@/pages/vendor/reconciliation'),
+  'VendorReconciliationPage',
+);
+const VendorDisbursementsPage = page(
+  () => import('@/pages/vendor/disbursements'),
+  'VendorDisbursementsPage',
+);
 const VendorSettingsPage = page(() => import('@/pages/vendor/settings'), 'VendorSettingsPage');
-const VendorLegalSettingsPage = page(() => import('@/pages/vendor/legal-settings'), 'VendorLegalSettingsPage');
-const VendorZonesSettingsPage = page(() => import('@/pages/vendor/zones-settings'), 'VendorZonesSettingsPage');
-const VendorBulkTermsSettingsPage = page(() => import('@/pages/vendor/bulk-terms-settings'), 'VendorBulkTermsSettingsPage');
+const VendorLegalSettingsPage = page(
+  () => import('@/pages/vendor/legal-settings'),
+  'VendorLegalSettingsPage',
+);
+const VendorZonesSettingsPage = page(
+  () => import('@/pages/vendor/zones-settings'),
+  'VendorZonesSettingsPage',
+);
+const VendorBulkTermsSettingsPage = page(
+  () => import('@/pages/vendor/bulk-terms-settings'),
+  'VendorBulkTermsSettingsPage',
+);
 const VendorCapacityPage = page(() => import('@/pages/vendor/capacity'), 'VendorCapacityPage');
 
 // Admin Pages
 const AdminOverviewPage = page(() => import('@/pages/admin/overview'), 'AdminOverviewPage');
 const AdminVendorsPage = page(() => import('@/pages/admin/vendors'), 'AdminVendorsPage');
-const AdminVendorDetailPage = page(() => import('@/pages/admin/vendor-detail'), 'AdminVendorDetailPage');
+const AdminVendorDetailPage = page(
+  () => import('@/pages/admin/vendor-detail'),
+  'AdminVendorDetailPage',
+);
 const AdminProductsPage = page(() => import('@/pages/admin/products'), 'AdminProductsPage');
 const AdminMoneyPage = page(() => import('@/pages/admin/money'), 'AdminMoneyPage');
-const AdminDisbursementsPage = page(() => import('@/pages/admin/disbursements'), 'AdminDisbursementsPage');
+const AdminDisbursementsPage = page(
+  () => import('@/pages/admin/disbursements'),
+  'AdminDisbursementsPage',
+);
 const AdminPayoutsPage = page(() => import('@/pages/admin/payouts'), 'AdminPayoutsPage');
-const AdminReconciliationPage = page(() => import('@/pages/admin/reconciliation'), 'AdminReconciliationPage');
+const AdminReconciliationPage = page(
+  () => import('@/pages/admin/reconciliation'),
+  'AdminReconciliationPage',
+);
 const AdminDisputesPage = page(() => import('@/pages/admin/disputes'), 'AdminDisputesPage');
-const AdminDisputeDetailPage = page(() => import('@/pages/admin/dispute-detail'), 'AdminDisputeDetailPage');
+const AdminDisputeDetailPage = page(
+  () => import('@/pages/admin/dispute-detail'),
+  'AdminDisputeDetailPage',
+);
 const AdminConfigPage = page(() => import('@/pages/admin/config'), 'AdminConfigPage');
-const AdminInterprovinceFeePage = page(() => import('@/pages/admin/interprovince-fee'), 'AdminInterprovinceFeePage');
+const AdminInterprovinceFeePage = page(
+  () => import('@/pages/admin/interprovince-fee'),
+  'AdminInterprovinceFeePage',
+);
 const AdminOpeningFeePage = page(() => import('@/pages/admin/opening-fee'), 'AdminOpeningFeePage');
-const AdminCakeCatalogPage = page(() => import('@/pages/admin/cake-catalog'), 'AdminCakeCatalogPage');
+const AdminCakeCatalogPage = page(
+  () => import('@/pages/admin/cake-catalog'),
+  'AdminCakeCatalogPage',
+);
 const AdminVouchersPage = page(() => import('@/pages/admin/vouchers'), 'AdminVouchersPage');
 
 // Bảng route của ứng dụng. Tách ra thành hằng riêng để có thể tham chiếu
@@ -113,10 +166,16 @@ const ROUTE_TABLE = [
       { path: 'san-pham', element: withSuspense(CatalogPage) },
       { path: 'san-pham/:id', element: withSuspense(ProductDetailPage) },
       { path: 'dat-so-luong-lon', element: withSuspense(BulkHubPage) },
-      { path: 'dat-so-luong-lon/yeu-cau-moi', element: withSuspense(NewQuoteRequestPage) },
+      {
+        path: 'dat-so-luong-lon/yeu-cau-moi',
+        element: withSuspense(NewQuoteRequestPage),
+      },
       { path: 'don-vi-cung-cap', element: withSuspense(VendorsListPage) },
       { path: 'don-vi-cung-cap/:id', element: withSuspense(VendorDetailPage) },
-      { path: 'don-vi-cung-cap/:id/yeu-cau', element: withSuspense(DirectQuoteRequestPage) },
+      {
+        path: 'don-vi-cung-cap/:id/yeu-cau',
+        element: withSuspense(DirectQuoteRequestPage),
+      },
       { path: 'gio-hang', element: withSuspense(CartPage) },
       { path: 'thanh-toan', element: withSuspense(CheckoutPage) },
       { path: 'thanh-toan/ket-qua', element: withSuspense(PaymentResultPage) },
@@ -129,7 +188,6 @@ const ROUTE_TABLE = [
       { path: 'dang-ky/xac-nhan', element: withSuspense(RegisterConfirmPage) },
       { path: 'quen-mat-khau', element: withSuspense(ForgotPasswordPage) },
       { path: 'dat-lai-mat-khau', element: withSuspense(ResetPasswordPage) },
-      { path: 'so-do-giao-dien', element: withSuspense(SitemapPage) },
 
       // Nested Buyer Account Zone
       {
@@ -144,10 +202,16 @@ const ROUTE_TABLE = [
           { index: true, element: withSuspense(AccountOverviewPage) },
           { path: 'don-hang', element: withSuspense(OrdersListPage) },
           { path: 'don-hang/:id', element: withSuspense(OrderDetailPage) },
-          { path: 'don-hang/:id/khieu-nai', element: withSuspense(OrderDisputePage) },
+          {
+            path: 'don-hang/:id/khieu-nai',
+            element: withSuspense(OrderDisputePage),
+          },
           { path: 'yeu-cau', element: withSuspense(RequestsListPage) },
           { path: 'yeu-cau/:id', element: withSuspense(RequestComparePage) },
-          { path: 'yeu-cau/:id/dat-coc', element: withSuspense(DepositPaymentPage) },
+          {
+            path: 'yeu-cau/:id/dat-coc',
+            element: withSuspense(DepositPaymentPage),
+          },
           { path: 'dia-chi', element: withSuspense(AddressesPage) },
           { path: 'dia-chi/moi', element: withSuspense(AddressFormPage) },
           { path: 'dia-chi/:id', element: withSuspense(AddressFormPage) },
@@ -174,17 +238,35 @@ const ROUTE_TABLE = [
       { path: 'don-hang/:id', element: withSuspense(VendorOrderDetailPage) },
       { path: 'yeu-cau', element: withSuspense(VendorRequestsPage) },
       { path: 'yeu-cau/:id', element: withSuspense(VendorRequestDetailPage) },
-      { path: 'yeu-cau/:id/bao-gia', element: withSuspense(VendorRequestDetailPage) },
+      {
+        path: 'yeu-cau/:id/bao-gia',
+        element: withSuspense(VendorRequestDetailPage),
+      },
       { path: 'san-pham', element: withSuspense(VendorProductsPage) },
       { path: 'san-pham/moi', element: withSuspense(VendorProductFormPage) },
       { path: 'san-pham/:id', element: withSuspense(VendorProductFormPage) },
       { path: 'tien', element: withSuspense(VendorMoneyPage) },
-      { path: 'tien/doi-soat', element: withSuspense(VendorReconciliationPage) },
-      { path: 'tien/giai-ngan', element: withSuspense(VendorDisbursementsPage) },
+      {
+        path: 'tien/doi-soat',
+        element: withSuspense(VendorReconciliationPage),
+      },
+      {
+        path: 'tien/giai-ngan',
+        element: withSuspense(VendorDisbursementsPage),
+      },
       { path: 'cai-dat', element: withSuspense(VendorSettingsPage) },
-      { path: 'cai-dat/phap-ly', element: withSuspense(VendorLegalSettingsPage) },
-      { path: 'cai-dat/vung-giao', element: withSuspense(VendorZonesSettingsPage) },
-      { path: 'cai-dat/nhan-dat-hang', element: withSuspense(VendorBulkTermsSettingsPage) },
+      {
+        path: 'cai-dat/phap-ly',
+        element: withSuspense(VendorLegalSettingsPage),
+      },
+      {
+        path: 'cai-dat/vung-giao',
+        element: withSuspense(VendorZonesSettingsPage),
+      },
+      {
+        path: 'cai-dat/nhan-dat-hang',
+        element: withSuspense(VendorBulkTermsSettingsPage),
+      },
       { path: 'cai-dat/cong-suat', element: withSuspense(VendorCapacityPage) },
     ],
   },
@@ -210,8 +292,14 @@ const ROUTE_TABLE = [
       { path: 'khieu-nai', element: withSuspense(AdminDisputesPage) },
       { path: 'khieu-nai/:id', element: withSuspense(AdminDisputeDetailPage) },
       { path: 'cau-hinh', element: withSuspense(AdminConfigPage) },
-      { path: 'cau-hinh/phi-lien-tinh', element: withSuspense(AdminInterprovinceFeePage) },
-      { path: 'cau-hinh/phi-mo-ban', element: withSuspense(AdminOpeningFeePage) },
+      {
+        path: 'cau-hinh/phi-lien-tinh',
+        element: withSuspense(AdminInterprovinceFeePage),
+      },
+      {
+        path: 'cau-hinh/phi-mo-ban',
+        element: withSuspense(AdminOpeningFeePage),
+      },
       { path: 'cau-hinh/vo-nhan', element: withSuspense(AdminCakeCatalogPage) },
       { path: 'cau-hinh/voucher', element: withSuspense(AdminVouchersPage) },
     ],
@@ -220,11 +308,7 @@ const ROUTE_TABLE = [
   // Fallback 404 (Không tìm thấy trang)
   {
     path: '*',
-    element: (
-      <BaseLayout>
-        {withSuspense(NotFoundPage)}
-      </BaseLayout>
-    ),
+    element: <BaseLayout>{withSuspense(NotFoundPage)}</BaseLayout>,
   },
 ];
 

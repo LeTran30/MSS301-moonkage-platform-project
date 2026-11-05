@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { advanceOrder } from '../advanceOrderApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 describe('Feature advance-order-status - advanceOrderApi (FR-32, FR-40, FR-42)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('gửi PATCH đúng endpoint của đơn và trả về entity đã map', async () => {
@@ -20,7 +18,10 @@ describe('Feature advance-order-status - advanceOrderApi (FR-32, FR-40, FR-42)',
       }) as never,
     );
 
-    const order = await advanceOrder('ord-1', { status: 'CONFIRMED', note: 'Đã chuẩn bị nguyên liệu' });
+    const order = await advanceOrder('ord-1', {
+      status: 'CONFIRMED',
+      note: 'Đã chuẩn bị nguyên liệu',
+    });
 
     expect(patch).toHaveBeenCalledWith('/order-service/api/orders/ord-1', {
       status: 'CONFIRMED',

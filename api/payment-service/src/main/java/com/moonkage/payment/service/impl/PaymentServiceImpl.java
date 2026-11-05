@@ -1,5 +1,6 @@
 package com.moonkage.payment.service.impl;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.payment.config.RabbitConfig;
 import com.moonkage.payment.config.VnpayProperties;
@@ -8,7 +9,6 @@ import com.moonkage.payment.dto.event.PaymentSucceededEvent;
 import com.moonkage.payment.dto.request.CreatePaymentRequest;
 import com.moonkage.payment.dto.request.CreatePaymentRequest.AllocationRequest;
 import com.moonkage.payment.dto.response.CreatePaymentResponse;
-import com.moonkage.payment.dto.response.PageResponse;
 import com.moonkage.payment.dto.response.PaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
 import com.moonkage.payment.entity.Payment;

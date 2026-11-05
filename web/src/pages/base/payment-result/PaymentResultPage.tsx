@@ -65,11 +65,13 @@ export function PaymentResultPage() {
             <Icon name="clock" size={40} />
           </div>
 
-          <Badge tone="gold" size="md">ĐANG CHỜ XÁC NHẬN THANH TOÁN (M4.3)</Badge>
+          <Badge tone="gold" size="md">
+            ĐANG CHỜ XÁC NHẬN THANH TOÁN
+          </Badge>
           <h1 className={styles.title}>Đang chờ cổng thanh toán xác nhận</h1>
           <p className={styles.desc}>
-            Khoản tiền {formatCurrency(amount)} đã được gửi tới VNPay. Trang này tự cập nhật ngay khi
-            hệ thống nhận được xác nhận (IPN) của cổng thanh toán.
+            Khoản tiền {formatCurrency(amount)} đã được gửi tới VNPay. Trang này tự cập nhật ngay
+            khi hệ thống nhận được xác nhận (IPN) của cổng thanh toán.
           </p>
 
           <div className={styles.actions}>
@@ -90,11 +92,13 @@ export function PaymentResultPage() {
             <Icon name="alert" size={40} />
           </div>
 
-          <Badge tone="red" size="md">THANH TOÁN THẤT BẠI (M4.3)</Badge>
+          <Badge tone="red" size="md">
+            THANH TOÁN THẤT BẠI
+          </Badge>
           <h1 className={styles.title}>Thanh toán chưa thành công</h1>
           <p className={styles.desc}>
-            Cổng thanh toán đã báo giao dịch không thành công. Khoản tiền chưa được trừ, bạn có thể thử
-            thanh toán lại.
+            Cổng thanh toán đã báo giao dịch không thành công. Khoản tiền chưa được trừ, bạn có thể
+            thử thanh toán lại.
           </p>
 
           <div className={styles.actions}>
@@ -114,13 +118,16 @@ export function PaymentResultPage() {
           <Icon name="check" size={40} />
         </div>
 
-        <Badge tone="green" size="md">THANH TOÁN THÀNH CÔNG (M4.3)</Badge>
+        <Badge tone="green" size="md">
+          THANH TOÁN THÀNH CÔNG
+        </Badge>
         <h1 className={styles.title}>Đơn hàng đã được xác nhận thanh toán</h1>
         <p className={styles.desc}>
-          Khoản tiền {formatCurrency(amount)} đã được ký quỹ an toàn qua VNPay. Người bán đã nhận được đơn và sẽ tiến hành đóng gói bánh gửi tới bạn.
+          Khoản tiền {formatCurrency(amount)} đã được ký quỹ an toàn qua VNPay. Người bán đã nhận
+          được đơn và sẽ tiến hành đóng gói bánh gửi tới bạn.
         </p>
 
-        {/* BR-25, AC-09.7: Hiện N đơn vừa tạo, nhóm theo lần thanh toán; chỉ hiển thị, không đổi trạng thái */}
+        {/*, : Hiện N đơn vừa tạo, nhóm theo lần thanh toán; chỉ hiển thị, không đổi trạng thái */}
         <div className={styles.ordersBox}>
           <div className={styles.ordersBoxHeader}>
             <span>Các đơn hàng trong lần thanh toán này:</span>
@@ -132,7 +139,8 @@ export function PaymentResultPage() {
           <div className={styles.orderList}>
             {orderIds.length === 0 ? (
               <p className={styles.desc}>
-                Đơn hàng đang được hệ thống tạo, trang danh sách đơn hàng sẽ hiển thị ngay khi sẵn sàng.
+                Đơn hàng đang được hệ thống tạo, trang danh sách đơn hàng sẽ hiển thị ngay khi sẵn
+                sàng.
               </p>
             ) : (
               orderIds.map((id: string) => (

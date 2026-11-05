@@ -156,7 +156,7 @@ services:
     restart: "no"
     networks: [moonkage-network]
     entrypoint: ["sh", "/init/init.sh"]
-    volumes: ["./infra/minio/init.sh:/init/init.sh:ro"]
+    volumes: ["./infra/minio/init.sh:/init/init.sh:ro", "./infra/minio/seed:/seed:ro"]
     environment:
       MINIO_INTERNAL_URL: http://minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}

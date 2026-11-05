@@ -1,8 +1,8 @@
 package com.moonkage.payment.service;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.payment.dto.request.CreatePaymentRequest;
 import com.moonkage.payment.dto.response.CreatePaymentResponse;
-import com.moonkage.payment.dto.response.PageResponse;
 import com.moonkage.payment.dto.response.PaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
 import com.moonkage.payment.enums.PaymentPurpose;

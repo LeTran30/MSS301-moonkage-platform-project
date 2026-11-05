@@ -1,9 +1,10 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import { toNationalPhone } from '@/shared/utils';
 import { clearTokens, getAccessToken, storeTokens } from '@/shared/api/tokenVault';
 import { userStore } from '../model/userStore';
-import type { User, UserRole } from '../model/types';
+import { markAnonymous } from '../model/sessionStatusStore';
+import { GUEST_USER, type User, type UserRole } from '../model/types';
 
 /**
  * Wire shape of `com.moonkage.identity.account.dto.AccountResponse`.
@@ -51,9 +52,6 @@ export function mapAccountToUser(dto: AccountDto): User {
 export const sessionApi = {
   /** The signed-in account profile. */
   async getMyAccount(): Promise<User> {
-    if (isDemoMode()) {
-      return userStore.get();
-    }
     const res = await apiClient.get<unknown>(GATEWAY.IDENTITY.ME);
     const dto = unwrap<AccountDto>(res);
     if (!dto) {
@@ -65,8 +63,7 @@ export const sessionApi = {
   /** Sign out: drop the tokens and the cached profile. */
   async logout(): Promise<void> {
     clearTokens();
-    if (!isDemoMode()) {
-      return;
-    }
+    userStore.set(GUEST_USER);
+    markAnonymous();
   },
 };

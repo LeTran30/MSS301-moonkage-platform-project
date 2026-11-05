@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 import type { CreateNfcSessionDto } from '@/entities/user';
 
@@ -18,12 +18,6 @@ export async function createNfcSession(): Promise<CreateNfcSessionDto> {
   // chỉ ghi rằng phiên xác minh đã mở (NFR-03).
   trackEvent(ANALYTICS_EVENTS.verifyNfc, { step: 'session_opened' });
 
-  if (isDemoMode()) {
-    return {
-      sessionId: `demo-${Date.now().toString(36)}`,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-    };
-  }
   const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.NFC_SESSIONS);
   const dto = unwrap<CreateNfcSessionDto>(res);
   if (!dto?.sessionId) {

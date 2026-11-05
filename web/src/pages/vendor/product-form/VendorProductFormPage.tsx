@@ -82,18 +82,27 @@ export function VendorProductFormPage() {
     setOrigin(existing.origin ?? '');
     setExpiryDate(existing.expiryDate ?? '');
     setPiecesPerBox(existing.piecesPerBox ? String(existing.piecesPerBox) : '');
-    setImages((existing.images ?? []).map((image) => ({ key: image.key, url: image.url })));
+    setImages(
+      (existing.images ?? []).map((image) => ({
+        key: image.key,
+        url: image.url,
+      })),
+    );
   }
 
   // RESELL luôn là bán lại, SELF_PRODUCED không bao giờ; BOTH do chủ Shop chọn (AC-29.2).
   const isResold = supplySource === 'RESELL' || (supplySource === 'BOTH' && resold);
 
   function toggleCrust(code: CakeCrust) {
-    setSelectedCrusts((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+    setSelectedCrusts((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
+    );
   }
 
   function toggleFilling(code: CakeFilling) {
-    setSelectedFillings((prev) => (prev.includes(code) ? prev.filter((f) => f !== code) : [...prev, code]));
+    setSelectedFillings((prev) =>
+      prev.includes(code) ? prev.filter((f) => f !== code) : [...prev, code],
+    );
   }
 
   async function handleUploadImage(file: File) {
@@ -118,11 +127,11 @@ export function VendorProductFormPage() {
     if (price <= 0) return 'Vui lòng nhập giá bán lẻ.';
     if (stock < 0) return 'Tồn kho không được âm.';
     if (isResold && (!brand.trim() || !origin.trim())) {
-      return 'Bánh bán lại cần ghi rõ thương hiệu và xuất xứ (BR-12).';
+      return 'Bánh bán lại cần ghi rõ thương hiệu và xuất xứ.';
     }
     if (!expiryDate) return 'Vui lòng chọn hạn sử dụng.';
-    if (selectedCrusts.length === 0) return 'FR-54: Sản phẩm bắt buộc gắn ít nhất 1 loại Vỏ bánh.';
-    if (selectedFillings.length === 0) return 'FR-54: Sản phẩm bắt buộc gắn ít nhất 1 loại Nhân bánh.';
+    if (selectedCrusts.length === 0) return ': Sản phẩm bắt buộc gắn ít nhất 1 loại Vỏ bánh.';
+    if (selectedFillings.length === 0) return ': Sản phẩm bắt buộc gắn ít nhất 1 loại Nhân bánh.';
     if (images.length === 0) return `Sản phẩm cần ít nhất 1 ảnh (tối đa ${MAX_PRODUCT_IMAGES}).`;
     if (!description.trim()) return 'Vui lòng nhập mô tả sản phẩm.';
     return null;
@@ -156,7 +165,10 @@ export function VendorProductFormPage() {
       };
 
       if (isEdit && existing) {
-        await saveProduct(vendorId, existing.id, { ...payload, version: existing.version });
+        await saveProduct(vendorId, existing.id, {
+          ...payload,
+          version: existing.version,
+        });
       } else {
         await saveProduct(vendorId, null, payload);
       }
@@ -164,7 +176,7 @@ export function VendorProductFormPage() {
       toast.success(
         isEdit
           ? 'Đã cập nhật thông tin sản phẩm bánh thành công!'
-          : 'Đã đăng bán sản phẩm mới lên sàn Moonkage!'
+          : 'Đã đăng bán sản phẩm mới lên sàn Moonkage!',
       );
       navigate(routes.vendor.products);
     });
@@ -182,7 +194,7 @@ export function VendorProductFormPage() {
 
       <div className={styles.header}>
         <h1 className={styles.title}>
-          {isEdit ? `Cập nhật: ${existing?.name ?? ''}` : 'Đăng Sản Phẩm Bánh Trung Thu Mới (B4.1)'}
+          {isEdit ? `Cập nhật: ${existing?.name ?? ''}` : 'Đăng Sản Phẩm Bánh Trung Thu Mới'}
         </h1>
       </div>
 
@@ -246,10 +258,19 @@ export function VendorProductFormPage() {
           />
 
           <div className={styles.actions}>
-            <Button type="submit" variant="primary" loading={busy} disabled={!vendorId || uploading}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={busy}
+              disabled={!vendorId || uploading}
+            >
               {isEdit ? 'Lưu Thay Đổi Sản Phẩm' : 'Đăng Bán Ngay'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate(routes.vendor.products)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(routes.vendor.products)}
+            >
               Hủy
             </Button>
           </div>

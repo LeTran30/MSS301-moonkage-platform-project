@@ -5,11 +5,16 @@ import './styles/tokens-dark.css';
 import './styles/reset.css';
 import './styles/global.css';
 import { migrateLegacyTokens } from './providers';
-import { ENV, apiConnectSources, applyCspMeta, setRuntimeFlags, type FeatureFlag } from '@/shared/config';
+import {
+  applyCspMeta,
+  cspConnectSources,
+  cspImageSources,
+  setRuntimeFlags,
+  type FeatureFlag,
+} from '@/shared/config';
 import {
   ANALYTICS_HOST,
   ANALYTICS_MEASUREMENT_ID,
-  OBSERVABILITY_CONTEXT,
   isAnalyticsEnabled,
 } from '@/shared/config/observability';
 import { initAnalytics, initSentry, initWebVitals } from '@/shared/observability';
@@ -20,7 +25,7 @@ import { App } from './App';
 // có request nào đi ra ngoài.
 initSentry();
 initWebVitals();
-if (isAnalyticsEnabled() && !OBSERVABILITY_CONTEXT.isDemoMode) {
+if (isAnalyticsEnabled()) {
   initAnalytics(ANALYTICS_MEASUREMENT_ID, ANALYTICS_HOST || undefined);
 }
 
@@ -29,12 +34,17 @@ if (isAnalyticsEnabled() && !OBSERVABILITY_CONTEXT.isDemoMode) {
 // so no request is ever sent with a stale token.
 migrateLegacyTokens();
 
-// CSP: ở development, vite dev server cần `eval` cho HMR nên không áp dụng.
-// Ở production, header HTTP ở web server vẫn là cách đúng; thẻ `<meta>` ở đây
-// chỉ là lớp phòng thủ thứ hai cho nơi không cấu hình được header.
+/*
+ * CSP: ở development, vite dev server cần `eval` cho HMR nên không áp dụng.
+ * Ở production, header HTTP ở web server vẫn là cách đúng; thẻ `<meta>` ở đây
+ * chỉ là lớp phòng thủ thứ hai cho nơi không cấu hình được header.
+ *
+ * `connect-src` phải khai báo thêm API gateway: nếu chỉ có `'self'`, trình
+ * duyệt chặn mọi request XHR/fetch tới gateway và mọi màn hình hiện "Network
+ * Error" — kể cả bản build chạy qua `vite preview` (E2E).
+ */
 if (import.meta.env.PROD) {
-  // The gateway may live on another origin (VITE_API_BASE_URL): allow it, or every call is blocked.
-  applyCspMeta(apiConnectSources(ENV.apiBaseUrl));
+  applyCspMeta(cspConnectSources(), cspImageSources());
 }
 
 // Đường tắt tính năng không cần deploy: hệ thống config tập trung gọi
@@ -55,5 +65,5 @@ const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

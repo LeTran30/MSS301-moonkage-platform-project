@@ -1,2 +1,2 @@
 export { AddToCartButton } from './ui/AddToCartButton';
-export { syncCartAddToBackend, syncCartLineToBackend } from './model/useCartSync';
+export { useCartSync } from './model/useCartSync';

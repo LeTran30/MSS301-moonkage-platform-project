@@ -1,11 +1,7 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
-import {
-  disputeStore,
-  type Dispute,
-  type DisputeReason,
-} from '@/entities/dispute';
+import { type Dispute, type DisputeReason } from '@/entities/dispute';
 import { mapDisputeDtoToEntity, type DisputeDto } from '@/entities/dispute';
 
 /**
@@ -33,32 +29,6 @@ export async function openDispute(orderId: string, payload: OpenDisputePayload):
     evidence_count: payload.evidences?.length ?? 0,
   });
 
-  if (isDemoMode()) {
-    const dispute: Dispute = {
-      id: `DISP-${Date.now().toString().slice(-6)}`,
-      orderId,
-      buyerId: '',
-      buyerName: '',
-      vendorId: '',
-      vendorName: '',
-      reason: payload.reason,
-      description: payload.description,
-      images: [],
-      evidences: (payload.evidences ?? []).map((e) => ({
-        party: 'BUYER' as const,
-        downloadUrl: e.tempKey,
-        note: e.note,
-      })),
-      createdAt: new Date().toISOString(),
-      status: 'OPEN',
-      orderTotalAmount: 0,
-      escrowHoldingAmount: 0,
-      disbursedAmount: 0,
-      maxRefundableAmount: 0,
-    };
-    disputeStore.set((prev) => [dispute, ...prev]);
-    return dispute;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.ORDER.DISPUTE(orderId), payload);
   const dto = unwrap<DisputeDto>(res);
   if (!dto) {
@@ -70,30 +40,8 @@ export async function openDispute(orderId: string, payload: OpenDisputePayload):
 /** Add a piece of evidence (AC-49.1) from the buyer or the vendor owner. */
 export async function addDisputeEvidence(
   orderId: string,
-  payload: { tempKey: string; note?: string }
+  payload: { tempKey: string; note?: string },
 ): Promise<Dispute> {
-  if (isDemoMode()) {
-    return (
-      disputeStore.get().find((d) => d.orderId === orderId) ?? {
-        id: `DISP-${Date.now().toString().slice(-6)}`,
-        orderId,
-        buyerId: '',
-        buyerName: '',
-        vendorId: '',
-        vendorName: '',
-        reason: 'OTHER',
-        description: '',
-        images: [],
-        evidences: [],
-        createdAt: new Date().toISOString(),
-        status: 'OPEN',
-        orderTotalAmount: 0,
-        escrowHoldingAmount: 0,
-        disbursedAmount: 0,
-        maxRefundableAmount: 0,
-      }
-    );
-  }
   const res = await apiClient.post<unknown>(GATEWAY.ORDER.DISPUTE_EVIDENCES(orderId), payload);
   const dto = unwrap<DisputeDto>(res);
   if (!dto) {

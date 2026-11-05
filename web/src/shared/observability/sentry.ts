@@ -13,7 +13,7 @@
  *
  * Vì sao nạp **động** (dynamic import): SDK trình duyệt nặng ~90 kB. Nếu
  * import tĩnh, mọi người dùng đều phải tải nó — kể cả khi không có DSN
- * (local, demo, CI). Nạp động giữ ngân sách bundle của phần code chạy thật
+ * (local, CI). Nạp động giữ ngân sách bundle của phần code chạy thật
  * và chỉ tải SDK khi thực sự cần báo lỗi.
  *
  * Vì sao vẫn an toàn: `initSentry()` được gọi ở đầu `main.tsx`, tức là
@@ -43,9 +43,7 @@ interface SentryModule {
   captureException: (error: unknown, hint?: Record<string, unknown>) => void;
   setUser: (user: { id: string; role?: string } | null) => void;
   addBreadcrumb: (breadcrumb: Record<string, unknown>) => void;
-  lazyLoadIntegration?: (
-    name: string,
-  ) => Promise<(options?: Record<string, unknown>) => unknown>;
+  lazyLoadIntegration?: (name: string) => Promise<(options?: Record<string, unknown>) => unknown>;
   addIntegration?: (integration: unknown) => void;
 }
 
@@ -139,11 +137,6 @@ export function initSentry(): void {
         'ResizeObserver loop limit exceeded',
         'AbortError',
       ],
-      beforeSend(event: unknown) {
-        // Chế độ demo không gửi gì ra ngoài, kể cả khi DSN có trong cấu hình.
-        if (OBSERVABILITY_CONTEXT.isDemoMode) return null;
-        return event;
-      },
     });
 
     // Session Replay chỉ bật khi được yêu cầu tường minh: nó ghi lại thao tác

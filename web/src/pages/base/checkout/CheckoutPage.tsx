@@ -3,7 +3,7 @@ import { toast } from '@/shared/ui';
 import { openPaymentPage, useAction, useAsync } from '@/shared/lib';
 import { toNationalPhone } from '@/shared/utils';
 import { addressApi, type Address } from '@/entities/address';
-import { useCart } from '@/entities/cart';
+import { useCartFor } from '@/entities/cart';
 import { CartSummary } from '@/entities/cart';
 import { setDeliveryProvince, useDeliveryProvinceCode } from '@/entities/region';
 import { useCurrentUser } from '@/entities/user';
@@ -24,13 +24,16 @@ interface CheckoutInvoiceInfo {
 }
 
 export function CheckoutPage() {
-  const cart = useCart();
   const user = useCurrentUser();
   const { busy, run, error } = useAction();
   const checkoutOrder = useCheckout();
 
   // The cart was priced to the delivery province (BR-30), so the order ships there.
   const provinceCode = useDeliveryProvinceCode();
+  // Giỏ hàng đến từ API thật (`GET /api/carts/me`) — server là nguồn sự thật
+  // của FR-08, không có bản sao cục bộ nào ở đây.
+  const asyncCart = useCartFor(provinceCode);
+  const cart = asyncCart.kind === 'loaded' ? asyncCart.data : { groups: [] };
   const [receiver, setReceiver] = useState(user.name);
   const [phone, setPhone] = useState(user.phone);
   const [address, setAddress] = useState('');
@@ -58,7 +61,7 @@ export function CheckoutPage() {
 
   const subtotal = cart.groups.reduce(
     (acc, g) => acc + g.items.reduce((s, it) => s + it.price * it.quantity, 0),
-    0
+    0,
   );
   const totalShipping = cart.groups.reduce((acc, g) => acc + g.shippingFee, 0);
   const total = subtotal + totalShipping;
@@ -75,7 +78,12 @@ export function CheckoutPage() {
 
     void run(async () => {
       const invoiceInfo: CheckoutInvoiceInfo | undefined = needInvoice
-        ? { name: companyName, taxCode, address: companyAddress, email: companyEmail }
+        ? {
+            name: companyName,
+            taxCode,
+            address: companyAddress,
+            email: companyEmail,
+          }
         : undefined;
 
       // Backend FR-09 / BR-29: POST /api/checkouts giữ kho và trả link VNPay.
@@ -95,7 +103,7 @@ export function CheckoutPage() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Thanh toán đơn hàng (M4.1, Flow 1)</h1>
+      <h1 className={styles.title}>Thanh toán đơn hàng</h1>
       <p className={styles.subtitle}>
         Xác nhận thông tin nhận hàng và hóa đơn cho {cart.groups.length} kiện hàng.
       </p>

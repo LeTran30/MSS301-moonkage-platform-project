@@ -8,10 +8,10 @@
   margin-bottom: var(--space-6);
 }
 .eyebrow {
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: 0.08em;
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   margin-bottom: var(--space-1);
 }
 .title {
@@ -106,8 +106,8 @@
   color: var(--color-text);
 }
 .chipActive {
-  background: var(--color-gold);
-  border-color: var(--color-gold);
+  background: var(--color-gold-text);
+  border-color: var(--color-gold-text);
   color: var(--color-white);
 }
 .chipActive:hover {
@@ -121,4 +121,14 @@
   font-size: var(--text-sm);
   color: var(--color-danger);
   margin: 0;
+}
+
+/* Màn hình hẹp: gộp hai cột form về một cột để không bị bóp méo. */
+@media (max-width: var(--breakpoint-md)) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .ownerCard {
+    padding: var(--space-6);
+  }
 }

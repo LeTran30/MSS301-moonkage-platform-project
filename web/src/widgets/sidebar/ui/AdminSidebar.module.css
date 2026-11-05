@@ -1,13 +1,14 @@
+/* Admin sidebar — màu khu đi qua token `--color-zone` (audit §1.8). */
 .sidebar {
-  width: var(--sidebar-w);
-  flex: none;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+  width: 260px;
+  flex-shrink: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - var(--header-h));
-  position: sticky;
-  top: var(--header-h);
+  justify-content: space-between;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
 }
 .header {
   padding: var(--space-4);
@@ -15,13 +16,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  background: var(--color-info-soft);
+  background: var(--color-zone-soft);
 }
 .zoneTag {
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   letter-spacing: 0.08em;
-  color: var(--color-info);
+  color: var(--color-zone);
 }
 .operatorTitle {
   font-size: var(--text-xs);
@@ -48,11 +49,11 @@
 }
 .navLink:hover {
   background: var(--color-surface-2);
-  color: var(--color-info);
+  color: var(--color-zone);
 }
 .navLink.active {
-  background: var(--color-info-soft);
-  color: var(--color-info);
+  background: var(--color-zone-soft);
+  color: var(--color-zone);
   font-weight: var(--weight-semibold);
 }
 .navLabel {
@@ -61,9 +62,9 @@
 .badge {
   padding: 2px 6px;
   border-radius: var(--radius-full);
-  background: var(--color-primary);
+  background: var(--color-zone);
   color: var(--color-white);
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-bold);
 }
 .footerLink {
@@ -79,5 +80,15 @@
   transition: color var(--duration-fast);
 }
 .backHomeBtn:hover {
-  color: var(--color-primary);
+  color: var(--color-zone);
+}
+
+/*
+ * Ở màn hình hẹp (≤lg), sidebar cột cố định bị ẩn và thay bằng drawer
+ * trượt (`SidebarDrawer`) — audit §3.3.
+ */
+@media (max-width: 1024px) {
+  .sidebar {
+    display: none;
+  }
 }

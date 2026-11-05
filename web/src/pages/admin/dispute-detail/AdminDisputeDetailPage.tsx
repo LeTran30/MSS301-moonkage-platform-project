@@ -2,41 +2,75 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, ButtonLink, Card, Breadcrumbs, toast } from '@/shared/ui';
+import { Badge, Button, ButtonLink, Card, Breadcrumbs, Textarea, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import {
-  disputeStore,
-  useDisputes,
-  DISPUTE_REASON_LABELS,
-  type DisputeDecision,
-} from '@/entities/dispute';
+import { DISPUTE_REASON_LABELS, useDisputeById, type DisputeDecision } from '@/entities/dispute';
 import { useResolveDispute } from '@/features/resolve-disputes';
 import styles from './AdminDisputeDetailPage.module.css';
 
+/**
+ * Q5.1 — hội đồng trọng tài tranh chấp Escrow.
+ *
+ * Dữ liệu đọc từ máy chủ:
+ * - `GET /api/orders?disputeStatus=OPEN` + `GET /api/orders/{orderId}/dispute`
+ *   — hồ sơ khiếu nại (FR-49).
+ * - `GET /api/ledgers/{orderId}` — số tiền **đang giữ** trong Escrow; đây là
+ *   trần hoàn tiền theo AC-49.3, không phải một con số ước lượng.
+ * - `PATCH /api/orders/{orderId}/dispute` — ghi phán quyết (FR-49).
+ */
 export function AdminDisputeDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const disputeId = id ?? '';
   const navigate = useNavigate();
-  const disputes = useDisputes();
-  const dispute = disputes.find((d) => d.id === id) || disputes[0];
   const { busy, run, error } = useAction();
   const resolveDispute = useResolveDispute();
 
-  const escrowAmount = dispute ? dispute.escrowHoldingAmount : 975000;
-  const [refundToBuyer, setRefundToBuyer] = useState<number>(dispute?.escrowHoldingAmount || 0);
-  const [adminNote, setAdminNote] = useState(
-    'Hộp bánh bị móp méo do đơn vị vận chuyển, chấp thuận hoàn tiền theo AC-49.3.'
-  );
+  const asyncDispute = useDisputeById(disputeId);
+  const dispute = asyncDispute.kind === 'loaded' ? asyncDispute.data : null;
+
+  // Số tiền hoàn mặc định bằng **toàn bộ** số đang giữ: quyết định
+  // PARTIAL_REFUND thì quản trị viên tự giảm, còn FULL_REFUND thì hoàn hết.
+  const escrowAmount = dispute?.escrowHoldingAmount ?? 0;
+  const [refundToBuyer, setRefundToBuyer] = useState<number>(escrowAmount);
+  const [adminNote, setAdminNote] = useState('');
+
+  // Khi hồ sơ tải xong, số tiền hoàn phải mặc định theo số tiền thật đang
+  // giữ (trước đó là một con số cứng 975.000đ không có ý nghĩa). Ta điều
+  // chỉnh state trong lúc render thay vì trong effect để không phát sinh
+  // thêm một vòng render không cần thiết.
+  const [seededDisputeId, setSeededDisputeId] = useState<string | null>(null);
+  if (dispute && dispute.id !== seededDisputeId) {
+    setSeededDisputeId(dispute.id);
+    setRefundToBuyer(dispute.escrowHoldingAmount ?? 0);
+  }
+
+  if (asyncDispute.kind === 'loading') {
+    return <p role="status">Đang tải hồ sơ khiếu nại…</p>;
+  }
+
+  if (asyncDispute.kind === 'error') {
+    return (
+      <div role="alert">
+        <p>{asyncDispute.message}</p>
+        <Button variant="secondary" onClick={asyncDispute.reload}>
+          Thử lại
+        </Button>
+      </div>
+    );
+  }
 
   if (!dispute) {
     return (
       <div>
-        <p>Không tìm thấy khiếu nại.</p>
+        <p>Không tìm thấy khiếu nại #{disputeId}.</p>
         <ButtonLink to={routes.admin.disputes}>Về danh sách tranh chấp</ButtonLink>
       </div>
     );
   }
 
   const payToVendor = Math.max(0, escrowAmount - refundToBuyer);
+  const alreadyResolved = dispute.status === 'RESOLVED';
+  const orderId = dispute.orderId;
 
   function handleResolve(decision: DisputeDecision) {
     const refund =
@@ -49,31 +83,20 @@ export function AdminDisputeDetailPage() {
 
     void run(async () => {
       // Backend FR-49: PATCH /api/orders/{orderId}/dispute với ResolveDisputeRequest.
-      const resolved = await resolveDispute(dispute.orderId, {
+      const resolved = await resolveDispute(orderId, {
         decision,
         refundAmount: refund,
-        decisionReason: adminNote,
+        decisionReason: adminNote.trim(),
       });
 
-      disputeStore.set((prev) =>
-        prev.map((d) =>
-          d.id === dispute.id
-            ? {
-                ...d,
-                status: 'RESOLVED',
-                decision: resolved.decision ?? decision,
-                refundAmount: resolved.refundAmount ?? refund,
-                adminNote,
-                decidedAt: new Date().toISOString(),
-                resolvedAt: resolved.resolvedAt ?? new Date().toISOString(),
-              }
-            : d
-        )
+      toast.success(
+        `Đã hạch toán quyết định trọng tài: Hoàn buyer ${formatCurrency(refund)}, Trả xưởng ${formatCurrency(Math.max(0, escrowAmount - refund))}!`,
       );
 
-      toast.success(
-        `Đã hạch toán quyết định trọng tài: Hoàn buyer ${formatCurrency(refund)}, Trả xưởng ${formatCurrency(payToVendor)}!`
-      );
+      // Dữ liệu phán quyết trả về từ máy chủ là nguồn sự thật.
+      if (resolved.status) {
+        asyncDispute.reload();
+      }
       navigate(routes.admin.disputes);
     });
   }
@@ -90,15 +113,14 @@ export function AdminDisputeDetailPage() {
 
       <div className={styles.headerRow}>
         <div>
-          <h1 className={styles.title}>
-            Hội Đồng Trọng Tài Tranh Chấp #{dispute.id} (Q5.1, AC-49.3)
-          </h1>
+          <h1 className={styles.title}>Hội Đồng Trọng Tài Tranh Chấp #{dispute.id}</h1>
           <p className={styles.subtitle}>
-            Đơn hàng: #{dispute.orderId} · Ký quỹ tạm giữ: <strong>{formatCurrency(escrowAmount)}</strong>
+            Đơn hàng: #{dispute.orderId} · Ký quỹ tạm giữ:{' '}
+            <strong>{formatCurrency(escrowAmount)}</strong>
           </p>
         </div>
-        <Badge tone={dispute.status === 'RESOLVED' ? 'green' : 'red'} size="md">
-          {dispute.status === 'RESOLVED' ? 'Đã phán quyết' : 'Đang thụ lý trọng tài'}
+        <Badge tone={alreadyResolved ? 'green' : 'red'} size="md">
+          {alreadyResolved ? 'Đã phán quyết' : 'Đang thụ lý trọng tài'}
         </Badge>
       </div>
 
@@ -108,7 +130,9 @@ export function AdminDisputeDetailPage() {
           <div className={styles.detailList}>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Lý do:</span>
-              <strong className={styles.reasonValue}>{DISPUTE_REASON_LABELS[dispute.reason]}</strong>
+              <strong className={styles.reasonValue}>
+                {DISPUTE_REASON_LABELS[dispute.reason]}
+              </strong>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Số tiền ký quỹ phong tỏa:</span>
@@ -137,58 +161,88 @@ export function AdminDisputeDetailPage() {
         <Card padding="lg" className={styles.card}>
           <h2 className={styles.cardTitle}>Phán Quyết & Hạch Toán Ký Quỹ Escrow</h2>
 
-          <div>
-            <label className={styles.fieldLabel} htmlFor="refund-amount">
-              Số tiền hoàn trả Bên Mua (VNĐ) — Tối đa: {formatCurrency(escrowAmount)}
-            </label>
-            <input
-              id="refund-amount"
-              type="number"
-              className={styles.numberInput}
-              value={refundToBuyer}
-              onChange={(e) => setRefundToBuyer(Math.min(escrowAmount, Number(e.target.value)))}
-              max={escrowAmount}
-              min={0}
-            />
-            <div className={styles.hint}>
-              Số tiền còn lại giải ngân cho Bên Xưởng: <strong>{formatCurrency(payToVendor)}</strong>
+          {alreadyResolved ? (
+            <div className={styles.detailList}>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Quyết định:</span>
+                <strong>{dispute.decision ?? '—'}</strong>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Hoàn cho người mua:</span>
+                <strong>{formatCurrency(dispute.refundAmount ?? 0)}</strong>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Căn cứ phán quyết:</span>
+                <strong>{dispute.adminNote ?? '—'}</strong>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div>
+                <label className={styles.fieldLabel} htmlFor="refund-amount">
+                  Số tiền hoàn trả Bên Mua (VNĐ) — Tối đa: {formatCurrency(escrowAmount)}
+                </label>
+                <input
+                  id="refund-amount"
+                  type="number"
+                  className={styles.numberInput}
+                  value={refundToBuyer}
+                  onChange={(e) =>
+                    setRefundToBuyer(
+                      Math.min(escrowAmount, Math.max(0, Number(e.target.value) || 0)),
+                    )
+                  }
+                  max={escrowAmount}
+                  min={0}
+                />
+                <div className={styles.hint}>
+                  Số tiền còn lại giải ngân cho Bên Xưởng:{' '}
+                  <strong>{formatCurrency(payToVendor)}</strong>
+                </div>
+              </div>
 
-          <div>
-            <label className={styles.fieldLabel} htmlFor="decision-reason">
-              Căn cứ phán quyết trọng tài:
-            </label>
-            <textarea
-              id="decision-reason"
-              className={styles.textarea}
-              rows={3}
-              value={adminNote}
-              maxLength={2000}
-              onChange={(e) => setAdminNote(e.target.value)}
-            />
-          </div>
+              <div>
+                <Textarea
+                  id="decision-reason"
+                  label="Căn cứ phán quyết trọng tài:"
+                  rows={3}
+                  value={adminNote}
+                  maxLength={2000}
+                  placeholder="Nêu rõ căn cứ: bằng chứng đã đối chiếu, quy định áp dụng và lý do phân bổ tiền."
+                  onChange={(e) => setAdminNote(e.target.value)}
+                />
+              </div>
 
-          {error && (
-            <p className={styles.formError} role="alert">
-              {error}
-            </p>
+              {error && (
+                <p className={styles.formError} role="alert">
+                  {error}
+                </p>
+              )}
+
+              <div className={styles.actionRow}>
+                <Button
+                  variant="primary"
+                  onClick={() => handleResolve('PARTIAL_REFUND')}
+                  loading={busy}
+                  disabled={busy}
+                >
+                  Chấp Thuận Phân Bổ Ký Quỹ
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleResolve('FULL_REFUND')}
+                  disabled={busy}
+                >
+                  Hoàn 100% Cho Buyer
+                </Button>
+                <Button variant="outline" onClick={() => handleResolve('REJECTED')} disabled={busy}>
+                  Bác Đơn, Trả 100% Xưởng
+                </Button>
+              </div>
+            </>
           )}
-
-          <div className={styles.actionRow}>
-            <Button variant="primary" onClick={() => handleResolve('PARTIAL_REFUND')} loading={busy} disabled={busy}>
-              Chấp Thuận Phân Bổ Ký Quỹ
-            </Button>
-            <Button variant="outline" onClick={() => handleResolve('FULL_REFUND')} disabled={busy}>
-              Hoàn 100% Cho Buyer
-            </Button>
-            <Button variant="outline" onClick={() => handleResolve('REJECTED')} disabled={busy}>
-              Bác Đơn, Trả 100% Xưởng
-            </Button>
-          </div>
         </Card>
       </div>
     </div>
   );
 }
-

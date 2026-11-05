@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { nfcApi, NFC_REASON_MESSAGES } from '../nfcApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -10,13 +9,12 @@ describe('User Entity - nfcApi (FR-04, AC-04.1)', () => {
   });
 
   it('nfcApi.getSession() đọc trạng thái phiên', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope({
         sessionId: 'sess-1',
         status: 'VERIFIED',
         expiresAt: '2026-11-02T04:05:00Z',
-      })
+      }),
     );
 
     const status = await nfcApi.getSession('sess-1');
@@ -25,14 +23,13 @@ describe('User Entity - nfcApi (FR-04, AC-04.1)', () => {
   });
 
   it('nfcApi.getMyStatus() chỉ trả dữ liệu đã che', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope({
         nfcStatus: 'VERIFIED',
         legalName: 'Anh Minh',
         idNumberMasked: '0792••••4567',
         nfcVerifiedAt: '2026-10-20T08:00:00Z',
-      })
+      }),
     );
 
     const status = await nfcApi.getMyStatus();

@@ -68,13 +68,13 @@ export function QuoteRequestDeliveryCard({
           label="Tỉnh / Thành phố"
           options={provinceOptions}
           value={provinceCode}
-          onChange={(e) => onProvinceCodeChange(e.target.value)}
+          onChange={(v) => onProvinceCodeChange(v)}
           required
         />
       </div>
       <p className={styles.hintLine}>
         Khu vực giao: <strong>{provinceNameOf(provinceCode) || 'Hà Nội'}</strong> — phí vận chuyển
-        liên tỉnh được tính theo tỉnh này (BR-30).
+        liên tỉnh được tính theo tỉnh này.
       </p>
     </Card>
   );

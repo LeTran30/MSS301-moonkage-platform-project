@@ -59,11 +59,14 @@ export function RequestComparePage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.breadcrumb}>
-          <Link to={routes.account.requests}>Yêu cầu &amp; báo giá</Link> / <span>#{request.id}</span>
+          <Link to={routes.account.requests}>Yêu cầu &amp; báo giá</Link> /{' '}
+          <span>#{request.id}</span>
         </div>
-        <h2 className={styles.title}>So Sánh Báo Giá Cạnh Nhau (M6.2.1, FR-17)</h2>
+        <h2 className={styles.title}>So Sánh Báo Giá Cạnh Nhau</h2>
         <p className={styles.lead}>
-          Yêu cầu: <strong>{request.quantity} hộp</strong> · Ngày giao: <strong>{request.deliveryDeadline}</strong> · Khu vực: <strong>{request.deliveryProvince}</strong>
+          Yêu cầu: <strong>{request.quantity} hộp</strong> · Ngày giao:{' '}
+          <strong>{request.deliveryDeadline}</strong> · Khu vực:{' '}
+          <strong>{request.deliveryProvince}</strong>
         </p>
       </div>
 
@@ -141,7 +144,7 @@ export function RequestComparePage() {
                       loading={busy}
                       onClick={() => handleAcceptQuoteAndDeposit(quote)}
                     >
-                      Chấp nhận &amp; Đặt cọc {formatCurrency(quote.depositAmount)} (M6.2.2)
+                      Chấp nhận &amp; Đặt cọc {formatCurrency(quote.depositAmount)}
                     </Button>
                   ) : (
                     <Badge tone="neutral" size="sm">
@@ -166,4 +169,3 @@ export function RequestComparePage() {
     </div>
   );
 }
-

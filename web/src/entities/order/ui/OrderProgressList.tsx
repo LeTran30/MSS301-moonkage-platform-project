@@ -14,7 +14,7 @@ interface OrderProgressListProps {
  * Lịch trình xử lý đơn hàng.
  *
  * Ưu tiên lịch sử tiến độ từ backend; khi backend chưa có dữ liệu thì hiển thị
- * các mốc gốc của đơn (fallback cho bản demo).
+ * các mốc gốc của đơn (fallback khi backend chưa có dữ liệu).
  */
 export function OrderProgressList({ order, progressUpdates }: OrderProgressListProps) {
   return (

@@ -1,5 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import type { Order } from '@/entities/order';
+
+import { type Order } from '@/entities/order';
 import { mapOrderDtoToEntity, type OrderDto } from '@/entities/order';
 
 /**

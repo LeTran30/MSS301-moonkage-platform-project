@@ -11,10 +11,7 @@
   gap: 16px;
 }
 .title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .subtitle {
   color: var(--color-text-muted);
@@ -53,20 +50,23 @@
 }
 .totalValue {
   font-weight: 700;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   color: var(--color-primary);
 }
 .escrowBox {
   background: var(--color-surface-2);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-top: 8px;
 }
 .escrowTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   font-size: var(--text-sm);
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: var(--color-gold);
+  color: var(--color-gold-text);
 }
 .escrowList {
   margin: 0;
@@ -91,7 +91,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   cursor: pointer;
   background: transparent;
@@ -99,6 +99,9 @@
 .paymentOptionActive {
   background: var(--color-surface-2);
   border-color: var(--color-gold);
+}
+.paymentRadioInput {
+  flex: none;
 }
 .optionHint {
   font-size: var(--text-xs);
@@ -124,7 +127,7 @@
 .confirmBtn {
   width: 100%;
   padding: 14px 20px;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
 }
 .error {
   margin: 0;

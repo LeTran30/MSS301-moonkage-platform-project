@@ -1,4 +1,3 @@
-export { INITIAL_CRUSTS, INITIAL_FILLINGS } from './types';
 export type { CakeCrust, CakeFilling, CakeTaxonomyItem, Product, ProductStatus } from './types';
 export { productStore, taxonomyStore, useProduct, useProducts, useTaxonomy } from './productStore';
 export { filterProducts } from './filterProducts';

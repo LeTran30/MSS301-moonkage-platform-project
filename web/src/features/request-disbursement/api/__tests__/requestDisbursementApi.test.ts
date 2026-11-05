@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { requestDisbursement } from '../requestDisbursementApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 describe('Feature request-disbursement - requestDisbursementApi (FR-41)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('requestDisbursement() gửi amount + purpose của FR-41', async () => {
@@ -18,7 +16,7 @@ describe('Feature request-disbursement - requestDisbursementApi (FR-41)', () => 
         amount: 4_200_000,
         purpose: 'MATERIALS',
         status: 'PENDING',
-      }) as never
+      }) as never,
     );
 
     const created = await requestDisbursement('ord-1', {

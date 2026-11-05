@@ -31,7 +31,7 @@ export function AddressesPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3>Địa chỉ nhận hàng đã lưu (M6.3, FR-03)</h3>
+        <h3>Địa chỉ nhận hàng đã lưu</h3>
         <Button
           variant="primary"
           size="sm"

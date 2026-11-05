@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Card } from '@/shared/ui';
+import { Badge, Card, Icon } from '@/shared/ui';
 import type { Dispute } from '../model/disputeStore';
 import styles from './DisputeResolutionCard.module.css';
 
@@ -17,7 +17,9 @@ export function DisputeResolutionCard({ dispute }: DisputeResolutionCardProps) {
           <span className={styles.disputeId}>#{dispute.id}</span>
           <h3 className={styles.orderRef}>Phán quyết tranh chấp đơn #{dispute.orderId}</h3>
         </div>
-        <Badge tone="green">✓ Đã giải quyết xong</Badge>
+        <Badge tone="green">
+          <Icon name="check" size={13} /> Đã giải quyết xong
+        </Badge>
       </div>
 
       <div className={styles.resolutionDetails}>

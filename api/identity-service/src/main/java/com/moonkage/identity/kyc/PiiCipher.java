@@ -8,7 +8,6 @@ import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,8 +29,8 @@ class PiiCipher {
     private final String base64Key;
 
     /** {@code base64Key}: 32 random bytes, e.g. {@code openssl rand -base64 32}. */
-    public PiiCipher(@Value("${nfc.pii-key}") String base64Key) {
-        this.base64Key = base64Key;
+    public PiiCipher(NfcProperties nfcProperties) {
+        this.base64Key = nfcProperties.getPiiKey();
     }
 
     public byte[] encrypt(String plaintext) {

@@ -2,7 +2,7 @@
  * Cấu hình observability (Sentry + analytics).
  *
  * Vì sao tách riêng khỏi `env.ts`: observability là thứ **bật/tắt được theo
- * môi trường** và có thể thiếu hoàn toàn (local, demo, CI) mà ứng dụng vẫn
+ * môi trường** và có thể thiếu hoàn toàn (local, CI) mà ứng dụng vẫn
  * phải chạy bình thường. Không có DSN thì không khởi tạo Sentry; không có
  * measurement ID thì không khởi tạo analytics.
  *
@@ -30,13 +30,11 @@ export interface ObservabilityContext {
   environment: string;
   /** Phiên bản ứng dụng (git sha hoặc số build). */
   release?: string;
-  /** Môi trường demo không gửi gì ra ngoài. */
-  isDemoMode: boolean;
 }
 
-const env = (typeof import.meta !== 'undefined' && import.meta.env
-  ? import.meta.env
-  : {}) as Record<string, string | undefined>;
+const env = (
+  typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {}
+) as Record<string, string | undefined>;
 
 function readVar(name: string): string {
   return (env[name] ?? '').trim();
@@ -101,5 +99,4 @@ export function isAnalyticsEnabled(): boolean {
 export const OBSERVABILITY_CONTEXT: ObservabilityContext = {
   environment: OBSERVABILITY_ENVIRONMENT,
   release: OBSERVABILITY_RELEASE || undefined,
-  isDemoMode: readVar('VITE_DEMO_MODE') === 'true',
 };

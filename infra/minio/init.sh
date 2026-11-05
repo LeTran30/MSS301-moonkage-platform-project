@@ -21,6 +21,18 @@ for bucket in "$MINIO_PUBLIC_BUCKET" "$MINIO_PRIVATE_BUCKET" "$MINIO_VENDOR_DOCS
 done
 mc anonymous set download "$ALIAS/$MINIO_PUBLIC_BUCKET"
 
+# ── seed images ──
+# The dev seed of vendor-service writes product 000300000001 and points its cover image at
+# this file. Without the file here the catalogue card would show an empty placeholder, so the
+# seed would be half there. `mc cp` overwrites, so re-running is safe.
+# The layout mirrors the bucket: /seed/products/<vendorId>/<file>.
+for image in /seed/products/*/*; do
+    [ -f "$image" ] || continue
+    vendor_id=$(basename "$(dirname "$image")")
+    file_name=$(basename "$image")
+    mc cp "$image" "$ALIAS/$MINIO_PUBLIC_BUCKET/products/$vendor_id/$file_name" >/dev/null
+done
+
 for bucket in "$MINIO_PRIVATE_BUCKET" "$MINIO_VENDOR_DOCS_BUCKET"; do
     mc anonymous set none "$ALIAS/$bucket"
     # import replaces the whole lifecycle configuration, so re-running never duplicates the rule

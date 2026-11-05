@@ -22,6 +22,14 @@ spring:
     gateway:
       discovery:
         locator:
+          # D-30 (interim state, deliberate): the locator is still on because four services - identity, quotation,
+          # order and payment - do not serve their canonical /api/<resource> path yet. Their clients (the web, and
+          # the mobile app outside this repository) still call /<service>/api/..., so turning the locator off now
+          # would answer 404 on every one of those calls.
+          #
+          # LegacyPathRedirectFilter answers 308 for the legacy form of the services that HAVE migrated
+          # (catalog, vendor, orchestrator), so their old path leads to the canonical one. The locator is turned off
+          # once every service serves /api/<resource>/... and the clients have moved over.
           enabled: true
           lower-case-service-id: true
       server:

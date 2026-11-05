@@ -18,7 +18,8 @@ export function NfcVerifiedPanel({ user, returnUrl }: NfcVerifiedPanelProps) {
       <h3>Tài khoản đã được xác minh thành công</h3>
       <p>
         Số định danh CCCD đã mã hóa an toàn:{' '}
-        <code>{user.idCardNumberMasked || '0011••••9876'}</code>
+        {/* Không có dữ liệu thì nói rõ là chưa có, không tự điền một số CCCD giả. */}
+        <code>{user.idCardNumberMasked || 'Chưa có dữ liệu'}</code>
       </p>
       <p className={styles.verifiedNote}>
         Bạn có đầy đủ quyền tạo yêu cầu báo giá doanh nghiệp, chốt hợp đồng và mở Shop bán hàng.
@@ -54,7 +55,6 @@ interface NfcSessionCardProps {
   busy: boolean;
   error?: string | null;
   onRefreshSession: () => void;
-  onOpenSimulator: () => void;
 }
 
 /** Thẻ QR phiên xác minh + hướng dẫn 3 bước (M6.4). */
@@ -67,7 +67,6 @@ export function NfcSessionCard({
   busy,
   error,
   onRefreshSession,
-  onOpenSimulator,
 }: NfcSessionCardProps) {
   return (
     <Card padding="lg" className={styles.qrCard}>
@@ -107,11 +106,14 @@ export function NfcSessionCard({
           </div>
 
           <div className={styles.qrActions}>
-            <Button variant="primary" size="md" loading={busy} disabled={busy} onClick={onRefreshSession}>
+            <Button
+              variant="primary"
+              size="md"
+              loading={busy}
+              disabled={busy}
+              onClick={onRefreshSession}
+            >
               Tạo mã QR mới
-            </Button>
-            <Button variant="secondary" size="md" onClick={onOpenSimulator}>
-              Mở popup giả lập quét NFC (Flow 6)
             </Button>
           </div>
 

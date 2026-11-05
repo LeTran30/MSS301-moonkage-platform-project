@@ -1,10 +1,10 @@
 package com.moonkage.gateway.config;
 
+import com.moonkage.api.GatewayHeader;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
@@ -42,14 +42,8 @@ import org.springframework.web.server.ServerWebExchange;
  */
 @Configuration
 @EnableWebFluxSecurity
-@EnableConfigurationProperties(RateLimitProperties.class)
+@EnableConfigurationProperties({RateLimitProperties.class, JwtProperties.class, CorsProperties.class})
 public class SecurityConfig {
-
-    /** No longer set; still stripped so a client cannot smuggle it to a service that reads it. */
-    static final String USER_ID = "X-User-Id";
-
-    static final String ACCOUNT_ID = "X-Account-Id";
-    static final String USER_ROLE = "X-User-Role";
 
     /** Route orchestrator-websocket in application.yml. */
     static final String WEBSOCKET_PATH = "/ws/**";
@@ -67,6 +61,12 @@ public class SecurityConfig {
                         // /internal/** is for service-to-service (OpenFeign) calls only
                         .pathMatchers("/internal/**", "/*/internal/**")
                         .denyAll()
+                        // The legacy form of a migrated service is listed here next to the canonical one for the
+                        // migration window of D-30. In practice the caller never reaches these rules for it:
+                        // LegacyPathRedirectFilter answers 308 before this chain, so the old path leads to the
+                        // canonical one and the authorization happens there. The entries are kept until the
+                        // locator is turned off, because a caller that still uses the old form must not be
+                        // refused a read it is allowed to make.
                         .pathMatchers(
                                 HttpMethod.GET,
                                 "/api/interprovince-fees",
@@ -105,6 +105,17 @@ public class SecurityConfig {
                                 "/catalog-service/api/products/**",
                                 "/order-service/api/reviews/**")
                         .permitAll()
+                        // FR-14: the list of suppliers that take custom orders is public
+                        // (SupplierController: "Works for a guest too"). The buyer sees
+                        // these shops before signing in, so the gateway must let the
+                        // request through without a token.
+                        .pathMatchers(
+                                HttpMethod.GET,
+                                "/api/suppliers",
+                                "/api/suppliers/**",
+                                "/quotation-service/api/suppliers",
+                                "/quotation-service/api/suppliers/**")
+                        .permitAll()
                         // BR-25: VNPay calls the IPN server to server and redirects the payer to the return page,
                         // both without our token; payment-service checks vnp_SecureHash instead
                         .pathMatchers(
@@ -134,9 +145,9 @@ public class SecurityConfig {
 
     /** Same Base64 HS256 key as identity-service (jwt.secret). Only ACCESS tokens pass; refresh tokens are refused. */
     @Bean
-    ReactiveJwtDecoder jwtDecoder(@Value("${jwt.secret}") String secret) {
+    ReactiveJwtDecoder jwtDecoder(JwtProperties jwtProperties) {
         NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder.withSecretKey(
-                        new SecretKeySpec(Base64.getDecoder().decode(secret), "HmacSHA256"))
+                        new SecretKeySpec(Base64.getDecoder().decode(jwtProperties.secret()), "HmacSHA256"))
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
         OAuth2TokenValidator<Jwt> accessOnly = jwt -> "ACCESS".equals(jwt.getClaimAsString("type"))
@@ -147,9 +158,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource(@Value("${moonkage.cors.allowed-origins}") List<String> origins) {
+    CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(origins);
+        cfg.setAllowedOrigins(corsProperties.allowedOrigins());
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         cfg.setMaxAge(Duration.ofHours(1));
@@ -176,13 +187,13 @@ public class SecurityConfig {
         // incoming headers are read-only, so build a fresh copy
         HttpHeaders headers = new HttpHeaders();
         headers.addAll(exchange.getRequest().getHeaders());
-        headers.remove(USER_ID);
-        headers.remove(ACCOUNT_ID);
-        headers.remove(USER_ROLE);
+        headers.remove(GatewayHeader.USER_ID);
+        headers.remove(GatewayHeader.ACCOUNT_ID);
+        headers.remove(GatewayHeader.USER_ROLE);
         if (jwt != null) {
             // one id per person: the account id, the JWT subject
-            headers.set(ACCOUNT_ID, jwt.getSubject());
-            headers.set(USER_ROLE, jwt.getClaimAsString("role"));
+            headers.set(GatewayHeader.ACCOUNT_ID, jwt.getSubject());
+            headers.set(GatewayHeader.USER_ROLE, jwt.getClaimAsString("role"));
         }
         HttpHeaders readOnly = HttpHeaders.readOnlyHttpHeaders(headers);
         ServerHttpRequest request = new ServerHttpRequestDecorator(exchange.getRequest()) {

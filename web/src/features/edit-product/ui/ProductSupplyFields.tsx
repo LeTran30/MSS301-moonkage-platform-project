@@ -1,4 +1,4 @@
-import { Input } from '@/shared/ui';
+import { Input, Radio } from '@/shared/ui';
 import styles from './productFormUi.module.css';
 
 export type SupplySource = 'SELF_PRODUCED' | 'RESELL' | 'BOTH';
@@ -36,11 +36,23 @@ export function ProductSupplyFields({
         <fieldset className={styles.fieldset}>
           <legend className={styles.label}>Nguồn hàng *</legend>
           <label className={styles.radio}>
-            <input type="radio" name="product-resold" checked={!resold} onChange={() => onResoldChange(false)} />
+            <Radio
+              name="product-resold"
+              checked={!resold}
+              onChange={() => onResoldChange(false)}
+              inputClassName={styles.radioInput}
+              aria-label="Bánh tự sản xuất"
+            />
             Bánh tự sản xuất
           </label>
           <label className={styles.radio}>
-            <input type="radio" name="product-resold" checked={resold} onChange={() => onResoldChange(true)} />
+            <Radio
+              name="product-resold"
+              checked={resold}
+              onChange={() => onResoldChange(true)}
+              inputClassName={styles.radioInput}
+              aria-label="Bánh nhập về bán lại"
+            />
             Bánh nhập về bán lại
           </label>
         </fieldset>

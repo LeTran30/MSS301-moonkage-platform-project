@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { Card } from '@/shared/ui';
+import { Card, Icon, type IconName } from '@/shared/ui';
 import { authShellStyles as styles } from './authShellStyles';
 
 type Props = {
-  /** The emoji or icon shown above the title. */
-  icon?: ReactNode;
+  /** Icon SVG hiển thị phía trên tiêu đề (thay cho emoji gốc). */
+  icon?: IconName;
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
@@ -22,7 +22,11 @@ export function AuthShell({ icon, title, subtitle, children, className }: Props)
     <div className={styles.authContainer}>
       <Card className={`${styles.authCard} ${className ?? ''}`}>
         <div className={styles.logoHeader}>
-          {icon && <div className={styles.moonIcon} aria-hidden="true">{icon}</div>}
+          {icon && (
+            <div className={styles.moonIcon} aria-hidden="true">
+              <Icon name={icon} size={44} />
+            </div>
+          )}
           <h1 className={styles.brandTitle}>{title}</h1>
           {subtitle && <p className={styles.brandSub}>{subtitle}</p>}
         </div>

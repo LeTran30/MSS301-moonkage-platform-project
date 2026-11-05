@@ -21,7 +21,7 @@ export function OrdersListPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>ĐƠN HÀNG CỦA TÔI (M6.1, FLOW 1, FLOW 2)</div>
+        <div className={styles.eyebrow}>ĐƠN HÀNG CỦA TÔI</div>
         <h2 className={styles.title}>Danh sách đơn hàng</h2>
         <p className={styles.lead}>
           Theo dõi tiến độ giao bánh, duyệt bản thiết kế in logo và yêu cầu hỗ trợ khiếu nại.
@@ -29,7 +29,11 @@ export function OrdersListPage() {
       </div>
 
       <div className={styles.tabsWrap}>
-        <Tabs<'retail' | 'bulk'> items={tabItems as { id: 'retail' | 'bulk'; label: string }[]} activeId={activeTab} onChange={setActiveTab} />
+        <Tabs<'retail' | 'bulk'>
+          items={tabItems as { id: 'retail' | 'bulk'; label: string }[]}
+          activeId={activeTab}
+          onChange={setActiveTab}
+        />
       </div>
 
       {activeTab === 'retail' && (
@@ -40,7 +44,9 @@ export function OrdersListPage() {
                 <div className={styles.idGroup}>
                   <Icon name="package" size={18} />
                   <strong>#{order.id}</strong>
-                  <span className={styles.orderDate}>· Ngày đặt: {formatDate(order.createdAt)}</span>
+                  <span className={styles.orderDate}>
+                    · Ngày đặt: {formatDate(order.createdAt)}
+                  </span>
                 </div>
                 <div className={styles.statusWrap}>
                   <Badge
@@ -48,8 +54,8 @@ export function OrdersListPage() {
                       order.status === 'COMPLETED'
                         ? 'green'
                         : order.status === 'DELIVERED'
-                        ? 'gold'
-                        : 'neutral'
+                          ? 'gold'
+                          : 'neutral'
                     }
                   >
                     {orderStatusLabel(order.status)}
@@ -64,7 +70,13 @@ export function OrdersListPage() {
               <div className={styles.itemsList}>
                 {order.items.map((it, idx) => (
                   <div key={idx} className={styles.itemRow}>
-                    <img src={it.image} alt={it.name} className={styles.itemImg}  loading="lazy" decoding="async" />
+                    <img
+                      src={it.image}
+                      alt={it.name}
+                      className={styles.itemImg}
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <div className={styles.itemInfo}>
                       <span className={styles.itemName}>{it.name}</span>
                       <span className={styles.itemQty}>
@@ -78,7 +90,9 @@ export function OrdersListPage() {
 
               <div className={styles.orderFooter}>
                 <div className={styles.totalBlock}>
-                  <span>Tổng thanh toán: <strong>{formatCurrency(order.total)}</strong></span>
+                  <span>
+                    Tổng thanh toán: <strong>{formatCurrency(order.total)}</strong>
+                  </span>
                   {order.trackingCode && (
                     <span className={styles.tracking}>Mã vận đơn: {order.trackingCode}</span>
                   )}
@@ -86,8 +100,12 @@ export function OrdersListPage() {
 
                 <div className={styles.actionBtns}>
                   {order.status === 'DELIVERED' && (
-                    <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
-                      <Icon name="alert" size={14} /> Báo vấn đề với đơn (M6.1.3)
+                    <ButtonLink
+                      to={routes.account.orderDispute(order.id)}
+                      variant="danger"
+                      size="sm"
+                    >
+                      <Icon name="alert" size={14} /> Báo vấn đề với đơn
                     </ButtonLink>
                   )}
                   <ButtonLink to={routes.account.order(order.id)} variant="primary" size="sm">
@@ -108,8 +126,12 @@ export function OrdersListPage() {
                 <div className={styles.idGroup}>
                   <Icon name="factory" size={18} />
                   <strong>#{order.id}</strong>
-                  <Badge tone="gold" size="sm">HỢP ĐỒNG IN LOGO</Badge>
-                  <span className={styles.orderDate}>· Ngày đặt: {formatDate(order.createdAt)}</span>
+                  <Badge tone="gold" size="sm">
+                    HỢP ĐỒNG IN LOGO
+                  </Badge>
+                  <span className={styles.orderDate}>
+                    · Ngày đặt: {formatDate(order.createdAt)}
+                  </span>
                 </div>
                 <div className={styles.statusWrap}>
                   <Badge
@@ -117,15 +139,15 @@ export function OrdersListPage() {
                       order.status === 'WAITING_MAKET'
                         ? 'red'
                         : order.status === 'IN_PRODUCTION'
-                        ? 'amber'
-                        : 'green'
+                          ? 'amber'
+                          : 'green'
                     }
                   >
                     {order.status === 'WAITING_MAKET'
                       ? 'CẦN DUYỆT MAKET'
                       : order.status === 'IN_PRODUCTION'
-                      ? 'Đang sản xuất'
-                      : order.status}
+                        ? 'Đang sản xuất'
+                        : order.status}
                   </Badge>
                 </div>
               </div>
@@ -137,11 +159,18 @@ export function OrdersListPage() {
               <div className={styles.itemsList}>
                 {order.items.map((it, idx) => (
                   <div key={idx} className={styles.itemRow}>
-                    <img src={it.image} alt={it.name} className={styles.itemImg}  loading="lazy" decoding="async" />
+                    <img
+                      src={it.image}
+                      alt={it.name}
+                      className={styles.itemImg}
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <div className={styles.itemInfo}>
                       <span className={styles.itemName}>{it.name}</span>
                       <span className={styles.itemQty}>
-                        Đơn giá: {formatCurrency(it.price)} · Số lượng: <strong>{it.quantity} hộp</strong>
+                        Đơn giá: {formatCurrency(it.price)} · Số lượng:{' '}
+                        <strong>{it.quantity} hộp</strong>
                       </span>
                     </div>
                     <div className={styles.itemTotal}>{formatCurrency(it.price * it.quantity)}</div>
@@ -151,15 +180,16 @@ export function OrdersListPage() {
 
               <div className={styles.bulkPaymentBrief}>
                 <div className={styles.briefCol}>
-                  <span>Tổng hợp đồng: <strong>{formatCurrency(order.total)}</strong></span>
+                  <span>
+                    Tổng hợp đồng: <strong>{formatCurrency(order.total)}</strong>
+                  </span>
                   <span className={styles.greenText}>
                     Đã cọc: <strong>{formatCurrency(order.depositAmount || 0)}</strong>
                   </span>
                 </div>
                 <div className={styles.briefCol}>
                   <span>
-                    Phần còn lại:{' '}
-                    <strong>{formatCurrency(order.remainingAmount || 0)}</strong>
+                    Phần còn lại: <strong>{formatCurrency(order.remainingAmount || 0)}</strong>
                   </span>
                   <span>
                     Trạng thái:{' '}
@@ -171,7 +201,9 @@ export function OrdersListPage() {
               <div className={styles.orderFooter}>
                 <div className={styles.bulkNotice}>
                   <Icon name="sparkle" size={16} />
-                  <span>Xưởng đã tải lên maket hộp. Vui lòng xem và duyệt để bắt đầu đúc bánh.</span>
+                  <span>
+                    Xưởng đã tải lên maket hộp. Vui lòng xem và duyệt để bắt đầu đúc bánh.
+                  </span>
                 </div>
 
                 <div className={styles.actionBtns}>
@@ -187,4 +219,3 @@ export function OrdersListPage() {
     </div>
   );
 }
-
