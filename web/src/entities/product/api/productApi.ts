@@ -1,7 +1,5 @@
 import { apiClient, GATEWAY, unwrap, unwrapList, unwrapPage } from '@/shared/api';
-import { isDemoMode, provinceCodeOf } from '@/shared/config';
-import { MOCK_PRODUCTS } from '../model/productStore';
-import { INITIAL_CRUSTS, INITIAL_FILLINGS } from '../model/types';
+import { provinceCodeOf } from '@/shared/config';
 import type { Product, CakeTaxonomyItem } from '../model/types';
 
 /**
@@ -146,9 +144,6 @@ export const productApi = {
    * so omitting it answers 400.
    */
   async getProducts(province?: string, options?: { vendorId?: string; q?: string }): Promise<Product[]> {
-    if (isDemoMode()) {
-      return MOCK_PRODUCTS;
-    }
     const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
     if (options?.vendorId) params.set('vendorId', options.vendorId);
     if (options?.q) params.set('q', options.q);
@@ -159,9 +154,6 @@ export const productApi = {
   },
 
   async getProductById(id: string, province?: string): Promise<Product | null> {
-    if (isDemoMode()) {
-      return MOCK_PRODUCTS.find((p) => p.id === id) || null;
-    }
     const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
     const res = await apiClient.get<unknown>(`${GATEWAY.CATALOG.PRODUCT_BY_ID(id)}?${params.toString()}`);
     // ProductReadController.getProduct trả về MỘT `ProductListingResponse` trong
@@ -177,9 +169,6 @@ export const productApi = {
    * buyer sees every review of the product, not only the ones of one order.
    */
   async getReviews(productId: string): Promise<ProductReview[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.CATALOG.PRODUCT_REVIEWS(productId));
     return unwrapPage<ProductReviewDto>(res).map(mapProductReviewDto);
   },
@@ -191,18 +180,11 @@ export const productApi = {
    * knows the filter list is unreliable instead of seeing a silent default list.
    */
   async getTaxonomy(): Promise<{ crusts: CakeTaxonomyItem[]; fillings: CakeTaxonomyItem[] }> {
-    if (isDemoMode()) {
-      return { crusts: INITIAL_CRUSTS, fillings: INITIAL_FILLINGS };
-    }
-
     const res = await apiClient.get<unknown>(`${GATEWAY.CATALOG.CAKE_ATTRIBUTES}`);
     const attributes = unwrapList<CakeAttributeDto>(res).map(mapCakeAttributeDto);
     const crusts = attributes.filter((a) => a.type === 'crust');
     const fillings = attributes.filter((a) => a.type === 'filling');
 
-    return {
-      crusts: crusts.length > 0 ? crusts : INITIAL_CRUSTS,
-      fillings: fillings.length > 0 ? fillings : INITIAL_FILLINGS,
-    };
+    return { crusts, fillings };
   },
 };

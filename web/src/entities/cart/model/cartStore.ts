@@ -26,39 +26,8 @@ export type CartState = {
   groups: ShopCartGroup[];
 };
 
-const INITIAL_CART: CartState = {
-  groups: [
-    {
-      vendorId: 'ven_quan',
-      vendorName: 'Hiệu Bánh Gia Truyền Bảo An',
-      shippingFee: 25000,
-      items: [
-        {
-          productId: 'prod_01',
-          name: 'Bánh Nướng Thập Cẩm Gà Quay 2 Trứng Muối',
-          price: 135000,
-          image: '/images/banh-nuong.jpg',
-          vendorId: 'ven_quan',
-          vendorName: 'Hiệu Bánh Gia Truyền Bảo An',
-          quantity: 2,
-          stock: 120,
-          bulkQuoteThreshold: 30,
-        },
-        {
-          productId: 'prod_02',
-          name: 'Hộp Quà Trăng Vàng Đoàn Viên (4 Bánh Cao Cấp)',
-          price: 680000,
-          image: '/images/hop-qua.jpg',
-          vendorId: 'ven_quan',
-          vendorName: 'Hiệu Bánh Gia Truyền Bảo An',
-          quantity: 1,
-          stock: 45,
-          bulkQuoteThreshold: 20,
-        },
-      ],
-    },
-  ],
-};
+// The server holds the cart; the store mirrors it for the header badge.
+const INITIAL_CART: CartState = { groups: [] };
 
 export const cartStore = createStore<CartState>(INITIAL_CART, 'moonkage_cart');
 

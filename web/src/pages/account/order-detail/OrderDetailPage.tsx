@@ -31,7 +31,7 @@ type DetailTab = 'progress' | 'maket' | 'payment' | 'invoice' | 'reviews';
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = id || '';
-  const order = useOrder(orderId || 'MK-1042');
+  const order = useOrder(orderId);
   const [activeTab, setActiveTab] = useState<DetailTab>('progress');
   const { busy, run, error } = useAction();
   const confirmDelivery = useConfirmDelivery();

@@ -88,6 +88,19 @@ export const CSP_DIRECTIVES: readonly string[] = [
  */
 export const HEADER_ONLY_DIRECTIVES: readonly string[] = ['frame-ancestors \'none\''];
 
+/**
+ * The origin of the API gateway, when it is not the app's own: the CSP must let
+ * the app connect to it. A relative or empty base URL needs nothing extra.
+ */
+export function apiConnectSources(apiBaseUrl: string): string[] {
+  if (!/^https?:\/\//i.test(apiBaseUrl)) return [];
+  try {
+    return [new URL(apiBaseUrl).origin];
+  } catch {
+    return [];
+  }
+}
+
 /** Chuỗi header CSP đầy đủ, dùng khi cấu hình web server. */
 export function buildCspHeader(extraConnectSources: readonly string[] = []): string {
   const connect = ["'self'", ...extraConnectSources];

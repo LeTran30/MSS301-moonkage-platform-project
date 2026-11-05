@@ -9,18 +9,18 @@ describe('Feature checkout - checkoutApi (FR-08)', () => {
     vi.restoreAllMocks();
   });
 
-  it('checkoutOrder() sinh ID có tiền tố chuẩn khi demo', async () => {
+  it('checkoutOrder() gọi máy chủ cả khi bật chế độ demo (luồng 1 không còn mock)', async () => {
     vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
-    const result = await checkoutOrder({
-      recipientName: 'Anh Minh',
-      recipientPhone: '0903123456',
-      provinceCode: '01',
-      addressDetail: '180 Triệu Việt Vương',
-    });
-    expect(result.checkoutId).toMatch(/^chk_/);
-    expect(result.paymentId).toMatch(/^pay_/);
-    // Demo mode has no gateway: the link opens the result page for that payment.
-    expect(result.paymentUrl).toBe(`/thanh-toan/ket-qua?paymentId=${result.paymentId}`);
+    const post = vi.spyOn(apiClient, 'post').mockRejectedValue(new Error('HTTP 503'));
+    await expect(
+      checkoutOrder({
+        recipientName: 'Anh Minh',
+        recipientPhone: '0903123456',
+        provinceCode: '01',
+        addressDetail: '180 Triệu Việt Vương',
+      }),
+    ).rejects.toThrow('HTTP 503');
+    expect(post).toHaveBeenCalledTimes(1);
   });
 
   it('checkoutOrder() trả về paymentUrl và paymentId của backend', async () => {

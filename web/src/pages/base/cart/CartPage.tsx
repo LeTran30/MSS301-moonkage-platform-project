@@ -51,6 +51,8 @@ export function CartPage() {
 
   return (
     <div className={styles.container}>
+      {/* Tiêu đề trang hiện ở mọi trạng thái: đang tải, lỗi, giỏ trống. */}
+      <h1 className={styles.title}>Giỏ hàng của bạn (M4.0, Flow 1)</h1>
       <AsyncState
         state={asyncCart}
         onRetry={asyncCart.reload}
@@ -72,7 +74,6 @@ export function CartPage() {
       >
         {() => (
           <>
-            <h1 className={styles.title}>Giỏ hàng của bạn (M4.0, Flow 1)</h1>
             <p className={styles.subtitle}>
               Đơn hàng được chia theo từng hiệu bánh để đảm bảo thời gian nướng và vận chuyển chuẩn xác nhất.
             </p>

@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap, unwrapList } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 import type { Product, ProductStatus } from '@/entities/product/@x/vendor';
 
 /**
@@ -146,18 +145,12 @@ export function mapVendorProductDtoToEntity(dto: VendorProductDto): Product {
 export const vendorProductApi = {
   /** The Shop's products, every status, newest first (FR-30). */
   async getProducts(vendorId: string): Promise<VendorProductDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.VENDOR.PRODUCTS(vendorId));
     return unwrapList<VendorProductDto>(res);
   },
 
   /** One product as its Shop sees it, with the version to send back on PUT. */
   async getProduct(vendorId: string, productId: string): Promise<VendorProductDto | null> {
-    if (isDemoMode()) {
-      return null;
-    }
     const res = await apiClient.get<unknown>(GATEWAY.VENDOR.PRODUCT_BY_ID(vendorId, productId));
     // ProductController.getProduct trả về MỘT `ProductResponse` trong envelope.
     const dto = unwrap<VendorProductDto>(res);

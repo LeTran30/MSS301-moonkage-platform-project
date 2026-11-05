@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
+  apiConnectSources,
   buildCspHeader,
   applyCspMeta,
   CSP_DIRECTIVES,
@@ -47,6 +48,13 @@ describe('Shared config - security', () => {
   it('connect-src nhận thêm nguồn cho API gateway', () => {
     const csp = buildCspHeader(['https://api.moonkage.vn', 'wss://api.moonkage.vn']);
     expect(csp).toContain("connect-src 'self' https://api.moonkage.vn wss://api.moonkage.vn");
+  });
+
+  it('apiConnectSources lấy origin của gateway khác origin, bỏ qua URL tương đối', () => {
+    expect(apiConnectSources('http://localhost:8080')).toEqual(['http://localhost:8080']);
+    expect(apiConnectSources('https://api.moonkage.vn/v1/')).toEqual(['https://api.moonkage.vn']);
+    expect(apiConnectSources('')).toEqual([]);
+    expect(apiConnectSources('/api')).toEqual([]);
   });
 
   it('connect-src mặc định chỉ cho phép chính ứng dụng', () => {

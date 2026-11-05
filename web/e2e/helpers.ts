@@ -1,16 +1,23 @@
 import { expect, type Page } from '@playwright/test';
+import { stubApi } from './apiStubs';
 
 /**
  * Tiện ích dùng chung cho các test E2E.
  *
- * Ứng dụng chạy ở chế độ demo, nên không có backend thật: dữ liệu đến từ
- * `MOCK_PRODUCTS`. Test vì vậy tập trung vào **hành trình người dùng** và
- * **contract của giao diện** (route, nhãn, trạng thái), không phụ thuộc vào
- * dữ liệu server.
+ * Ứng dụng chạy ở chế độ demo cho các luồng còn dữ liệu demo. Luồng 1 không
+ * còn mock: nó đọc máy chủ, và `apiStubs.ts` trả lời thay máy chủ. Test tập
+ * trung vào **hành trình người dùng** và **contract của giao diện** (route,
+ * nhãn, trạng thái).
  */
 
-/** Điều hướng tới một route của ứng dụng và chờ trang render xong. */
+const stubbedPages = new WeakSet<Page>();
+
+/** Điều hướng tới một route của ứng dụng (máy chủ đã được giả lập) và chờ trang render xong. */
 export async function gotoRoute(page: Page, path: string): Promise<void> {
+  if (!stubbedPages.has(page)) {
+    stubbedPages.add(page);
+    await stubApi(page);
+  }
   await page.goto(path);
   await expect(page.locator('#root')).toBeVisible();
 }
