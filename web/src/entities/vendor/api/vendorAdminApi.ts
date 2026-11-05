@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrapList } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { OwnerCheckDto, VendorResponseDto, VendorReviewDto } from './vendorDto';
 
 /**
@@ -20,9 +20,6 @@ export const vendorAdminApi = {
     status?: 'PENDING' | 'NEEDS_INFO' | 'APPROVED' | 'REJECTED' | 'LOCKED';
     ownerAccountId?: string;
   }): Promise<VendorResponseDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const params = new URLSearchParams();
     if (options?.status) params.set('status', options.status);
     if (options?.ownerAccountId) params.set('ownerAccountId', options.ownerAccountId);
@@ -35,18 +32,12 @@ export const vendorAdminApi = {
 
   /** Past review decisions of one vendor, oldest first (AC-45.5). */
   async getVendorReviews(vendorId: string): Promise<VendorReviewDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.VENDOR.REVIEWS(vendorId));
     return unwrapList<VendorReviewDto>(res);
   },
 
   /** How the owner matched the representative at each submission (AC-45.4). */
   async getOwnerChecks(vendorId: string): Promise<OwnerCheckDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.VENDOR.OWNER_CHECKS(vendorId));
     return unwrapList<OwnerCheckDto>(res);
   },

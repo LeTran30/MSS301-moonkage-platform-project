@@ -1,8 +1,9 @@
 package com.moonkage.payment.security;
 
+import com.moonkage.api.GatewayHeader;
+import com.moonkage.api.GatewayRole;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
-import java.util.Arrays;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -37,14 +38,9 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
         if (!required && accountId == null && role == null) {
             return null;
         }
-        if (!StringUtils.hasText(accountId) || !isKnownRole(role)) {
+        if (!StringUtils.hasText(accountId) || !GatewayRole.isKnown(role)) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
         return new CurrentUserInfo(accountId, Role.valueOf(role));
-    }
-
-    private static boolean isKnownRole(String role) {
-        return role != null
-                && Arrays.stream(Role.values()).anyMatch(r -> r.name().equals(role));
     }
 }

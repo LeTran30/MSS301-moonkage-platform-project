@@ -1,20 +1,10 @@
 // IA Sheet 7.1 & Bảng tính:
 // Trạng thái đơn mua lẻ (5 bước): Đã thanh toán -> Người bán xác nhận -> Đang giao -> Đã giao -> Hoàn tất
-export type RetailOrderStatus =
-  | 'PAID'
-  | 'CONFIRMED'
-  | 'SHIPPING'
-  | 'DELIVERED'
-  | 'COMPLETED';
+export type RetailOrderStatus = 'PAID' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'COMPLETED';
 
 // Trạng thái đơn đặt hàng số lượng lớn (6 bước): Đã cọc -> Chờ duyệt maket (bỏ khi không custom) -> Đang sản xuất -> Sẵn sàng giao -> Đã giao -> Hoàn tất
 export type BulkOrderStatus =
-  | 'DEPOSITED'
-  | 'WAITING_MAKET'
-  | 'IN_PRODUCTION'
-  | 'READY_TO_SHIP'
-  | 'DELIVERED'
-  | 'COMPLETED';
+  'DEPOSITED' | 'WAITING_MAKET' | 'IN_PRODUCTION' | 'READY_TO_SHIP' | 'DELIVERED' | 'COMPLETED';
 
 export type OrderType = 'RETAIL' | 'BULK';
 
@@ -52,7 +42,7 @@ export type Order = {
   remainingPaid?: boolean;
   status: RetailOrderStatus | BulkOrderStatus;
   items: Array<{
-    /** The catalogue product; a review names it (FR-11). Absent on demo orders. */
+    /** The catalogue product; a review names it (FR-11). Absent when the catalogue product is not linked. */
     productId?: string;
     name: string;
     quantity: number;

@@ -1,8 +1,7 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import { generateEntityId } from '@/shared/utils';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
-import { requestStore, type QuoteRequest } from '@/entities/request';
+import { type QuoteRequest } from '@/entities/request';
 import { mapQuoteRequestDto, type QuoteRequestDto } from '@/entities/request';
 
 /**
@@ -39,7 +38,7 @@ export interface CreateQuoteRequestPayload {
  * created request.
  */
 export async function createQuoteRequest(
-  payload: CreateQuoteRequestPayload
+  payload: CreateQuoteRequestPayload,
 ): Promise<QuoteRequest> {
   // Funnel báo giá (FR-15, FR-16). Không ghi `budget`, `customSpec` hay thông
   // tin giao hàng — đó là dữ liệu tài chính và PII (NFR-03).
@@ -48,32 +47,6 @@ export async function createQuoteRequest(
     quantity: payload.quantity,
   });
 
-  if (isDemoMode()) {
-    const request: QuoteRequest = {
-      id: generateEntityId('REQ'),
-      type: payload.type,
-      buyerId: '',
-      buyerName: payload.delivery.recipientName,
-      targetVendorId: payload.targetVendorId,
-      quantity: payload.quantity,
-      deliveryDeadline: payload.deliveryDeadline,
-      deliveryAddress: payload.delivery.addressDetail,
-      deliveryProvince: payload.delivery.provinceCode,
-      budgetPerBox: payload.budget,
-      customRequirements: payload.customSpec,
-      customTypes: payload.customTypes,
-      productId: payload.productId,
-      recipientName: payload.delivery.recipientName,
-      recipientPhone: payload.delivery.recipientPhone,
-      provinceCode: payload.delivery.provinceCode,
-      createdAt: new Date().toISOString(),
-      status: 'OPEN',
-      invitedVendorsCount: 0,
-      quotes: [],
-    };
-    requestStore.set((prev) => [request, ...prev]);
-    return request;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.QUOTATION.REQUESTS, payload);
   const dto = unwrap<QuoteRequestDto>(res);
   if (!dto) {

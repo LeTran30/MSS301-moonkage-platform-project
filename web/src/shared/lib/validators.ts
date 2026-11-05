@@ -30,6 +30,20 @@ export const validators = {
     return null;
   },
 
+  /**
+   * Định danh đăng nhập: email **hoặc** số điện thoại.
+   *
+   * Backend `LoginRequest.username` nhận cả hai (xem `midfi-content-spec.md`
+   * M5.4), và tài khoản mẫu trong seed dùng email. Vì vậy form không được
+   * bắt buộc số điện thoại — chỉ cần một định danh hợp lệ.
+   */
+  loginIdentifier(value: string): string | null {
+    if (!value || !value.trim()) return 'Email hoặc số điện thoại không được để trống';
+    const trimmed = value.trim();
+    if (trimmed.includes('@')) return validators.email(trimmed);
+    return validators.phoneVN(trimmed);
+  },
+
   password(value: string): string | null {
     if (!value) return 'Mật khẩu không được để trống';
     if (value.length < 8) {

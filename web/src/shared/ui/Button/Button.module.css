@@ -45,7 +45,7 @@
 .lg {
   --btn-h: var(--control-h-lg);
   padding: 0 var(--space-8);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
 }
 .block {
   width: 100%;

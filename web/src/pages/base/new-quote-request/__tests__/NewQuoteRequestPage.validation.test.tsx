@@ -36,7 +36,7 @@ function renderPage() {
   return render(
     <MemoryRouter>
       <NewQuoteRequestPage />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -56,7 +56,9 @@ describe('NewQuoteRequestPage — validate form', () => {
     await userEvent.clear(quantity());
     await userEvent.click(submit());
 
-    expect(await screen.findByText(/Số lượng hộp cần đặt không được để trống/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Số lượng hộp cần đặt không được để trống/i),
+    ).toBeInTheDocument();
   });
 
   it('số lượng dưới 20 hộp thì báo lỗi ngưỡng tối thiểu', async () => {
@@ -72,7 +74,9 @@ describe('NewQuoteRequestPage — validate form', () => {
   it('số điện thoại sai định dạng thì báo lỗi', async () => {
     renderPage();
 
-    const phone = screen.getByRole('textbox', { name: /Số điện thoại người nhận/i });
+    const phone = screen.getByRole('textbox', {
+      name: /Số điện thoại người nhận/i,
+    });
     await userEvent.clear(phone);
     await userEvent.type(phone, '123');
     await userEvent.click(submit());
@@ -83,11 +87,15 @@ describe('NewQuoteRequestPage — validate form', () => {
   it('địa chỉ rỗng thì báo lỗi', async () => {
     renderPage();
 
-    const address = screen.getByRole('textbox', { name: /Địa chỉ nhận hàng chi tiết/i });
+    const address = screen.getByRole('textbox', {
+      name: /Địa chỉ nhận hàng chi tiết/i,
+    });
     await userEvent.clear(address);
     await userEvent.click(submit());
 
-    expect(await screen.findByText(/Địa chỉ nhận hàng chi tiết không được để trống/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Địa chỉ nhận hàng chi tiết không được để trống/i),
+    ).toBeInTheDocument();
   });
 
   it('người nhận rỗng thì báo lỗi', async () => {
@@ -105,11 +113,15 @@ describe('NewQuoteRequestPage — validate form', () => {
 
     await userEvent.clear(quantity());
     await userEvent.click(submit());
-    expect(await screen.findByText(/Số lượng hộp cần đặt không được để trống/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Số lượng hộp cần đặt không được để trống/i),
+    ).toBeInTheDocument();
 
     await userEvent.type(quantity(), '500');
     await waitFor(() =>
-      expect(screen.queryByText(/Số lượng hộp cần đặt không được để trống/i)).not.toBeInTheDocument()
+      expect(
+        screen.queryByText(/Số lượng hộp cần đặt không được để trống/i),
+      ).not.toBeInTheDocument(),
     );
   });
 });

@@ -1,5 +1,6 @@
 package com.moonkage.identity.common.config;
 
+import com.moonkage.outbox.EventExchange;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String EVENTS_EXCHANGE = "moonkage.events";
+    public static final String EVENTS_EXCHANGE = EventExchange.NAME;
     public static final String EMAIL_ROUTING_KEY = "orchestrator.email.identity";
 
     // FR-04 (Software Design 5.4): web push and audit, consumed by orchestrator-service

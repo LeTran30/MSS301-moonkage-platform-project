@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type {
   PresignedUploadLink,
   SaveOrderProfilePayload,
@@ -19,30 +19,23 @@ import type {
 /** Replace the vendor's order terms (FR-35). */
 export async function saveOrderProfile(
   vendorId: string,
-  payload: SaveOrderProfilePayload
+  payload: SaveOrderProfilePayload,
 ): Promise<void> {
-  if (isDemoMode()) {
-    return;
-  }
   await apiClient.put(GATEWAY.VENDOR.ORDER_PROFILE(vendorId), payload);
 }
 
 /** Replace the whole list of provinces the vendor delivers to (FR-28). */
 export async function saveDeliveryAreas(vendorId: string, provinceCodes: string[]): Promise<void> {
-  if (isDemoMode()) {
-    return;
-  }
-  await apiClient.put(GATEWAY.VENDOR.DELIVERY_AREAS(vendorId), { provinceCodes });
+  await apiClient.put(GATEWAY.VENDOR.DELIVERY_AREAS(vendorId), {
+    provinceCodes,
+  });
 }
 
 /** The owner's local delivery fee, or the admin's lock decision (FR-28, FR-46). */
 export async function updateVendor(
   vendorId: string,
-  payload: UpdateVendorPayload
+  payload: UpdateVendorPayload,
 ): Promise<VendorDetailDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.patch<unknown>(GATEWAY.VENDOR.BY_ID(vendorId), payload);
   return unwrap<VendorDetailDto>(res);
 }
@@ -56,11 +49,8 @@ export async function updateVendor(
  */
 export async function resubmitVendorProfile(
   vendorId: string,
-  payload: SubmitVendorPayload
+  payload: SubmitVendorPayload,
 ): Promise<VendorDetailDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.put<unknown>(GATEWAY.VENDOR.BY_ID(vendorId), payload);
   return unwrap<VendorDetailDto>(res);
 }
@@ -71,11 +61,8 @@ export async function resubmitVendorProfile(
  */
 export async function createVendorUploadLink(
   contentType: string,
-  sizeBytes: number
+  sizeBytes: number,
 ): Promise<PresignedUploadLink | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.UPLOADS, {
     contentType,
     sizeBytes,

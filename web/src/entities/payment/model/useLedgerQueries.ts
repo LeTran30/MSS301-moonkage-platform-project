@@ -33,7 +33,9 @@ export function useDisbursements(orderId: string | null) {
 export function useDisbursementRequests(options?: { vendorId?: string | null }) {
   const vendorId = options?.vendorId ?? null;
   return useQueryData(queryKeys.ledger.list(`requests:${vendorId ?? ''}`), async () => {
-    const ledgers = await ledgerApi.getLedgers({ vendorId: vendorId ?? undefined });
+    const ledgers = await ledgerApi.getLedgers({
+      vendorId: vendorId ?? undefined,
+    });
     const requests: Array<DisbursementDto & { ledger: LedgerDto }> = [];
     for (const ledger of ledgers) {
       const disbursements = await ledgerApi.getDisbursements(ledger.orderId);

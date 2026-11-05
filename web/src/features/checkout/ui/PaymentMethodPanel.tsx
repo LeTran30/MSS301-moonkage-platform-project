@@ -1,4 +1,4 @@
-import { Card, Icon } from '@/shared/ui';
+import { Card, Icon, Radio } from '@/shared/ui';
 import styles from './checkoutUi.module.css';
 
 /**
@@ -15,7 +15,7 @@ export function PaymentMethodPanel() {
       </div>
       <div className={styles.paymentMethod}>
         <div className={styles.vnpayRadio}>
-          <input type="radio" checked readOnly aria-label="Cổng VNPay" />
+          <Radio checked readOnly aria-label="Cổng VNPay" inputClassName={styles.vnpayRadioInput} />
           <div>
             <strong>Cổng thanh toán VNPay (Sandbox)</strong>
             <p>

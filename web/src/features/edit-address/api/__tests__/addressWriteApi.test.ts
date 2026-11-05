@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createAddress, deleteAddress, updateAddress } from '../addressWriteApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -21,7 +20,6 @@ const ADDRESS_DTO = {
 describe('Feature edit-address - addressWriteApi (FR-03, M6.3)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('createAddress gửi POST /api/addresses và trả về địa chỉ đã lưu', async () => {

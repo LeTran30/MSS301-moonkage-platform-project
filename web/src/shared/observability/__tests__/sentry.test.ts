@@ -36,7 +36,11 @@ describe('sentry khi không có DSN', () => {
   });
 
   it('captureApiError không gọi SDK', () => {
-    captureApiError(new Error('boom'), { endpoint: '/api/x', method: 'GET', status: 500 });
+    captureApiError(new Error('boom'), {
+      endpoint: '/api/x',
+      method: 'GET',
+      status: 500,
+    });
     expect(sentryMock.captureException).not.toHaveBeenCalled();
   });
 

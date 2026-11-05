@@ -39,7 +39,7 @@
   height: 44px;
   border-radius: var(--radius-full);
   background: var(--color-gold-soft);
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   display: grid;
   place-items: center;
 }
@@ -110,11 +110,25 @@
   margin-left: auto;
   background: var(--color-primary);
   color: var(--color-white);
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   padding: 2px 6px;
   border-radius: var(--radius-full);
 }
 .content {
   min-width: 0;
+}
+
+/* Màn hình hẹp: thanh điều hướng tài khoản lên trên, nội dung xuống dưới. */
+@media (max-width: var(--breakpoint-md)) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .sidebar {
+    position: static;
+  }
+  .container {
+    padding: var(--space-5) var(--space-3) var(--space-8);
+  }
 }

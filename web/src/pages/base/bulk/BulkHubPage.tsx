@@ -5,56 +5,88 @@ import styles from './BulkHubPage.module.css';
 export function BulkHubPage() {
   return (
     <div className={styles.container}>
-      {/* Header trung chuyển (M3.0, FR-14, FR-16) */}
+      {/* Header trung chuyển */}
       <div className={styles.header}>
         <div className={styles.eyebrow}>ĐẶT SỐ LƯỢNG LỚN · GIẢI PHÁP DOANH NGHIỆP</div>
         <h1 className={styles.title}>Bánh Trung Thu Doanh Nghiệp &amp; Đặt Theo Yêu Cầu</h1>
         <p className={styles.lead}>
-          Giải pháp quà tặng trung thu tối ưu: In ấn logo nhận diện, xuất hóa đơn tài chính đầy đủ, cam kết tiến độ và chất lượng bởi sàn Moonkage.
+          Giải pháp quà tặng trung thu tối ưu: In ấn logo nhận diện, xuất hóa đơn tài chính đầy đủ,
+          cam kết tiến độ và chất lượng bởi sàn Moonkage.
         </p>
       </div>
 
       {/* Two choices explanation per IA Note */}
       <div className={styles.grid}>
-        {/* Cách 1: Gửi yêu cầu mở (M3.1, Flow 2) */}
+        {/* Cách 1: Gửi yêu cầu mở */}
         <Card padding="lg" tone="gold" interactive className={styles.methodCard}>
           <div className={styles.iconGold}>
             <Icon name="sparkle" size={32} />
           </div>
           <div className={styles.cardContent}>
-            <Badge tone="gold" size="sm">CÁCH 1: GỬI NHIỀU NƠI</Badge>
+            <Badge tone="gold" size="sm">
+              CÁCH 1: GỬI NHIỀU NƠI
+            </Badge>
             <h2 className={styles.methodTitle}>Tạo 1 yêu cầu để nhiều xưởng báo giá</h2>
             <p className={styles.methodDesc}>
-              Phù hợp khi bạn chưa chọn được xưởng hoặc muốn so sánh đơn giá, tiến độ giao hàng và chính sách cọc giữa các bên.
+              Phù hợp khi bạn chưa chọn được xưởng hoặc muốn so sánh đơn giá, tiến độ giao hàng và
+              chính sách cọc giữa các bên.
             </p>
             <ul className={styles.featureList}>
-              <li><Icon name="check" size={14} /> Điền thông tin số lượng, ngày cần giao và ngân sách</li>
-              <li><Icon name="check" size={14} /> Tải file logo để xưởng tư vấn làm maket</li>
-              <li><Icon name="check" size={14} /> Nhận bảng so sánh báo giá cạnh nhau trực quan</li>
+              <li>
+                <Icon name="check" size={14} /> Điền thông tin số lượng, ngày cần giao và ngân sách
+              </li>
+              <li>
+                <Icon name="check" size={14} /> Tải file logo để xưởng tư vấn làm maket
+              </li>
+              <li>
+                <Icon name="check" size={14} /> Nhận bảng so sánh báo giá cạnh nhau trực quan
+              </li>
             </ul>
-            <ButtonLink to={routes.base.quoteRequestNew} variant="gold" size="lg" iconRight="arrowRight" block>
+            <ButtonLink
+              to={routes.base.quoteRequestNew}
+              variant="gold"
+              size="lg"
+              iconRight="arrowRight"
+              block
+            >
               Tạo yêu cầu báo giá ngay
             </ButtonLink>
           </div>
         </Card>
 
-        {/* Cách 2: Chọn 1 xưởng cụ thể (M3.2, M3.3, M3.4, Flow 3) */}
+        {/* Cách 2: Chọn 1 xưởng cụ thể */}
         <Card padding="lg" interactive className={styles.methodCard}>
           <div className={styles.iconRed}>
             <Icon name="factory" size={32} />
           </div>
           <div className={styles.cardContent}>
-            <Badge tone="red" size="sm">CÁCH 2: CHỌN MỘT ĐƠN VỊ</Badge>
+            <Badge tone="red" size="sm">
+              CÁCH 2: CHỌN MỘT ĐƠN VỊ
+            </Badge>
             <h2 className={styles.methodTitle}>Xem danh sách xưởng &amp; gửi yêu cầu riêng</h2>
             <p className={styles.methodDesc}>
-              Phù hợp khi bạn đã nhắm một nghệ nhân hoặc hiệu bánh phố cổ cụ thể, muốn xem hồ sơ năng lực và trao đổi trực tiếp.
+              Phù hợp khi bạn đã nhắm một nghệ nhân hoặc hiệu bánh phố cổ cụ thể, muốn xem hồ sơ
+              năng lực và trao đổi trực tiếp.
             </p>
             <ul className={styles.featureList}>
-              <li><Icon name="check" size={14} /> Xem hồ sơ điều kiện nhận đặt hàng, số lượng tối thiểu</li>
-              <li><Icon name="check" size={14} /> Bảng giá tham khảo theo từng bậc số lượng</li>
-              <li><Icon name="check" size={14} /> Gửi yêu cầu đặt hàng riêng chỉ gửi tới đơn vị đó</li>
+              <li>
+                <Icon name="check" size={14} /> Xem hồ sơ điều kiện nhận đặt hàng, số lượng tối
+                thiểu
+              </li>
+              <li>
+                <Icon name="check" size={14} /> Bảng giá tham khảo theo từng bậc số lượng
+              </li>
+              <li>
+                <Icon name="check" size={14} /> Gửi yêu cầu đặt hàng riêng chỉ gửi tới đơn vị đó
+              </li>
             </ul>
-            <ButtonLink to={routes.base.vendors} variant="secondary" size="lg" iconRight="chevronRight" block>
+            <ButtonLink
+              to={routes.base.vendors}
+              variant="secondary"
+              size="lg"
+              iconRight="chevronRight"
+              block
+            >
               Xem danh sách đơn vị cung cấp
             </ButtonLink>
           </div>
@@ -100,4 +132,3 @@ export function BulkHubPage() {
     </div>
   );
 }
-

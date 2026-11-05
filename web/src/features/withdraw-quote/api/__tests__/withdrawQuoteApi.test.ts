@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { withdrawQuote } from '../withdrawQuoteApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 describe('Feature withdraw-quote - withdrawQuoteApi (BR-05)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('gửi PATCH với status WITHDRAWN đúng endpoint của báo giá', async () => {
@@ -22,10 +20,9 @@ describe('Feature withdraw-quote - withdrawQuoteApi (BR-05)', () => {
 
     const quote = await withdrawQuote('req-1', 'quo-1');
 
-    expect(patch).toHaveBeenCalledWith(
-      '/quotation-service/api/quote-requests/req-1/quotes/quo-1',
-      { status: 'WITHDRAWN' },
-    );
+    expect(patch).toHaveBeenCalledWith('/quotation-service/api/quote-requests/req-1/quotes/quo-1', {
+      status: 'WITHDRAWN',
+    });
     expect(quote.status).toBe('WITHDRAWN');
     expect(quote.totalPrice).toBe(12000000);
   });

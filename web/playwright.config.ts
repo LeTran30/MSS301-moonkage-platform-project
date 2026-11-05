@@ -3,18 +3,42 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Cấu hình Playwright cho E2E test.
  *
- * E2E chạy ứng dụng thật (vite dev server) ở chế độ demo, nên không cần
- * backend: dữ liệu đến từ `MOCK_PRODUCTS` trong `productStore`.
+ * E2E chạy ứng dụng thật (vite dev server) và cần backend Moonkage đang
+ * chạy (docker compose up). Không còn chế độ demo: mọi màn hình đọc dữ liệu
+ * từ API Gateway.
  *
  * Chạy:
  *   `npm run e2e`            — chạy tất cả
  *   `npm run e2e:ui`         — mở giao diện Playwright Inspector
  *   `npm run e2e:report`     — xem báo cáo HTML sau lần chạy
  */
+
+/**
+ * Gateway mà **cả ứng dụng lẫn test** dùng.
+ *
+ * Vì sao phải là một hằng duy nhất: CSP của ứng dụng chỉ cho phép
+ * `connect-src` tới đúng origin được nhúng lúc build (`VITE_API_BASE_URL`).
+ * Test gọi gateway từ trong trang qua `fetch`, nên nếu test dùng một host
+ * khác (ví dụ `localhost` còn app dùng `127.0.0.1`) thì trình duyệt chặn
+ * request và test chết với "Failed to fetch" — một lỗi hạ tầng, không phải
+ * lỗi sản phẩm.
+ */
+const API_BASE_URL = process.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080';
+
+// Test runner và web server phải dùng **cùng** một gateway: `helpers.ts` đọc
+// `process.env.VITE_API_BASE_URL` để dựng URL tuyệt đối, còn CSP của app chỉ
+// cho phép đúng origin được nhúng lúc build. Gán vào `process.env` ở đây để
+// cả hai vế thấy cùng một giá trị — nếu lệch host, CSP chặn `fetch` của test
+// và test chết với "Failed to fetch" (lỗi hạ tầng, không phải lỗi sản phẩm).
+process.env.VITE_API_BASE_URL = API_BASE_URL;
 export default defineConfig({
   testDir: './e2e',
+  // Loại trừ file debug tạm: glob mặc định của Playwright là `**/*.@(spec|test)...`
+  // nên một file tên `_tmp-debug2.spec.ts` lọt vào `web/e2e/` sẽ bị CI chạy.
+  // File tạm chỉ dùng để dò lỗi cục bộ, không bao giờ được chạy trong CI.
+  testIgnore: ['**/_tmp*/**', '**/_tmp-*', '**/tmp-*'],
   // Không chạy song song trên cùng một máy: các test dùng chung trạng thái
-  // demo (giỏ hàng, phiên đăng nhập) nên chạy tuần tự cho ổn định.
+  // (giỏ hàng, phiên đăng nhập) nên chạy tuần tự cho ổn định.
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
@@ -48,8 +72,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
-      VITE_DEMO_MODE: 'true',
-      VITE_API_BASE_URL: 'http://127.0.0.1:9999',
+      VITE_API_BASE_URL: API_BASE_URL,
+      VITE_WS_URL: process.env.VITE_WS_URL ?? 'ws://127.0.0.1:8080/ws',
     },
   },
 });

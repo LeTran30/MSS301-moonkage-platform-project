@@ -21,6 +21,8 @@
         <module>common-storage</module>
         <module>common-reference</module>
         <module>common-observability</module>
+        <module>common-api</module>
+        <module>common-outbox</module>
         <module>discovery-server</module>
         <module>api-gateway</module>
         <module>identity-service</module>

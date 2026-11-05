@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.moonkage.api.GatewayHeader;
 import com.moonkage.storage.ObjectStorage;
 import com.moonkage.vendor.client.IdentityClient;
 import com.moonkage.vendor.client.PaymentClient;
@@ -23,7 +24,6 @@ import com.moonkage.vendor.client.dto.CreatePaymentResponse;
 import com.moonkage.vendor.client.dto.PaymentPurpose;
 import com.moonkage.vendor.client.dto.PaymentSucceededEvent;
 import com.moonkage.vendor.common.config.RabbitConfig;
-import com.moonkage.vendor.security.GatewayHeader;
 import com.moonkage.vendor.security.Role;
 import java.time.Instant;
 import java.util.UUID;

@@ -1,4 +1,4 @@
-import { Button, Card, CardHeader } from '@/shared/ui';
+import { Button, Card, CardHeader, Checkbox } from '@/shared/ui';
 import { PROVINCE_ITEMS } from '@/shared/config';
 import styles from './vendorSettingsUi.module.css';
 
@@ -26,24 +26,31 @@ export function VendorShippingSettingsTab({
   return (
     <Card className={styles.formCard}>
       <CardHeader
-        title="Cấu hình phạm vi giao hàng & Phí ship (B6.2)"
+        title="Cấu hình phạm vi giao hàng & Phí ship"
         description="Tích hợp biểu phí giao hàng liên tỉnh theo quy định của Admin sàn Moonkage"
       />
 
       <form onSubmit={onSave}>
         <div className={styles.formBody}>
           <div className={styles.formGroup}>
-            <label className={styles.label}>Tỉnh / Thành phố giao được (FR-28)</label>
-            <div className={styles.provinceGrid}>
+            <div className={styles.label} id="province-group-label">
+              Tỉnh / Thành phố giao được
+            </div>
+            <div
+              className={styles.provinceGrid}
+              role="group"
+              aria-labelledby="province-group-label"
+            >
               {PROVINCE_ITEMS.map((province) => {
                 const checked = provinceCodes.includes(province.code);
                 return (
                   <label key={province.code} className={styles.provinceItem}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => onProvinceToggle(province.code)}
-                    />
+                  <Checkbox
+                    inputClassName={styles.provinceCheckbox}
+                    checked={checked}
+                    onChange={() => onProvinceToggle(province.code)}
+                    aria-label={`Giao đến ${province.name}`}
+                  />
                     <span>
                       {province.name} <code>({province.code})</code>
                     </span>

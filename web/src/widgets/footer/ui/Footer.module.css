@@ -74,7 +74,7 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--text-xs);
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   font-weight: var(--weight-medium);
 }
 .linkCol {
@@ -112,6 +112,29 @@
   color: var(--color-text-muted);
 }
 .metaFlags {
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   font-weight: var(--weight-medium);
+}
+
+/* Màn hình hẹp: bốn cột chân trang xuống hai cột, rồi một cột. */
+@media (max-width: var(--breakpoint-lg)) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+  }
+  .brandCol {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+}
+
+@media (max-width: var(--breakpoint-sm)) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .bottomBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
 }

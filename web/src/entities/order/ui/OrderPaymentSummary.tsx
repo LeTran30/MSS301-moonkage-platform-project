@@ -41,8 +41,13 @@ export function OrderPaymentSummary({
             </div>
             {!order.remainingPaid && onPayRemainder && (
               <div className={styles.payRemainderRow}>
-                <Button variant="primary" loading={busy} iconRight="arrowRight" onClick={onPayRemainder}>
-                  Thanh toán phần còn lại (FR-22)
+                <Button
+                  variant="primary"
+                  loading={busy}
+                  iconRight="arrowRight"
+                  onClick={onPayRemainder}
+                >
+                  Thanh toán phần còn lại
                 </Button>
               </div>
             )}

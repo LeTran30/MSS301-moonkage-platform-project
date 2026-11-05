@@ -3,15 +3,19 @@ import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { Icon, toast } from '@/shared/ui';
 import { CartBadge } from '@/entities/cart';
-import { setDeliveryProvince, useDeliveryProvinceCode, useDeliveryProvinceName } from '@/entities/region';
+import {
+  setDeliveryProvince,
+  useDeliveryProvinceCode,
+  useDeliveryProvinceName,
+} from '@/entities/region';
 import { useTheme } from '@/shared/lib/theme';
-import { switchDemoActor, useCurrentUser } from '@/entities/user';
-import { ActorSwitcherModal } from './ActorSwitcherModal';
+import { useCurrentUser } from '@/entities/user';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNotifications } from './HeaderNotifications';
 import { HeaderSearch } from './HeaderSearch';
 import { HeaderTopBar } from './HeaderTopBar';
 import { HeaderUserMenu } from './HeaderUserMenu';
+import { HeaderMobileNav } from './HeaderMobileNav';
 import { LocationPickerModal } from './LocationPickerModal';
 import styles from './Header.module.css';
 
@@ -22,11 +26,15 @@ export function Header() {
   // The catalog, the cart and checkout read the same store (FR-06, BR-30).
   const provinceCode = useDeliveryProvinceCode();
   const provinceName = useDeliveryProvinceName();
-  const [actorSwitcherOpen, setActorSwitcherOpen] = useState(false);
 
   return (
     <header className={styles.header}>
-      <HeaderTopBar user={user} onOpenActorSwitcher={() => setActorSwitcherOpen(true)} />
+      {/*
+        Thanh trên cùng là dấu hiệu của bản dựng: nó lặp lại tên/role/NFC đã
+        hiện ở menu tài khoản và nhắc phím tắt Ctrl+K. Ở production không cần,
+        nên bản build production không render thanh này.
+      */}
+      {!import.meta.env.PROD && <HeaderTopBar user={user} />}
 
       {/* Main Header Row */}
       <div className={styles.mainRow}>
@@ -61,7 +69,7 @@ export function Header() {
                 toast.info(
                   theme === 'dark'
                     ? 'Đã bật chế độ Sáng Trăng Rằm'
-                    : 'Đã bật chế độ Đêm Hội Trăng Rằm'
+                    : 'Đã bật chế độ Đêm Hội Trăng Rằm',
                 );
               }}
               title={
@@ -78,6 +86,11 @@ export function Header() {
 
             <HeaderUserMenu user={user} />
           </div>
+
+          <HeaderMobileNav
+            selectedProvince={provinceName}
+            onOpenLocation={() => setLocationModalOpen(true)}
+          />
         </div>
       </div>
 
@@ -89,16 +102,6 @@ export function Header() {
           setLocationModalOpen(false);
         }}
         onClose={() => setLocationModalOpen(false)}
-      />
-
-      <ActorSwitcherModal
-        open={actorSwitcherOpen}
-        currentUserId={user.id}
-        onSelect={(key) => {
-          switchDemoActor(key);
-          setActorSwitcherOpen(false);
-        }}
-        onClose={() => setActorSwitcherOpen(false)}
       />
     </header>
   );

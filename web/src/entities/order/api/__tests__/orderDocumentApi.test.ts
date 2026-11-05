@@ -5,7 +5,6 @@ import {
   mapReviewDtoToEntity,
   type MockupDto,
 } from '../orderDocumentApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -53,12 +52,15 @@ describe('Order Entity - orderDocumentApi (FR-20, FR-11, FR-25)', () => {
   });
 
   it('orderDocumentApi.getMockups() bóc envelope của GET /mockups', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope([
-        { versionNo: 1, downloadUrl: '/m1.pdf', reviewStatus: 'PENDING_REVIEW' },
+        {
+          versionNo: 1,
+          downloadUrl: '/m1.pdf',
+          reviewStatus: 'PENDING_REVIEW',
+        },
         { versionNo: 2, downloadUrl: '/m2.pdf', reviewStatus: 'APPROVED' },
-      ])
+      ]),
     );
 
     const mockups = await orderDocumentApi.getMockups('ORD-1');

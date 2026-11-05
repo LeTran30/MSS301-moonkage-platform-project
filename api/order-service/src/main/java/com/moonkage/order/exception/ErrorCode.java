@@ -1,5 +1,6 @@
 package com.moonkage.order.exception;
 
+import com.moonkage.api.CommonErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,20 +10,20 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Common
-    INTERNAL_SERVER_ERROR("COMMON_500", HttpStatus.INTERNAL_SERVER_ERROR, "error.common.internal"),
-    INVALID_INPUT("COMMON_400", HttpStatus.BAD_REQUEST, "error.common.invalid_input"),
-    MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "error.common.malformed_json"),
+    INTERNAL_SERVER_ERROR(CommonErrorCode.INTERNAL_SERVER_ERROR),
+    INVALID_INPUT(CommonErrorCode.INVALID_INPUT),
+    MALFORMED_JSON(CommonErrorCode.MALFORMED_JSON),
     /** A required query parameter is missing, e.g. {@code provinceCode} on GET /api/carts/me. */
-    PARAMETER_REQUIRED("COMMON_400_PARAM", HttpStatus.BAD_REQUEST, "error.common.parameter_required"),
+    PARAMETER_REQUIRED(CommonErrorCode.PARAMETER_REQUIRED),
     /** No X-Account-Id / X-User-Role: the call did not come through the gateway with a token. */
-    UNAUTHENTICATED("COMMON_401", HttpStatus.UNAUTHORIZED, "error.common.unauthenticated"),
-    ACCESS_DENIED("COMMON_403", HttpStatus.FORBIDDEN, "error.common.access_denied"),
-    RESOURCE_NOT_FOUND("COMMON_404", HttpStatus.NOT_FOUND, "error.common.resource_not_found"),
-    METHOD_NOT_ALLOWED("COMMON_405", HttpStatus.METHOD_NOT_ALLOWED, "error.common.method_not_allowed"),
+    UNAUTHENTICATED(CommonErrorCode.UNAUTHENTICATED),
+    ACCESS_DENIED(CommonErrorCode.ACCESS_DENIED),
+    RESOURCE_NOT_FOUND(CommonErrorCode.RESOURCE_NOT_FOUND),
+    METHOD_NOT_ALLOWED(CommonErrorCode.METHOD_NOT_ALLOWED),
     /** A business operation asked of a resource in the wrong status (api-db README, API rule 3). */
-    INVALID_STATE_TRANSITION("COMMON_409", HttpStatus.CONFLICT, "error.common.invalid_state_transition"),
+    INVALID_STATE_TRANSITION(CommonErrorCode.INVALID_STATE_TRANSITION),
     /** Another service did not answer, or answered with a server error. */
-    DEPENDENCY_UNAVAILABLE("COMMON_503", HttpStatus.SERVICE_UNAVAILABLE, "error.common.dependency_unavailable"),
+    DEPENDENCY_UNAVAILABLE(CommonErrorCode.DEPENDENCY_UNAVAILABLE),
 
     // Cart (FR-08)
     CART_ITEM_NOT_FOUND("CART_001", HttpStatus.NOT_FOUND, "error.cart.item_not_found"),
@@ -80,4 +81,16 @@ public enum ErrorCode {
     private final String code;
     private final HttpStatus httpStatus;
     private final String messageKey;
+
+    /**
+     * A common code, taken from the shared list of common-api.
+     *
+     * <p>The code string, the status and the message key of the common failures exist in one place now, so they can no
+     * longer drift apart between the services (audit findings H-02 and H-03).
+     */
+    ErrorCode(CommonErrorCode common) {
+        this.code = common.getCode();
+        this.httpStatus = common.getHttpStatus();
+        this.messageKey = common.getMessageKey();
+    }
 }

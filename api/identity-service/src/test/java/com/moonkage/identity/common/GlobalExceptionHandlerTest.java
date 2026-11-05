@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.moonkage.api.ApiResponse;
 import com.moonkage.identity.common.config.LocaleConfig;
-import com.moonkage.identity.common.exception.ApiResponse;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
 import com.moonkage.identity.common.exception.GlobalExceptionHandler;
@@ -28,6 +28,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -106,6 +107,22 @@ class GlobalExceptionHandlerTest {
         assertEquals(
                 "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
                 response.getBody().message());
+    }
+
+    /** The shared boundary answers a missing query parameter with a 400 naming the parameter. */
+    @Test
+    void handleMissingParameter() {
+        ResponseEntity<ApiResponse<Void>> response = handler.handleMissingParameter(
+                new MissingServletRequestParameterException("provinceCode", "String"), request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ApiResponse<Void> body = response.getBody();
+        assertNotNull(body);
+        assertEquals("COMMON_400_PARAM", body.code());
+        assertEquals("Thiếu tham số bắt buộc provinceCode.", body.message());
+        assertEquals(
+                List.of(new ApiResponse.FieldError("provinceCode", "Thiếu tham số bắt buộc provinceCode.")),
+                body.errors());
     }
 
     /** Through MVC dispatch: the catch-all handler must not turn these into 500. */

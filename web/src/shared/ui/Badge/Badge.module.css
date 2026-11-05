@@ -10,11 +10,11 @@
 }
 .md {
   font-size: var(--text-xs);
-  padding: 5px 10px;
+  padding: var(--space-1) var(--space-2);
 }
 .sm {
-  font-size: 0.6875rem;
-  padding: 3px 8px;
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
 }
 .dot {
   width: 6px;
@@ -28,7 +28,7 @@
 }
 .gold {
   background: var(--color-gold-soft);
-  color: var(--color-gold-hover);
+  color: var(--color-gold-text);
 }
 .red {
   background: var(--color-primary-soft);

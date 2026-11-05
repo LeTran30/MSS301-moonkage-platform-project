@@ -1,0 +1,128 @@
+/* Drawer sidebar cho màn hình hẹp — theo pattern `HeaderMobileNav` (audit §3.3). */
+
+.trigger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  flex: none;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.trigger:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-zone);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  background: rgb(20 14 10 / 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  animation: fade 160ms ease;
+}
+.overlay[data-side='left'] {
+  justify-content: flex-start;
+}
+.overlay[data-side='right'] {
+  justify-content: flex-end;
+}
+
+.panel {
+  width: min(300px, 84vw);
+  height: 100%;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: slide-left 220ms var(--ease-out);
+}
+.panel[data-side='right'] {
+  border-right: 0;
+  border-left: 1px solid var(--color-border);
+  animation: slide-right 220ms var(--ease-out);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-zone-soft);
+}
+.panelTitle {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--color-zone);
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.closeBtn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-danger);
+}
+
+.panelBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Nút mở drawer chỉ hiện ở màn hình hẹp (≤lg). */
+@media (max-width: 1024px) {
+  .trigger {
+    display: inline-flex;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

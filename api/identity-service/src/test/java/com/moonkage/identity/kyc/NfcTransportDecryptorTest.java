@@ -28,10 +28,17 @@ class NfcTransportDecryptorTest {
     private static KeyPair pair;
     private static NfcTransportDecryptor decryptor;
 
+    /** The properties with only the transport key set; the other keys are not used by the decryptor. */
+    private static NfcProperties propertiesWithPrivateKey(String privateKey) {
+        NfcProperties properties = new NfcProperties();
+        properties.setTransportPrivateKey(privateKey);
+        return properties;
+    }
+
     @BeforeAll
     static void setUp() throws Exception {
         pair = newKeyPair();
-        decryptor = new NfcTransportDecryptor(pkcs8(pair));
+        decryptor = new NfcTransportDecryptor(propertiesWithPrivateKey(pkcs8(pair)));
     }
 
     @Test
@@ -47,7 +54,7 @@ class NfcTransportDecryptorTest {
 
         assertEquals(
                 FIELDS,
-                new NfcTransportDecryptor(pem)
+                new NfcTransportDecryptor(propertiesWithPrivateKey(pem))
                         .decrypt(encrypt(pair, EncryptionMethod.A256GCM))
                         .orElseThrow());
     }
@@ -67,8 +74,12 @@ class NfcTransportDecryptorTest {
     void missingOrInvalidKeyIsAServerFault() throws Exception {
         String jwe = encrypt(pair, EncryptionMethod.A256GCM);
 
-        assertThrows(IllegalStateException.class, () -> new NfcTransportDecryptor("").decrypt(jwe));
-        assertThrows(IllegalStateException.class, () -> new NfcTransportDecryptor("not-a-key").decrypt(jwe));
+        assertThrows(
+                IllegalStateException.class,
+                () -> new NfcTransportDecryptor(propertiesWithPrivateKey("")).decrypt(jwe));
+        assertThrows(
+                IllegalStateException.class,
+                () -> new NfcTransportDecryptor(propertiesWithPrivateKey("not-a-key")).decrypt(jwe));
     }
 
     private static KeyPair newKeyPair() throws Exception {

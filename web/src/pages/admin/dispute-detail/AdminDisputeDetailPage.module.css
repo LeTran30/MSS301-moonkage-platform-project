@@ -13,10 +13,7 @@
 }
 
 .title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 
 .subtitle {

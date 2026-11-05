@@ -3,14 +3,12 @@ import { cakeAttributeApi } from '../cakeAttributeApi';
 import { registrationFeeApi } from '../registrationFeeApi';
 import { vendorAdminApi } from '../vendorAdminApi';
 import { vendorCatalogApi } from '../vendorCatalogApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 describe('Vendor Entity - vendorCatalogApi (FR-14, FR-27, FR-35)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('getVendors gửi provinceCode của tỉnh hiện tại', async () => {
@@ -49,7 +47,6 @@ describe('Vendor Entity - vendorCatalogApi (FR-14, FR-27, FR-35)', () => {
 describe('Vendor Entity - vendorAdminApi (FR-45, FR-46)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('searchVendors lọc theo status của VendorStatus', async () => {
@@ -77,7 +74,12 @@ describe('Vendor Entity - vendorAdminApi (FR-45, FR-46)', () => {
   it('getOwnerChecks đọc kết quả đối chiếu chủ hộ (AC-45.4)', async () => {
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope([
-        { submissionNo: 1, ownerLegalName: 'Nguyễn A', idMatch: true, nameMatch: 'EXACT' },
+        {
+          submissionNo: 1,
+          ownerLegalName: 'Nguyễn A',
+          idMatch: true,
+          nameMatch: 'EXACT',
+        },
       ]) as never,
     );
 
@@ -91,13 +93,19 @@ describe('Vendor Entity - vendorAdminApi (FR-45, FR-46)', () => {
 describe('Vendor Entity - cakeAttributeApi (FR-54)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('list lọc theo group và bỏ hidden khi không xin admin', async () => {
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope([
-        { id: 'a1', group: 'CRUST', code: '01', label: 'Hỷ', sortOrder: 1, active: true },
+        {
+          id: 'a1',
+          group: 'CRUST',
+          code: '01',
+          label: 'Hỷ',
+          sortOrder: 1,
+          active: true,
+        },
       ]) as never,
     );
 
@@ -119,13 +127,15 @@ describe('Vendor Entity - cakeAttributeApi (FR-54)', () => {
 describe('Vendor Entity - registrationFeeApi (FR-53, AC-26.9)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('getConfig đọc mức phí đang có hiệu lực', async () => {
-    const get = vi
-      .spyOn(apiClient, 'get')
-      .mockResolvedValue(envelope({ amount: 200000, effectiveFrom: '2026-11-01T00:00:00Z' }) as never);
+    const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
+      envelope({
+        amount: 200000,
+        effectiveFrom: '2026-11-01T00:00:00Z',
+      }) as never,
+    );
 
     const config = await registrationFeeApi.getConfig();
 

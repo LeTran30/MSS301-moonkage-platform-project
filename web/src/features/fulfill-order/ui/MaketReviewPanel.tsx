@@ -1,4 +1,4 @@
-import { Badge, Button, Card } from '@/shared/ui';
+import { Badge, Button, Card, ProductImage } from '@/shared/ui';
 import type { MaketVersion } from '@/entities/order';
 import styles from './MaketReviewPanel.module.css';
 
@@ -43,12 +43,11 @@ export function MaketReviewPanel({
       </div>
 
       <div className={styles.maketPreview}>
-        <img
-          src={currentMaket?.imageUrl || '/images/doanh-nghiep.jpg'}
+        <ProductImage
+          src={currentMaket?.imageUrl}
           alt="Bản vẽ maket"
           className={styles.maketImage}
-          loading="lazy"
-          decoding="async"
+          fallbackIcon="image"
         />
         <div className={styles.maketCaption}>
           <strong>Bản thiết kế số #{currentMaket?.version}</strong>

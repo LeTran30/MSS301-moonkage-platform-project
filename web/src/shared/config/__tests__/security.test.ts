@@ -3,6 +3,8 @@ import {
   apiConnectSources,
   buildCspHeader,
   applyCspMeta,
+  cspConnectSources,
+  cspImageSources,
   CSP_DIRECTIVES,
   SECURITY_HEADERS,
   apiCredentials,
@@ -59,6 +61,53 @@ describe('Shared config - security', () => {
 
   it('connect-src mặc định chỉ cho phép chính ứng dụng', () => {
     expect(buildCspHeader()).toContain("connect-src 'self'");
+  });
+
+  /*
+   * `connect-src 'self'` một mình chặn mọi request XHR/fetch tới API gateway
+   * (gateway khác origin vì khác cổng): trình duyệt báo "Network Error" và
+   * mọi màn hình không tải được dữ liệu.
+   */
+  it('cspConnectSources khai báo origin của API gateway và WebSocket', () => {
+    const sources = cspConnectSources();
+
+    // `VITE_API_BASE_URL` của test là `http://gateway.test` (vite.config.ts).
+    expect(sources).toContain('http://gateway.test');
+    // Giao thức WebSocket phải được khai báo riêng: `http:` không mở `ws:`.
+    expect(sources).toContain('ws://gateway.test');
+  });
+
+  it('cspConnectSources không sinh nguồn rỗng hay trùng lặp', () => {
+    const sources = cspConnectSources();
+    expect(sources.every((s) => s.length > 0)).toBe(true);
+    expect(new Set(sources).size).toBe(sources.length);
+  });
+
+  it('applyCspMeta chèn nguồn API vào connect-src', () => {
+    applyCspMeta(cspConnectSources());
+
+    const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+    expect(meta?.getAttribute('content')).toContain('http://gateway.test');
+  });
+
+  /*
+   * Ảnh sản phẩm đến từ object storage (origin khác) nên `img-src` phải khai
+   * báo thêm nguồn đó, nếu không mọi ảnh trong danh mục hiện ô trống.
+   */
+  it('cspImageSources khai báo origin của object storage', () => {
+    expect(cspImageSources()).toContain('http://media.test');
+  });
+
+  it('buildCspHeader thêm nguồn ảnh vào img-src', () => {
+    const csp = buildCspHeader([], ['http://media.test']);
+    expect(csp).toContain("img-src 'self' data: blob: http://media.test");
+  });
+
+  it('applyCspMeta chèn nguồn ảnh vào img-src', () => {
+    applyCspMeta([], ['http://media.test']);
+
+    const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+    expect(meta?.getAttribute('content')).toContain('http://media.test');
   });
 
   it('applyCspMeta chèn đúng một thẻ meta', () => {

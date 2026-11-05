@@ -89,25 +89,86 @@ export const CSP_DIRECTIVES: readonly string[] = [
 export const HEADER_ONLY_DIRECTIVES: readonly string[] = ['frame-ancestors \'none\''];
 
 /**
- * The origin of the API gateway, when it is not the app's own: the CSP must let
- * the app connect to it. A relative or empty base URL needs nothing extra.
+ * Các nguồn `connect-src` phải khai báo cho CSP.
+ *
+ * `connect-src 'self'` một mình chặn mọi request XHR/fetch tới API gateway:
+ * trình duyệt báo "Network Error" và mọi màn hình không tải được dữ liệu.
+ * Gateway là nguồn khác origin (khác cổng), nên phải nêu tường minh.
+ *
+ * Lấy từ `VITE_API_BASE_URL` / `VITE_WS_URL` — cùng nguồn với phần cấu hình
+ * mà `apiClient` dùng, nên CSP không bao giờ lệch với nơi app thực sự gọi.
  */
-export function apiConnectSources(apiBaseUrl: string): string[] {
-  if (!/^https?:\/\//i.test(apiBaseUrl)) return [];
-  try {
-    return [new URL(apiBaseUrl).origin];
-  } catch {
-    return [];
+export function cspConnectSources(): string[] {
+  const sources = new Set<string>();
+
+  const apiBase = env.VITE_API_BASE_URL?.trim();
+  if (apiBase) {
+    try {
+      const url = new URL(apiBase);
+      sources.add(url.origin);
+      // `http://host:8080` không cho phép `ws://host:8080/ws`; phải khai báo
+      // riêng giao thức WebSocket.
+      if (url.protocol === 'http:') sources.add(`ws://${url.host}`);
+      if (url.protocol === 'https:') sources.add(`wss://${url.host}`);
+    } catch {
+      // `VITE_API_BASE_URL` không phải URL hợp lệ: bỏ qua, CSP sẽ chặn và báo lỗi.
+    }
   }
+
+  const wsUrl = env.VITE_WS_URL?.trim();
+  if (wsUrl) {
+    try {
+      sources.add(new URL(wsUrl).origin);
+    } catch {
+      // Bỏ qua URL WebSocket không hợp lệ.
+    }
+  }
+
+  return [...sources];
+}
+
+/**
+ * Các nguồn `img-src` phải khai báo cho CSP.
+ *
+ * Ảnh sản phẩm / ảnh báo giá được backend trả về từ MinIO (object storage),
+ * tức là một origin khác — `img-src 'self' data: blob:` chặn chúng và mọi
+ * ảnh trong danh mục hiện ô trống.
+ *
+ * `VITE_MEDIA_BASE_URL` khai báo origin đó. Nếu backend trả ảnh từ nhiều host
+ * khác nhau (CDN riêng, domain khác), liệt kê từng origin, phân tách bằng dấu
+ * phẩy.
+ */
+export function cspImageSources(): string[] {
+  const raw = env.VITE_MEDIA_BASE_URL?.trim();
+  if (!raw) return [];
+
+  const sources = new Set<string>();
+  for (const candidate of raw.split(',')) {
+    const value = candidate.trim();
+    if (!value) continue;
+    try {
+      sources.add(new URL(value).origin);
+    } catch {
+      // Bỏ qua origin không hợp lệ.
+    }
+  }
+  return [...sources];
 }
 
 /** Chuỗi header CSP đầy đủ, dùng khi cấu hình web server. */
-export function buildCspHeader(extraConnectSources: readonly string[] = []): string {
+export function buildCspHeader(
+  extraConnectSources: readonly string[] = [],
+  extraImageSources: readonly string[] = [],
+): string {
   const connect = ["'self'", ...extraConnectSources];
+  const images = ["'self'", 'data:', 'blob:', ...extraImageSources];
   const directives = [...CSP_DIRECTIVES, ...HEADER_ONLY_DIRECTIVES];
   return directives.map((directive) => {
     if (directive.startsWith('connect-src')) {
       return `connect-src ${connect.join(' ')}`;
+    }
+    if (directive.startsWith('img-src')) {
+      return `img-src ${images.join(' ')}`;
     }
     return directive;
   }).join('; ');
@@ -121,7 +182,10 @@ export function buildCspHeader(extraConnectSources: readonly string[] = []): str
  * Cách đúng vẫn là header ở server. Hàm này giúp ứng dụng không trần khi
  * deploy ở nơi không cấu hình được header (ví dụ hosting tĩnh đơn giản).
  */
-export function applyCspMeta(extraConnectSources: readonly string[] = []): void {
+export function applyCspMeta(
+  extraConnectSources: readonly string[] = [],
+  extraImageSources: readonly string[] = [],
+): void {
   if (typeof document === 'undefined') return;
   if (document.querySelector('meta[http-equiv="Content-Security-Policy"]')) return;
 
@@ -131,6 +195,9 @@ export function applyCspMeta(extraConnectSources: readonly string[] = []): void 
   meta.content = CSP_DIRECTIVES.map((directive) => {
     if (directive.startsWith('connect-src')) {
       return `connect-src 'self' ${extraConnectSources.join(' ')}`.trim();
+    }
+    if (directive.startsWith('img-src')) {
+      return `img-src 'self' data: blob: ${extraImageSources.join(' ')}`.trim();
     }
     return directive;
   }).join('; ');

@@ -28,7 +28,7 @@ export function RequestsListPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <div className={styles.eyebrow}>YÊU CẦU &amp; BÁO GIÁ (M6.2, FLOW 2, FLOW 3)</div>
+          <div className={styles.eyebrow}>YÊU CẦU &amp; BÁO GIÁ</div>
           <h2 className={styles.title}>Quản Lý Yêu Cầu Báo Giá Của Bạn</h2>
           <p className={styles.lead}>
             Theo dõi danh sách yêu cầu đặt số lượng lớn và so sánh bảng giá từ các xưởng.
@@ -93,10 +93,16 @@ export function RequestsListPage() {
 
                 <div className={styles.cardFooter}>
                   <div className={styles.vendorStats}>
-                    <Icon name="users" size={14} /> {req.invitedVendorsCount} xưởng được mời tham gia
+                    <Icon name="users" size={14} /> {req.invitedVendorsCount} xưởng được mời tham
+                    gia
                   </div>
-                  <ButtonLink to={routes.account.request(req.id)} variant="primary" size="sm" iconRight="chevronRight">
-                    So sánh {quoteTotal} bảng báo giá (M6.2.1)
+                  <ButtonLink
+                    to={routes.account.request(req.id)}
+                    variant="primary"
+                    size="sm"
+                    iconRight="chevronRight"
+                  >
+                    So sánh {quoteTotal} bảng báo giá
                   </ButtonLink>
                 </div>
               </Card>
@@ -111,4 +117,3 @@ export function RequestsListPage() {
     </div>
   );
 }
-

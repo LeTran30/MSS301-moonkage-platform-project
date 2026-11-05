@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import { mapQuoteDto, type QuoteDto } from '@/entities/request';
 import type { Quote } from '@/entities/request';
 
@@ -26,11 +26,8 @@ export interface WithdrawQuotePayload {
 export async function withdrawQuote(
   requestId: string,
   quoteId: string,
-  payload: WithdrawQuotePayload = { status: 'WITHDRAWN' }
+  payload: WithdrawQuotePayload = { status: 'WITHDRAWN' },
 ): Promise<Quote> {
-  if (isDemoMode()) {
-    throw new Error('Rút báo giá chỉ có sẵn ở chế độ demo.');
-  }
   const res = await apiClient.patch<unknown>(
     GATEWAY.QUOTATION.UPDATE_QUOTE(requestId, quoteId),
     payload,

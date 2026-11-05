@@ -5,34 +5,56 @@ html {
 }
 body {
   font-family: var(--font-sans);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--color-text);
   background: var(--gradient-paper), var(--color-bg);
   background-attachment: fixed;
 }
+/*
+ * Thang tiêu đề thống nhất.
+ *
+ * Mỗi cấp tiêu đề dùng **sans** để không trộn hai hệ chữ song song; serif
+ * (Playfair) chỉ dành cho phần thị giác nổi bật — tiêu đề hero, tên thương
+ * hiệu · nền mỗi trang chỉ có **một** điểm nhấn serif.
+ *
+ * Mỗi cấp đều = chữ chữ body (16px) và bậc tiêu đề luôn lớn hơn nội dung.
+ */
 h1,
 h2,
-h3 {
-  font-family: var(--font-display);
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
-h4,
-h5,
+h1 {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+h2 {
+  font-size: var(--text-xl);
+}
+h3 {
+  font-size: var(--text-lg);
+  letter-spacing: -0.005em;
+}
+h4 {
+  font-size: var(--text-base);
+}
+h5 {
+  font-size: var(--text-sm);
+}
 h6 {
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
+  font-size: var(--text-xs);
 }
 ::selection {
   background: var(--color-gold-soft);
   color: var(--color-text);
-}
-:focus-visible {
-  outline: 2px solid var(--color-gold);
-  outline-offset: 2px;
 }
 code,
 kbd {
@@ -156,6 +178,11 @@ kbd {
  *
  * Without this, a keyboard user cannot tell where the focus is: the app had only two
  * `focus-visible` rules in the whole codebase.
+ *
+ * Chuẩn hoá (audit §9.3): dùng **một** vòng focus duy nhất — `outline` lấy màu
+ * `--color-primary`, không cộng thêm `box-shadow`. Control nào đã có vòng riêng
+ * (`Input`, `Select`, `Textarea` dùng `box-shadow: var(--ring)`) sẽ tắt outline
+ * ở đây để tránh **hai vòng focus chồng lên nhau**.
  */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -163,12 +190,39 @@ kbd {
   border-radius: var(--radius-xs);
 }
 
-/* Controls that sit on the brand colour need a light ring instead. */
-.mk-on-brand :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline-color: var(--color-gold-bright);
+/* Control đã tự vẽ vòng focus bằng `box-shadow` ⇒ bỏ outline để không trùng. */
+:where(
+    input,
+    select,
+    textarea
+  ):focus-visible {
+  outline: none;
 }
 
 /* Never show the ring for a mouse click. */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
   outline: none;
+}
+
+/*
+ * Màu nhấn theo khu (audit §1.7 / §1.8).
+ *
+ * `--color-zone` được khai báo theo `data-zone` ở `tokens.css`. Để hệ token
+ * này thực sự có ý nghĩa (thay vì là token chết), nó được áp vào **ba** vị trí
+ * dùng nhất trong mỗi khu:
+ *
+ * 1. Tiêu đề trang (`h1`) — dấu hiệu rõ nhất về việc đang ở khu nào.
+ * 2. Nhãn "eyebrow" (nhãn nhỏ trên tiêu đề) — cùng sắc độ với tiêu đề.
+ * 3. Tab đang chọn — đã xử lý trong `shared/ui/Tabs`.
+ *
+ * Chỉ dùng token, không thêm màu mới ⇒ không phát sinh rủi ro contrast.
+ * Sắc khu: khu mua = đỏ thương hiệu, khu người bán = vàng đồng, khu quản trị
+ * = xanh mực nội bộ.
+ *
+ * Lưu ý: mỗi CSS module của trang có thể ghi đè màu tiêu đề bằng rule riêng
+ * (`.title`), nên rule ở đây chỉ là mặc định cho những trang chưa tự định nghĩa.
+ */
+[data-zone='vendor'] .mkEyebrow,
+[data-zone='admin'] .mkEyebrow {
+  color: var(--color-zone);
 }

@@ -6,11 +6,10 @@ import styles from './Header.module.css';
 
 interface HeaderTopBarProps {
   user: User;
-  onOpenActorSwitcher: () => void;
 }
 
-/** Thanh trên cùng: chỉ báo nhân vật demo + lối tắt (Ctrl+K, đổi vai, sơ đồ). */
-export function HeaderTopBar({ user, onOpenActorSwitcher }: HeaderTopBarProps) {
+/** Thanh trên cùng: thông tin tài khoản đang đăng nhập + lối tắt (Ctrl+K, chính sách). */
+export function HeaderTopBar({ user }: HeaderTopBarProps) {
   const roleLabel =
     user.role === 'VENDOR' ? 'Người bán' : user.role === 'ADMIN' ? 'Quản trị' : 'Người mua';
 
@@ -22,7 +21,7 @@ export function HeaderTopBar({ user, onOpenActorSwitcher }: HeaderTopBarProps) {
             <Icon name="sparkle" size={13} />
           </span>
           <span>
-            Đang thử vai: <strong>{user.name}</strong> ({roleLabel})
+            Đang đăng nhập: <strong>{user.name}</strong> ({roleLabel})
           </span>
           {user.nfcStatus === 'VERIFIED' ? (
             <Badge tone="green" size="sm">
@@ -41,7 +40,11 @@ export function HeaderTopBar({ user, onOpenActorSwitcher }: HeaderTopBarProps) {
             className={styles.cmdKBtn}
             onClick={() => {
               window.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
+                new KeyboardEvent('keydown', {
+                  key: 'k',
+                  ctrlKey: true,
+                  bubbles: true,
+                }),
               );
             }}
             title="Tìm kiếm nhanh & Lệnh (Ctrl+K)"
@@ -51,16 +54,8 @@ export function HeaderTopBar({ user, onOpenActorSwitcher }: HeaderTopBarProps) {
             <kbd className={styles.cmdKShortcut}>⌘K</kbd>
           </button>
           <span className={styles.divider}>|</span>
-          <button
-            type="button"
-            className={styles.switchActorBtn}
-            onClick={onOpenActorSwitcher}
-          >
-            <Icon name="users" size={14} /> Đổi vai test (6 nhân vật IA)
-          </button>
-          <span className={styles.divider}>|</span>
-          <Link to={routes.system.sitemap} className={styles.sitemapLink}>
-            <Icon name="layers" size={14} /> Sơ đồ 73 trang &amp; Luồng
+          <Link to={routes.base.policy} className={styles.sitemapLink}>
+            <Icon name="layers" size={14} /> Chính sách sàn
           </Link>
         </div>
       </div>

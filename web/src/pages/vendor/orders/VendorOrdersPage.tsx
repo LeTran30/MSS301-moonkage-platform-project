@@ -12,7 +12,7 @@ import {
   useAttachInvoice,
   useUploadMockup,
 } from '@/features/fulfill-order';
-import { uploadFile } from '@/shared/api';
+import { useFileUpload } from '@/features/file-upload';
 import styles from './VendorOrdersPage.module.css';
 
 type VendorOrderTab = 'ALL' | 'RETAIL' | 'BULK' | 'DISPUTED';
@@ -37,6 +37,10 @@ export function VendorOrdersPage() {
 
   const attachInvoice = useAttachInvoice();
   const uploadMockup = useUploadMockup();
+  // Hóa đơn VAT và maket đều vào kho đơn hàng — feature `file-upload` giữ
+  // trạng thái tải thay vì page tự gọi API.
+  const invoiceUpload = useFileUpload('ORDER');
+  const maketUpload = useFileUpload('ORDER');
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
@@ -73,9 +77,9 @@ export function VendorOrdersPage() {
         toast.error('Vui lòng chọn tệp hóa đơn điện tử.');
         return;
       }
-      const tempKey = await uploadFile('ORDER', invoiceFile);
+      const tempKey = await invoiceUpload.upload(invoiceFile);
       if (!tempKey) {
-        toast.info('Chế độ demo: bỏ qua bước tải tệp lên.');
+        toast.error('Không tải được hóa đơn lên kho lưu trữ.');
         setInvoiceModalOpen(false);
         return;
       }
@@ -83,7 +87,7 @@ export function VendorOrdersPage() {
       toast.success(
         link?.downloadUrl
           ? `Đã gắn hóa đơn VAT thành công cho đơn #${selectedOrder.id}`
-          : `Đã ghi nhận hóa đơn cho đơn #${selectedOrder.id}`
+          : `Đã ghi nhận hóa đơn cho đơn #${selectedOrder.id}`,
       );
       setInvoiceModalOpen(false);
       asyncOrders.reload();
@@ -105,9 +109,9 @@ export function VendorOrdersPage() {
         toast.error('Vui lòng chọn tệp thiết kế Maket.');
         return;
       }
-      const tempKey = await uploadFile('ORDER', maketFile);
+      const tempKey = await maketUpload.upload(maketFile);
       if (!tempKey) {
-        toast.info('Chế độ demo: bỏ qua bước tải tệp lên.');
+        toast.error('Không tải được tệp thiết kế lên kho lưu trữ.');
         setMaketModalOpen(false);
         return;
       }
@@ -122,7 +126,7 @@ export function VendorOrdersPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản lý đơn hàng (B2.0 - B2.2)</h1>
+          <h1 className={styles.title}>Quản lý đơn hàng</h1>
           <p className={styles.desc}>
             Xử lý đơn bán sẵn, theo dõi đơn sản xuất theo yêu cầu, gắn hóa đơn VAT và tải lên Maket
             thiết kế.
@@ -133,7 +137,8 @@ export function VendorOrdersPage() {
             <span>Cần gửi Maket:</span> <strong>{waitingMaket} đơn</strong>
           </div>
           <div className={styles.statBadge}>
-            <span>Đang khiếu nại:</span> <strong className={styles.errorText}>{disputed} đơn</strong>
+            <span>Đang khiếu nại:</span>{' '}
+            <strong className={styles.errorText}>{disputed} đơn</strong>
           </div>
         </div>
       </div>
@@ -143,7 +148,7 @@ export function VendorOrdersPage() {
           { id: 'ALL', label: `Tất cả đơn (${orders.length})` },
           { id: 'RETAIL', label: 'Đơn bán lẻ / Shop sẵn' },
           { id: 'BULK', label: 'Đơn đặt hàng doanh nghiệp' },
-          { id: 'DISPUTED', label: 'Đang khiếu nại (FR-49)' },
+          { id: 'DISPUTED', label: 'Đang khiếu nại' },
         ]}
         activeId={activeTab}
         onChange={setActiveTab}
@@ -177,7 +182,7 @@ export function VendorOrdersPage() {
         )}
       </AsyncState>
 
-      {/* Modal Attach Invoice (B2.2, FR-44) */}
+      {/* Modal Attach Invoice */}
       <AttachInvoiceModal
         open={invoiceModalOpen}
         invoiceNumber={invoiceNumber}
@@ -189,7 +194,7 @@ export function VendorOrdersPage() {
         onSubmit={handleSaveInvoice}
       />
 
-      {/* Modal Maket (B2.1, Flow 2, FR-39) */}
+      {/* Modal Maket */}
       <UploadMaketModal
         open={maketModalOpen}
         maketFile={maketFile}

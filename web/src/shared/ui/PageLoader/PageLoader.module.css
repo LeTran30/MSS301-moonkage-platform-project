@@ -3,17 +3,17 @@
 .page {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: var(--space-8) var(--space-4);
   width: 100%;
 }
 .headerSkeleton {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 .bodySkeleton {
-  margin-bottom: 32px;
+  margin-bottom: var(--space-8);
 }
 .cardGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  gap: var(--space-5);
 }

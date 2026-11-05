@@ -11,10 +11,7 @@
   align-items: center;
 }
 .title {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  margin: 0px;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .lead {
   max-width: 760px;
@@ -49,7 +46,7 @@
 .input {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: inherit;
@@ -58,7 +55,7 @@
 .textarea {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: inherit;
@@ -79,7 +76,7 @@
 
 .taxonomyChip {
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: inherit;
@@ -95,5 +92,15 @@
   border: 1px solid var(--color-gold);
   background: var(--color-gold);
   color: var(--color-white);
+}
+
+/* Màn hình hẹp: ba cột thuộc tính xuống một cột. */
+@media (max-width: var(--breakpoint-md)) {
+  .gridThree {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    flex-wrap: wrap;
+  }
 }
 

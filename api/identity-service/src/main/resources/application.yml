@@ -2,10 +2,15 @@ server:
   port: 8081
   # trust X-Forwarded-* from the gateway so Swagger "Try it out" calls go through http://localhost:8080/<service>
   forward-headers-strategy: framework
+  # RT-02: finish the requests in flight before the container stops
+  shutdown: graceful
 
 spring:
   application:
     name: identity-service
+  # RT-02: how long the container waits for the requests in flight
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   # all values come from the repo-root .env (see .env.example)
   # RabbitMQ (domain events, Software Design 5.4)
   rabbitmq:
@@ -30,6 +35,8 @@ spring:
     placeholders:
       "[seed_password]": ${SEED_PASSWORD:}
   jpa:
+    # no lazy loading in the web layer: every query the response needs is written out (DP-02)
+    open-in-view: false
     hibernate:
       ddl-auto: validate
     # off by default: every statement in the log is noise and may carry personal data in literals.
@@ -75,6 +82,8 @@ nfc:
 
 # domain events go through the outbox_events table (Software Design 6)
 outbox:
+  # the topic exchange every service publishes its domain events on (Software Design 5.4)
+  exchange: moonkage.events
   relay-interval: 2s
   batch-size: 100
   confirm-timeout: 5s

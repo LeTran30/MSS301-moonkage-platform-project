@@ -15,8 +15,8 @@ export function NfcVerifyNotice() {
       <div className={styles.nfcText}>
         <h4>Yêu cầu bắt buộc: Xác minh danh tính NFC Căn cước công dân</h4>
         <p>
-          Theo quy chế giao dịch số lượng lớn (FR-04), bạn cần quét CCCD gắn chip qua ứng dụng
-          Moonkage Verify để kích hoạt quyền tạo yêu cầu báo giá.
+          Theo quy chế giao dịch số lượng lớn, bạn cần quét CCCD gắn chip qua ứng dụng Moonkage
+          Verify để kích hoạt quyền tạo yêu cầu báo giá.
         </p>
       </div>
       <ButtonLink to={routes.account.verify} variant="gold" iconRight="arrowRight">

@@ -19,7 +19,9 @@ import { productStore, taxonomyStore } from './productStore';
  * bootstrap and the catalogue page share one cache entry: the API is called once,
  * not twice.
  */
-export function useProductCatalog(provinceCode: string): { kind: 'loading' | 'loaded' | 'error' } {
+export function useProductCatalog(provinceCode: string): {
+  kind: 'loading' | 'loaded' | 'error';
+} {
   const state = useQueryData(queryKeys.product.catalog(provinceCode), () =>
     productApi.getProducts(provinceCode),
   );

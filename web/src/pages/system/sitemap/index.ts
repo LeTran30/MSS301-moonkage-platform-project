@@ -1,1 +1,0 @@
-export { SitemapPage } from './SitemapPage';

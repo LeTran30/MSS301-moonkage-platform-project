@@ -1,16 +1,16 @@
 import { apiClient } from './client';
-import { GATEWAY } from './gateway';
 import { unwrap } from './envelope';
-import { isDemoMode } from '@/shared/config';
 
 /**
- * The write side of a file upload to the private object storage (FR-26, FR-29).
+ * The transport of a file upload to the private object storage (FR-26, FR-29).
  *
  * Step 1 asks the backend for a signed link, step 2 sends the bytes straight
  * to the object storage — the API service never receives them.
  *
- * The order and the vendor documents live in different buckets, so the caller
- * says which one it wants.
+ * Vì sao ở `shared/`: hai chỗ trong repo đây chỉ là **vận chuyển thuần** —
+ * không biết tệp đó là bằng chứng khiếu nại, hóa đơn VAT hay maket. Quy tắc
+ * nghiệp vụ ("tệp này vào kho nào", "báo tiến độ thế nào") thuộc về feature
+ * `file-upload`, không thuộc về tầng `shared`.
  */
 
 /** Wire shape of `com.moonkage.*.dto.response.PresignedUploadLinkResponse`. */
@@ -21,47 +21,19 @@ export interface UploadLink {
   expiresAt?: string;
 }
 
-/** Which service owns the bucket the file goes to. */
-export type UploadTarget = 'ORDER' | 'VENDOR';
-
-/** Ask the backend for a signed upload link. */
+/**
+ * Ask the backend for a signed upload link at `url`.
+ *
+ * `url` do người gọi chỉ định vì endpoint upload nằm ở service nào là quyết
+ * định của nghiệp vụ, không phải của tầng vận chuyển.
+ */
 export async function createUploadLink(
-  target: UploadTarget,
+  url: string,
   contentType: string,
-  sizeBytes: number
+  sizeBytes: number,
 ): Promise<UploadLink | null> {
-  if (isDemoMode()) {
-    return null;
-  }
-  const url = target === 'ORDER' ? GATEWAY.ORDER.UPLOADS : GATEWAY.VENDOR.UPLOADS;
   const res = await apiClient.post<unknown>(url, { contentType, sizeBytes });
   return unwrap<UploadLink>(res);
-}
-
-/**
- * Send one file to the private object storage and keep its `tempKey`.
- *
- * In demo mode there is no backend to ask, so the answer is `null` and the
- * caller tells the user the step was skipped.
- */
-export async function uploadFile(
-  target: UploadTarget,
-  file: File
-): Promise<string | null> {
-  const link = await createUploadLink(
-    target,
-    file.type || 'application/octet-stream',
-    file.size
-  );
-  if (!link?.uploadUrl || !link.tempKey) {
-    if (isDemoMode()) {
-      return null;
-    }
-    throw new Error('Máy chủ không trả về liên kết tải tệp lên.');
-  }
-
-  await uploadFileToLink(link, file);
-  return link.tempKey;
 }
 
 /**
@@ -71,14 +43,18 @@ export async function uploadFile(
  * bucket, so the caller that already has the link does not have to ask again.
  * The form fields go first and the file last, named `file`.
  */
-export async function uploadFileToLink(link: UploadLink, file: File): Promise<void> {
+export async function uploadFileToLink(
+  link: UploadLink,
+  file: File,
+  signal?: AbortSignal,
+): Promise<void> {
   const form = new FormData();
   Object.entries(link.formFields ?? {}).forEach(([key, value]) => {
     form.append(key, value);
   });
   form.append('file', file);
 
-  const res = await fetch(link.uploadUrl, { method: 'POST', body: form });
+  const res = await fetch(link.uploadUrl, { method: 'POST', body: form, signal });
   if (!res.ok) {
     throw new Error('Không tải được tệp lên kho lưu trữ.');
   }

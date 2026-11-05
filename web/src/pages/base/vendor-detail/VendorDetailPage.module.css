@@ -52,7 +52,7 @@
 }
 .metaCards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-8);
 }
@@ -76,7 +76,7 @@
 }
 .productGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--space-5);
 }
 .customGrid {
@@ -104,7 +104,7 @@
   gap: var(--space-3);
 }
 .cardHeading {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--color-border);
@@ -151,4 +151,24 @@
 .notFound {
   padding: var(--space-16);
   text-align: center;
+}
+
+/* --- Responsive (audit §3.6) --- */
+@media (max-width: 1024px) {
+  .customGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+}
+
+@media (max-width: 768px) {
+  .headerInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-4);
+  }
+  .condRow {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
 }

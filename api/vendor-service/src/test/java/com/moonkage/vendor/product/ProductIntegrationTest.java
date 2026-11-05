@@ -19,12 +19,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.moonkage.api.GatewayHeader;
 import com.moonkage.storage.BucketAccess;
 import com.moonkage.storage.ObjectStorage;
 import com.moonkage.vendor.client.IdentityClient;
 import com.moonkage.vendor.client.PaymentClient;
 import com.moonkage.vendor.common.config.RabbitConfig;
-import com.moonkage.vendor.security.GatewayHeader;
 import com.moonkage.vendor.security.Role;
 import com.moonkage.vendor.vendor.SupplySource;
 import com.moonkage.vendor.vendor.VendorFixture;
