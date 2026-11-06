@@ -30,6 +30,8 @@ Dependencies JdbcTemplate/NamedParameterJdbcTemplate, cùng DataSource/transacti
 2. Chỉ ghi vendor_snapshots; lock/unlock phản ánh qua view join, không sửa hàng loạt product hay product version/rating.
 3. Trả APPLIED/STALE. Không giả định locked wire là full snapshot.
 
+Bản chụp vendor mang thêm `province_code` — tỉnh trụ sở của Shop (B-3.1). Cột cho phép null: một bản chụp ghi trước khi có trường này thì không có tỉnh. View `product_listings` nối cột đó vào listing, nên người mua thấy được tỉnh của Shop trên thẻ sản phẩm.
+
 ### Reviews / rebuild rating
 
 1. Lock theo product để reviews/upserts/rebuild không ghi đè aggregate của nhau. Product đã có thì vendor phải khớp.

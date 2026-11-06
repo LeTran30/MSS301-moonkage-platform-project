@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap, unwrapList, unwrapPage } from '@/shared/api';
-import { provinceCodeOf } from '@/shared/config';
+import { provinceCodeOf, provinceNameOf } from '@/shared/config';
 import type { CakeTaxonomyItem, Product } from '../model/types';
 
 /**
@@ -13,6 +13,11 @@ export interface ProductDto {
   id: string;
   vendorId?: string;
   vendorName?: string;
+  /**
+   * The province of the Shop the product belongs to (B-3.1), copied from the vendor
+   * snapshot into the catalogue listing. Two digits, absent when the Shop has none yet.
+   */
+  provinceCode?: string;
   name: string;
   description?: string;
   crustCodes?: string[];
@@ -72,7 +77,12 @@ export function mapProductDtoToEntity(dto: ProductDto): Product {
     expiryDate: dto.expiryDate ? formatExpiry(dto.expiryDate) : '',
     // Catalog `DeliveryLabel` is LOCAL or NATIONWIDE (BR-13).
     deliveryTag: dto.deliveryLabel === 'LOCAL' ? 'Giao nội thành' : 'Giao toàn quốc',
-    province: dto.origin || '',
+    /*
+     * Tỉnh của tiệm bánh (B-3.1): listing của catalogue mang `provinceCode` của
+     * shop. Khi không có, rơi về `origin` cũ để thẻ sản phẩm không mất chỗ hiện
+     * địa điểm.
+     */
+    province: provinceNameOf(dto.provinceCode) || dto.origin || '',
     rating: dto.ratingAvg ?? 0,
     reviewCount: dto.ratingCount ?? 0,
     crusts: (dto.crustCodes ?? []) as Product['crusts'],

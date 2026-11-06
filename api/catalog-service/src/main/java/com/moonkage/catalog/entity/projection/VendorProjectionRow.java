@@ -9,6 +9,7 @@ public record VendorProjectionRow(
         String vendorId,
         String ownerAccountId,
         String businessName,
+        String provinceCode,
         String status,
         boolean canOperate,
         boolean sellsShop,
@@ -29,7 +30,9 @@ public record VendorProjectionRow(
                 || (canOperate && !"APPROVED".equals(status))
                 || sourceVersion < 0
                 || (localDeliveryFee != null && localDeliveryFee < 0)
-                || deliveryAreas.stream().anyMatch(code -> !Province.isKnown(code))) {
+                || deliveryAreas.stream().anyMatch(code -> !Province.isKnown(code))
+                // The province of the shop is optional (B-3.1), but a code that is there must be one of the 34.
+                || (provinceCode != null && !Province.isKnown(provinceCode))) {
             throw new IllegalArgumentException("Invalid normalized vendor projection row");
         }
     }
