@@ -1,10 +1,10 @@
 package com.moonkage.payment.controller;
 
-import com.moonkage.payment.dto.response.PageResponse;
+import com.moonkage.api.ApiResponse;
+import com.moonkage.api.PageResponse;
 import com.moonkage.payment.dto.response.PaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
 import com.moonkage.payment.enums.PaymentPurpose;
-import com.moonkage.payment.exception.ApiResponse;
 import com.moonkage.payment.security.CurrentUser;
 import com.moonkage.payment.security.CurrentUserInfo;
 import com.moonkage.payment.service.PaymentService;

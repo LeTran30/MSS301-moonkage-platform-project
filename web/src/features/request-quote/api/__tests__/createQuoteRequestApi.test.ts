@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createQuoteRequest } from '../createQuoteRequestApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -10,7 +9,6 @@ describe('Feature request-quote - createQuoteRequestApi (FR-15, FR-16)', () => {
   });
 
   it('createQuoteRequest() gửi đúng body CreateQuoteRequestRequest', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(
       envelope({
         id: 'req-new',
@@ -23,7 +21,7 @@ describe('Feature request-quote - createQuoteRequestApi (FR-15, FR-16)', () => {
           provinceCode: '01',
           addressDetail: '29 Liễu Giai',
         },
-      })
+      }),
     );
 
     const created = await createQuoteRequest({

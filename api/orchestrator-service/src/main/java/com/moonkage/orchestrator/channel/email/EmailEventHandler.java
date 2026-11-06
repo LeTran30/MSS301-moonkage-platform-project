@@ -1,5 +1,6 @@
 package com.moonkage.orchestrator.channel.email;
 
+import com.moonkage.observability.PiiMasker;
 import com.moonkage.orchestrator.application.port.EmailSender;
 import com.moonkage.orchestrator.application.port.EventHandler;
 import com.moonkage.orchestrator.application.port.TemplateRenderer;
@@ -37,6 +38,9 @@ public class EmailEventHandler implements EventHandler<EmailNotificationEvent> {
 
         String htmlContent = templateRenderer.render(event.templateCode(), event.params());
         emailSender.send(event.to(), event.subject(), htmlContent);
-        log.info("Email channel processed event [{}] for recipient {}", event.eventId(), event.to());
+        log.info(
+                "Email channel processed event [{}] for recipient {}",
+                event.eventId(),
+                PiiMasker.maskEmail(event.to()));
     }
 }

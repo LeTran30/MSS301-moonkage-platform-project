@@ -1,6 +1,6 @@
 export { routes } from './routes';
 export { getToken } from './theme';
-export { ENV, isDemoMode, isConfigValid } from './env';
+export { ENV, isConfigValid } from './env';
 export {
   AUTH_MODE,
   usesCookieAuth,
@@ -8,7 +8,11 @@ export {
   buildCspHeader,
   applyCspMeta,
   apiConnectSources,
+  cspConnectSources,
+  cspImageSources,
   CSP_DIRECTIVES,
+  UPGRADE_INSECURE_REQUESTS,
+  isSecureOrigin,
   SECURITY_HEADERS,
   type AuthMode,
 } from './security';

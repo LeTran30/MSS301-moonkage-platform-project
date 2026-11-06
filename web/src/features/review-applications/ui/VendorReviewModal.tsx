@@ -1,4 +1,4 @@
-import { Button, Modal } from '@/shared/ui';
+import { Button, Checkbox, Modal, Icon, Textarea } from '@/shared/ui';
 import type { VendorDetailDto } from '@/entities/vendor';
 import styles from './reviewApplicationsUi.module.css';
 
@@ -53,8 +53,8 @@ export function VendorReviewModal({
           <Button variant="danger" loading={busy} onClick={onReject}>
             Từ chối hồ sơ
           </Button>
-          <Button variant="primary" loading={busy} onClick={onApprove}>
-            ✓ Phê duyệt mở bán
+          <Button variant="primary" loading={busy} onClick={onApprove} iconLeft="check">
+            Phê duyệt mở bán
           </Button>
         </>
       }
@@ -70,53 +70,47 @@ export function VendorReviewModal({
           <h4>Bộ kiểm tra tiêu chuẩn pháp lý sàn Moonkage:</h4>
           <ul>
             <li>
-              ✓ Loại hình doanh nghiệp đúng quy định: <strong>{vendor?.entityType}</strong> (BR-33).
+              <Icon name="check" size={16} /> Loại hình doanh nghiệp đúng quy định:{' '}
+              <strong>{vendor?.entityType}</strong>.
             </li>
             <li>
-              ✓ Người đại diện pháp luật: <strong>{vendor?.representativeName}</strong> — CCCD đã
-              che: <strong>{vendor?.representativeIdMasked}</strong>.
+              <Icon name="check" size={16} /> Người đại diện pháp luật:{' '}
+              <strong>{vendor?.representativeName}</strong> — CCCD đã che:{' '}
+              <strong>{vendor?.representativeIdMasked}</strong>.
             </li>
             <li>
-              ✓ Giấy chứng nhận cơ sở đủ điều kiện An toàn Vệ sinh Thực phẩm: Đã đính kèm bản sao
-              hợp lệ.
+              <Icon name="check" size={16} /> Giấy chứng nhận cơ sở đủ điều kiện An toàn Vệ sinh Thực
+              phẩm: Đã đính kèm bản sao hợp lệ.
             </li>
-            <li>✓ Cam kết không bán hàng nhái, hàng giả mạo nhãn hiệu cổ truyền.</li>
+            <li>
+              <Icon name="check" size={16} /> Cam kết không bán hàng nhái, hàng giả mạo nhãn hiệu cổ
+              truyền.
+            </li>
           </ul>
         </div>
 
         <div className={styles.rejectGroup}>
-          <label className={styles.label} htmlFor="license-checked">
-            Đã đối chiếu Giấy phép kinh doanh (bắt buộc để phê duyệt — AC-45.5)
-          </label>
-          <input
+          <Checkbox
             id="license-checked"
-            type="checkbox"
+            label="Đã đối chiếu Giấy phép kinh doanh (bắt buộc để phê duyệt)"
             checked={licenseChecked}
             onChange={(e) => onLicenseCheckedChange(e.target.checked)}
           />
 
           {vendor?.entityType === 'SOLE_PROPRIETORSHIP' && (
-            <>
-              <label className={styles.label} htmlFor="registry-checked">
-                Đã tra mã doanh nghiệp trên cổng ĐKKD quốc gia (AC-45.5, A-14)
-              </label>
-              <input
-                id="registry-checked"
-                type="checkbox"
-                checked={registryChecked}
-                onChange={(e) => onRegistryCheckedChange(e.target.checked)}
-              />
-            </>
+            <Checkbox
+              id="registry-checked"
+              label="Đã tra mã doanh nghiệp trên cổng ĐKKD quốc gia"
+              checked={registryChecked}
+              onChange={(e) => onRegistryCheckedChange(e.target.checked)}
+            />
           )}
         </div>
 
         <div className={styles.rejectGroup}>
-          <label className={styles.label} htmlFor="reject-reason">
-            Ghi chú hoặc lý do nếu từ chối (Gửi thông báo cho người bán):
-          </label>
-          <textarea
+          <Textarea
             id="reject-reason"
-            className={styles.textarea}
+            label="Ghi chú hoặc lý do nếu từ chối (Gửi thông báo cho người bán):"
             rows={3}
             value={rejectReason}
             onChange={(e) => onRejectReasonChange(e.target.value)}

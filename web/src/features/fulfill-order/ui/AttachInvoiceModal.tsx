@@ -27,7 +27,7 @@ export function AttachInvoiceModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Gắn hóa đơn VAT điện tử (FR-44)"
+      title="Gắn hóa đơn VAT điện tử"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -41,24 +41,30 @@ export function AttachInvoiceModal({
     >
       <div className={styles.modalContent}>
         <p className={styles.modalSub}>
-          Theo quy định Moonkage, người bán xuất hóa đơn điện tử và gắn tệp hóa đơn trước khi
-          yêu cầu đối soát giải ngân.
+          Theo quy định Moonkage, người bán xuất hóa đơn điện tử và gắn tệp hóa đơn trước khi yêu
+          cầu đối soát giải ngân.
         </p>
         <div className={styles.formGroup}>
-          <label className={styles.label}>Số hóa đơn điện tử / Ký hiệu *</label>
+          <label className={styles.label} htmlFor="invoice-number">
+            Số hóa đơn điện tử / Ký hiệu *
+          </label>
           <Input
+            id="invoice-number"
             value={invoiceNumber}
             onChange={(e) => onInvoiceNumberChange(e.target.value)}
-            placeholder="VD: 1C26TAA-0001293"
+            placeholder="Ví dụ: 1C26TAA-0001293"
             required
           />
         </div>
         <div className={styles.formGroup}>
-          <label className={styles.label}>Tệp hóa đơn (PDF hoặc ảnh) *</label>
-          <label className={styles.fileBox}>
+          <label className={styles.label} htmlFor="invoice-file">
+            Tệp hóa đơn (PDF hoặc ảnh) *
+          </label>
+          <label className={styles.fileBox} htmlFor="invoice-file">
             <Icon name="file" size={20} />
             <span>{invoiceFile ? invoiceFile.name : 'Chọn tệp hóa đơn...'}</span>
             <input
+              id="invoice-file"
               type="file"
               className={styles.fileInput}
               accept="image/*,application/pdf"

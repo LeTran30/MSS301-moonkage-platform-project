@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Badge, Button, Card, Tabs, toast } from '@/shared/ui';
+import { Badge, Button, Card, Icon, Tabs, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { formatCurrency, formatDate } from '@/shared/utils';
 import { type Quote, type QuoteRequest, useVendorRequestList } from '@/entities/request';
@@ -85,21 +85,24 @@ export function VendorRequestsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản lý yêu cầu báo giá (B3.0 - B3.2)</h1>
+          <h1 className={styles.title}>Quản lý yêu cầu báo giá</h1>
           <p className={styles.desc}>
-            Tiếp cận khách hàng doanh nghiệp đặt bánh số lượng lớn. Soạn báo giá cạnh tranh, linh hoạt tỷ lệ cọc và ngày giao.
+            Tiếp cận khách hàng doanh nghiệp đặt bánh số lượng lớn. Soạn báo giá cạnh tranh, linh
+            hoạt tỷ lệ cọc và ngày giao.
           </p>
         </div>
         <div className={styles.badgeHint}>
-          ⚡ Cơ hội doanh số:{' '}
-          <strong>{requests.reduce((sum, r) => sum + r.quantity, 0).toLocaleString()} hộp bánh</strong>
+          <Icon name="sparkle" size={16} /> Cơ hội doanh số:{' '}
+          <strong>
+            {requests.reduce((sum, r) => sum + r.quantity, 0).toLocaleString()} hộp bánh
+          </strong>
         </div>
       </div>
 
       <Tabs<RequestTab>
         items={[
-          { id: 'OPEN', label: 'Yêu cầu mở toàn sàn (Flow 2)' },
-          { id: 'DIRECT', label: 'Yêu cầu chỉ định riêng (Flow 3)' },
+          { id: 'OPEN', label: 'Yêu cầu mở toàn sàn' },
+          { id: 'DIRECT', label: 'Yêu cầu chỉ định riêng' },
           { id: 'ALL', label: 'Tất cả yêu cầu' },
         ]}
         activeId={activeTab}
@@ -120,30 +123,46 @@ export function VendorRequestsPage() {
                   <div className={styles.reqMeta}>
                     <span className={styles.reqId}>#{req.id}</span>
                     <Badge tone={req.type === 'DIRECT' ? 'gold' : 'neutral'}>
-                      {req.type === 'DIRECT' ? 'Chỉ định riêng cho xưởng' : 'Đăng công khai toàn sàn'}
+                      {req.type === 'DIRECT'
+                        ? 'Chỉ định riêng cho xưởng'
+                        : 'Đăng công khai toàn sàn'}
                     </Badge>
-                    <span className={styles.reqDate}>Hạn nhận hàng: {formatDate(req.deliveryDeadline)}</span>
+                    <span className={styles.reqDate}>
+                      Hạn nhận hàng: {formatDate(req.deliveryDeadline)}
+                    </span>
                   </div>
-                  {hasQuoted && <Badge tone="green">✓ Xưởng đã gửi báo giá</Badge>}
+                  {hasQuoted && (
+                    <Badge tone="green">
+                      <Icon name="check" size={13} /> Xưởng đã gửi báo giá
+                    </Badge>
+                  )}
                 </div>
 
                 <div className={styles.reqBody}>
                   <div className={styles.reqMain}>
-                    <h3 className={styles.reqTitle}>Đơn hàng {req.quantity} hộp quà doanh nghiệp</h3>
+                    <h3 className={styles.reqTitle}>
+                      Đơn hàng {req.quantity} hộp quà doanh nghiệp
+                    </h3>
                     <div className={styles.specsGrid}>
                       <div className={styles.specItem}>
                         <span className={styles.specLabel}>Số lượng cần:</span>
-                        <strong className={styles.specVal}>{req.quantity.toLocaleString()} hộp</strong>
+                        <strong className={styles.specVal}>
+                          {req.quantity.toLocaleString()} hộp
+                        </strong>
                       </div>
                       <div className={styles.specItem}>
                         <span className={styles.specLabel}>Ngân sách dự kiến:</span>
                         <strong className={styles.specVal}>
-                          {req.budgetPerBox ? `${formatCurrency(req.budgetPerBox)} / hộp` : 'Thương lượng'}
+                          {req.budgetPerBox
+                            ? `${formatCurrency(req.budgetPerBox)} / hộp`
+                            : 'Thương lượng'}
                         </strong>
                       </div>
                       <div className={styles.specItem}>
                         <span className={styles.specLabel}>Ưa thích vỏ/nhân:</span>
-                        <strong className={styles.specVal}>{req.crustPreference || 'Truyền thống'}</strong>
+                        <strong className={styles.specVal}>
+                          {req.crustPreference || 'Chưa nêu vỏ bánh'}
+                        </strong>
                       </div>
                       <div className={styles.specItem}>
                         <span className={styles.specLabel}>Giao tại:</span>
@@ -155,12 +174,14 @@ export function VendorRequestsPage() {
 
                     {req.customLogoFileName && (
                       <div className={styles.customLogoTag}>
-                        🏷️ Khách yêu cầu: Đã đính kèm logo {req.customLogoFileName}
+                        <Icon name="tag" size={15} /> Khách yêu cầu: Đã đính kèm logo{' '}
+                        {req.customLogoFileName}
                       </div>
                     )}
 
                     <p className={styles.reqNotes}>
-                      <strong>Yêu cầu đặc biệt:</strong> {req.customRequirements || 'Theo mẫu chuẩn của xưởng'}
+                      <strong>Yêu cầu đặc biệt:</strong>{' '}
+                      {req.customRequirements || 'Khách không nêu yêu cầu riêng'}
                     </p>
                   </div>
 
@@ -168,7 +189,9 @@ export function VendorRequestsPage() {
                     <div className={styles.buyerBox}>
                       <span className={styles.buyerLabel}>Khách hàng:</span>
                       <strong className={styles.buyerName}>{req.buyerName}</strong>
-                      <span className={styles.nfcVerifiedTag}>🛡️ Đã xác thực NFC CCCD</span>
+                      <span className={styles.nfcVerifiedTag}>
+                        <Icon name="shield" size={14} /> Đã xác thực NFC CCCD
+                      </span>
                     </div>
 
                     <div className={styles.responsesCount}>
@@ -179,11 +202,12 @@ export function VendorRequestsPage() {
                       variant={hasQuoted ? 'secondary' : 'primary'}
                       size="md"
                       onClick={() => handleOpenQuoteModal(req)}
+                      iconLeft="pen"
                     >
-                      {hasQuoted ? 'Cập nhật lại báo giá' : '📝 Soạn báo giá ngay'}
+                      {hasQuoted ? 'Cập nhật lại báo giá' : 'Soạn báo giá ngay'}
                     </Button>
 
-                    {/* BR-05: rút báo giá đã gửi. AC-36.3: từ chối lời mời. */}
+                    {/* : rút báo giá đã gửi. : từ chối lời mời. */}
                     <div className={styles.requestActions}>
                       {hasQuoted && (
                         <Button
@@ -212,7 +236,7 @@ export function VendorRequestsPage() {
         </div>
       )}
 
-      {/* Modal Soạn báo giá qua Feature (B3.1, B3.2) */}
+      {/* Modal Soạn báo giá qua Feature */}
       <SubmitQuoteModal
         isOpen={quoteModalOpen}
         request={selectedReq}

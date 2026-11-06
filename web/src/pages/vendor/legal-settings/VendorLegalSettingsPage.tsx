@@ -23,7 +23,7 @@ export function VendorLegalSettingsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Hồ Sơ Pháp Lý &amp; An Toàn Thực Phẩm (B6.1, NFR-02)</h1>
+          <h1 className={styles.title}>Hồ Sơ Pháp Lý &amp; An Toàn Thực Phẩm</h1>
           <p className={styles.subtitle}>
             Thông tin bắt buộc để duy trì tích xanh kiểm định và phân phối bánh ra toàn quốc
           </p>

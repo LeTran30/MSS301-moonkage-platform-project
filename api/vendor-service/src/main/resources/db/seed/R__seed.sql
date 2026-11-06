@@ -42,3 +42,45 @@ WHERE id = '00000000-0000-4000-8000-000200000001'
 UPDATE vendors
 SET representative_name = 'VO THI QUE'
 WHERE id = '00000000-0000-4000-8000-000200000002' AND representative_name IS NULL;
+
+-- ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+-- Product 000300000001 (sản phẩm mẫu của Shop Trăng Vàng)
+--
+-- Products are written by vendor-service only (L-18) and reach catalog-service through the
+-- product.upserted event, so a seed row alone would never show up in the catalogue. The seed
+-- therefore writes the product AND the matching outbox event: the relay publishes it like any
+-- other change, and catalog-service projects it into product_views (its read model).
+--
+-- The image key points at the file infra/minio/init.sh puts in the public bucket, so the seed
+-- works from a clean `docker compose down -v` without a manual upload.
+-- ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+INSERT INTO products (id, vendor_id, name, description, brand, origin, resold, pieces_per_box,
+                       list_price, stock, expiry_date, delivery_label, quote_threshold, status, version)
+VALUES ('00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000200000001',
+        'Bánh Trung Thu Trăng Vàng - Hộp 6 Bánh',
+        'Hộp bánh trung thu thập cẩm 6 chiếc, vỏ bánh nướng truyền thống nhân thập cẩm gồm đậu xanh, hạt sen, trứng muối và lạp xưởng. Làm thủ công mỗi ngày, hộp quà biếu tặng gia đình và đối tác.',
+        'Doanh nghiệp tư nhân Bánh Trung Thu Trăng Vàng', NULL, false, 6,
+        120000, 500, '2026-12-31', 'NATIONWIDE', 50, 'ON_SALE', 0)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO product_images (product_id, position, object_key)
+VALUES ('00000000-0000-4000-8000-000300000001', 0,
+        'products/00000000-0000-4000-8000-000200000001/banh-trung-thu-hop-6.jpg')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO product_cake_attributes (product_id, attribute_id)
+VALUES ('00000000-0000-4000-8000-000300000001', 'a1f0c0de-0000-4000-8000-000000000101'),
+       ('00000000-0000-4000-8000-000300000001', 'a1f0c0de-0000-4000-8000-000000000201')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO product_price_tiers (id, product_id, from_qty, unit_price)
+VALUES ('00000000-0000-4000-8000-000300000101', '00000000-0000-4000-8000-000300000001', 50, 110000)
+ON CONFLICT DO NOTHING;
+
+-- The event the relay sends to the other services. Its id is fixed, so a re-run of the seed does
+-- not publish the same product twice (catalog-service skips an event id it has already applied).
+INSERT INTO outbox_events (id, created_at, updated_at, attempts, payload, published_at, routing_key)
+VALUES ('00000000-0000-4000-8000-000900000001', now(), now(), 0,
+        '{"eventId":"00000000-0000-4000-8000-000900000001","schemaVersion":1,"eventType":"product.upserted","sourceService":"vendor-service","aggregateType":"PRODUCT","aggregateId":"00000000-0000-4000-8000-000300000001","sourceVersion":0,"occurredAt":"2026-11-05T00:00:00Z","data":{"productId":"00000000-0000-4000-8000-000300000001","vendorId":"00000000-0000-4000-8000-000200000001","name":"Bánh Trung Thu Trăng Vàng - Hộp 6 Bánh","description":"Hộp bánh trung thu thập cẩm 6 chiếc, vỏ bánh nướng truyền thống nhân thập cẩm gồm đậu xanh, hạt sen, trứng muối và lạp xưởng. Làm thủ công mỗi ngày, hộp quà biếu tặng gia đình và đối tác.","crustCodes":["banh-nuong"],"fillingCodes":["thap-cam"],"brand":"Doanh nghiệp tư nhân Bánh Trung Thu Trăng Vàng","origin":null,"resold":false,"piecesPerBox":6,"listPrice":120000,"stock":500,"expiryDate":"2026-12-31","deliveryLabel":"NATIONWIDE","quoteThreshold":50,"status":"ON_SALE","imageKeys":["products/00000000-0000-4000-8000-000200000001/banh-trung-thu-hop-6.jpg"],"priceTiers":[{"fromQty":50,"unitPrice":110000}]}}',
+        NULL, 'product.upserted')
+ON CONFLICT DO NOTHING;

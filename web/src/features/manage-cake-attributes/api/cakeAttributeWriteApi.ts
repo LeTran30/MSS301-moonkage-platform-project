@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type {
   CakeAttributeDto,
   CreateCakeAttributePayload,
@@ -16,11 +16,8 @@ import type {
 
 /** Admin: a new value; the code and the position come from the label (AC-54.1). */
 export async function createCakeAttribute(
-  payload: CreateCakeAttributePayload
+  payload: CreateCakeAttributePayload,
 ): Promise<CakeAttributeDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.CAKE_ATTRIBUTES, payload);
   return unwrap<CakeAttributeDto>(res);
 }
@@ -28,14 +25,11 @@ export async function createCakeAttribute(
 /** Admin: a partial change; the code and the group never change (AC-54.3). */
 export async function updateCakeAttribute(
   attributeId: string,
-  payload: UpdateCakeAttributePayload
+  payload: UpdateCakeAttributePayload,
 ): Promise<CakeAttributeDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.patch<unknown>(
     `${GATEWAY.VENDOR.CAKE_ATTRIBUTES}/${attributeId}`,
-    payload
+    payload,
   );
   return unwrap<CakeAttributeDto>(res);
 }

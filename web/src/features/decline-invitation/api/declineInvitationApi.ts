@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { InvitationDto } from '@/entities/request';
 
 /**
@@ -26,11 +26,8 @@ export interface DeclineInvitationPayload {
 export async function declineInvitation(
   requestId: string,
   vendorId: string,
-  payload: DeclineInvitationPayload = { status: 'DECLINED' }
+  payload: DeclineInvitationPayload = { status: 'DECLINED' },
 ): Promise<InvitationDto | null> {
-  if (isDemoMode()) {
-    throw new Error('Từ chối lời mời chỉ có sẵn ở chế độ demo.');
-  }
   const res = await apiClient.patch<unknown>(
     GATEWAY.QUOTATION.UPDATE_INVITATION(requestId, vendorId),
     payload,

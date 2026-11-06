@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * The write side of the registration fee payment (FR-27, FR-53).
@@ -17,11 +16,8 @@ import { isDemoMode } from '@/shared/config';
  * payment was created (AC-53.3), and the VNPay page to open.
  */
 export async function createRegistrationFeePayment(
-  vendorId: string
+  vendorId: string,
 ): Promise<{ paymentId: string; amount: number; paymentUrl: string } | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.REGISTRATION_FEE_PAYMENT(vendorId));
   return unwrap<{ paymentId: string; amount: number; paymentUrl: string }>(res);
 }

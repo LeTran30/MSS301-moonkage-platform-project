@@ -1,18 +1,21 @@
 import { test, expect } from '@playwright/test';
-import { gotoRoute, waitForAppReady, login } from './helpers';
+import { gotoRoute, waitForAppReady, login, SEED_ACCOUNTS } from './helpers';
 
 /**
  * FLOW 3 — Đăng nhập & phân quyền (M5.1, Q2.0).
  *
  * Kiểm tra ranh giới giữa khu vực người mua và khu vực quản trị: người mua
  * đã đăng nhập không được thấy màn hình quản trị.
+ *
+ * Mọi phiên đăng nhập đi qua API thật với tài khoản seed
+ * (`member1@mk.com`, `admin@mk.com` — docs/guides/database.md).
  */
 test.describe('FLOW 3 — Đăng nhập & phân quyền', () => {
   test('form đăng nhập có nhãn và ô nhập đầy đủ', async ({ page }) => {
     await gotoRoute(page, '/dang-nhap');
     await waitForAppReady(page);
 
-    await expect(page.getByLabel('Số điện thoại')).toBeVisible();
+    await expect(page.getByLabel('Email hoặc số điện thoại')).toBeVisible();
     await expect(page.getByLabel('Mật khẩu')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Đăng nhập' })).toBeVisible();
   });
@@ -21,8 +24,7 @@ test.describe('FLOW 3 — Đăng nhập & phân quyền', () => {
     await gotoRoute(page, '/dang-nhap');
     await waitForAppReady(page);
 
-    // Form đăng nhập có sẵn dữ liệu mẫu để demo, nên phải xoá trước khi kiểm tra.
-    await page.getByLabel('Số điện thoại').fill('');
+    await page.getByLabel('Email hoặc số điện thoại').fill('');
     await page.getByLabel('Mật khẩu').fill('');
     await page.getByRole('button', { name: 'Đăng nhập' }).click();
 
@@ -30,11 +32,11 @@ test.describe('FLOW 3 — Đăng nhập & phân quyền', () => {
     await expect(page).toHaveURL(/\/dang-nhap/);
   });
 
-  test('số điện thoại sai định dạng thì báo lỗi, không vào được tài khoản', async ({ page }) => {
+  test('định danh sai định dạng thì báo lỗi, không vào được tài khoản', async ({ page }) => {
     await gotoRoute(page, '/dang-nhap');
     await waitForAppReady(page);
 
-    await page.getByLabel('Số điện thoại').fill('123');
+    await page.getByLabel('Email hoặc số điện thoại').fill('khong-phai-email');
     await page.getByLabel('Mật khẩu').fill('Password@123');
     await page.getByRole('button', { name: 'Đăng nhập' }).click();
 
@@ -57,7 +59,7 @@ test.describe('FLOW 3 — Đăng nhập & phân quyền', () => {
   });
 
   test('người dùng không được phân quyền vào khu vực quản trị', async ({ page }) => {
-    await login(page);
+    await login(page, SEED_ACCOUNTS.buyer.username, SEED_ACCOUNTS.buyer.password);
 
     // Đi thẳng vào URL quản trị: ứng dụng phải chặn lại.
     await gotoRoute(page, '/quan-tri');
@@ -70,5 +72,16 @@ test.describe('FLOW 3 — Đăng nhập & phân quyền', () => {
 
     // Nội dung quản trị thật sự không được phép hiện ra.
     await expect(page.getByRole('link', { name: /người bán/i }).first()).toHaveCount(0);
+  });
+
+  test('quản trị viên đăng nhập thật thì vào được khu vực quản trị', async ({ page }) => {
+    await login(page, SEED_ACCOUNTS.admin.username, SEED_ACCOUNTS.admin.password);
+
+    await gotoRoute(page, '/quan-tri');
+    await waitForAppReady(page);
+
+    // Không bị chặn 403 — nội dung quản trị phải hiện ra.
+    await expect(page.getByRole('heading', { name: /Từ chối quyền truy cập/i })).toHaveCount(0);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 });

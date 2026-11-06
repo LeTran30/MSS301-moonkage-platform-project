@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap, unwrapList, unwrapPage } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import { useEffect, useState } from 'react';
 import { useStore } from '@/shared/lib';
 import { orderStore, type Order } from '../model';
@@ -26,11 +26,6 @@ export const orderApi = {
     missingInvoice?: boolean;
     openDispute?: boolean;
   }): Promise<Order[]> {
-    if (isDemoMode()) {
-      const all = orderStore.get();
-      if (!options?.vendorId) return all;
-      return all.filter((o) => o.vendorId === options.vendorId);
-    }
     const params = new URLSearchParams();
     if (options?.vendorId) params.set('vendorId', options.vendorId);
     if (options?.kind) params.set('kind', options.kind);
@@ -42,15 +37,12 @@ export const orderApi = {
 
     const query = params.toString();
     const res = await apiClient.get<unknown>(
-      query ? `${GATEWAY.ORDER.ORDERS}?${query}` : GATEWAY.ORDER.ORDERS
+      query ? `${GATEWAY.ORDER.ORDERS}?${query}` : GATEWAY.ORDER.ORDERS,
     );
     return unwrapPage<OrderDto>(res).map(mapOrderDtoToEntity);
   },
 
   async getOrderById(id: string): Promise<Order | null> {
-    if (isDemoMode()) {
-      return orderStore.get().find((o) => o.id === id) || null;
-    }
     const res = await apiClient.get<unknown>(GATEWAY.ORDER.ORDER_BY_ID(id));
     // OrderController.get trả về MỘT `OrderResponse` trong envelope, không phải
     // danh sách: `unwrapList` trả về mảng rỗng và chi tiết đơn luôn trống.
@@ -62,9 +54,6 @@ export const orderApi = {
    * FR-21: the order's progress history, read only.
    */
   async getProgressUpdates(orderId: string): Promise<ProgressUpdate[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.ORDER.PROGRESS_UPDATES(orderId));
     return unwrapList<ProgressUpdateDto>(res).map(mapProgressUpdateDto);
   },
@@ -77,9 +66,6 @@ export const orderApi = {
    * page polls it while the status is still `PENDING_PAYMENT`.
    */
   async getCheckout(checkoutId: string): Promise<CheckoutDto | null> {
-    if (isDemoMode()) {
-      return null;
-    }
     const res = await apiClient.get<unknown>(GATEWAY.ORDER.CHECKOUT_BY_ID(checkoutId));
     const dto = unwrap<CheckoutDto>(res);
     return dto ?? null;

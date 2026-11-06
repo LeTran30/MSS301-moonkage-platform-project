@@ -67,15 +67,17 @@ Seed không bao giờ đụng tới tài khoản người dùng tự tạo: emai
 | | | `…-000100000001` → `…-000100000005` | member1 → member5 | identity |
 | vendor | `0002` | `…-000200000001` | Trăng Vàng (của member4) | vendor |
 | | | `…-000200000002` | Bánh Quê (của member5) | vendor |
-| product | `0003` | | *chờ người phụ trách vendor* (sản phẩm ghi ở vendor-service, L-18) | vendor |
+| product | `0003` | `…-000300000001` | Bánh Trung Thu Trăng Vàng - Hộp 6 Bánh (sản phẩm mẫu của Shop Trăng Vàng) | vendor |
 | quote request | `0004` | | *chưa dùng*; seed quotation chỉ có bản sao người bán (`vendor_snapshots`) theo ID `0002` | quotation |
 | order | `0005` | | *chờ người phụ trách order* | order |
 | address | `0006` | `…-000600000001`, `…02` | 2 địa chỉ của member1 (TP.HCM, Hà Nội) | identity |
 | | | `…-000600000003` | địa chỉ của member2 | identity |
 | delivery area | `0007` | `…-000700000001`, `…02` | vùng giao của 2 shop (79, 01) | vendor |
 | registration fee config | `0008` | `…-000800000001` | mức phí đăng ký mặc định 200.000đ (nằm trong migration, mọi môi trường) | vendor |
+| price tier | `0003` (con) | `…-000300000101` | bậc giá số lượng lớn của sản phẩm `…-000300000001` | vendor |
+| outbox event | `0009` | `…-000900000001` | `eventId` của sự kiện `product.upserted` trong seed (dùng làm khoá chống xử lý trùng ở inbox của catalog) | vendor |
 
-Loại mới thì lấy mã tiếp theo (`0008`…) và thêm một dòng vào bảng.
+Loại mới thì lấy mã tiếp theo (`0009`…) và thêm một dòng vào bảng. ID của bản ghi trong seed phải có dòng tương ứng ở đây — xem quy tắc trong [../architecture/api-db/decisions.md](../architecture/api-db/decisions.md) (D-26).
 
 ## 6. Làm lại từ đầu
 

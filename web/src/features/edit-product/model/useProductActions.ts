@@ -13,9 +13,13 @@ import type {
 
 /** A write changed this product: the shop's list and the product must be read again. */
 async function forgetProduct(vendorId: string, productId: string | null | undefined) {
-  await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.products(vendorId) });
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.vendor.products(vendorId),
+  });
   if (productId) {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.product(vendorId, productId) });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.vendor.product(vendorId, productId),
+    });
   }
 }
 

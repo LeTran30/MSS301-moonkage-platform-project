@@ -21,19 +21,16 @@ export function ConfigErrorPage() {
 
         <h1 className={styles.title}>Thiếu cấu hình API Gateway</h1>
         <p className={styles.desc}>
-          Ứng dụng chưa biết gọi API Gateway ở đâu. Hãy tạo file <code>.env.local</code> trong
-          thư mục gốc của web, điền địa chỉ gateway rồi chạy lại <code>npm run dev</code>.
+          Ứng dụng chưa biết gọi API Gateway ở đâu. Hãy tạo file <code>.env.local</code> trong thư
+          mục gốc của web, điền địa chỉ gateway rồi chạy lại <code>npm run dev</code>.
         </p>
 
         <div className={styles.codeBlock}>
           <span className={styles.codeLabel}>File cần tạo: web/.env.local</span>
           <pre className={styles.code}>
-{`# Sao chép từ .env.example rồi điền giá trị thật
+            {`# Sao chép từ .env.example rồi điền giá trị thật
 VITE_API_BASE_URL=http://localhost:8080
-VITE_WS_URL=ws://localhost:8080/ws
-
-# Hoặc bật chế độ demo (dữ liệu mô phỏng, không cần máy chủ)
-VITE_DEMO_MODE=true`}
+VITE_WS_URL=ws://localhost:8080/ws`}
           </pre>
         </div>
 
@@ -52,11 +49,6 @@ VITE_DEMO_MODE=true`}
             </li>
           </ol>
         </div>
-
-        <p className={styles.footnote}>
-          Nếu bạn chỉ muốn xem giao diện mà không có máy chủ, đặt{' '}
-          <code>VITE_DEMO_MODE=true</code> trong file trên.
-        </p>
 
         <div className={styles.actions}>
           <Button variant="outline" onClick={() => window.location.reload()}>

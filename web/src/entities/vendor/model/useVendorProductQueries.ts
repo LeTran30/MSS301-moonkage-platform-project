@@ -8,7 +8,15 @@ import { vendorProductApi, type VendorProductDto } from '../api/vendorProductApi
  * The seller sees the products the admin removed, so the list is not filtered.
  */
 export function useVendorProducts(vendorId: string) {
-  return useQueryData(queryKeys.vendor.products(vendorId), () => vendorProductApi.getProducts(vendorId));
+  return useQueryData(
+    queryKeys.vendor.products(vendorId),
+    () =>
+      vendorId
+        ? vendorProductApi.getProducts(vendorId)
+        // Chưa có id gian hàng (tài khoản chưa mở Shop) thì không gọi API:
+        // `/api/vendors//products` là URL sai và backend trả lỗi.
+        : Promise.resolve([] as VendorProductDto[]),
+  );
 }
 
 /**

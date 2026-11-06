@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { CreateVendorReviewPayload, VendorReviewDto } from '@/entities/vendor';
 
 /**
@@ -17,11 +17,8 @@ import type { CreateVendorReviewPayload, VendorReviewDto } from '@/entities/vend
  */
 export async function createVendorReview(
   vendorId: string,
-  payload: CreateVendorReviewPayload
+  payload: CreateVendorReviewPayload,
 ): Promise<VendorReviewDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.REVIEWS(vendorId), payload);
   return unwrap<VendorReviewDto>(res);
 }

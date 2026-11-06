@@ -1,33 +1,32 @@
 package com.moonkage.order.exception;
 
+import com.moonkage.api.ApiResponse;
+import com.moonkage.api.CommonExceptionHandler;
 import com.moonkage.storage.InvalidFileException;
 import com.moonkage.storage.StorageUnavailableException;
-import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/** Turns every error into {@link ApiResponse} with {@code data = null}. */
+/**
+ * Turns every error into {@link ApiResponse} with {@code data = null}.
+ *
+ * <p>The advice is registered here, not only in the shared boundary: {@code @RestControllerAdvice} is not inherited,
+ * so a subclass without the annotation would never be asked for its own handlers.
+ */
 @Slf4j
 @RestControllerAdvice
-@RequiredArgsConstructor
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends CommonExceptionHandler {
 
-    private final MessageSource messageSource;
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        super(messageSource);
+    }
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex, HttpServletRequest request) {
@@ -35,37 +34,6 @@ public class GlobalExceptionHandler {
         String message = localize(ec, ex.getArgs());
         log.warn("Business Exception: code={}, message={}", ec.getCode(), message);
         return build(ec, message, null, request);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(
-            MethodArgumentNotValidException ex, HttpServletRequest request) {
-        List<ApiResponse.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> new ApiResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
-                .toList();
-        return build(ErrorCode.INVALID_INPUT, localize(ErrorCode.INVALID_INPUT, null), fieldErrors, request);
-    }
-
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
-    public ResponseEntity<ApiResponse<Void>> handleUnreadable(Exception ex, HttpServletRequest request) {
-        return build(ErrorCode.MALFORMED_JSON, request);
-    }
-
-    /** Without this a missing {@code @RequestParam} fell through to the 500 handler. */
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMissingParameter(
-            MissingServletRequestParameterException ex, HttpServletRequest request) {
-        String message = localize(ErrorCode.PARAMETER_REQUIRED, new Object[] {ex.getParameterName()});
-        return build(
-                ErrorCode.PARAMETER_REQUIRED,
-                message,
-                List.of(new ApiResponse.FieldError(ex.getParameterName(), message)),
-                request);
-    }
-
-    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
-    public ResponseEntity<ApiResponse<Void>> handleNoResource(Exception ex, HttpServletRequest request) {
-        return build(ErrorCode.RESOURCE_NOT_FOUND, request);
     }
 
     /** An upload that is missing, of another type, too large or not the declared format (common-storage). */
@@ -83,28 +51,6 @@ public class GlobalExceptionHandler {
             StorageUnavailableException ex, HttpServletRequest request) {
         log.error("MinIO did not answer: {}", ex.getMessage());
         return build(ErrorCode.DEPENDENCY_UNAVAILABLE, request);
-    }
-
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
-            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
-        return build(ErrorCode.METHOD_NOT_ALLOWED, request);
-    }
-
-    /**
-     * A Feign call that the service did not turn into an AppException: the other service is down, timed out or
-     * failed. The caller gets 503, never the other service's body.
-     */
-    @ExceptionHandler(FeignException.class)
-    public ResponseEntity<ApiResponse<Void>> handleFeign(FeignException ex, HttpServletRequest request) {
-        log.error("Call to another service failed: status={}, {}", ex.status(), ex.getMessage());
-        return build(ErrorCode.DEPENDENCY_UNAVAILABLE, request);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUncaughtException(Exception ex, HttpServletRequest request) {
-        log.error("Unhandled Exception: ", ex);
-        return build(ErrorCode.INTERNAL_SERVER_ERROR, request);
     }
 
     private ResponseEntity<ApiResponse<Void>> build(ErrorCode errorCode, HttpServletRequest request) {

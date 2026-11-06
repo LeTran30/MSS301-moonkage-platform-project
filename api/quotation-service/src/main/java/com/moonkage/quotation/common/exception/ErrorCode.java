@@ -1,25 +1,35 @@
 package com.moonkage.quotation.common.exception;
 
+import com.moonkage.api.CommonErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
-/** Messages are MessageFormat patterns ({0}); they are shown to the user as they are. */
+/**
+ * The error codes of quotation-service.
+ *
+ * <p>The common ones ({@code COMMON_*}) take their code string and their status from {@link CommonErrorCode}, the
+ * list every service shares, so the same failure cannot be named two ways in two services. The text stays in this
+ * enum: quotation keeps no message bundle of its own, so the wording lives next to the code it belongs to and is
+ * shown to the user as it is.
+ *
+ * <p>The business codes ({@code QUOTE_*}) are quotation's own and keep their own string, status and text.
+ */
 @Getter
 @RequiredArgsConstructor
 public enum ErrorCode {
 
-    // Common
-    INTERNAL_SERVER_ERROR("COMMON_500", HttpStatus.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi không mong muốn."),
-    INVALID_INPUT("COMMON_400", HttpStatus.BAD_REQUEST, "Dữ liệu gửi lên không hợp lệ."),
-    MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "Nội dung gửi lên không đọc được."),
-    UNAUTHENTICATED("COMMON_401", HttpStatus.UNAUTHORIZED, "Thiếu thông tin đăng nhập."),
-    ACCESS_DENIED("COMMON_403", HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện thao tác này."),
-    RESOURCE_NOT_FOUND("COMMON_404", HttpStatus.NOT_FOUND, "Không tìm thấy đường dẫn."),
-    METHOD_NOT_ALLOWED("COMMON_405", HttpStatus.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ."),
-    INVALID_STATE_TRANSITION("COMMON_409", HttpStatus.CONFLICT, "Không thể chuyển sang trạng thái {0}."),
+    // Common: the code string and the status come from the shared list, the text stays quotation's own
+    INTERNAL_SERVER_ERROR(CommonErrorCode.INTERNAL_SERVER_ERROR, "Đã xảy ra lỗi không mong muốn."),
+    INVALID_INPUT(CommonErrorCode.INVALID_INPUT, "Dữ liệu gửi lên không hợp lệ."),
+    MALFORMED_JSON(CommonErrorCode.MALFORMED_JSON, "Nội dung gửi lên không đọc được."),
+    UNAUTHENTICATED(CommonErrorCode.UNAUTHENTICATED, "Thiếu thông tin đăng nhập."),
+    ACCESS_DENIED(CommonErrorCode.ACCESS_DENIED, "Bạn không có quyền thực hiện thao tác này."),
+    RESOURCE_NOT_FOUND(CommonErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy đường dẫn."),
+    METHOD_NOT_ALLOWED(CommonErrorCode.METHOD_NOT_ALLOWED, "Phương thức không được hỗ trợ."),
+    INVALID_STATE_TRANSITION(CommonErrorCode.INVALID_STATE_TRANSITION, "Không thể chuyển sang trạng thái {0}."),
     DEPENDENCY_UNAVAILABLE(
-            "COMMON_503", HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ liên quan đang không phản hồi. Vui lòng thử lại."),
+            CommonErrorCode.DEPENDENCY_UNAVAILABLE, "Dịch vụ liên quan đang không phản hồi. Vui lòng thử lại."),
 
     // Buyer and vendor checks (BR-16, BR-20, BR-22, BR-23, BR-31)
     NFC_NOT_VERIFIED("QUOTE_001", HttpStatus.FORBIDDEN, "Tài khoản cần xác minh NFC trước khi gửi yêu cầu (BR-23)."),
@@ -70,4 +80,17 @@ public enum ErrorCode {
     private final String code;
     private final HttpStatus httpStatus;
     private final String message;
+
+    /**
+     * A common code, taken from the shared list of common-api, with the text quotation shows to the user.
+     *
+     * <p>The code string and the status come from {@link CommonErrorCode}, so they are the same in every service;
+     * the text stays here, because quotation keeps no message bundle and its {@code ErrorCode} holds the wording
+     * next to the code it belongs to.
+     */
+    ErrorCode(CommonErrorCode common, String message) {
+        this.code = common.getCode();
+        this.httpStatus = common.getHttpStatus();
+        this.message = message;
+    }
 }

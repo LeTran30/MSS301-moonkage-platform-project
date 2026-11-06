@@ -1,7 +1,6 @@
 import { apiClient, GATEWAY, unwrap, unwrapList } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import { orderStore, type MaketVersion } from '../model';
 
+import { type MaketVersion } from '../model';
 /**
  * Wire shape of `com.moonkage.order.dto.response.MockupResponse`.
  *
@@ -111,28 +110,18 @@ export interface UploadLinkDto {
 export const orderDocumentApi = {
   /** The maket versions of an order (FR-20, FR-39). */
   async getMockups(orderId: string): Promise<MaketVersion[]> {
-    if (isDemoMode()) {
-      return orderStore.get().find((o) => o.id === orderId)?.maketVersions ?? [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.ORDER.MAKET_MOCKUPS(orderId));
     return unwrapList<MockupDto>(res).map(mapMockupDtoToEntity);
   },
 
   /** The reviews of an order (FR-11). */
   async getReviews(orderId: string): Promise<ProductReview[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.ORDER.REVIEWS(orderId));
     return unwrapList<ReviewDto>(res).map(mapReviewDtoToEntity);
   },
 
   /** The link to the vendor's invoice (FR-25). */
   async getInvoice(orderId: string): Promise<FileLinkDto | null> {
-    if (isDemoMode()) {
-      const order = orderStore.get().find((o) => o.id === orderId);
-      return order?.invoiceCompanyInfo ? { downloadUrl: '/invoices/invoice.pdf' } : null;
-    }
     const res = await apiClient.get<unknown>(`${GATEWAY.ORDER.ORDER_BY_ID(orderId)}/invoice`);
     return unwrap<FileLinkDto>(res);
   },

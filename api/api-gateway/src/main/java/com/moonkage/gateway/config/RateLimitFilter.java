@@ -1,5 +1,6 @@
 package com.moonkage.gateway.config;
 
+import com.moonkage.api.GatewayHeader;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.net.InetSocketAddress;
@@ -87,7 +88,7 @@ public class RateLimitFilter implements GlobalFilter {
      */
     private String callerOf(ServerWebExchange exchange) {
         if (properties.rules().keyByAccount()) {
-            String accountId = exchange.getRequest().getHeaders().getFirst(SecurityConfig.ACCOUNT_ID);
+            String accountId = exchange.getRequest().getHeaders().getFirst(GatewayHeader.ACCOUNT_ID);
             if (accountId != null && !accountId.isBlank()) {
                 return "account:" + accountId;
             }

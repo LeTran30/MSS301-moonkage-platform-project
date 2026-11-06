@@ -26,6 +26,23 @@ jobs:
     defaults:
       run:
         working-directory: web
+    env:
+      # Origin của object storage (MinIO) phục vụ ảnh sản phẩm — phải khai
+      # báo tường minh cho **mọi** bản build trong CI, vì `web/.env` /
+      # `web/.env.local` là file cục bộ của developer (đã gitignore, CI
+      # checkout sạch nên không có).
+      #
+      # Giá trị này khớp với `MINIO_API_PORT=9000` trong `.env.example` ở thư
+      # mục gốc và với `MINIO_BROWSER_URL` mặc định của backend
+      # (`${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT:9000}}` trong
+      # `api/*/src/main/resources/application.yml`) — nên URL ảnh mà backend
+      # trả về có đúng origin này.
+      #
+      # Nếu thiếu: CSP của ứng dụng chỉ có `img-src 'self' data: blob:` ⇒
+      # trình duyệt chặn mọi ảnh MinIO ⇒ log console đỏ ⇒ các test "trang ...
+      # không có lỗi console" đỏ. Đây chính là lỗi "CI lệch local" đã xảy
+      # ra: local có `.env` nên xanh, CI không có nên đỏ.
+      VITE_MEDIA_BASE_URL: http://localhost:9000
     steps:
       - uses: actions/checkout@v7
 
@@ -46,9 +63,37 @@ jobs:
       - name: CSS modules check
         run: node scripts/check-css-modules.mjs
 
+      # A module with a multi-column grid, a wide table or a fixed width but
+      # no @media at all will break the moment the viewport gets narrow.
+      - name: Responsive CSS check
+        run: node scripts/check-responsive.mjs
+
+      # Spec IDs (FR-06, M6.1.3, FLOW 5…) must never reach the rendered UI:
+      # they are internal requirement codes, meaningless to end users.
+      - name: No spec IDs in user-facing strings
+        run: node scripts/check-no-spec-ids.mjs
+
       # The UI is Vietnamese; a broken byte sequence would ship mojibake.
       - name: Encoding check (UTF-8)
         run: node scripts/check-encoding.mjs
+
+      # WCAG 2.1 AA contrast for the core color tokens, in both light and dark
+      # theme. A token that silently drops below 4.5:1 is a real accessibility
+      # regression, so it is a gate rather than a review note.
+      - name: Color contrast (WCAG AA)
+        run: node scripts/check-contrast.mjs
+
+      # Feature-Sliced Design boundaries: `shared` must not import from any
+      # other slice, `entities` must not import `features`, and so on. A
+      # reversed dependency turns the slices into a cycle that cannot be
+      # tested in isolation.
+      - name: FSD layer boundaries
+        run: node scripts/check-fsd-layers.mjs
+
+      # A stylesheet nobody imports is dead code: it reads as if the style were
+      # still applied and grows the CSS surface without anyone noticing.
+      - name: No orphan CSS modules
+        run: node scripts/check-orphan-css.mjs
 
       # build: tsc -b (type-check, strict mode) then vite build
       - name: Type-check and build
@@ -59,6 +104,14 @@ jobs:
       - name: Bundle size budget
         run: node scripts/check-bundle-size.mjs
 
+      # The build must declare the object-storage origin in its CSP. Without
+      # `VITE_MEDIA_BASE_URL` the CSP only allows `img-src 'self' data: blob:`
+      # ⇒ every MinIO image is blocked, the console fills with CSP violations
+      # and the E2E "no console error" tests fail. This catches a missing
+      # variable at build time instead of at the (much slower) E2E step.
+      - name: CSP media origin in build
+        run: node scripts/check-csp-media-origin.mjs
+
       - name: Unit tests (vitest)
         run: npm test
 
@@ -67,7 +120,59 @@ jobs:
         run: npm run coverage
 
       # E2E: the 7 core business flows. Chromium only, to keep the runtime
-      # bounded; the suite runs against the built app in demo mode.
+      # bounded; the suite runs against the production build (vite preview)
+      # talking to the real API Gateway — there is no demo mode left.
+      #
+      # The backend must be up: the suite reads real data from Postgres and
+      # real images from MinIO. Without it every assertion would fail on a
+      # "Network Error" screen instead of on a real defect.
+      - name: Prepare .env for the backend stack
+        working-directory: .
+        run: |
+          # .env is gitignored, so CI has to create it from the template.
+          # Every secret below must be a real value, not the placeholder in
+          # the template, or the service refuses to start:
+          #   JWT_SECRET          Base64 HS256 key, 32+ bytes
+          #   NFC_TRANSPORT_*     RSA private key that opens the NFC payload
+          #   PII_ENC_KEY_V1      AES-256 key that locks the ID number
+          #   ID_HASH_PEPPER_V1  pepper of the ID fingerprint
+          #   BANK_ACCOUNT_ENC_*  AES-256-GCM key of the vendor bank account
+          sed \
+            -e "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" \
+            -e "s|^NFC_TRANSPORT_PRIVATE_KEY_V1=.*|NFC_TRANSPORT_PRIVATE_KEY_V1=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null \| sed -n '/BEGIN/,/END/p' \| tr -d '\n' \| sed 's/-----BEGIN PRIVATE KEY-----\|-----END PRIVATE KEY-----//g')|" \
+            -e "s|^PII_ENC_KEY_V1=.*|PII_ENC_KEY_V1=$(openssl rand -base64 32)|" \
+            -e "s|^ID_HASH_PEPPER_V1=.*|ID_HASH_PEPPER_V1=$(openssl rand -base64 32)|" \
+            -e "s|^BANK_ACCOUNT_ENC_KEY_V1=.*|BANK_ACCOUNT_ENC_KEY_V1=$(openssl rand -base64 32)|" \
+            .env.example > .env
+          grep -cE '^[A-Z_]+=.{8,}' .env
+
+      - name: Start the backend stack
+        working-directory: .
+        run: docker compose up -d --build
+
+      # Wait until the backend really serves every service the E2E suite needs.
+      #
+      # `/actuator/health` of the gateway is NOT enough: it only says "the
+      # gateway is alive", not "every service registered in Eureka and is
+      # routable". The gateway answers 200 for health while business routes
+      # still answer 503 (`No servers available for service: ...`), and the
+      # E2E "no console error" tests then fail on that 503 — an
+      # infrastructure failure that looks like a product failure (and hides
+      # next to the CSP errors in the same array).
+      #
+      # The script probes one endpoint per service, with a real admin token,
+      # so a 503 means "not registered yet" and the wait continues.
+      - name: Wait for the backend stack
+        run: node scripts/wait-for-backend.mjs
+        env:
+          # Explicit, because the job-level env carries VITE_MEDIA_BASE_URL
+          # (the object storage origin) — not the gateway.
+          VITE_API_BASE_URL: http://localhost:8080
+          # The password of the seed accounts (SEED_PASSWORD in the root
+          # .env.example; the seed data is created by Flyway with it).
+          SEED_USERNAME: admin@mk.com
+          SEED_PASSWORD: 12345678
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

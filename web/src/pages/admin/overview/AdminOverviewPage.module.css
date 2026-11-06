@@ -13,10 +13,10 @@
 }
 
 .title {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-primary-dark);
+  color: var(--color-zone);
   margin-bottom: var(--space-1);
 }
 
@@ -98,7 +98,7 @@
 
 .financeMetrics {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-4);
 }
 

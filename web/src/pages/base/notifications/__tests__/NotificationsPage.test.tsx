@@ -54,9 +54,9 @@ describe('NotificationsPage — M6.6 dùng chung hai vai trò', () => {
     currentUser.role = 'BUYER';
   });
 
-  it('luôn nêu mã màn hình M6.6', () => {
+  it('không để lộ mã màn hình trong giao diện', () => {
     renderPage();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/M6\.6/);
+    expect(screen.getByRole('heading', { level: 1 })).not.toHaveTextContent(/M6\.6/);
   });
 
   it('hiện trạng thái rỗng khi không có thông báo', () => {

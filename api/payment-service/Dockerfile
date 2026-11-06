@@ -17,6 +17,8 @@ COPY order-service/pom.xml order-service/
 COPY common-storage/pom.xml common-storage/
 COPY common-reference/pom.xml common-reference/
 COPY common-observability/pom.xml common-observability/
+COPY common-api/pom.xml common-api/
+COPY common-outbox/pom.xml common-outbox/
 COPY vendor-service/pom.xml vendor-service/
 COPY payment-service/pom.xml payment-service/
 COPY orchestrator-service/pom.xml orchestrator-service/
@@ -24,6 +26,8 @@ COPY orchestrator-service/pom.xml orchestrator-service/
 COPY common-storage/src common-storage/src
 COPY common-reference/src common-reference/src
 COPY common-observability/src common-observability/src
+COPY common-api/src common-api/src
+COPY common-outbox/src common-outbox/src
 COPY payment-service/src payment-service/src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -pl payment-service -am package -DskipTests -Dspotless.check.skip=true -Dcheckstyle.skip=true
 

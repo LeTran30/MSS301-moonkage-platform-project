@@ -19,7 +19,7 @@ export function resolveEscrowDispute(
   escrowHoldingAmount: number,
   maxRefundableAmount: number,
   decision: DisputeDecision,
-  partialRefundInput?: number
+  partialRefundInput?: number,
 ): EscrowResolutionResult {
   if (decision === 'PARTIAL_REFUND') {
     const refund = partialRefundInput ?? 0;
@@ -28,7 +28,7 @@ export function resolveEscrowDispute(
         buyerRefund: 0,
         vendorPayout: 0,
         isValid: false,
-        error: `Quy tắc AC-49.3: Số tiền hoàn (${refund.toLocaleString()}đ) không được vượt quá số tiền Escrow đang giữ (${maxRefundableAmount.toLocaleString()}đ).`,
+        error: `Số tiền hoàn (${refund.toLocaleString()}đ) không được vượt quá số tiền Escrow đang giữ (${maxRefundableAmount.toLocaleString()}đ).`,
       };
     }
     return {

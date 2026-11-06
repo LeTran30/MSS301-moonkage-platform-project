@@ -4,20 +4,18 @@ import {
   replaceVendorProduct,
   updateVendorProductStatus,
 } from '../vendorProductWriteApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 describe('Feature edit-product - vendorProductWriteApi (FR-29 to FR-34, FR-46)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('replaceVendorProduct() gửi kèm version để chống ghi đè (FR-32, FR-33)', async () => {
-    const put = vi.spyOn(apiClient, 'put').mockResolvedValue(
-      envelope({ id: 'p-1', listPrice: 2000, status: 'ON_SALE' }) as never,
-    );
+    const put = vi
+      .spyOn(apiClient, 'put')
+      .mockResolvedValue(envelope({ id: 'p-1', listPrice: 2000, status: 'ON_SALE' }) as never);
 
     await replaceVendorProduct('ven-1', 'p-1', {
       name: 'Bánh nướng',
@@ -35,9 +33,9 @@ describe('Feature edit-product - vendorProductWriteApi (FR-29 to FR-34, FR-46)',
   });
 
   it('updateVendorProductStatus() gửi đúng payload đổi trạng thái (FR-34, FR-46)', async () => {
-    const patch = vi.spyOn(apiClient, 'patch').mockResolvedValue(
-      envelope({ id: 'p-1', status: 'REMOVED' }) as never,
-    );
+    const patch = vi
+      .spyOn(apiClient, 'patch')
+      .mockResolvedValue(envelope({ id: 'p-1', status: 'REMOVED' }) as never);
 
     await updateVendorProductStatus('ven-1', 'p-1', {
       status: 'REMOVED',

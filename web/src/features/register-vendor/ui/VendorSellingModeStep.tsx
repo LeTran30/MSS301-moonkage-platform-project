@@ -24,8 +24,10 @@ export function VendorSellingModeStep({
       <h3>Bước 3: Nguồn hàng &amp; Cách thức bán hàng trên sàn</h3>
 
       <div className={styles.field}>
-        <label className={styles.label}>Nguồn gốc bánh cung cấp:</label>
-        <div className={styles.optionRow}>
+        <div className={styles.label} id="source-type-label">
+          Nguồn gốc bánh cung cấp:
+        </div>
+        <div className={styles.optionRow} role="group" aria-labelledby="source-type-label">
           {SOURCE_OPTIONS.map((s) => (
             <button
               key={s}
@@ -40,8 +42,10 @@ export function VendorSellingModeStep({
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>Hình thức bán hàng trên Moonkage (BR-21):</label>
-        <div className={styles.optionRow}>
+        <div className={styles.label} id="selling-mode-label">
+          Hình thức bán hàng trên Moonkage:
+        </div>
+        <div className={styles.optionRow} role="group" aria-labelledby="selling-mode-label">
           <button
             type="button"
             className={`${styles.radioPill} ${form.sellingMode === 'BOTH' ? styles.radioSelected : ''}`}
@@ -69,9 +73,9 @@ export function VendorSellingModeStep({
       <div className={styles.feeNotice}>
         <Icon name="sparkle" size={16} />
         <span>
-          <strong>Lưu ý phí mở bán (FR-27, FR-53):</strong> Sau khi hồ sơ được Đội vận hành kiểm
-          duyệt thông qua, bạn sẽ thanh toán phí mở bán 200.000đ (thanh toán 1 lần qua VNPay) để
-          chính thức kích hoạt gian hàng.
+          <strong>Lưu ý phí mở bán:</strong> Sau khi hồ sơ được Đội vận hành kiểm duyệt thông qua,
+          bạn sẽ thanh toán phí mở bán 200.000đ (thanh toán 1 lần qua VNPay) để chính thức kích hoạt
+          gian hàng.
         </span>
       </div>
 

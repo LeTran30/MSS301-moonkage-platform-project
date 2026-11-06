@@ -1,5 +1,6 @@
 package com.moonkage.identity.common.exception;
 
+import com.moonkage.api.CommonErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,12 +10,12 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Common
-    INTERNAL_SERVER_ERROR("COMMON_500", HttpStatus.INTERNAL_SERVER_ERROR, "error.common.internal"),
-    INVALID_INPUT("COMMON_400", HttpStatus.BAD_REQUEST, "error.common.invalid_input"),
-    ACCESS_DENIED("COMMON_403", HttpStatus.FORBIDDEN, "error.common.access_denied"),
-    MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "error.common.malformed_json"),
-    RESOURCE_NOT_FOUND("COMMON_404", HttpStatus.NOT_FOUND, "error.common.resource_not_found"),
-    METHOD_NOT_ALLOWED("COMMON_405", HttpStatus.METHOD_NOT_ALLOWED, "error.common.method_not_allowed"),
+    INTERNAL_SERVER_ERROR(CommonErrorCode.INTERNAL_SERVER_ERROR),
+    INVALID_INPUT(CommonErrorCode.INVALID_INPUT),
+    ACCESS_DENIED(CommonErrorCode.ACCESS_DENIED),
+    MALFORMED_JSON(CommonErrorCode.MALFORMED_JSON),
+    RESOURCE_NOT_FOUND(CommonErrorCode.RESOURCE_NOT_FOUND),
+    METHOD_NOT_ALLOWED(CommonErrorCode.METHOD_NOT_ALLOWED),
 
     // Auth
     INVALID_CREDENTIALS("AUTH_001", HttpStatus.UNAUTHORIZED, "error.auth.invalid_credentials"),
@@ -46,4 +47,16 @@ public enum ErrorCode {
     private final String code;
     private final HttpStatus httpStatus;
     private final String messageKey;
+
+    /**
+     * A common code, taken from the shared list of common-api.
+     *
+     * <p>The code string, the status and the message key of the common failures exist in one place now, so they can no
+     * longer drift apart between the services (audit findings H-02 and H-03).
+     */
+    ErrorCode(CommonErrorCode common) {
+        this.code = common.getCode();
+        this.httpStatus = common.getHttpStatus();
+        this.messageKey = common.getMessageKey();
+    }
 }

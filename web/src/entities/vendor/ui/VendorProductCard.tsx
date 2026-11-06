@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, Card } from '@/shared/ui';
+import { Badge, Button, Card, ProductImage } from '@/shared/ui';
 import type { VendorProductDto } from '../api/vendorProductApi';
 import styles from './VendorProductCard.module.css';
 
@@ -25,12 +25,10 @@ export function VendorProductCard({
   return (
     <Card className={styles.productCard}>
       <div className={styles.cardImageWrap}>
-        <img
-          src={product.images?.[0]?.url || '/images/banh-nuong.jpg'}
+        <ProductImage
+          src={product.images?.[0]?.url}
           alt={product.name ?? ''}
           className={styles.productImg}
-          loading="lazy"
-          decoding="async"
         />
         <div className={styles.statusBadgeWrap}>
           <Badge tone={product.status === 'ON_SALE' ? 'green' : 'neutral'}>

@@ -16,13 +16,13 @@
   height: 64px;
   border-radius: var(--radius-full);
   background: var(--color-gold-soft);
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   display: grid;
   place-items: center;
   margin-bottom: var(--space-4);
 }
 .title {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
   margin-bottom: var(--space-2);

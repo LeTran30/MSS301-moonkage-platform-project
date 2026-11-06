@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { VendorDocumentDto } from '@/entities/vendor';
 
 /**
@@ -28,11 +28,8 @@ export interface CreateVendorDocumentPayload {
  */
 export async function attachVendorDocument(
   vendorId: string,
-  payload: CreateVendorDocumentPayload
+  payload: CreateVendorDocumentPayload,
 ): Promise<VendorDocumentDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.DOCUMENTS(vendorId), payload);
   const dto = unwrap<VendorDocumentDto>(res);
   return dto ?? null;

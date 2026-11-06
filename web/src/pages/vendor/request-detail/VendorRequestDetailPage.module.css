@@ -11,10 +11,7 @@
   gap: 16px;
 }
 .title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .subtitle {
   color: var(--color-text-muted);
@@ -57,7 +54,7 @@
 .noteBox {
   background: var(--color-surface-2);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-style: italic;
 }
@@ -91,4 +88,15 @@
   margin: 0;
   font-size: var(--text-sm);
   color: var(--color-danger);
+}
+
+/* Màn hình hẹp: hai cột trong form báo giá xuống một cột. */
+@media (max-width: var(--breakpoint-md)) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+  .specRow,
+  .totalRow {
+    flex-wrap: wrap;
+  }
 }

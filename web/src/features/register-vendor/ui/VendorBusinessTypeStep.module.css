@@ -4,7 +4,7 @@
   gap: var(--space-5);
 }
 .stepContent h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   border-bottom: 1px solid var(--color-border);
   padding-bottom: var(--space-2);
@@ -67,4 +67,14 @@
   justify-content: flex-end;
   gap: var(--space-3);
   margin-top: var(--space-2);
+}
+
+/* Màn hình hẹp: hai thẻ loại hình xuống một cột. */
+@media (max-width: var(--breakpoint-md)) {
+  .typeCards {
+    grid-template-columns: 1fr;
+  }
+  .actionRow {
+    flex-wrap: wrap;
+  }
 }

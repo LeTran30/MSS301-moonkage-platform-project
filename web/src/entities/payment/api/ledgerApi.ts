@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap, unwrapList, unwrapPage } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * Wire shape of `com.moonkage.payment.dto.response.LedgerResponse`
@@ -80,13 +79,7 @@ export interface PayoutDto {
  * `payableOnly=true` for the orders waiting for the payout (AC-48.1).
  */
 export const ledgerApi = {
-  async getLedgers(options?: {
-    vendorId?: string;
-    payableOnly?: boolean;
-  }): Promise<LedgerDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
+  async getLedgers(options?: { vendorId?: string; payableOnly?: boolean }): Promise<LedgerDto[]> {
     const params = new URLSearchParams();
     if (options?.vendorId) params.set('vendorId', options.vendorId);
     if (options?.payableOnly) params.set('payableOnly', 'true');
@@ -94,43 +87,31 @@ export const ledgerApi = {
 
     const query = params.toString();
     const res = await apiClient.get<unknown>(
-      query ? `${GATEWAY.PAYMENT.LEDGERS}?${query}` : GATEWAY.PAYMENT.LEDGERS
+      query ? `${GATEWAY.PAYMENT.LEDGERS}?${query}` : GATEWAY.PAYMENT.LEDGERS,
     );
     return unwrapPage<LedgerDto>(res);
   },
 
   /** The money of one order. */
   async getLedger(orderId: string): Promise<LedgerDto | null> {
-    if (isDemoMode()) {
-      return null;
-    }
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.LEDGER_BY_ORDER(orderId));
     return unwrap<LedgerDto>(res);
   },
 
   /** The order's money journal (NFR-07), read only. */
   async getEntries(orderId: string): Promise<LedgerEntryDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.LEDGER_ENTRIES(orderId));
     return unwrapList<LedgerEntryDto>(res);
   },
 
   /** The refunds booked on the order (FR-49). */
   async getRefunds(orderId: string): Promise<RefundDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.LEDGER_REFUNDS(orderId));
     return unwrapList<RefundDto>(res);
   },
 
   /** The disbursement requests booked on the order. */
   async getDisbursements(orderId: string): Promise<DisbursementDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.LEDGER_DISBURSEMENTS(orderId));
     return unwrapList<DisbursementDto>(res);
   },

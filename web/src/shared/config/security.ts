@@ -66,6 +66,9 @@ export function apiCredentials(): { withCredentials: boolean } {
  * - `connect-src 'self'` + API gateway + WebSocket — kết nối realtime.
  * - `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'` —
  *   chặn plugin, chặn nhúng, chặn iframe.
+ *
+ * Lưu ý: `upgrade-insecure-requests` **không** nằm trong danh sách này — xem
+ * `UPGRADE_INSECURE_REQUESTS` để hiểu vì sao.
  */
 export const CSP_DIRECTIVES: readonly string[] = [
   "default-src 'self'",
@@ -77,8 +80,55 @@ export const CSP_DIRECTIVES: readonly string[] = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  'upgrade-insecure-requests',
 ];
+
+/**
+ * Directive `upgrade-insecure-requests`, tách riêng khỏi `CSP_DIRECTIVES`.
+ *
+ * **Vì sao tách riêng — điểm dễ tái phát nhất của toàn bộ chính sách CSP:**
+ *
+ * `upgrade-insecure-requests` bảo trình duyệt nâng mọi request `http://`
+ * lên `https://`. Điều đó chỉ đúng khi **trang** được phục vụ qua HTTPS và
+ * mọi backend đã sẵn sàng phục vụ HTTPS.
+ *
+ * Ở môi trường local / CI / E2E, trang được phục vụ bằng `vite preview` tại
+ * `http://127.0.0.1:4173`. Origin đó là "potentially trustworthy" (127.0.0.1
+ * là loopback) nên vẫn là secure context ⇒ trình duyệt **vẫn áp dụng**
+ * directive này ⇒ mọi request `http://127.0.0.1:8080` (API gateway, chạy
+ * HTTP trong docker compose) bị nâng thành `https://127.0.0.1:8080`.
+ *
+ * Nếu `connect-src` chỉ khai báo `http://...`, trình duyệt chặn request ⇒
+ * danh mục rỗng, màn hình trắng, và log console đầy lỗi CSP. Đó chính là
+ * lỗi đã gặp ở E2E.
+ *
+ * Vì vậy:
+ * - `buildCspHeader()` (header HTTP ở nginx/CDN, luôn là production) **giữ**
+ *   directive này — đó là chuẩn production.
+ * - `applyCspMeta()` (thẻ `<meta>`, chỉ bổ sung) **chỉ thêm** directive này
+ *   khi trang đang chạy trên origin HTTPS (`window.location.protocol ===
+ *   'https:'`). Ở origin HTTP thì thêm vào chỉ gây hỏng.
+ *
+ * **Không bao giờ** thêm `upgrade-insecure-requests` trực tiếp vào
+ * `CSP_DIRECTIVES` — hãy dùng `applyCspMeta()`/`buildCspHeader()`.
+ */
+export const UPGRADE_INSECURE_REQUESTS = 'upgrade-insecure-requests';
+
+/**
+ * Trang hiện tại có đang chạy trên origin HTTPS không?
+ *
+ * Dùng để quyết định có thêm `upgrade-insecure-requests` vào CSP meta hay
+ * không. Trả về `false` khi không có `window` (SSR/test) hoặc khi origin là
+ * HTTP.
+ *
+ * Tham số `protocol` cho phép kiểm thử các nhánh khác nhau mà không phải
+ * giả lập `window.location`.
+ */
+export function isSecureOrigin(protocol?: string): boolean {
+  const value =
+    protocol ??
+    (typeof window !== 'undefined' && window.location ? window.location.protocol : undefined);
+  return value === 'https:';
+}
 
 /**
  * Directive **chỉ dùng được ở header HTTP**, không dùng được trong thẻ `<meta>`.
@@ -89,25 +139,132 @@ export const CSP_DIRECTIVES: readonly string[] = [
 export const HEADER_ONLY_DIRECTIVES: readonly string[] = ['frame-ancestors \'none\''];
 
 /**
- * The origin of the API gateway, when it is not the app's own: the CSP must let
- * the app connect to it. A relative or empty base URL needs nothing extra.
+ * Origin của API gateway khi nó khác origin của ứng dụng.
+ *
+ * Hàm này là **lớp bọc mỏng** của `cspConnectSources` — cùng một nguồn sự
+ * thật, nên CSP không thể lệch với nơi app thực sự gọi. Giữ hàm này vì
+ * `ENV.apiBaseUrl` là nơi ứng dụng biết chắc gateway của chính nó.
+ *
+ * URL tương đối hoặc rỗng không cần khai báo thêm (`'self'` đã đủ).
  */
 export function apiConnectSources(apiBaseUrl: string): string[] {
-  if (!/^https?:\/\//i.test(apiBaseUrl)) return [];
-  try {
-    return [new URL(apiBaseUrl).origin];
-  } catch {
-    return [];
-  }
+  return cspConnectSources(apiBaseUrl);
 }
 
-/** Chuỗi header CSP đầy đủ, dùng khi cấu hình web server. */
-export function buildCspHeader(extraConnectSources: readonly string[] = []): string {
+/**
+ * Các nguồn `connect-src` phải khai báo cho CSP.
+ *
+ * `connect-src 'self'` một mình chặn mọi request XHR/fetch tới API gateway:
+ * trình duyệt báo "Network Error" và mọi màn hình không tải được dữ liệu.
+ * Gateway là nguồn khác origin (khác cổng), nên phải nêu tường minh.
+ *
+ * Lấy từ `VITE_API_BASE_URL` / `VITE_WS_URL` — cùng nguồn với phần cấu hình
+ * mà `apiClient` dùng, nên CSP không bao giờ lệch với nơi app thực sự gọi.
+ */
+export function cspConnectSources(apiBaseUrl?: string): string[] {
+  const sources = new Set<string>();
+
+  const apiBase = (apiBaseUrl ?? env.VITE_API_BASE_URL)?.trim();
+  if (apiBase) {
+    try {
+      const url = new URL(apiBase);
+      sources.add(url.origin);
+      // `http://host:8080` không cho phép `ws://host:8080/ws`; phải khai báo
+      // riêng giao thức WebSocket.
+      if (url.protocol === 'http:') sources.add(`ws://${url.host}`);
+      if (url.protocol === 'https:') sources.add(`wss://${url.host}`);
+    } catch {
+      // `VITE_API_BASE_URL` không phải URL hợp lệ: bỏ qua, CSP sẽ chặn và báo lỗi.
+    }
+  }
+
+  const wsUrl = env.VITE_WS_URL?.trim();
+  if (wsUrl) {
+    try {
+      sources.add(new URL(wsUrl).origin);
+    } catch {
+      // Bỏ qua URL WebSocket không hợp lệ.
+    }
+  }
+
+  /*
+   * Khai báo **cả hai** biến thể `http://`/`https://` (và `ws://`/`wss://`)
+   * cho cùng host.
+   *
+   * Khi trang được phục vụ qua HTTPS, `upgrade-insecure-requests` (trong header
+   * HTTP production) nâng request `http://api` thành `https://api` — nếu
+   * `connect-src` chỉ có `http://api` thì CSP chặn chính request đó. Ngược
+   * lại, khi trang chạy ở origin HTTP (local/CI/E2E) và gateway chỉ phục vụ
+   * HTTP thì `https://api` không dùng được.
+   *
+   * Khai báo cả hai ⇒ CSP không bao giờ lệch với giao thức thực tế, dù
+   * trang/gateway chạy HTTP hay HTTPS.
+   */
+  for (const source of [...sources]) {
+    if (source.startsWith('http://')) {
+      sources.add(`https://${source.slice('http://'.length)}`);
+    } else if (source.startsWith('https://')) {
+      sources.add(`http://${source.slice('https://'.length)}`);
+    }
+    if (source.startsWith('ws://')) {
+      sources.add(`wss://${source.slice('ws://'.length)}`);
+    } else if (source.startsWith('wss://')) {
+      sources.add(`ws://${source.slice('wss://'.length)}`);
+    }
+  }
+
+  return [...sources];
+}
+
+/**
+ * Các nguồn `img-src` phải khai báo cho CSP.
+ *
+ * Ảnh sản phẩm / ảnh báo giá được backend trả về từ MinIO (object storage),
+ * tức là một origin khác — `img-src 'self' data: blob:` chặn chúng và mọi
+ * ảnh trong danh mục hiện ô trống.
+ *
+ * `VITE_MEDIA_BASE_URL` khai báo origin đó. Nếu backend trả ảnh từ nhiều host
+ * khác nhau (CDN riêng, domain khác), liệt kê từng origin, phân tách bằng dấu
+ * phẩy.
+ */
+export function cspImageSources(): string[] {
+  const raw = env.VITE_MEDIA_BASE_URL?.trim();
+  if (!raw) return [];
+
+  const sources = new Set<string>();
+  for (const candidate of raw.split(',')) {
+    const value = candidate.trim();
+    if (!value) continue;
+    try {
+      sources.add(new URL(value).origin);
+    } catch {
+      // Bỏ qua origin không hợp lệ.
+    }
+  }
+  return [...sources];
+}
+
+/**
+ * Chuỗi header CSP đầy đủ, dùng khi cấu hình web server.
+ *
+ * Header HTTP là nơi **duy nhất** `upgrade-insecure-requests` được phép xuất
+ * hiện: nó chỉ có nghĩa khi trang được phục vụ qua HTTPS (production), và
+ * đó là chuẩn production. Xem `UPGRADE_INSECURE_REQUESTS` để hiểu vì sao
+ * không bỏ directive này khỏi header.
+ */
+export function buildCspHeader(
+  extraConnectSources: readonly string[] = [],
+  extraImageSources: readonly string[] = [],
+): string {
   const connect = ["'self'", ...extraConnectSources];
-  const directives = [...CSP_DIRECTIVES, ...HEADER_ONLY_DIRECTIVES];
+  const images = ["'self'", 'data:', 'blob:', ...extraImageSources];
+  const directives = [...CSP_DIRECTIVES, UPGRADE_INSECURE_REQUESTS, ...HEADER_ONLY_DIRECTIVES];
   return directives.map((directive) => {
     if (directive.startsWith('connect-src')) {
       return `connect-src ${connect.join(' ')}`;
+    }
+    if (directive.startsWith('img-src')) {
+      return `img-src ${images.join(' ')}`;
     }
     return directive;
   }).join('; ');
@@ -120,17 +277,31 @@ export function buildCspHeader(extraConnectSources: readonly string[] = []): str
  * `frame-ancestors`, `report-uri` và `sandbox`, và nhiều trình duyệt bỏ qua nó.
  * Cách đúng vẫn là header ở server. Hàm này giúp ứng dụng không trần khi
  * deploy ở nơi không cấu hình được header (ví dụ hosting tĩnh đơn giản).
+ *
+ * `upgrade-insecure-requests` chỉ được thêm khi trang đang chạy trên origin
+ * **HTTPS**. Ở origin HTTP (local/CI/E2E) directive này sẽ nâng request
+ * `http://` của backend lên `https://` và chặn chính request đó — xem
+ * `UPGRADE_INSECURE_REQUESTS`.
  */
-export function applyCspMeta(extraConnectSources: readonly string[] = []): void {
+export function applyCspMeta(
+  extraConnectSources: readonly string[] = [],
+  extraImageSources: readonly string[] = [],
+  originProtocol?: string,
+): void {
   if (typeof document === 'undefined') return;
   if (document.querySelector('meta[http-equiv="Content-Security-Policy"]')) return;
 
   const meta = document.createElement('meta');
   meta.httpEquiv = 'Content-Security-Policy';
   // Chỉ dùng directive hợp lệ với thẻ `<meta>`.
-  meta.content = CSP_DIRECTIVES.map((directive) => {
+  const directives = [...CSP_DIRECTIVES];
+  if (isSecureOrigin(originProtocol)) directives.push(UPGRADE_INSECURE_REQUESTS);
+  meta.content = directives.map((directive) => {
     if (directive.startsWith('connect-src')) {
       return `connect-src 'self' ${extraConnectSources.join(' ')}`.trim();
+    }
+    if (directive.startsWith('img-src')) {
+      return `img-src 'self' data: blob: ${extraImageSources.join(' ')}`.trim();
     }
     return directive;
   }).join('; ');

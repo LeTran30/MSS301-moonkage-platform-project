@@ -1,7 +1,8 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { getAccessToken } from '@/shared/api/tokenVault';
 import { provinceCodeOf } from '@/shared/config';
-import type { CartState } from '../model/cartStore';
-import type { CartItem } from '../model/cartStore';
+import { type CartState } from '../model/cartTypes';
+import type { CartItem } from '../model/cartTypes';
 
 /**
  * Wire shape of `com.moonkage.order.dto.response.CartResponse`.
@@ -42,7 +43,7 @@ export function mapCartDtoToEntity(dto: CartDto): CartState {
         productId: line.productId,
         name: line.productName,
         price: line.unitPrice,
-        image: '/images/banh-nuong.jpg',
+        image: '',
         vendorId: group.vendorId,
         vendorName: group.vendorName,
         quantity: line.quantity,
@@ -61,7 +62,19 @@ export const cartApi = {
    * (package-architecture §3 — `api/` of a feature holds the writes).
    */
   async getMine(province?: string): Promise<CartState> {
-    const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
+    /*
+     * `GET /api/carts/me` là API của **tài khoản đang đăng nhập**: khách
+     * (không có token) không có giỏ nào. Gọi API lúc đó chỉ nhận 401 và làm
+     * trang giỏ hiện "Network Error" thay vì trạng thái rỗng — nên bỏ qua
+     * request và trả giỏ rỗng ngay.
+     */
+    if (!getAccessToken()) {
+      return { groups: [] };
+    }
+
+    const params = new URLSearchParams({
+      provinceCode: provinceCodeOf(province),
+    });
     const res = await apiClient.get<unknown>(`${GATEWAY.ORDER.CART}?${params.toString()}`);
     const dto = unwrap<CartDto>(res);
     return dto ? mapCartDtoToEntity(dto) : { groups: [] };

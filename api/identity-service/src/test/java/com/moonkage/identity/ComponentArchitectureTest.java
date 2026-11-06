@@ -14,15 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Package-by-component rules of identity-service. Each top-level package (account, profile, address, kyc, auth, otp,
  * email, outbox) is a component: other code uses its public service interface and DTOs; its entities, repositories
- * and implementations are package-private. {@code web} is the only HTTP entry point and nothing depends on it.
- * Cycles between components are checked by the shared ArchitectureTest (NO_PACKAGE_CYCLES).
+ * and implementations are package-private. {@code controller} is the only HTTP entry point and nothing depends on
+ * it. Cycles between components are checked by the shared ArchitectureTest (NO_PACKAGE_CYCLES).
  *
  * <pre>
- * web ──▶ auth ──▶ account ──▶ profile
- *  │        │         ▲
- *  │        ├──▶ otp, email
- *  │        └──▶ security ──▶ account
- *  └──▶ address, kyc ──▶ account        (all ──▶ common)
+ * controller ──▶ auth ──▶ account ──▶ profile
+ *      │           │         ▲
+ *      │           ├──▶ otp, email
+ *      │           └──▶ security ──▶ account
+ *      └──▶ address, kyc ──▶ account        (all ──▶ common)
  * </pre>
  */
 @AnalyzeClasses(
@@ -55,20 +55,20 @@ class ComponentArchitectureTest {
             .because("callers depend on the service interface, the component's public API");
 
     @ArchTest
-    static final ArchRule CONTROLLERS_LIVE_IN_WEB = classes()
+    static final ArchRule CONTROLLERS_LIVE_IN_CONTROLLER = classes()
             .that()
             .areAnnotatedWith(RestController.class)
             .should()
-            .resideInAPackage("com.moonkage.identity.web..")
-            .because("web is the HTTP layer outside every component");
+            .resideInAPackage("com.moonkage.identity.controller..")
+            .because("controller is the HTTP layer outside every component");
 
     @ArchTest
-    static final ArchRule NOTHING_DEPENDS_ON_WEB = noClasses()
+    static final ArchRule NOTHING_DEPENDS_ON_CONTROLLER = noClasses()
             .that()
-            .resideOutsideOfPackage("com.moonkage.identity.web..")
+            .resideOutsideOfPackage("com.moonkage.identity.controller..")
             .should()
             .dependOnClassesThat()
-            .resideInAPackage("com.moonkage.identity.web..")
+            .resideInAPackage("com.moonkage.identity.controller..")
             .because("components must not know how they are exposed over HTTP");
 
     @ArchTest

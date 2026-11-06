@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { Tabs, toast, AsyncState } from '@/shared/ui';
+import { Tabs, toast, AsyncState, Icon } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useVendorSearch, type VendorDetailDto, type VendorResponseDto } from '@/entities/vendor';
 import { VendorApplicationCard, type VendorStatus } from '@/entities/vendor';
-import { useLoadVendorDetail, useReviewApplication, VendorReviewModal } from '@/features/review-applications';
+import {
+  useLoadVendorDetail,
+  useReviewApplication,
+  VendorReviewModal,
+} from '@/features/review-applications';
 import { AttachVendorDocumentModal } from '@/features/attach-vendor-document';
 import styles from './AdminVendorsPage.module.css';
 
@@ -49,7 +53,8 @@ export function AdminVendorsPage() {
       const review = await reviewApplication(selectedVendor.id, {
         decision: 'APPROVE',
         licenseChecked,
-        registryChecked: selectedVendor.entityType === 'SOLE_PROPRIETORSHIP' ? registryChecked : false,
+        registryChecked:
+          selectedVendor.entityType === 'SOLE_PROPRIETORSHIP' ? registryChecked : false,
       });
       if (!review) return;
       setSuccessMsg(`Đã phê duyệt hồ sơ người bán "${selectedVendor.businessName}" thành công!`);
@@ -74,7 +79,7 @@ export function AdminVendorsPage() {
       });
       if (!review) return;
       setSuccessMsg(
-        `Đã từ chối hồ sơ "${selectedVendor.businessName}". Lý do: ${rejectReason.trim()}`
+        `Đã từ chối hồ sơ "${selectedVendor.businessName}". Lý do: ${rejectReason.trim()}`,
       );
       toast.success('Đã gửi kết quả thẩm định tới người bán.');
       setReviewModalOpen(false);
@@ -86,20 +91,20 @@ export function AdminVendorsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản lý &amp; Duyệt hồ sơ người bán (Q2.0, Q2.1)</h1>
+          <h1 className={styles.title}>Quản lý &amp; Duyệt hồ sơ người bán</h1>
           <p className={styles.desc}>
-            Thẩm định tính pháp lý Hộ kinh doanh / DNTN (BR-33), đối chiếu dữ liệu định danh sinh
-            trắc CCCD chip NFC.
+            Thẩm định tính pháp lý Hộ kinh doanh / DNTN, đối chiếu dữ liệu định danh sinh trắc CCCD
+            chip NFC.
           </p>
         </div>
         <div className={styles.ruleBadge}>
-          🛡️ Quy định BR-33: Bắt buộc mô hình HKD hoặc DNTN
+          <Icon name="shield" size={16} /> Quy định : Bắt buộc mô hình HKD hoặc DNTN
         </div>
       </div>
 
       {successMsg && (
         <div className={styles.alertSuccess}>
-          ✓ {successMsg}
+          <Icon name="check" size={16} /> {successMsg}
         </div>
       )}
 
@@ -134,7 +139,7 @@ export function AdminVendorsPage() {
         )}
       </AsyncState>
 
-      {/* Modal Review (Q2.1) */}
+      {/* Modal Review */}
       <VendorReviewModal
         open={reviewModalOpen}
         vendor={selectedVendor}
@@ -151,7 +156,7 @@ export function AdminVendorsPage() {
         onReject={handleReject}
       />
 
-      {/* Modal gắn hoá đơn phí đăng ký (Q-36, AC-27.6) */}
+      {/* Modal gắn hoá đơn phí đăng ký (Q-36) */}
       <AttachVendorDocumentModal
         open={feeInvoiceVendor !== null}
         vendorId={feeInvoiceVendor?.id ?? null}

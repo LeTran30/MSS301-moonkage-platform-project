@@ -66,7 +66,7 @@ export function VendorCompanyInfoStep({
         label="Tỉnh / Thành phố trụ sở"
         options={PROVINCE_ITEMS.map((p) => ({ value: p.code, label: p.name }))}
         value={form.provinceCode}
-        onChange={(e) => onChange({ provinceCode: e.target.value })}
+        onChange={(v) => onChange({ provinceCode: v })}
         required
       />
       <div className={styles.grid2}>

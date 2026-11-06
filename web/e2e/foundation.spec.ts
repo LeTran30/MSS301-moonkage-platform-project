@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoRoute, waitForAppReady } from './helpers';
+import { gotoRoute, waitForAppReady, login, SEED_ACCOUNTS } from './helpers';
 
 /**
  * Nền tảng E2E — kiểm tra "khung" của ứng dụng.
@@ -25,7 +25,6 @@ test.describe('Nền tảng — khung ứng dụng', () => {
       '/ban-hang/gioi-thieu',
       '/ban-hang/dang-ky',
       '/chinh-sach',
-      '/so-do-giao-dien',
       '/thong-bao',
     ];
 
@@ -73,32 +72,22 @@ test.describe('Nền tảng — khung ứng dụng', () => {
     await expect(page).toHaveTitle(/Bánh Trung Thu|Moonkage/i);
   });
 
-  test('bản đồ giao diện liệt kê các khu vực chính', async ({ page }) => {
+  test('bản đồ giao diện (trang thiết kế) không còn trong bản chạy thật', async ({ page }) => {
     await gotoRoute(page, '/so-do-giao-dien');
     await waitForAppReady(page);
 
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // Trang sơ đồ chỉ phục vụ thiết kế; trên production nó phải rơi vào 404.
+    await expect(page.getByText(/404|không tìm thấy/i).first()).toBeVisible();
   });
 
   test('màn hình hoãn vẫn mở được và nói rõ đang hoãn', async ({ page }) => {
     // Q6.3 (voucher) và B6.4 (lịch công suất) là tính năng hoãn: màn hình vẫn
     // phải tồn tại và giải thích, không được rơi vào 404. Cả hai nằm sau
-    // guard, nên test chuyển persona demo trước.
-    await gotoRoute(page, '/dang-nhap');
-    await waitForAppReady(page);
+    // guard, nên test đăng nhập bằng tài khoản thật trước.
+    await login(page, SEED_ACCOUNTS.admin.username, SEED_ACCOUNTS.admin.password);
 
     // Admin → Q6.3
-    await page.getByRole('button', { name: /Quản trị/ }).click();
     await gotoRoute(page, '/quan-tri/cau-hinh/voucher');
-    await waitForAppReady(page);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByText(/hoãn/i).first()).toBeVisible();
-
-    // Chủ xưởng → B6.4
-    await gotoRoute(page, '/dang-nhap');
-    await waitForAppReady(page);
-    await page.getByRole('button', { name: /Bảo An/ }).click();
-    await gotoRoute(page, '/kenh-ban/cai-dat/cong-suat');
     await waitForAppReady(page);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByText(/hoãn/i).first()).toBeVisible();

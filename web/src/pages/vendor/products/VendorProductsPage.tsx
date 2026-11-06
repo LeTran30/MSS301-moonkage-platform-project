@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { AsyncState, Button, toast } from '@/shared/ui';
+import { AsyncState, Button, Icon, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useTaxonomy } from '@/entities/product';
 import { useCurrentUser } from '@/entities/user';
@@ -35,7 +35,7 @@ export function VendorProductsPage() {
       toast.success(
         next === 'ON_SALE'
           ? `Đã bật hiển thị sản phẩm "${product.name}".`
-          : `Đã ẩn sản phẩm "${product.name}".`
+          : `Đã ẩn sản phẩm "${product.name}".`,
       );
     });
   };
@@ -44,13 +44,16 @@ export function VendorProductsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản lý sản phẩm (B4.0, B4.1)</h1>
+          <h1 className={styles.title}>Quản lý sản phẩm</h1>
           <p className={styles.desc}>
-            Đăng bán sản phẩm bán sẵn, cấu hình danh mục Vỏ &amp; Nhân (FR-54), bật/tắt hiển thị gian
-            hàng.
+            Đăng bán sản phẩm bán sẵn, cấu hình danh mục Vỏ &amp; Nhân, bật/tắt hiển thị gian hàng.
           </p>
         </div>
-        <Button variant="primary" onClick={() => navigate(routes.vendor.productNew)} disabled={!vendorId}>
+        <Button
+          variant="primary"
+          onClick={() => navigate(routes.vendor.productNew)}
+          disabled={!vendorId}
+        >
           + Thêm sản phẩm mới
         </Button>
       </div>
@@ -62,9 +65,9 @@ export function VendorProductsPage() {
       )}
 
       <div className={styles.ruleNotice}>
-        ℹ️ <strong>Quy định sàn Moonkage:</strong> Nhằm bảo đảm tính minh bạch và lịch sử đối soát,
-        sản phẩm không thể xóa vĩnh viễn khỏi hệ thống mà chỉ có thể <strong>Ẩn / Tạm dừng bán</strong>{' '}
-        (BR-24).
+        <Icon name="info" size={16} /> <strong>Quy định sàn Moonkage:</strong> Nhằm bảo đảm tính minh bạch và lịch sử đối soát,
+        sản phẩm không thể xóa vĩnh viễn khỏi hệ thống mà chỉ có thể{' '}
+        <strong>Ẩn / Tạm dừng bán</strong> .
       </div>
 
       <AsyncState

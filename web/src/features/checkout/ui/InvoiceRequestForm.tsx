@@ -1,4 +1,4 @@
-import { Card, Icon, Input } from '@/shared/ui';
+import { Card, Checkbox, Icon, Input } from '@/shared/ui';
 import styles from './checkoutUi.module.css';
 
 interface InvoiceRequestFormProps {
@@ -47,9 +47,8 @@ export function InvoiceRequestForm({
             lần thanh toán này.
           </p>
         </div>
-        <input
-          type="checkbox"
-          className={styles.checkbox}
+        <Checkbox
+          inputClassName={styles.checkbox}
           checked={needInvoice}
           onChange={(e) => onNeedInvoiceChange(e.target.checked)}
           aria-label="Yêu cầu xuất hóa đơn GTGT"

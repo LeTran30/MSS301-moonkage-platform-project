@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * Wire shape of `com.moonkage.identity.kyc.dto.response.CreateNfcSessionResponse`.
@@ -60,13 +59,6 @@ export const NFC_REASON_MESSAGES: Record<NfcReasonCode, string> = {
 export const nfcApi = {
   /** The status of the session (fallback when the WebSocket push is missed). */
   async getSession(sessionId: string): Promise<NfcSessionStatusDto> {
-    if (isDemoMode()) {
-      return {
-        sessionId,
-        status: 'PENDING',
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      };
-    }
     const res = await apiClient.get<unknown>(GATEWAY.IDENTITY.NFC_SESSION_BY_ID(sessionId));
     const dto = unwrap<NfcSessionStatusDto>(res);
     if (!dto) {
@@ -77,9 +69,6 @@ export const nfcApi = {
 
   /** The NFC status of the signed-in account (masked data only). */
   async getMyStatus(): Promise<NfcStatusDto> {
-    if (isDemoMode()) {
-      return { nfcStatus: 'NOT_VERIFIED' };
-    }
     const res = await apiClient.get<unknown>(GATEWAY.IDENTITY.NFC_VERIFY_STATUS);
     const dto = unwrap<NfcStatusDto>(res);
     if (!dto) {

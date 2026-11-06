@@ -9,7 +9,6 @@ export {
   updateTokens,
 } from './tokenVault';
 export { GATEWAY, NOT_IMPLEMENTED_YET, realtimePath, websocketUrl } from './gateway';
-export { demoAdapter, executeWithDemoMode } from './demo';
 export {
   unwrap,
   unwrapOrThrow,
@@ -20,4 +19,7 @@ export {
   type PageEnvelope,
 } from './envelope';
 export { RealtimeProvider, useRealtime } from './realtime';
-export { createUploadLink, uploadFile, uploadFileToLink, type UploadLink, type UploadTarget } from './upload';
+// Chỉ còn phần **vận chuyển thuần** của việc tải tệp lên: xin link có chữ ký
+// và gửi bytes. Quy tắc nghiệp vụ ("tệp này vào kho nào", "báo tiến độ thế
+// nào") thuộc feature `file-upload` — `shared/` không được chứa logic feature.
+export { createUploadLink, uploadFileToLink, type UploadLink } from './upload';

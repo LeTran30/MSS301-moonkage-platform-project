@@ -2,12 +2,21 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatDateTime } from '@/shared/utils';
-import { Badge, Button, ButtonLink, Tabs, Breadcrumbs, toast } from '@/shared/ui';
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  Tabs,
+  Breadcrumbs,
+  ErrorState,
+  PageLoader,
+  toast,
+} from '@/shared/ui';
 import { openPaymentPage, useAction } from '@/shared/lib';
 import {
   approveMaket,
   requestMaketRevision,
-  useOrder,
+  useOrderDetail,
   useOrderMockups,
   useOrderProgress,
   useOrderReviews,
@@ -31,7 +40,9 @@ type DetailTab = 'progress' | 'maket' | 'payment' | 'invoice' | 'reviews';
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = id || '';
-  const order = useOrder(orderId);
+  // FR-11: `GET /api/orders/{orderId}` — chi tiết đơn đọc thẳng từ máy chủ.
+  const asyncOrder = useOrderDetail(orderId);
+  const order = asyncOrder.kind === 'loaded' ? asyncOrder.data : null;
   const [activeTab, setActiveTab] = useState<DetailTab>('progress');
   const { busy, run, error } = useAction();
   const confirmDelivery = useConfirmDelivery();
@@ -40,9 +51,8 @@ export function OrderDetailPage() {
   const getInvoiceLink = useGetInvoiceLink();
 
   const isBulk = order?.type === 'BULK';
-  const currentMaket = order?.maketVersions?.[0];
 
-  // FR-21: `GET /api/orders/{orderId}/progress-updates` — lịch sử tiến độ.
+  // FR-21: `GET /api/orders/{orderId}/progress-updates` — lịch sách tiến độ.
   const asyncProgress = useOrderProgress(orderId);
   const progressUpdates = asyncProgress.kind === 'loaded' ? asyncProgress.data : [];
 
@@ -52,6 +62,11 @@ export function OrderDetailPage() {
 
   // Nạp bản maket mới nhất từ backend (FR-20): `GET /api/orders/{orderId}/mockups`.
   const asyncMockups = useOrderMockups(orderId);
+  const maketVersions = asyncMockups.kind === 'loaded' ? asyncMockups.data : [];
+  const currentMaket =
+    maketVersions.length > 0
+      ? maketVersions.reduce((a, b) => (b.version > a.version ? b : a))
+      : undefined;
 
   useEffect(() => {
     if (!orderId || !isBulk) return;
@@ -62,6 +77,14 @@ export function OrderDetailPage() {
     const latest = versions.reduce((a, b) => (b.version > a.version ? b : a));
     if (latest.status === 'APPROVED') approveMaket(orderId, latest.version);
   }, [orderId, isBulk, asyncMockups]);
+
+  if (asyncOrder.kind === 'loading') {
+    return <PageLoader />;
+  }
+
+  if (asyncOrder.kind === 'error') {
+    return <ErrorState message={asyncOrder.message} onRetry={asyncOrder.reload} />;
+  }
 
   if (!order) {
     return (
@@ -77,7 +100,7 @@ export function OrderDetailPage() {
   // Tabs cho đơn đặt hàng (M6.1.2): Tiến độ · Maket · Thanh toán · Hóa đơn
   const tabItems: { id: DetailTab; label: string }[] = [
     { id: 'progress', label: 'Tiến độ đơn hàng' },
-    ...(isBulk && order.maketVersions?.length
+    ...(isBulk && maketVersions.length > 0
       ? [{ id: 'maket' as const, label: 'Bản thiết kế Maket (in logo)' }]
       : []),
     { id: 'payment', label: 'Chi tiết thanh toán' },
@@ -98,7 +121,7 @@ export function OrderDetailPage() {
   function handleRequestRevision() {
     if (!order || !currentMaket) return;
     const feedback = prompt(
-      'Nhập nội dung bạn muốn xưởng điều chỉnh (Ví dụ: Đổi màu quai túi, to logo):'
+      'Nhập nội dung bạn muốn xưởng điều chỉnh (Ví dụ: Đổi màu quai túi, to logo):',
     );
     if (!feedback || !feedback.trim()) return;
 
@@ -157,7 +180,8 @@ export function OrderDetailPage() {
             Chi tiết đơn hàng #{order.id} {isBulk && <Badge tone="gold">Đơn Số Lượng Lớn</Badge>}
           </h2>
           <div className={styles.meta}>
-            Xưởng/Tiệm: <strong>{order.vendorName}</strong> · Đặt ngày {formatDateTime(order.createdAt)}
+            Xưởng/Tiệm: <strong>{order.vendorName}</strong> · Đặt ngày{' '}
+            {formatDateTime(order.createdAt)}
           </div>
         </div>
 
@@ -165,10 +189,10 @@ export function OrderDetailPage() {
           {order.status === 'DELIVERED' && (
             <>
               <Button variant="primary" size="sm" loading={busy} onClick={handleConfirmReceived}>
-                Đã nhận hàng (FR-11)
+                Đã nhận hàng
               </Button>
               <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
-                Báo vấn đề với đơn (M6.1.3)
+                Báo vấn đề với đơn
               </ButtonLink>
             </>
           )}
@@ -188,7 +212,7 @@ export function OrderDetailPage() {
         </div>
       )}
 
-      {/* Tab 2: Maket (M6.1.2) - Duyệt hoặc Yêu cầu sửa */}
+      {/* Tab 2: Maket - Duyệt hoặc Yêu cầu sửa */}
       {activeTab === 'maket' && isBulk && (
         <div className={styles.tabSection}>
           <MaketReviewPanel
@@ -226,7 +250,7 @@ export function OrderDetailPage() {
         </div>
       )}
 
-      {/* Tab 5: Đánh giá (FR-11) */}
+      {/* Tab 5: Đánh giá */}
       {activeTab === 'reviews' && (
         <div className={styles.tabSection}>
           {!isBulk && (order.status === 'DELIVERED' || order.status === 'COMPLETED') && (
@@ -235,7 +259,7 @@ export function OrderDetailPage() {
               products={order.items.flatMap((it) =>
                 it.productId && !reviews.some((r) => r.productId === it.productId)
                   ? [{ productId: it.productId, name: it.name }]
-                  : []
+                  : [],
               )}
             />
           )}

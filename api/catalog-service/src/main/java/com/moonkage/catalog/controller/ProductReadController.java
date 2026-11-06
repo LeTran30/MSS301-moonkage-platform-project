@@ -1,8 +1,9 @@
 package com.moonkage.catalog.controller;
 
+import com.moonkage.api.ApiResponse;
+import com.moonkage.api.GatewayHeader;
+import com.moonkage.api.PageResponse;
 import com.moonkage.catalog.dto.request.ProductSearchRequest;
-import com.moonkage.catalog.dto.response.ApiResponse;
-import com.moonkage.catalog.dto.response.PageResponse;
 import com.moonkage.catalog.dto.response.ProductFacetsResponse;
 import com.moonkage.catalog.dto.response.ProductListingResponse;
 import com.moonkage.catalog.dto.response.ProductReviewResponse;
@@ -34,7 +35,7 @@ public class ProductReadController {
             @RequestParam(required = false) Long priceMin,
             @RequestParam(required = false) Long priceMax,
             @RequestParam(required = false) String sort,
-            @RequestHeader(value = "X-Account-Id", required = false) String accountId,
+            @RequestHeader(value = GatewayHeader.ACCOUNT_ID, required = false) String accountId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         var request = new ProductSearchRequest(
@@ -53,7 +54,7 @@ public class ProductReadController {
     public ApiResponse<ProductListingResponse> getProduct(
             @PathVariable String productId,
             @RequestParam(required = false) String provinceCode,
-            @RequestHeader(value = "X-Account-Id", required = false) String accountId) {
+            @RequestHeader(value = GatewayHeader.ACCOUNT_ID, required = false) String accountId) {
         return ApiResponse.ok(service.getProduct(productId, provinceCode, accountId));
     }
 

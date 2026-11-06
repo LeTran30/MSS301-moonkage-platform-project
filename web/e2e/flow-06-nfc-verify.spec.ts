@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { gotoRoute, waitForAppReady, trackConsoleErrors, isIgnorableConsoleError } from './helpers';
+import {
+  gotoRoute,
+  waitForAppReady,
+  login,
+  trackConsoleErrors,
+  isIgnorableConsoleError,
+  SEED_ACCOUNTS,
+} from './helpers';
 
 /**
  * FLOW 6 — Xác minh danh tính NFC (M6.4, FR-04, AC-04.1).
@@ -9,29 +16,27 @@ import { gotoRoute, waitForAppReady, trackConsoleErrors, isIgnorableConsoleError
  * (Moonkage Verify, V1→V5) — đúng những gì backend dựa vào để đánh dấu
  * tài khoản là đã định danh.
  *
- * Lưu ý: trang này chỉ mở được khi đã đăng nhập (guard `RequireAuth`).
+ * Trang này chỉ mở được khi đã đăng nhập (guard `RequireAuth`), nên test
+ * đăng nhập bằng tài khoản seed thật. Không còn khung giả lập điện thoại:
+ * việc quét thẻ là hành động của người dùng thật ngoài ứng dụng này.
+ *
+ * Persona: `member2@mk.com` — tài khoản **chưa** xác minh NFC. Tài khoản đã
+ * định danh (`member1`) thấy màn "xác minh thành công", không có mã QR và
+ * hướng dẫn 3 bước — nên phải dùng persona chưa định danh để kiểm tra phần
+ * hướng dẫn.
  */
 test.describe('FLOW 6 — Xác minh danh tính NFC', () => {
-  /** Đặt persona demo chưa định danh (NFC chưa xác minh). */
-  async function useUnverifiedBuyer(page: import('@playwright/test').Page) {
-    await page.addInitScript(() => {
-      window.localStorage.setItem(
-        'moonkage_current_user',
-        JSON.stringify({
-          id: 'usr_minh',
-          name: 'Anh Minh',
-          email: 'minh.retail@gmail.com',
-          phone: '0903123456',
-          role: 'BUYER',
-          nfcStatus: 'UNVERIFIED',
-          idCardNumberMasked: '0792••••4567',
-        }),
-      );
-    });
+  /** Đăng nhập bằng persona chưa xác minh NFC. */
+  async function loginWithoutNfc(page: import('@playwright/test').Page) {
+    await login(
+      page,
+      SEED_ACCOUNTS.buyerWithoutNfc.username,
+      SEED_ACCOUNTS.buyerWithoutNfc.password,
+    );
   }
 
   test('trang xác minh hiện QR, hướng dẫn 3 bước và trạng thái định danh', async ({ page }) => {
-    await useUnverifiedBuyer(page);
+    await loginWithoutNfc(page);
     await gotoRoute(page, '/tai-khoan/xac-minh');
     await waitForAppReady(page);
 
@@ -47,7 +52,7 @@ test.describe('FLOW 6 — Xác minh danh tính NFC', () => {
   });
 
   test('phiên xác minh có mã hiển thị và nút tạo mã QR mới', async ({ page }) => {
-    await useUnverifiedBuyer(page);
+    await loginWithoutNfc(page);
     await gotoRoute(page, '/tai-khoan/xac-minh');
     await waitForAppReady(page);
 
@@ -56,67 +61,9 @@ test.describe('FLOW 6 — Xác minh danh tính NFC', () => {
     await expect(page.getByRole('button', { name: /Tạo mã QR mới/i })).toBeVisible();
   });
 
-  test('khung điện thoại giả lập đi qua đủ 5 màn hình V1→V5', async ({ page }) => {
-    await useUnverifiedBuyer(page);
-    await gotoRoute(page, '/tai-khoan/xac-minh');
-    await waitForAppReady(page);
-
-    // V1 — đăng nhập ứng dụng.
-    await expect(page.getByText(/MÀN APP V1/i)).toBeVisible();
-    await page.getByRole('button', { name: /Tiếp tục quét QR/i }).click();
-
-    // V2 — quét mã QR.
-    await expect(page.getByText(/MÀN APP V2/i)).toBeVisible();
-    await page.getByRole('button', { name: /Quét thành công/i }).click();
-
-    // V3 — chạm thẻ NFC.
-    await expect(page.getByText(/MÀN APP V3/i)).toBeVisible();
-    await page.getByRole('button', { name: /Đọc chip xong/i }).click();
-
-    // V4 — kiểm tra thông tin, chỉ hiện số CCCD đã che.
-    await expect(page.getByText(/MÀN APP V4/i)).toBeVisible();
-    await expect(page.getByText('Hợp lệ (Bộ Công An)')).toBeVisible();
-
-    // V5 — hoàn tất.
-    await page.getByRole('button', { name: /Xác nhận/i }).click();
-    await expect(page.getByText(/MÀN APP V5/i)).toBeVisible();
-    await expect(page.getByText(/Định danh thành công/i)).toBeVisible();
-  });
-
-  test('popup giả lập quét NFC chạy đủ 3 bước', async ({ page }) => {
-    await useUnverifiedBuyer(page);
-    await gotoRoute(page, '/tai-khoan/xac-minh');
-    await waitForAppReady(page);
-
-    await page.getByRole('button', { name: /Mở popup giả lập quét NFC/i }).click();
-
-    const modal = page.getByRole('dialog');
-    await expect(modal).toBeVisible();
-    await expect(modal.getByText(/Bước 1: Chạm thẻ CCCD/i)).toBeVisible();
-
-    await modal.getByRole('button', { name: /Bắt đầu quét NFC/i }).click();
-
-    // Bước 2 và bước 3 xuất hiện sau khi mô phỏng đọc thẻ xong.
-    await expect(modal.getByText(/Bước 2: Đối chiếu/i)).toBeVisible({ timeout: 10_000 });
-    await expect(modal.getByText(/Bước 3: Xác thực thành công/i)).toBeVisible({ timeout: 10_000 });
-  });
-
-  test('tài khoản đã định danh thì hiện trạng thái đã định danh', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.localStorage.setItem(
-        'moonkage_current_user',
-        JSON.stringify({
-          id: 'usr_lan',
-          name: 'Chị Lan',
-          email: 'lan.hr@globalcorp.vn',
-          phone: '0918889999',
-          role: 'BUYER',
-          nfcStatus: 'VERIFIED',
-          idCardNumberMasked: '0011••••9876',
-        }),
-      );
-    });
-
+  test('tài khoản đã định danh thì hiện kết quả xác minh', async ({ page }) => {
+    // `member1` đã định danh: trang hiện kết quả thành công, không có mã QR.
+    await login(page);
     await gotoRoute(page, '/tai-khoan/xac-minh');
     await waitForAppReady(page);
 
@@ -124,9 +71,19 @@ test.describe('FLOW 6 — Xác minh danh tính NFC', () => {
     await expect(page.getByText(/Tài khoản đã được xác minh thành công/i)).toBeVisible();
   });
 
+  test('không còn khung giả lập điện thoại trong môi trường thật', async ({ page }) => {
+    await loginWithoutNfc(page);
+    await gotoRoute(page, '/tai-khoan/xac-minh');
+    await waitForAppReady(page);
+
+    // Khung giả lập chỉ có ý nghĩa khi thiết kế, không dùng trên production.
+    await expect(page.getByText(/MÀN APP V\d/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Mở popup giả lập quét NFC/i })).toHaveCount(0);
+  });
+
   test('trang xác minh không có lỗi console', async ({ page }) => {
     const errors = trackConsoleErrors(page);
-    await useUnverifiedBuyer(page);
+    await loginWithoutNfc(page);
     await gotoRoute(page, '/tai-khoan/xac-minh');
     await waitForAppReady(page);
     await page.waitForTimeout(500);

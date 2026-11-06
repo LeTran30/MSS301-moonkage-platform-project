@@ -1,5 +1,5 @@
 import { createStore, useStore } from '@/shared/lib';
-import { isDemoMode } from '@/shared/config';
+
 import { resolveEscrowDispute, type EscrowResolutionResult } from './disputeEscrow';
 import { type DisputeDecision } from './disputeDecision';
 
@@ -11,12 +11,7 @@ export { DISPUTE_DECISION_LABELS, type DisputeDecision } from './disputeDecision
  * The UI used Vietnamese labels as the wire value, which the backend never
  * accepts; the labels live in `DISPUTE_REASON_LABELS` now.
  */
-export type DisputeReason =
-  | 'WRONG_ITEM'
-  | 'DAMAGED'
-  | 'LATE_DELIVERY'
-  | 'WRONG_LOGO'
-  | 'OTHER';
+export type DisputeReason = 'WRONG_ITEM' | 'DAMAGED' | 'LATE_DELIVERY' | 'WRONG_LOGO' | 'OTHER';
 
 /** Backend `com.moonkage.order.enums.DisputeStatus`: `OPEN | RESOLVED`. */
 export type DisputeStatus = 'OPEN' | 'RESOLVED';
@@ -73,44 +68,12 @@ export type Dispute = {
   };
 };
 
-export const MOCK_DISPUTES: Dispute[] = [
-  {
-    id: 'DISP-088',
-    orderId: 'MK-1042',
-    buyerId: 'usr_minh',
-    buyerName: 'Anh Minh',
-    vendorId: 'ven_quan',
-    vendorName: 'Hiệu Bánh Gia Truyền Bảo An',
-    reason: 'DAMAGED',
-    description: 'Hộp bánh giao đến bị bẹp góc và nứt 1 chiếc bánh nướng bên trong trong quá trình vận chuyển.',
-    images: ['/images/banh-nuong.jpg'],
-    evidences: [
-      {
-        party: 'BUYER',
-        downloadUrl: '/images/banh-nuong.jpg',
-        note: 'Ảnh chụp ngay khi nhận hàng, vỏ hộp bị bẹp góc.',
-        createdAt: '2026-10-26T10:15:00Z',
-      },
-    ],
-    createdAt: '2026-10-26T10:15:00Z',
-    status: 'OPEN',
-    orderTotalAmount: 975000,
-    escrowHoldingAmount: 975000,
-    disbursedAmount: 0,
-    maxRefundableAmount: 975000,
-  },
-];
-
 /**
  * The disputes of the caller.
  *
- * In demo mode the store starts with the mock list; against a live backend it
- * starts empty and is filled by `order-service`.
+ * The store starts empty and is filled by `order-service`.
  */
-export const disputeStore = createStore<Dispute[]>(
-  isDemoMode() ? MOCK_DISPUTES : [],
-  isDemoMode() ? 'moonkage_disputes' : undefined
-);
+export const disputeStore = createStore<Dispute[]>([]);
 
 export function useDisputes() {
   return useStore(disputeStore);
@@ -122,7 +85,7 @@ export function useDispute(id: string) {
 }
 
 /**
- * Phán quyết của quản trị trên UI (dùng khi demo / offline).
+ * Phán quyết của quản trị trên UI (fallback cục bộ khi backend không trả lời được).
  *
  * Backend `PATCH /api/orders/{orderId}/dispute` với `ResolveDisputeRequest`
  * là đường thật — xem `disputeApi.resolve`.
@@ -131,11 +94,16 @@ export function resolveDispute(
   disputeId: string,
   decision: DisputeDecision,
   refundAmount: number,
-  adminNote: string
+  adminNote: string,
 ): EscrowResolutionResult {
   const currentDispute = disputeStore.get().find((d) => d.id === disputeId);
   if (!currentDispute) {
-    return { buyerRefund: 0, vendorPayout: 0, isValid: false, error: 'Không tìm thấy khiếu nại.' };
+    return {
+      buyerRefund: 0,
+      vendorPayout: 0,
+      isValid: false,
+      error: 'Không tìm thấy khiếu nại.',
+    };
   }
 
   const maxRefund = currentDispute.maxRefundableAmount ?? currentDispute.escrowHoldingAmount;
@@ -143,7 +111,7 @@ export function resolveDispute(
     currentDispute.escrowHoldingAmount,
     maxRefund,
     decision,
-    refundAmount
+    refundAmount,
   );
 
   if (!resolution.isValid) {
@@ -163,7 +131,7 @@ export function resolveDispute(
         decidedAt: new Date().toISOString(),
         resolvedAt: new Date().toISOString(),
       };
-    })
+    }),
   );
 
   return resolution;

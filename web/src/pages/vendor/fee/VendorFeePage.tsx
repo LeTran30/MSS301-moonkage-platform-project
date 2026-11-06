@@ -17,11 +17,16 @@ export function VendorFeePage() {
   const payVendorFee = usePayVendorFee(vendorId);
 
   // FR-53 / AC-26.9: the registration fee level in effect, shown before paying.
+  // Mức phí đọc từ máy chủ; chưa tải xong thì không hiện một con số bịa.
   const asyncFee = useRegistrationFeeConfig();
-  const feeAmount = asyncFee.kind === 'loaded' ? asyncFee.data?.amount ?? 200000 : 200000;
+  const feeAmount = asyncFee.kind === 'loaded' ? (asyncFee.data?.amount ?? null) : null;
   const [feePlan, setFeePlan] = useState<'SEASONAL'>('SEASONAL');
 
   function handlePayFee() {
+    if (feeAmount === null) {
+      toast.error('Chưa tải được mức phí mở bán hiện hành. Vui lòng thử lại.');
+      return;
+    }
     void run(async () => {
       // AC-27.4: `POST /api/vendors/{vendorId}/registration-fee-payments` answers
       // the VNPay page to open; the shop opens once the payment succeeds.
@@ -32,7 +37,7 @@ export function VendorFeePage() {
         return;
       }
       toast.success(
-        `Đã khởi tạo lệnh nộp phí mở bán ${formatCurrency(feeAmount)}! Gian hàng sẽ mở khi thanh toán thành công.`
+        `Đã khởi tạo lệnh nộp phí mở bán ${formatCurrency(feeAmount)}! Gian hàng sẽ mở khi thanh toán thành công.`,
       );
       navigate(routes.vendor.overview);
     });
@@ -49,11 +54,10 @@ export function VendorFeePage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>
-            Kích Hoạt Gian Hàng & Phí Mở Bán (B1.1, AC-18)
-          </h1>
+          <h1 className={styles.title}>Kích Hoạt Gian Hàng & Phí Mở Bán</h1>
           <p className={styles.subtitle}>
-            Phí duy trì kiểm định chất lượng, gắn tem chống giả NFC và kết nối mạng lưới doanh nghiệp
+            Phí duy trì kiểm định chất lượng, gắn tem chống giả NFC và kết nối mạng lưới doanh
+            nghiệp
           </p>
         </div>
         <Badge tone="gold" size="md">
@@ -73,7 +77,13 @@ export function VendorFeePage() {
             <Badge tone="gold">Phổ biến nhất</Badge>
           </div>
           <div className={styles.planPrice}>
-            {formatCurrency(feeAmount)} <span className={styles.planPeriod}>/ lần mở bán</span>
+            {feeAmount === null ? (
+              <span className={styles.planPeriod}>Đang tải mức phí hiện hành…</span>
+            ) : (
+              <>
+                {formatCurrency(feeAmount)} <span className={styles.planPeriod}>/ lần mở bán</span>
+              </>
+            )}
           </div>
           <ul className={styles.planFeatures}>
             <li>Đăng tải không giới hạn sản phẩm bánh Trung Thu</li>
@@ -81,7 +91,10 @@ export function VendorFeePage() {
             <li>Cấp tem NFC chống hàng giả miễn phí đợt đầu</li>
             <li>Hỗ trợ trọng tài Escrow bảo lãnh thanh toán 100%</li>
           </ul>
-          <Button variant={feePlan === 'SEASONAL' ? 'primary' : 'outline'} className={styles.planButton}>
+          <Button
+            variant={feePlan === 'SEASONAL' ? 'primary' : 'outline'}
+            className={styles.planButton}
+          >
             {feePlan === 'SEASONAL' ? 'Đang Chọn Gói Này' : 'Chọn Gói Này'}
           </Button>
         </Card>
@@ -96,13 +109,20 @@ export function VendorFeePage() {
       <Card padding="md" className={styles.totalRow}>
         <div>
           <div className={styles.totalLabel}>Tổng phí thanh toán kích hoạt:</div>
-          <div className={styles.totalValue}>{formatCurrency(feeAmount)}</div>
+          <div className={styles.totalValue}>
+            {feeAmount === null ? '—' : formatCurrency(feeAmount)}
+          </div>
         </div>
-        <Button variant="primary" size="lg" loading={busy} onClick={handlePayFee}>
+        <Button
+          variant="primary"
+          size="lg"
+          loading={busy}
+          disabled={feeAmount === null}
+          onClick={handlePayFee}
+        >
           Thanh Toán & Kích Hoạt Gian Hàng Ngay
         </Button>
       </Card>
     </div>
   );
 }
-

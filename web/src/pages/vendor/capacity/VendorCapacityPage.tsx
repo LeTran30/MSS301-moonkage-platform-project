@@ -4,13 +4,11 @@ import { useMyVendorId, useOrderProfile } from '@/entities/vendor';
 import styles from './VendorCapacityPage.module.css';
 
 /**
- * B6.4 — Lịch công suất của gian hàng.
+ * Lịch công suất của gian hàng.
  *
- * The feature is **deferred**: `requirements.md` mục 4.3 lists FR-37 (xem công
- * suất còn lại) under "Hoãn (không có trong demo)", and the IA marks B6.4 as
- * "Hoãn" too. The screen stays so `/kenh-ban/cai-dat/cong-suat` does not end in
- * a 404; it shows the weekly capacity the order profile already carries and
- * says plainly that the weekly schedule is not in this release.
+ * Tính năng khai báo lịch theo tuần chưa mở trong phiên bản hiện tại. Màn hình
+ * vẫn hiển thị công suất tuần mà hồ sơ nhận đặt hàng đã khai báo và nói rõ
+ * phần nào còn đang chờ.
  */
 export function VendorCapacityPage() {
   const asyncVendorId = useMyVendorId();
@@ -32,22 +30,22 @@ export function VendorCapacityPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Lịch Công Suất Của Gian Hàng (B6.4)</h1>
+          <h1 className={styles.title}>Lịch Công Suất Của Gian Hàng</h1>
           <p className={styles.subtitle}>
             Số hộp bánh Trung Thu xưởng nhận được mỗi tuần, để người mua biết trước khi gửi yêu cầu.
           </p>
         </div>
         <Badge tone="amber" size="md">
-          Hoãn trong bản demo
+          Chưa có trong phiên bản này
         </Badge>
       </div>
 
       <Card padding="lg" className={styles.card}>
         <h2 className={styles.cardTitle}>Trạng thái của tính năng</h2>
         <p className={styles.para}>
-          Đặc tả nghiệp vụ <code>FR-37</code> (xem công suất còn lại) nằm trong nhóm{' '}
-          <strong>hoãn</strong> của bản demo, nên chưa có màn hình khai báo lịch theo từng tuần. Màn hình
-          này được giữ lại để bản đồ giao diện (IA) không bị thiếu mã trang <code>B6.4</code>.
+          Lịch công suất theo từng tuần đã được <strong>hoãn</strong> sang phiên bản sau. Màn hình
+          này hiện công suất tuần mà xưởng đã khai báo trong hồ sơ nhận đặt hàng; phần lịch theo tuần
+          sẽ được bổ sung sau.
         </p>
 
         <div className={styles.factBox}>

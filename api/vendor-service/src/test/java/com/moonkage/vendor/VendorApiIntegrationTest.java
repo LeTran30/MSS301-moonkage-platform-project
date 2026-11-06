@@ -22,12 +22,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.moonkage.api.GatewayHeader;
 import com.moonkage.storage.ObjectStorage;
 import com.moonkage.storage.PresignedUploadLink;
 import com.moonkage.vendor.client.IdentityClient;
 import com.moonkage.vendor.client.dto.CheckIdNumberResponse;
 import com.moonkage.vendor.common.config.RabbitConfig;
-import com.moonkage.vendor.security.GatewayHeader;
 import com.moonkage.vendor.security.Role;
 import java.time.Instant;
 import java.util.HashMap;

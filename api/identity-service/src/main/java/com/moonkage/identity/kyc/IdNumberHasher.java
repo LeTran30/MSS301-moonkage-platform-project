@@ -5,7 +5,6 @@ import java.security.GeneralSecurityException;
 import java.util.HexFormat;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,8 +22,8 @@ class IdNumberHasher {
 
     private final String pepper;
 
-    public IdNumberHasher(@Value("${nfc.id-hash-pepper}") String pepper) {
-        this.pepper = pepper;
+    public IdNumberHasher(NfcProperties nfcProperties) {
+        this.pepper = nfcProperties.getIdHashPepper();
     }
 
     /** Lower-case hex, 64 characters. {@code idNumber} must already be the 12 digits. */

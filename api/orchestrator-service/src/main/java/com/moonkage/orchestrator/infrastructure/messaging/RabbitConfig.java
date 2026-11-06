@@ -1,5 +1,6 @@
 package com.moonkage.orchestrator.infrastructure.messaging;
 
+import com.moonkage.outbox.EventExchange;
 import java.util.List;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String EVENTS_EXCHANGE = "moonkage.events";
+    public static final String EVENTS_EXCHANGE = EventExchange.NAME;
     public static final String EVENTS_DLX = "moonkage.events.dlx";
 
     public static final String AUDIT_QUEUE = "orchestrator.audit";

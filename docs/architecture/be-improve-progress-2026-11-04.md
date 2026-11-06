@@ -114,13 +114,13 @@ build → bundle 1068.6/1100 kB). `npm run e2e` → **54/54 pass**.
 
 | # | Hạng mục | Vì sao chưa làm |
 | --- | --- | --- |
-| **BE-06** | Tắt `discovery.locator` | Repo **không có** `mobile/`, nhưng app NFC chạy ngoài repo → phải xác nhận trước khi tắt. Tài liệu cũng cảnh báo *"đổi đường dẫn làm web và app hỏng cùng lúc"*. |
-| **BE-05 / BE-05b** | Phí giao do BE tính | `CheckoutServiceImpl` **đã** gán `shippingFee` theo từng shop; còn lại là chốt hợp đồng API và bỏ hardcode `25000` ở FE. |
-| **BE-11** | OpenTelemetry tracing | BE-11b (metric) đã xong; tracing cần hạ tầng collector. |
-| **BE-13** | Sinh type TS từ OpenAPI | Cần bật `springdoc-openapi` ở mọi service — thay đổi khá lớn, nên tách riêng. |
-| **BE-03 / BE-12** | `common-web` + gom 6 `ApiResponse` | Thay đổi 6 module cùng lúc — nên tách PR riêng cho từng service. |
-| **BE-14** | URL VNPay return | `.env.example` đã trỏ `/thanh-toan/ket-qua` (route của bản web hiện tại); cần xác nhận route này tồn tại trong bản deploy. |
-| **BE-15** | Error Prone sạch | `MissingSummary` (9 file) · `UnrecognisedJavadocTag` · `TimeInStaticInitializer` — sửa sai có thể làm test thời gian yếu hơn. |
+| **BE-06** | Tắt `discovery.locator` | Repo **không có** `mobile/`, nhưng app NFC chạy ngoài repo → phải xác nhận trước khi tắt. Tài liệu cũng cảnh báo *"đổi đường dẫn làm web và app hỏng cùng lúc"*. → **kế hoạch: [debt-implementation-plan.md](debt-implementation-plan.md) §1 (A-1 → A-2 → A-3)** |
+| **BE-05 / BE-05b** | Phí giao do BE tính | `CheckoutServiceImpl` **đã** gán `shippingFee` theo từng shop; còn lại là chốt hợp đồng API và bỏ hardcode `25000` ở FE. → **Đã kiểm chứng 2026-11-06: FE không còn hardcode `25000` ngoài test** (`web/src` chỉ còn trong `__tests__/`); BE đã tính phí qua `ProductSnapshotResponse.shippingFee`. Phần còn lại là chốt hợp đồng API. |
+| **BE-11** | OpenTelemetry tracing | BE-11b (metric) đã xong; tracing cần hạ tầng collector. → **kế hoạch: [debt-implementation-plan.md](debt-implementation-plan.md) §3 (C-2)** |
+| **BE-13** | Sinh type TS từ OpenAPI | Cần bật `springdoc-openapi` ở mọi service — thay đổi khá lớn, nên tách riêng. → **Đã kiểm chứng 2026-11-06: cả 7 service ĐÃ có `springdoc` trong `pom.xml`** ⇒ OpenAPI sẵn có ở `/v3/api-docs`; phần còn lại chỉ là script sinh type ở web. **kế hoạch: [debt-implementation-plan.md](debt-implementation-plan.md) §3 (C-3)** |
+| **BE-03 / BE-12** | `common-web` + gom 6 `ApiResponse` | Thay đổi 6 module cùng lúc — nên tách PR riêng cho từng service. → **Đã đóng 2026-11-05** bằng `common-api` (xem [codebase-conformance-review.md](codebase-conformance-review.md) P1-1, P1-2, P1-3, P1-4) |
+| **BE-14** | URL VNPay return | `.env.example` đã trỏ `/thanh-toan/ket-qua` (route của bản web hiện tại); cần xác nhận route này tồn tại trong bản deploy. → **Đã kiểm chứng 2026-11-06: route tồn tại** (`web/src/app/routes.tsx:181` → `PaymentResultPage`). Chỉ cần đổi domain khi deploy. → **kế hoạch: [debt-implementation-plan.md](debt-implementation-plan.md) §4 (D-3)** |
+| **BE-15** | Error Prone sạch | `MissingSummary` (9 file) · `UnrecognisedJavadocTag` · `TimeInStaticInitializer` — sửa sai có thể làm test thời gian yếu hơn. → **Đã kiểm chứng 2026-11-06: `mvn compile` không còn cảnh báo nào** cho 3 check này; `api/pom.xml` chỉ bật 9 check `ERROR` cố định. |
 
 ---
 

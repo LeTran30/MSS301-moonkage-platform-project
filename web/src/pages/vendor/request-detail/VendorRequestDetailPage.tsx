@@ -15,15 +15,19 @@ export function VendorRequestDetailPage() {
   const asyncRequest = useQuoteRequest(requestId);
   const req = asyncRequest.kind === 'loaded' ? asyncRequest.data : null;
 
-  const [pricePerBox, setPricePerBox] = useState<string>('160000');
+  /*
+   * Báo giá phải do xưởng tự nhập: trước đây form điền sẵn 160.000đ/hộp, cọc
+   * 40%, ngày giao 08/11/2026 và một ghi chú mô tả "hộp quà cao cấp ép kim
+   * logo" — tức là xưởng có thể gửi một báo giá hoàn toàn bịa mà không nhập
+   * một chữ nào. Nay mọi ô để trống cho xưởng điền.
+   */
+  const [pricePerBox, setPricePerBox] = useState<string>('');
   const [shippingFee, setShippingFee] = useState<string>('0');
-  const [depositPercent, setDepositPercent] = useState<string>('40');
-  const [deliveryDate, setDeliveryDate] = useState<string>('2026-11-08');
-  const [deliveryMethod, setDeliveryMethod] = useState<string>('Xe tải xưởng giao tận văn phòng');
+  const [depositPercent, setDepositPercent] = useState<string>('');
+  const [deliveryDate, setDeliveryDate] = useState<string>('');
+  const [deliveryMethod, setDeliveryMethod] = useState<string>('');
   const [validDays, setValidDays] = useState<string>('7');
-  const [note, setNote] = useState(
-    'Hộp quà cao cấp ép kim logo, tặng kèm túi giấy đỏ sang trọng. Đã bao gồm tem NFC chống giả.'
-  );
+  const [note, setNote] = useState('');
   const { busy, run, error } = useAction();
   const submitQuote = useSubmitQuote();
 
@@ -57,6 +61,15 @@ export function VendorRequestDetailPage() {
 
   function handleSubmitQuote(e: React.FormEvent) {
     e.preventDefault();
+    // Báo giá không có đơn giá hoặc ngày giao thì không gửi được.
+    if (!pricePerBox || Number(pricePerBox) <= 0) {
+      toast.error('Vui lòng nhập đơn giá mỗi hộp.');
+      return;
+    }
+    if (!deliveryDate) {
+      toast.error('Vui lòng chọn ngày giao hàng.');
+      return;
+    }
     void run(async () => {
       // FR-38: the client sends the lines and the shipping fee; the server
       // computes the total, the deposit and the remainder.
@@ -92,7 +105,7 @@ export function VendorRequestDetailPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Chi Tiết RFQ #{req.id} (B3.1, B3.2)</h1>
+          <h1 className={styles.title}>Chi Tiết RFQ #{req.id}</h1>
           <p className={styles.subtitle}>Doanh nghiệp: {req.buyerName}</p>
         </div>
         <Badge tone="gold" size="md">
@@ -106,7 +119,7 @@ export function VendorRequestDetailPage() {
           <div className={styles.specList}>
             <div className={styles.specRow}>
               <span>Mục tiêu:</span>
-              <strong>{req.customRequirements || 'Đặt bánh theo yêu cầu'}</strong>
+              <strong>{req.customRequirements || 'Khách không nêu yêu cầu riêng'}</strong>
             </div>
             <div className={styles.specRow}>
               <span>Thời hạn nhận bánh:</span>
@@ -114,7 +127,9 @@ export function VendorRequestDetailPage() {
             </div>
             <div className={styles.specRow}>
               <span>Ngân sách mục tiêu:</span>
-              <span>{req.budgetPerBox ? `${formatCurrency(req.budgetPerBox)} / hộp` : 'Chưa định'}</span>
+              <span>
+                {req.budgetPerBox ? `${formatCurrency(req.budgetPerBox)} / hộp` : 'Chưa định'}
+              </span>
             </div>
             <div className={styles.specRow}>
               <span>Địa điểm nhận hàng:</span>
@@ -127,7 +142,14 @@ export function VendorRequestDetailPage() {
           <div>
             <div className={styles.noteLabel}>Ghi chú yêu cầu riêng của doanh nghiệp:</div>
             <div className={styles.noteBox}>
-              "{req.customRequirements || 'Cần in logo thương hiệu của công ty lên nắp hộp, 4 vị nhân truyền thống ít ngọt cho khối văn phòng.'}"
+              "
+              {/*
+                Trước đây khi khách không ghi chú, UI tự hiện một đoạn yêu cầu bịa
+                ("in logo… 4 vị nhân truyền thống ít ngọt"). Xưởng có thể tưởng
+                đó là yêu cầu thật của khách. Nay nói rõ là không có ghi chú.
+              */}
+              {req.customRequirements || 'Khách không ghi chú yêu cầu riêng.'}
+              "
             </div>
           </div>
         </Card>
@@ -175,12 +197,21 @@ export function VendorRequestDetailPage() {
               <Select
                 label="Phương thức giao hàng"
                 options={[
-                  { value: 'Xe tải xưởng giao tận văn phòng', label: 'Xe tải xưởng giao tận văn phòng' },
-                  { value: 'Giao hàng chuyên nghiệp', label: 'Giao hàng chuyên nghiệp' },
-                  { value: 'Khách tự đến xưởng lấy', label: 'Khách tự đến xưởng lấy' },
+                  {
+                    value: 'Xe tải xưởng giao tận văn phòng',
+                    label: 'Xe tải xưởng giao tận văn phòng',
+                  },
+                  {
+                    value: 'Giao hàng chuyên nghiệp',
+                    label: 'Giao hàng chuyên nghiệp',
+                  },
+                  {
+                    value: 'Khách tự đến xưởng lấy',
+                    label: 'Khách tự đến xưởng lấy',
+                  },
                 ]}
                 value={deliveryMethod}
-                onChange={(e) => setDeliveryMethod(e.target.value)}
+                onChange={(v) => setDeliveryMethod(v)}
                 required
               />
             </div>
@@ -221,4 +252,3 @@ export function VendorRequestDetailPage() {
     </div>
   );
 }
-

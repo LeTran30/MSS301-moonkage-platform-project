@@ -2,7 +2,7 @@ package com.moonkage.orchestrator.infrastructure.websocket;
 
 import com.moonkage.orchestrator.application.port.RealtimeDestination;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -16,6 +16,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  */
 @Configuration
 @EnableWebSocketMessageBroker
+@EnableConfigurationProperties(CorsProperties.class)
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     public static final String ENDPOINT = "/ws";
@@ -25,11 +26,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final StompAuthInterceptor stompAuthInterceptor;
     private final List<String> allowedOrigins;
 
-    public WebSocketConfig(
-            StompAuthInterceptor stompAuthInterceptor,
-            @Value("${moonkage.cors.allowed-origins}") List<String> allowedOrigins) {
+    public WebSocketConfig(StompAuthInterceptor stompAuthInterceptor, CorsProperties corsProperties) {
         this.stompAuthInterceptor = stompAuthInterceptor;
-        this.allowedOrigins = allowedOrigins;
+        this.allowedOrigins = corsProperties.getAllowedOrigins();
     }
 
     @Override

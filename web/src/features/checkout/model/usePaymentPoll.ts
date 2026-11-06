@@ -29,7 +29,7 @@ const MAX_POLLS = 30;
  */
 export function usePaymentPoll(
   paymentId: string | null,
-  checkoutId: string | null
+  checkoutId: string | null,
 ): PaymentPollState {
   const [state, setState] = useState<PaymentPollState>({
     kind: 'idle',
@@ -89,13 +89,23 @@ export function usePaymentPoll(
 
         if (payment.status === 'FAILED') {
           if (!current) return;
-          setState({ kind: 'failed', payment, orderIds: [], amount: payment.amount });
+          setState({
+            kind: 'failed',
+            payment,
+            orderIds: [],
+            amount: payment.amount,
+          });
           return;
         }
 
         // Still `PENDING`: the IPN has not arrived yet.
         if (!current) return;
-        setState({ kind: 'pending', payment, orderIds: [], amount: payment.amount });
+        setState({
+          kind: 'pending',
+          payment,
+          orderIds: [],
+          amount: payment.amount,
+        });
 
         if (pollsRef.current < MAX_POLLS) {
           window.setTimeout(() => void poll(), POLL_INTERVAL_MS);

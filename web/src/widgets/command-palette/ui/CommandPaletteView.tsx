@@ -36,7 +36,12 @@ export function CommandPaletteView({
         nhưng người dùng bàn phím cũng đóng được bằng Tab + Enter, thay vì
         một `div` có onClick không có vai trò.
       */}
-      <button type="button" className={styles.backdropClose} aria-label="Đóng tìm kiếm nhanh" onClick={onClose} />
+      <button
+        type="button"
+        className={styles.backdropClose}
+        aria-label="Đóng tìm kiếm nhanh"
+        onClick={onClose}
+      />
       <div
         className={styles.modal}
         role="dialog"
@@ -49,7 +54,7 @@ export function CommandPaletteView({
             ref={inputRef}
             type="text"
             className={styles.searchInput}
-            placeholder="Gõ lệnh, tìm trang, đổi persona, bật dark mode..."
+            placeholder="Gõ lệnh, tìm trang, bật dark mode..."
             value={query}
             role="combobox"
             aria-autocomplete="list"

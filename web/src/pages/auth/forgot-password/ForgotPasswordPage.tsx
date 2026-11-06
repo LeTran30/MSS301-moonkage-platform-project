@@ -34,7 +34,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthShell
-      icon="🔑"
+      icon="key"
       title="Quên Mật Khẩu"
       subtitle="Nhập email đã đăng ký để nhận mã OTP đặt lại mật khẩu."
     >

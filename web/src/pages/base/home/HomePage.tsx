@@ -1,5 +1,5 @@
 import { routes } from '@/shared/config';
-import { Badge, ButtonLink, Card, Icon } from '@/shared/ui';
+import { Badge, ButtonLink, Card, Icon, ProductImage } from '@/shared/ui';
 import { ProductCard, useProducts } from '@/entities/product';
 import { useVendors } from '@/entities/vendor';
 import styles from './HomePage.module.css';
@@ -141,13 +141,7 @@ export function HomePage() {
           {vendors.map((v) => (
             <Card key={v.id} padding="md" interactive className={styles.vendorCard}>
               <div className={styles.vendorBannerWrap}>
-                <img
-                  src={v.bannerImage || '/images/xuong.jpg'}
-                  alt={v.name}
-                  className={styles.vendorBanner}
-                  loading="lazy"
-                  decoding="async"
-                />
+                <ProductImage src={v.bannerImage} alt={v.name} className={styles.vendorBanner} fallbackIcon="factory" />
                 <div className={styles.vendorModeBadge}>
                   <Badge tone={v.sellingMode === 'CUSTOM_ORDER' ? 'gold' : 'green'} size="sm">
                     {v.sellingMode === 'CUSTOM_ORDER'
@@ -163,8 +157,17 @@ export function HomePage() {
                 <h3 className={styles.vendorName}>{v.name}</h3>
                 <div className={styles.vendorMeta}>
                   <span><Icon name="mapPin" size={13} /> {v.province}</span>
-                  <span>•</span>
-                  <span><Icon name="star" size={13} className={styles.star} /> {v.rating} ({v.reviewCount} đánh giá)</span>
+                  {/*
+                    `quotation-service` chưa trả điểm đánh giá của người bán, nên
+                    khi thiếu dữ liệu thì không hiện "0 sao (0 đánh giá)" — đó là
+                    con số bịa, không phải dữ liệu thật.
+                  */}
+                  {(v.rating > 0 || v.reviewCount > 0) && (
+                    <>
+                      <span>•</span>
+                      <span><Icon name="star" size={13} className={styles.star} /> {v.rating} ({v.reviewCount} đánh giá)</span>
+                    </>
+                  )}
                 </div>
                 <p className={styles.vendorIntro}>{v.introduction}</p>
 

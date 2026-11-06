@@ -11,7 +11,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.time.Instant;
 import javax.crypto.SecretKey;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,17 +19,18 @@ import org.springframework.stereotype.Component;
  * so callers check the account's current state themselves (a token outlives a ban).
  */
 @Component
+@EnableConfigurationProperties(JwtProperties.class)
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
-    private String secretKey;
+    private final String secretKey;
+    private final long expirationMs;
+    private final long refreshExpirationMs;
 
-    @Value("${jwt.expiration}")
-    private long expirationMs;
-
-    @Value("${jwt.refresh-expiration}")
-    private long refreshExpirationMs;
-
+    public JwtTokenProvider(JwtProperties jwtProperties) {
+        this.secretKey = jwtProperties.getSecret();
+        this.expirationMs = jwtProperties.getExpiration();
+        this.refreshExpirationMs = jwtProperties.getRefreshExpiration();
+    }
     // jjwt's builder only accepts java.util.Date; keep it confined to this adapter
     @SuppressWarnings("JavaUtilDate")
     private static java.util.Date toDate(Instant instant) {

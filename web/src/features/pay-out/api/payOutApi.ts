@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { PayoutDto } from '@/entities/payment';
 
 /**
@@ -12,9 +12,6 @@ import type { PayoutDto } from '@/entities/payment';
 
 /** FR-48: an admin pays the vendor what is held, once per order. */
 export async function payOutLedger(orderId: string): Promise<PayoutDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.put<unknown>(GATEWAY.PAYMENT.LEDGER_PAYOUT(orderId));
   return unwrap<PayoutDto>(res);
 }

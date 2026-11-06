@@ -12,9 +12,7 @@
 }
 
 .title {
-  margin: 0 0 var(--space-1);
-  font-size: var(--text-2xl);
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   color: var(--color-text);
 }
 

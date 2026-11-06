@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { Icon } from '@/shared/ui';
-import type { User } from '@/entities/user';
+import { sessionApi, type User } from '@/entities/user';
 import styles from './Header.module.css';
 
 interface HeaderUserMenuProps {
@@ -20,6 +20,7 @@ export function HeaderUserMenu({ user }: HeaderUserMenuProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Đóng menu khi bấm ra ngoài, và trả tiêu điểm về nút mở menu khi Esc.
   useEffect(() => {
@@ -167,14 +168,22 @@ export function HeaderUserMenu({ user }: HeaderUserMenuProps) {
           <div className={styles.dropdownDivider} />
 
           <div className={styles.dropdownSection}>
-            <Link
+            <button
+              type="button"
               role="menuitem"
-              to={routes.auth.login}
               className={styles.dropdownItem}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                // Đăng xuất thật: xoá token và hồ sơ, rồi về trang đăng nhập.
+                // Trước đây mục này chỉ là một liên kết, nên token vẫn còn
+                // trong vault và F5 lại đưa người dùng trở lại khu vực đã bảo vệ.
+                void sessionApi.logout().finally(() => {
+                  navigate(routes.auth.login, { replace: true });
+                });
+              }}
             >
-              <Icon name="logout" size={16} /> Đổi tài khoản / Đăng xuất
-            </Link>
+              <Icon name="logout" size={16} /> Đăng xuất
+            </button>
           </div>
         </div>
       )}

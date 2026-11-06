@@ -1,24 +1,58 @@
 package com.moonkage.quotation.common.exception;
 
+import com.moonkage.api.ApiResponse;
+import com.moonkage.api.CommonErrorCode;
+import com.moonkage.api.CommonExceptionHandler;
 import feign.FeignException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/** Turns every error into {@link ApiResponse} with {@code data = null}. */
+/**
+ * Turns every error into {@link ApiResponse} with {@code data = null}.
+ *
+ * <p>The framework failures (a body that cannot be read, an unknown path, a wrong method, a missing query
+ * parameter, a call to another service that failed, a failure nobody expected) are answered by
+ * {@link CommonExceptionHandler}, the shared boundary every service uses. This advice adds the ones that are
+ * quotation's own: its business errors ({@code AppException}) and the refusal of a request that skipped the gateway.
+ *
+ * <p>The advice is registered here, not only in the shared boundary: {@code @RestControllerAdvice} is not inherited,
+ * so a subclass without the annotation would never be asked for its own handlers.
+ */
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends CommonExceptionHandler {
+
+    /**
+     * The wording of the common failures, in quotation's own words.
+     *
+     * <p>quotation keeps no message bundle of its own: its {@code ErrorCode} holds the text itself, so the shared
+     * boundary asks this advice for the wording instead of reading a bundle. Every text is the one the service already
+     * answered with, so a client sees the same words as before the shared boundary was introduced.
+     */
+    private static final Map<CommonErrorCode, String> MESSAGES = Map.ofEntries(
+            Map.entry(CommonErrorCode.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR.getMessage()),
+            Map.entry(CommonErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage()),
+            Map.entry(CommonErrorCode.MALFORMED_JSON, ErrorCode.MALFORMED_JSON.getMessage()),
+            Map.entry(CommonErrorCode.UNAUTHENTICATED, ErrorCode.UNAUTHENTICATED.getMessage()),
+            Map.entry(CommonErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getMessage()),
+            Map.entry(CommonErrorCode.RESOURCE_NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND.getMessage()),
+            Map.entry(CommonErrorCode.METHOD_NOT_ALLOWED, ErrorCode.METHOD_NOT_ALLOWED.getMessage()),
+            Map.entry(CommonErrorCode.INVALID_STATE_TRANSITION, ErrorCode.INVALID_STATE_TRANSITION.getMessage()),
+            Map.entry(CommonErrorCode.DEPENDENCY_UNAVAILABLE, ErrorCode.DEPENDENCY_UNAVAILABLE.getMessage()),
+            // quotation has no required query parameter, so no code of its own for this one
+            Map.entry(CommonErrorCode.PARAMETER_REQUIRED, "Thiếu tham số bắt buộc {0}."));
+
+    /** quotation keeps no message bundle, so the shared boundary is built without one. */
+    public GlobalExceptionHandler() {
+        super(null);
+    }
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex, HttpServletRequest request) {
@@ -26,48 +60,53 @@ public class GlobalExceptionHandler {
         return build(ex.getErrorCode(), ex.getMessage(), null, request);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidation(
-            MethodArgumentNotValidException ex, HttpServletRequest request) {
-        List<ApiResponse.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> new ApiResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
-                .toList();
-        return build(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getMessage(), fieldErrors, request);
-    }
-
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
-    public ResponseEntity<ApiResponse<Void>> handleUnreadable(Exception ex, HttpServletRequest request) {
-        return build(ErrorCode.MALFORMED_JSON, request);
-    }
-
-    /** X-Account-Id is set by the gateway from the access token; missing means the call skipped it. */
+    /**
+     * X-Account-Id is set by the gateway from the access token; missing means the call skipped it.
+     *
+     * <p>The shared boundary does not cover a missing header: that failure is a security one, so each service
+     * answers it with its own wording.
+     */
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ApiResponse<Void>> handleMissingHeader(
             MissingRequestHeaderException ex, HttpServletRequest request) {
         return build(ErrorCode.UNAUTHENTICATED, request);
     }
 
-    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
-    public ResponseEntity<ApiResponse<Void>> handleNoResource(Exception ex, HttpServletRequest request) {
-        return build(ErrorCode.RESOURCE_NOT_FOUND, request);
+    /**
+     * The text of a common failure, in quotation's own words.
+     *
+     * <p>The shared boundary would read the text from a message bundle; quotation has none, so the wording comes from
+     * this advice and stays the service's own. A text that holds a {@code {0}} placeholder (the state transition, the
+     * name of a missing parameter) is formatted with the arguments the shared boundary passes in.
+     */
+    @Override
+    protected String localize(CommonErrorCode errorCode, Object[] args) {
+        String text = MESSAGES.get(errorCode);
+        if (text == null) {
+            // a code quotation has no wording for: the shared default is better than showing the key
+            return super.localize(errorCode, args);
+        }
+        return args == null ? text : MessageFormat.format(text, args);
     }
 
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
-            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
-        return build(ErrorCode.METHOD_NOT_ALLOWED, request);
-    }
-
-    @ExceptionHandler(FeignException.class)
-    public ResponseEntity<ApiResponse<Void>> handleFeign(FeignException ex, HttpServletRequest request) {
-        log.error("Call to another service failed", ex);
-        return build(ErrorCode.DEPENDENCY_UNAVAILABLE, request);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUncaught(Exception ex, HttpServletRequest request) {
+    /**
+     * How a failure nobody expected is written down, in quotation's own words.
+     *
+     * <p>Only the wording of the log line is the service's own; the answer itself is the shared one.
+     */
+    @Override
+    protected void logUnhandled(Exception ex) {
         log.error("Unhandled exception", ex);
-        return build(ErrorCode.INTERNAL_SERVER_ERROR, request);
+    }
+
+    /**
+     * How a call to another service that failed is written down, in quotation's own words.
+     *
+     * <p>Only the wording of the log line is the service's own; the answer itself is the shared one.
+     */
+    @Override
+    protected void logFeign(FeignException ex) {
+        log.error("Call to another service failed", ex);
     }
 
     private ResponseEntity<ApiResponse<Void>> build(ErrorCode errorCode, HttpServletRequest request) {

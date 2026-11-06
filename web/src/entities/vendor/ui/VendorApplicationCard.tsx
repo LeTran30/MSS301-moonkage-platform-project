@@ -12,7 +12,11 @@ interface VendorApplicationCardProps {
 }
 
 /** Thẻ hồ sơ người bán trong danh sách quản trị (Q2.0). */
-export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: VendorApplicationCardProps) {
+export function VendorApplicationCard({
+  vendor,
+  onReview,
+  onAttachFeeInvoice,
+}: VendorApplicationCardProps) {
   return (
     <Card className={styles.vendorCard}>
       <div className={styles.cardHeader}>
@@ -31,11 +35,7 @@ export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: 
         <div className={styles.statusCol}>
           <Badge
             tone={
-              vendor.status === 'APPROVED'
-                ? 'green'
-                : vendor.status === 'PENDING'
-                  ? 'gold'
-                  : 'red'
+              vendor.status === 'APPROVED' ? 'green' : vendor.status === 'PENDING' ? 'gold' : 'red'
             }
           >
             {vendor.status ? VENDOR_STATUS_LABELS[vendor.status as VendorStatus] : 'Chưa rõ'}
@@ -46,12 +46,12 @@ export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: 
       <div className={styles.cardBody}>
         <div className={styles.legalGrid}>
           <div className={styles.legalItem}>
-            <span className={styles.legalLabel}>Mô hình kinh doanh (BR-33):</span>
+            <span className={styles.legalLabel}>Mô hình kinh doanh:</span>
             <strong>Đối chiếu trong hồ sơ chi tiết</strong>
           </div>
 
           <div className={styles.legalItem}>
-            <span className={styles.legalLabel}>Chế độ nhận đơn (BR-21):</span>
+            <span className={styles.legalLabel}>Chế độ nhận đơn:</span>
             <strong>
               {vendor.sellsShop && vendor.acceptsOrders
                 ? 'Bán lẻ & Nhận đặt hàng'
@@ -62,7 +62,7 @@ export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: 
           </div>
 
           <div className={styles.legalItem}>
-            <span className={styles.legalLabel}>Nguồn hàng (AC-26.2):</span>
+            <span className={styles.legalLabel}>Nguồn hàng:</span>
             <strong>
               {vendor.supplySource === 'SELF_PRODUCED'
                 ? 'Tự sản xuất'

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { submitQuote } from '../submitQuoteApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -10,7 +9,6 @@ describe('Feature respond-to-quote-request - submitQuoteApi (FR-38)', () => {
   });
 
   it('submitQuote() gửi đủ các dòng và phí giao hàng (FR-38)', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue(
       envelope({
         id: 'quo-new',
@@ -20,7 +18,7 @@ describe('Feature respond-to-quote-request - submitQuoteApi (FR-38)', () => {
         depositAmount: 9000000,
         remainingAmount: 13500000,
         status: 'SUBMITTED',
-      })
+      }),
     );
 
     const quote = await submitQuote('req-1', {

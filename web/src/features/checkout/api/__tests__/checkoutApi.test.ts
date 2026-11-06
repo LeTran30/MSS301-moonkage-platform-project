@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { checkoutOrder } from '../checkoutApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -9,22 +8,7 @@ describe('Feature checkout - checkoutApi (FR-08)', () => {
     vi.restoreAllMocks();
   });
 
-  it('checkoutOrder() gọi máy chủ cả khi bật chế độ demo (luồng 1 không còn mock)', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
-    const post = vi.spyOn(apiClient, 'post').mockRejectedValue(new Error('HTTP 503'));
-    await expect(
-      checkoutOrder({
-        recipientName: 'Anh Minh',
-        recipientPhone: '0903123456',
-        provinceCode: '01',
-        addressDetail: '180 Triệu Việt Vương',
-      }),
-    ).rejects.toThrow('HTTP 503');
-    expect(post).toHaveBeenCalledTimes(1);
-  });
-
   it('checkoutOrder() trả về paymentUrl và paymentId của backend', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     vi.spyOn(apiClient, 'post').mockResolvedValue(
       envelope({
         checkoutId: 'chk-1',

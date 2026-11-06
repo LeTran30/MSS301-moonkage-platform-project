@@ -1,6 +1,6 @@
 import { formatCurrency } from '@/shared/utils';
 import { Button, Card, Icon } from '@/shared/ui';
-import type { ShopCartGroup } from '../model/cartStore';
+import type { ShopCartGroup } from '../model/cartTypes';
 import styles from './CartSummary.module.css';
 
 interface CartSummaryProps {

@@ -1,8 +1,8 @@
 import styles from './AddressFormPage.module.css';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { routes, PROVINCE_ITEMS } from '@/shared/config';
-import { Button, Card, Input, Breadcrumbs, toast } from '@/shared/ui';
+import { routes, PROVINCE_ITEMS, DEFAULT_PROVINCE_CODE } from '@/shared/config';
+import { Button, Card, Checkbox, Input, Breadcrumbs, Select, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { validators } from '@/shared/lib';
 import { addressApi } from '@/entities/address';
@@ -27,7 +27,8 @@ export function AddressFormPage() {
   const [label, setLabel] = useState('');
   const [recipient, setRecipient] = useState('');
   const [phone, setPhone] = useState('');
-  const [provinceCode, setProvinceCode] = useState('01');
+  // Tỉnh mặc định của sàn (`DEFAULT_PROVINCE_CODE`); người dùng chọn tỉnh thật.
+  const [provinceCode, setProvinceCode] = useState(DEFAULT_PROVINCE_CODE);
   const [wardName, setWardName] = useState('');
   const [street, setStreet] = useState('');
   const [isDefault, setIsDefault] = useState(false);
@@ -119,10 +120,11 @@ export function AddressFormPage() {
       <Card padding="lg" className={styles.lead}>
         <form onSubmit={handleSubmit} className={styles.form} noValidate>
           <div>
-            <label className={styles.label}>
+            <label className={styles.label} htmlFor="address-label">
               Nhãn gợi nhớ (Ví dụ: Nhà riêng, Văn phòng, Kho xưởng)
             </label>
             <Input
+              id="address-label"
               type="text"
               placeholder="Văn phòng công ty"
               value={label}
@@ -132,8 +134,11 @@ export function AddressFormPage() {
 
           <div className={styles.gridTwo}>
             <div>
-              <label className={styles.label}>Tên người nhận hàng *</label>
+              <label className={styles.label} htmlFor="address-recipient">
+                Tên người nhận hàng *
+              </label>
               <Input
+                id="address-recipient"
                 type="text"
                 placeholder="Nguyễn Văn A"
                 value={recipient}
@@ -148,8 +153,11 @@ export function AddressFormPage() {
               )}
             </div>
             <div>
-              <label className={styles.label}>Số điện thoại liên hệ *</label>
+              <label className={styles.label} htmlFor="address-phone">
+                Số điện thoại liên hệ *
+              </label>
               <Input
+                id="address-phone"
                 type="tel"
                 placeholder="0912 345 678"
                 value={phone}
@@ -167,28 +175,22 @@ export function AddressFormPage() {
 
           <div className={styles.gridTwo}>
             <div>
-              <label className={styles.label}>Tỉnh / Thành phố *</label>
-              <select
+              <Select
+                label="Tỉnh / Thành phố"
+                required
+                options={PROVINCE_ITEMS.map((p) => ({ value: p.code, label: p.officialName }))}
                 value={provinceCode}
-                onChange={(e) => setProvinceCode(e.target.value)}
-                className={styles.input}
-                aria-invalid={Boolean(errors.provinceCode)}
-              >
-                {PROVINCE_ITEMS.map((p) => (
-                  <option key={p.code} value={p.code}>
-                    {p.officialName}
-                  </option>
-                ))}
-              </select>
-              {errors.provinceCode && (
-                <p role="alert" className={styles.error}>
-                  {errors.provinceCode}
-                </p>
-              )}
+                onChange={(v) => setProvinceCode(v)}
+                error={errors.provinceCode}
+                placeholder="Chọn tỉnh / thành phố"
+              />
             </div>
             <div>
-              <label className={styles.label}>Phường / Xã *</label>
+              <label className={styles.label} htmlFor="address-ward">
+                Phường / Xã *
+              </label>
               <Input
+                id="address-ward"
                 type="text"
                 placeholder="Phường Ba Đình"
                 value={wardName}
@@ -205,8 +207,11 @@ export function AddressFormPage() {
           </div>
 
           <div>
-            <label className={styles.label}>Số nhà, tên đường, tòa nhà *</label>
+            <label className={styles.label} htmlFor="address-street">
+              Số nhà, tên đường, tòa nhà *
+            </label>
             <Input
+              id="address-street"
               type="text"
               placeholder="Tầng 18, Tòa Capital Place, 29 Liễu Giai"
               value={street}
@@ -222,8 +227,8 @@ export function AddressFormPage() {
           </div>
 
           <label className={styles.checkboxRow}>
-            <input
-              type="checkbox"
+            <Checkbox
+              inputClassName={styles.checkboxInput}
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
             />

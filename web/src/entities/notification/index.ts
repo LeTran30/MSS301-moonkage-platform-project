@@ -1,5 +1,4 @@
 export {
-  MOCK_NOTIFICATIONS,
   markAllNotificationsAsRead,
   markNotificationAsRead,
   notificationStore,
