@@ -3,18 +3,18 @@ import { Button, Card, Icon, toast } from '@/shared/ui';
 import { cn } from '@/shared/lib';
 import { formatDateTime } from '@/shared/utils';
 import { CHAT_FILE_MAX_BYTES, CHAT_FILE_TYPES, CHAT_MAX_LENGTH, type ChatMessage } from '../api/chatApi';
-import { useOrderChat } from '../model/useOrderChat';
-import styles from './OrderChatPanel.module.css';
+import { useConversation } from '../model/useConversation';
+import styles from './ChatPanel.module.css';
 
-interface OrderChatPanelProps {
-  orderId: string;
-  /** Who is on the other side, as the page calls them ("shop", "người mua"). */
+interface ChatPanelProps {
+  conversationId: string;
+  /** Who is on the other side: the Shop's or the buyer's name. */
   counterpartName: string;
 }
 
-/** The chat of an order between its buyer and the vendor owner. */
-export function OrderChatPanel({ orderId, counterpartName }: OrderChatPanelProps) {
-  const chat = useOrderChat(orderId);
+/** One buyer–Shop conversation: messages, files, seen and typing. */
+export function ChatPanel({ conversationId, counterpartName }: ChatPanelProps) {
+  const chat = useConversation(conversationId);
   const [draft, setDraft] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
@@ -28,7 +28,6 @@ export function OrderChatPanel({ orderId, counterpartName }: OrderChatPanelProps
     if (list) list.scrollTop = list.scrollHeight;
   }, [lastSeq, chat.otherTyping]);
 
-  const canWrite = chat.myParty !== null;
   const lastMine = [...chat.messages].reverse().find((m) => m.senderParty === chat.myParty);
 
   function pickFile(picked: File | undefined) {
@@ -71,7 +70,7 @@ export function OrderChatPanel({ orderId, counterpartName }: OrderChatPanelProps
     <Card padding="lg" className={styles.panel}>
       <div className={styles.header}>
         <Icon name="message" size={18} />
-        <h3 className={styles.title}>Nhắn tin với {counterpartName}</h3>
+        <h3 className={styles.title}>{counterpartName}</h3>
       </div>
 
       <div ref={listRef} className={styles.list} aria-live="polite" aria-label="Tin nhắn">
@@ -105,61 +104,57 @@ export function OrderChatPanel({ orderId, counterpartName }: OrderChatPanelProps
         {chat.otherTyping && <p className={styles.typing}>{counterpartName} đang soạn tin…</p>}
       </div>
 
-      {canWrite ? (
-        <form className={styles.composer} onSubmit={(e) => void submit(e)}>
-          {file && (
-            <div className={styles.fileChip}>
-              <Icon name={file.type.startsWith('image/') ? 'image' : 'file'} size={14} />
-              <span className={styles.fileName}>{file.name}</span>
-              <button
-                type="button"
-                className={styles.fileRemove}
-                aria-label="Bỏ tệp đính kèm"
-                onClick={() => {
-                  setFile(null);
-                  if (fileRef.current) fileRef.current.value = '';
-                }}
-              >
-                <Icon name="x" size={14} />
-              </button>
-            </div>
-          )}
-          <div className={styles.row}>
-            <input
-              ref={fileRef}
-              type="file"
-              className={styles.fileInput}
-              accept={CHAT_FILE_TYPES.join(',')}
-              onChange={(e) => pickFile(e.target.files?.[0])}
-            />
-            <Button
+      <form className={styles.composer} onSubmit={(e) => void submit(e)}>
+        {file && (
+          <div className={styles.fileChip}>
+            <Icon name={file.type.startsWith('image/') ? 'image' : 'file'} size={14} />
+            <span className={styles.fileName}>{file.name}</span>
+            <button
               type="button"
-              variant="ghost"
-              iconLeft="upload"
-              aria-label="Đính kèm ảnh hoặc PDF"
-              onClick={() => fileRef.current?.click()}
-            />
-            <textarea
-              className={styles.input}
-              rows={1}
-              maxLength={CHAT_MAX_LENGTH}
-              placeholder={`Nhắn cho ${counterpartName}… (Enter để gửi, Shift+Enter xuống dòng)`}
-              aria-label="Nội dung tin nhắn"
-              value={draft}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                if (e.target.value.trim()) chat.signalTyping();
+              className={styles.fileRemove}
+              aria-label="Bỏ tệp đính kèm"
+              onClick={() => {
+                setFile(null);
+                if (fileRef.current) fileRef.current.value = '';
               }}
-              onKeyDown={onKeyDown}
-            />
-            <Button type="submit" variant="primary" loading={sending} disabled={!draft.trim() && !file}>
-              Gửi
-            </Button>
+            >
+              <Icon name="x" size={14} />
+            </button>
           </div>
-        </form>
-      ) : (
-        <p className={styles.hint}>Quản trị viên chỉ xem cuộc trò chuyện, không gửi tin.</p>
-      )}
+        )}
+        <div className={styles.row}>
+          <input
+            ref={fileRef}
+            type="file"
+            className={styles.fileInput}
+            accept={CHAT_FILE_TYPES.join(',')}
+            onChange={(e) => pickFile(e.target.files?.[0])}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            iconLeft="upload"
+            aria-label="Đính kèm ảnh hoặc PDF"
+            onClick={() => fileRef.current?.click()}
+          />
+          <textarea
+            className={styles.input}
+            rows={1}
+            maxLength={CHAT_MAX_LENGTH}
+            placeholder="Nhập tin nhắn… (Enter để gửi)"
+            aria-label="Nội dung tin nhắn"
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              if (e.target.value.trim()) chat.signalTyping();
+            }}
+            onKeyDown={onKeyDown}
+          />
+          <Button type="submit" variant="primary" loading={sending} disabled={!draft.trim() && !file}>
+            Gửi
+          </Button>
+        </div>
+      </form>
     </Card>
   );
 }

@@ -76,7 +76,14 @@ public enum ErrorCode {
     // Reviews (FR-11, BR-32)
     /** Only a product of a delivered buy-now order of the caller. */
     REVIEW_NOT_ALLOWED("REVIEW_001", HttpStatus.CONFLICT, "error.review.not_allowed"),
-    REVIEW_ALREADY_EXISTS("REVIEW_002", HttpStatus.CONFLICT, "error.review.already_exists");
+    REVIEW_ALREADY_EXISTS("REVIEW_002", HttpStatus.CONFLICT, "error.review.already_exists"),
+
+    // Chat between a buyer and a Shop
+    /** Not one of its two sides, or no such conversation: the same answer, so nothing leaks. */
+    CONVERSATION_NOT_FOUND("CHAT_001", HttpStatus.NOT_FOUND, "error.chat.conversation_not_found"),
+    /** BR-22 in spirit: an owner does not chat with their own Shop. */
+    CHAT_WITH_OWN_SHOP("CHAT_002", HttpStatus.CONFLICT, "error.chat.own_shop"),
+    SHOP_NOT_FOUND("CHAT_003", HttpStatus.NOT_FOUND, "error.chat.shop_not_found");
 
     private final String code;
     private final HttpStatus httpStatus;

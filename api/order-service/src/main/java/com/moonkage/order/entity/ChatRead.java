@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** How far one side of an order's chat has read. */
+/** How far one side of a conversation has read. */
 @Entity
 @Table(name = "chat_reads")
 @IdClass(ChatRead.Key.class)
@@ -24,7 +24,7 @@ import lombok.Setter;
 public class ChatRead {
 
     @Id
-    private String orderId;
+    private String conversationId;
 
     @Id
     @Enumerated(EnumType.STRING)
@@ -37,7 +37,7 @@ public class ChatRead {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    public record Key(String orderId, ChatParty party) implements Serializable {
+    public record Key(String conversationId, ChatParty party) implements Serializable {
 
         /** For JPA, which builds the key reflectively. */
         public Key() {

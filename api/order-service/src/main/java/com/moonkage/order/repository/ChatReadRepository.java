@@ -10,16 +10,16 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatReadRepository extends JpaRepository<ChatRead, ChatRead.Key> {
 
-    List<ChatRead> findByOrderId(String orderId);
+    List<ChatRead> findByConversationId(String conversationId);
 
     /** One statement, so two tabs reading at once cannot collide; the marker only moves forward. */
     @Modifying
     @Query(
-            value = "INSERT INTO chat_reads (order_id, party, last_read_seq, updated_at) "
-                    + "VALUES (:orderId, :party, :seq, now()) "
-                    + "ON CONFLICT (order_id, party) DO UPDATE "
+            value = "INSERT INTO chat_reads (conversation_id, party, last_read_seq, updated_at) "
+                    + "VALUES (:conversationId, :party, :seq, now()) "
+                    + "ON CONFLICT (conversation_id, party) DO UPDATE "
                     + "SET last_read_seq = EXCLUDED.last_read_seq, updated_at = now() "
                     + "WHERE chat_reads.last_read_seq < EXCLUDED.last_read_seq",
             nativeQuery = true)
-    int advance(String orderId, String party, long seq);
+    int advance(String conversationId, String party, long seq);
 }

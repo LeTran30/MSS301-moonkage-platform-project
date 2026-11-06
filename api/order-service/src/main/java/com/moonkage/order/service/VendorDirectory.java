@@ -16,6 +16,15 @@ public class VendorDirectory {
 
     private final VendorClient vendorClient;
 
+    /** A vendor as vendor-service sees it; empty when there is no such vendor. */
+    public Optional<VendorView> find(String vendorId) {
+        try {
+            return Optional.ofNullable(vendorClient.getVendor(vendorId));
+        } catch (FeignException.NotFound e) {
+            return Optional.empty();
+        }
+    }
+
     /**
      * The account that owns a vendor, to push a chat event to; empty when vendor-service does not know it or cannot
      * be reached, since a missed push only costs the other side a poll.

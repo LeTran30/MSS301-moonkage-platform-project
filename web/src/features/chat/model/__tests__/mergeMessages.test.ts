@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { mergeMessages } from '../useOrderChat';
+import { mergeMessages } from '../useConversation';
 
 type ChatMessage = Parameters<typeof mergeMessages>[0][number];
 
 const msg = (seq: number, body = `tin ${seq}`): ChatMessage => ({
   id: `m${seq}`,
   seq,
-  orderId: 'o1',
+  conversationId: 'c1',
   senderAccountId: 'a',
   senderParty: 'BUYER',
   body,

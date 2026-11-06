@@ -1,4 +1,4 @@
-import { apiClient, GATEWAY, unwrapOrThrow, uploadFile } from '@/shared/api';
+import { apiClient, GATEWAY, unwrapList, unwrapOrThrow, uploadFile } from '@/shared/api';
 
 /** `ChatParty`: the buyer of the order or the owner of its vendor. */
 export type ChatParty = 'BUYER' | 'VENDOR';
@@ -8,7 +8,7 @@ export interface ChatMessage {
   id: string;
   /** Order of the thread; also the cursor for older pages and read markers. */
   seq: number;
-  orderId: string;
+  conversationId: string;
   senderAccountId: string;
   senderParty: ChatParty;
   body: string | null;
@@ -21,19 +21,31 @@ export interface ChatMessage {
 
 /** Wire shape of `ChatThreadResponse`: one page, oldest first. */
 export interface ChatThread {
-  orderId: string;
-  /** `null` for an admin, who reads but never writes. */
-  myParty: ChatParty | null;
+  conversationId: string;
+  myParty: ChatParty;
   messages: ChatMessage[];
   buyerReadSeq: number;
   vendorReadSeq: number;
   hasMore: boolean;
 }
 
+/** Wire shape of `ConversationResponse`: one line of an inbox. */
+export interface Conversation {
+  id: string;
+  vendorId: string;
+  vendorName: string | null;
+  buyerAccountId: string;
+  buyerName: string | null;
+  myParty: ChatParty;
+  lastMessage: ChatMessage | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+}
+
 /** What orchestrator pushes on `/user/queue/chat`. */
 export interface ChatPush {
   type: 'MESSAGE' | 'READ' | 'TYPING';
-  orderId: string;
+  conversationId: string;
   senderAccountId: string;
   senderParty: ChatParty;
   message: ChatMessage | null;
@@ -48,18 +60,30 @@ export const CHAT_FILE_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 export const CHAT_FILE_MAX_BYTES = 20 * 1024 * 1024;
 export const CHAT_MAX_LENGTH = 2000;
 
+const BASE = GATEWAY.ORDER.CHAT_CONVERSATIONS;
+
 export const chatApi = {
-  async thread(orderId: string, before?: number): Promise<ChatThread> {
-    const res = await apiClient.get<unknown>(GATEWAY.ORDER.CHAT(orderId), {
+  /** "Nhắn shop": the caller's conversation with the Shop, the same one every time. */
+  async start(vendorId: string): Promise<Conversation> {
+    return unwrapOrThrow<Conversation>(await apiClient.post<unknown>(BASE, { vendorId }));
+  },
+
+  /** As a buyer: the Shops one wrote to; as a Shop owner: the buyers who wrote. */
+  async inbox(as: ChatParty): Promise<Conversation[]> {
+    return unwrapList<Conversation>(await apiClient.get<unknown>(BASE, { params: { as } }));
+  },
+
+  async thread(conversationId: string, before?: number): Promise<ChatThread> {
+    const res = await apiClient.get<unknown>(GATEWAY.ORDER.CHAT_CONVERSATION(conversationId), {
       params: before ? { before } : undefined,
     });
     return unwrapOrThrow<ChatThread>(res);
   },
 
   /** A file is sent to the object storage first; only its tempKey rides on the message. */
-  async send(orderId: string, body: string, file: File | null): Promise<ChatMessage> {
+  async send(conversationId: string, body: string, file: File | null): Promise<ChatMessage> {
     const tempKey = file ? await uploadFile('ORDER', file) : null;
-    const res = await apiClient.post<unknown>(GATEWAY.ORDER.CHAT_MESSAGES(orderId), {
+    const res = await apiClient.post<unknown>(GATEWAY.ORDER.CHAT_MESSAGES(conversationId), {
       body: body.trim() || null,
       attachmentTempKey: tempKey,
       attachmentName: file?.name ?? null,
@@ -67,11 +91,11 @@ export const chatApi = {
     return unwrapOrThrow<ChatMessage>(res);
   },
 
-  async markRead(orderId: string, upToSeq: number): Promise<void> {
-    await apiClient.post(GATEWAY.ORDER.CHAT_READ(orderId), { upToSeq });
+  async markRead(conversationId: string, upToSeq: number): Promise<void> {
+    await apiClient.post(GATEWAY.ORDER.CHAT_READ(conversationId), { upToSeq });
   },
 
-  async typing(orderId: string): Promise<void> {
-    await apiClient.post(GATEWAY.ORDER.CHAT_TYPING(orderId), {});
+  async typing(conversationId: string): Promise<void> {
+    await apiClient.post(GATEWAY.ORDER.CHAT_TYPING(conversationId), {});
   },
 };
