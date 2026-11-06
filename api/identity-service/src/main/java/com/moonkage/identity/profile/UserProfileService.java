@@ -12,6 +12,10 @@ public interface UserProfileService {
      */
     AccountResponse getMyAccount(String accountId);
 
+    /** PATCH /api/accounts/me/profile: a new display name; answers like GET /api/accounts/me. Throws
+     * USER_PROFILE_NOT_FOUND. */
+    AccountResponse updateFullName(String accountId, String fullName);
+
     /** The profile shares the account's id; joins the caller's transaction. */
     void createProfile(String accountId, String fullName);
 
