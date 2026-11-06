@@ -12,9 +12,7 @@ export const GATEWAY = {
     REGISTER: '/identity-service/api/auth/register',
     REFRESH: '/identity-service/api/auth/refresh-token', // AuthController: @PostMapping("/refresh-token")
     ME: '/identity-service/api/accounts/me',             // AccountController: @GetMapping("/api/accounts/me")
-    // AccountController chưa có endpoint sửa hồ sơ (tài liệu vẽ
-    // PATCH /api/accounts/me/profile ở giai đoạn 3 của api-db-alignment-plan.md).
-    // Hằng số giữ lại cho tài liệu, nhưng chưa có endpoint chạy được.
+    // AccountController: @PatchMapping("/api/accounts/me/profile") — đổi họ tên hiển thị (FR-02).
     UPDATE_PROFILE: '/identity-service/api/accounts/me/profile',
     NFC_SESSIONS: '/identity-service/api/nfc/sessions',  // KycController: /api/nfc/sessions
     NFC_SESSION_BY_ID: (sessionId: string) => `/identity-service/api/nfc/sessions/${sessionId}`,

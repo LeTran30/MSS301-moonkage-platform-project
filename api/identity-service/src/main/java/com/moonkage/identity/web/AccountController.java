@@ -6,6 +6,7 @@ import com.moonkage.identity.kyc.LegalProfileService;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.dto.UpdateProfileRequest;
 import com.moonkage.identity.security.CurrentUser;
 import com.moonkage.identity.security.CurrentUserInfo;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -13,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,6 +33,14 @@ public class AccountController {
     @GetMapping("/api/accounts/me")
     public ResponseEntity<ApiResponse<AccountResponse>> getMyAccount(@CurrentUser CurrentUserInfo currentUser) {
         return ResponseEntity.ok(ApiResponse.ok(userProfileService.getMyAccount(currentUser.accountId())));
+    }
+
+    /** FR-02: change the display name; 400 when it is blank or longer than 100 characters. */
+    @PatchMapping("/api/accounts/me/profile")
+    public ResponseEntity<ApiResponse<AccountResponse>> updateMyProfile(
+            @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid UpdateProfileRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(userProfileService.updateFullName(currentUser.accountId(), request.fullName())));
     }
 
     /**
