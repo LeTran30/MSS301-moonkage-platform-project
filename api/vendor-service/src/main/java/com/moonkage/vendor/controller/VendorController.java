@@ -25,6 +25,7 @@ import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
+import com.moonkage.vendor.vendor.dto.response.VendorSummaryResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -91,6 +92,16 @@ public class VendorController {
     public ResponseEntity<ApiResponse<VendorDetailResponse>> getVendor(
             @CurrentUser CurrentUserInfo caller, @PathVariable String vendorId) {
         return ResponseEntity.ok(ApiResponse.ok(vendorService.getVendor(caller, vendorId)));
+    }
+
+    /**
+     * Open to guests (B-3.2): the public summary of a shop, so a buyer can see the province of the shop they are
+     * looking at. Only the safe fields of {@link VendorSummaryResponse} are exposed; the private profile keeps its
+     * owner-and-admin check above.
+     */
+    @GetMapping("/api/vendors/{vendorId}/summary")
+    public ResponseEntity<ApiResponse<VendorSummaryResponse>> getVendorSummary(@PathVariable String vendorId) {
+        return ResponseEntity.ok(ApiResponse.ok(vendorService.getSummary(vendorId)));
     }
 
     /** Allowed only while NEEDS_INFO or REJECTED (AC-27.2). */

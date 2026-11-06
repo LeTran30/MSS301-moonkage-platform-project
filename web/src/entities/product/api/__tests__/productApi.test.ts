@@ -98,6 +98,26 @@ describe('Product Entity - productApi (T-01)', () => {
     await expect(productApi.getProducts('Hà Nội')).rejects.toThrow('HTTP 500');
   });
 
+  it('tỉnh của tiệm bánh đến từ provinceCode của listing (B-3.1)', () => {
+    const entity = mapProductDtoToEntity({
+      id: 'p-02',
+      name: 'Bánh nướng',
+      listPrice: 95000,
+      provinceCode: '79',
+    });
+    expect(entity.province).toBe('TP Hồ Chí Minh');
+  });
+
+  it('listing không có provinceCode thì giữ origin cũ, không bịa tỉnh', () => {
+    const entity = mapProductDtoToEntity({
+      id: 'p-03',
+      name: 'Bánh nướng',
+      listPrice: 95000,
+      origin: 'Hà Nội',
+    });
+    expect(entity.province).toBe('Hà Nội');
+  });
+
   it('productApi.getTaxonomy() bóc envelope danh mục vỏ và nhân', async () => {
     vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope([

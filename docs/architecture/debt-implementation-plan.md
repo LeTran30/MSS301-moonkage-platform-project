@@ -13,13 +13,13 @@ Còn **9 hạng mục** trong **4 nhóm**. Tổng ước lượng **13–17 ngà
 | Nhóm | Hạng mục | Ước lượng | Phụ thuộc | Ưu tiên |
 |---|---|---|---|---|
 | **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
-| **B. Luồng nghiệp vụ** | B-1 · B-2 · B-3 | 4–5 ngày | B-1 → B-2 | **P0** |
+| **B. Luồng nghiệp vụ** | B-1 · B-2 · B-3 ✅ | 4–5 ngày | B-1 → B-2 | **P0** |
 | **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
 | **D. Tài liệu & quyết định** | D-1 ✅ · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
 
 > **Điểm quan trọng nhất của kế hoạch này:** phần lớn việc còn nợ **không** phụ thuộc app mobile. Chỉ **A-3 (tắt `discovery.locator`)** là cần xác nhận từ bên ngoài repo. Vì vậy A-1 và A-2 có thể làm ngay.
 >
-> **Tiến độ (2026-11-06):** A-1, A-2 và phần 308 của A-3 **đã xong**. Phần còn lại của A-3 (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) **vẫn chặn** ở app mobile. **C-1** (tài liệu hoá 4 thư viện `common-*`) và **D-1** (chốt trạng thái ADR D-25 → D-30) cũng **đã xong** trong ngày 2026-11-06.
+> **Tiến độ (2026-11-06):** A-1, A-2 và phần 308 của A-3 **đã xong**. Phần còn lại của A-3 (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) **vẫn chặn** ở app mobile. **C-1** (tài liệu hoá 4 thư viện `common-*`) và **D-1** (chốt trạng thái ADR D-25 → D-30) cũng **đã xong** trong ngày 2026-11-06. **B-3** (tỉnh của Shop trong projection của catalog + endpoint công khai `GET /api/vendors/{vendorId}/summary`) **đã xong** trong ngày 2026-11-06; 3.3 và 3.4 của B-3 là hạ tầng ngoài repo nên không làm được bằng code.
 
 ---
 
@@ -271,12 +271,12 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 **Chủ sở hữu:** BE lead + FE lead · **Ước lượng:** 1 ngày**
 
-| # | Việc | Loại |
-|---|---|---|
-| 3.1 | Thêm **tỉnh của Shop** vào projection của catalog (`ProductListing` hiện **không** có trường province — đã kiểm chứng 2026-11-06) | Migration + entity + projection |
-| 3.2 | `GET /api/vendors/{id}` hiện chỉ cho chủ Shop và admin → người mua cần xem tỉnh của Shop | Thêm endpoint công khai read-only |
-| 3.3 | VNPay sandbox trả lỗi 71 "Website này chưa được phê duyệt" | **Không sửa bằng code** — cấu hình merchant (`VNPAY_TMN_CODE`, URL trả về đăng ký với VNPay) |
-| 3.4 | IPN thật không tới được `localhost` | Cần tunnel khi thử VNPay thật |
+| # | Việc | Loại | Trạng thái (2026-11-06) |
+|---|---|---|---|
+| 3.1 | Thêm **tỉnh của Shop** vào projection của catalog (`ProductListing` hiện **không** có trường province — đã kiểm chứng 2026-11-06) | Migration + entity + projection | ✅ Xong: `provinceCode` trong `VendorSnapshot` (`vendor.updated`/`vendor.locked`) → cột `vendor_snapshots.province_code` (migration `V2026_11_06_1100`) → view `product_listings` → `ProductListing.provinceCode` → `ProductListingResponse.provinceCode` |
+| 3.2 | `GET /api/vendors/{id}` hiện chỉ cho chủ Shop và admin → người mua cần xem tỉnh của Shop | Thêm endpoint công khai read-only | ✅ Xong: `GET /api/vendors/{vendorId}/summary` trả `VendorSummaryResponse` (id, tên, tỉnh, trạng thái, cờ bán hàng, vùng giao); gateway cho khách qua đúng matcher `/*/summary`; hồ sơ `GET /api/vendors/{id}` **giữ nguyên** kiểm chủ/admin |
+| 3.3 | VNPay sandbox trả lỗi 71 "Website này chưa được phê duyệt" | **Không sửa bằng code** — cấu hình merchant (`VNPAY_TMN_CODE`, URL trả về đăng ký với VNPay) | ⛔ Hạ tầng ngoài repo |
+| 3.4 | IPN thật không tới được `localhost` | Cần tunnel khi thử VNPay thật | ⛔ Hạ tầng ngoài repo |
 
 > 3.3 và 3.4 là **hạ tầng bên ngoài**, không sửa được trong repo. Ghi rõ trong tài liệu để không ai mất thời gian tìm.
 

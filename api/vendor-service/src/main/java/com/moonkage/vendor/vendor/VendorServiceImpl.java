@@ -18,6 +18,7 @@ import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
+import com.moonkage.vendor.vendor.dto.response.VendorSummaryResponse;
 import com.moonkage.vendor.vendor.elements.DeliveryFee;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,18 @@ class VendorServiceImpl implements VendorService {
     public VendorDetailResponse getVendor(CurrentUserInfo caller, String vendorId) {
         Vendor vendor = vendorFinder.getVisibleTo(caller, vendorId);
         return toDetailResponse(vendor, caller);
+    }
+
+    /**
+     * The public summary of a shop (B-3.2). No ownership check: this read is open to guests, which is why it answers
+     * only the safe fields of {@link VendorSummaryResponse} and never the private profile.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public VendorSummaryResponse getSummary(String vendorId) {
+        Vendor vendor = vendorFinder.get(vendorId);
+        List<String> deliveryAreas = deliveryAreaReader.provinceCodesOf(vendor.getId());
+        return VendorMapper.toSummaryResponse(vendor, deliveryAreas);
     }
 
     @Override

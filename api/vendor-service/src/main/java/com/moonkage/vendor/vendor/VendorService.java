@@ -15,6 +15,7 @@ import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
+import com.moonkage.vendor.vendor.dto.response.VendorSummaryResponse;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +48,13 @@ public interface VendorService {
 
     /** The owner or an admin; the admin also gets the owner check of the latest submission (AC-45.1, AC-45.4). */
     VendorDetailResponse getVendor(CurrentUserInfo caller, String vendorId);
+
+    /**
+     * The public summary of a shop (B-3.2): open to guests, so a buyer can see the province of the shop they are
+     * looking at. Only the safe fields of {@link VendorSummaryResponse} are exposed; the private profile stays behind
+     * {@link #getVendor(CurrentUserInfo, String)}.
+     */
+    VendorSummaryResponse getSummary(String vendorId);
 
     /** AC-27.2: the owner, while NEEDS_INFO or REJECTED; every check of a first submission runs again. */
     VendorDetailResponse resubmit(CurrentUserInfo caller, String vendorId, SubmitVendorRequest request);

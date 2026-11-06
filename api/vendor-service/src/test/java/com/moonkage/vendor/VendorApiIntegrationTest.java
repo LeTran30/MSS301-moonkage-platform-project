@@ -366,6 +366,47 @@ class VendorApiIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    // ─── public summary (B-3.2) ───
+
+    @Test
+    void aGuestReadsThePublicSummaryOfAShopWithoutAToken() throws Exception {
+        String vendorId = submitAndGetId();
+
+        mvc.perform(get("/api/vendors/{id}/summary", vendorId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(vendorId))
+                .andExpect(jsonPath("$.data.businessName").value("Tiệm bánh Trăng"))
+                .andExpect(jsonPath("$.data.provinceCode").value("79"))
+                .andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andExpect(jsonPath("$.data.canOperate").value(false))
+                .andExpect(jsonPath("$.data.sellsShop").value(true))
+                .andExpect(jsonPath("$.data.acceptsOrders").value(false))
+                .andExpect(jsonPath("$.data.deliveryAreas", hasSize(0)));
+    }
+
+    @Test
+    void thePublicSummaryNeverCarriesThePrivateProfileOfTheShop() throws Exception {
+        String vendorId = submitAndGetId();
+
+        mvc.perform(get("/api/vendors/{id}/summary", vendorId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.ownerAccountId").doesNotExist())
+                .andExpect(jsonPath("$.data.taxCode").doesNotExist())
+                .andExpect(jsonPath("$.data.address").doesNotExist())
+                .andExpect(jsonPath("$.data.representativeName").doesNotExist())
+                .andExpect(jsonPath("$.data.bankAccount").doesNotExist())
+                .andExpect(jsonPath("$.data.statusReason").doesNotExist())
+                .andExpect(jsonPath("$.data.localDeliveryFee").doesNotExist())
+                .andExpect(jsonPath("$.data.documents").doesNotExist());
+    }
+
+    @Test
+    void theSummaryOfAnUnknownShopIsNotFound() throws Exception {
+        mvc.perform(get("/api/vendors/{id}/summary", "missing"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("VENDOR_001"));
+    }
+
     @Test
     void theOwnerOpensADocumentThroughAShortLivedLink() throws Exception {
         String vendorId = submitAndGetId();

@@ -76,6 +76,10 @@ public class ProductListing {
     private String vendorName;
     private String ownerAccountId;
 
+    /** Head-office province of the shop (B-3.1); null when the vendor copy has none. */
+    @Column(name = "province_code", length = 2)
+    private String provinceCode;
+
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "text[]")
     private String[] deliveryAreas;

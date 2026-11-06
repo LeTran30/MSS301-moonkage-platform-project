@@ -353,7 +353,7 @@ class CatalogProjectionIntegrationTest {
                 id(),
                 "vendor.updated",
                 new VendorProjectionRow(
-                        VENDOR, OWNER, "Shop one", "APPROVED", true, false, false, List.of("01"), 10000L, 2));
+                        VENDOR, OWNER, "Shop one", "01", "APPROVED", true, false, false, List.of("01"), 10000L, 2));
         assertThat(countIn("01")).isZero();
         assertThatThrownBy(() -> products.getProduct("sale", "01", null))
                 .isInstanceOf(com.moonkage.catalog.exception.CatalogException.class);
@@ -736,6 +736,8 @@ class CatalogProjectionIntegrationTest {
         assertThat(listing.at("/data/totalElements").asInt()).isEqualTo(1);
         assertThat(listing.at("/data/content/0/vendorAcceptsOrders").asBoolean())
                 .isTrue();
+        // B-3.1: the province of the shop reaches the public listing.
+        assertThat(listing.at("/data/content/0/provinceCode").asText()).isEqualTo("01");
         assertThat(jdbc.queryForObject(
                         "SELECT price_tiers::text FROM product_views WHERE product_id='wire'", String.class))
                 .isEqualTo("[{\"fromQty\": 10, \"unitPrice\": 95000}]");
@@ -933,7 +935,8 @@ class CatalogProjectionIntegrationTest {
         return """
                 {"eventId":"%s","schemaVersion":1,"eventType":"%s","sourceService":"vendor-service",
                 "aggregateType":"VENDOR","aggregateId":"%s","sourceVersion":%d,"occurredAt":"2026-10-26T11:00:00Z",
-                "data":{"vendorId":"%s","ownerAccountId":"%s","businessName":"Shop one","status":"%s",
+                "data":{"vendorId":"%s","ownerAccountId":"%s","businessName":"Shop one","provinceCode":"01",
+                "status":"%s",
                 "statusReason":null,"canOperate":%s,"sellsShop":true,"acceptsOrders":true,"deliveryAreas":["01"],
                 "localDeliveryFee":15000,"orderProfile":null,"changedBy":null}}
                 """.formatted(eventId, routingKey, VENDOR, version, VENDOR, OWNER, status, canOperate);
@@ -977,6 +980,7 @@ class CatalogProjectionIntegrationTest {
                 VENDOR,
                 OWNER,
                 "Shop one",
+                "01",
                 locked ? "LOCKED" : "APPROVED",
                 !locked,
                 true,

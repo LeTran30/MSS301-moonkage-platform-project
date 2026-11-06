@@ -6,6 +6,7 @@ import com.moonkage.vendor.vendor.dto.response.VendorDetailResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
+import com.moonkage.vendor.vendor.dto.response.VendorSummaryResponse;
 import com.moonkage.vendor.vendor.elements.DeliveryFee;
 import com.moonkage.vendor.vendor.elements.RepresentativeName;
 import com.moonkage.vendor.vendor.elements.TaxCode;
@@ -55,6 +56,23 @@ final class VendorMapper {
                 ownerCheck == null ? null : toOwnerCheckResponse(ownerCheck),
                 v.getCreatedAt(),
                 v.getUpdatedAt());
+    }
+
+    /**
+     * The public summary of a shop (B-3.2): only the fields a buyer may read, never anything private.
+     *
+     * @param deliveryAreas province codes the shop delivers to; empty when it has none yet
+     */
+    static VendorSummaryResponse toSummaryResponse(Vendor v, List<String> deliveryAreas) {
+        return new VendorSummaryResponse(
+                v.getId(),
+                v.getBusinessName(),
+                valueOf(v.getProvinceCode(), ProvinceCode::value),
+                v.getStatus(),
+                v.canOperate(),
+                v.isSellsShop(),
+                v.isAcceptsOrders(),
+                deliveryAreas);
     }
 
     static VendorDocumentResponse toDocumentResponse(VendorDocument d) {

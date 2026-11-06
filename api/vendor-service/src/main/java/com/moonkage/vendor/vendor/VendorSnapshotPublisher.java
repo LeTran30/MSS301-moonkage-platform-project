@@ -36,6 +36,9 @@ class VendorSnapshotPublisher {
                 vendor.getId(),
                 vendor.getOwnerAccountId(),
                 vendor.getBusinessName(),
+                vendor.getProvinceCode() == null
+                        ? null
+                        : vendor.getProvinceCode().value(),
                 vendor.getStatus(),
                 vendor.getStatusReason(),
                 vendor.canOperate(),

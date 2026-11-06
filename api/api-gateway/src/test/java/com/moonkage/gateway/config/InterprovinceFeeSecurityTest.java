@@ -120,6 +120,17 @@ class InterprovinceFeeSecurityTest {
         }
     }
 
+    /**
+     * B-3.2: the public summary of one Shop is open to guests, but the profile of the Shop keeps its
+     * owner-and-admin check.
+     */
+    @Test
+    void guestsReadTheVendorSummaryButNotThePrivateVendorProfile() {
+        client.get().uri("/api/vendors/v-1/summary").exchange().expectStatus().isOk();
+        // The profile of the Shop is not public: without a token it is refused.
+        client.get().uri("/api/vendors/v-1").exchange().expectStatus().isUnauthorized();
+    }
+
     @Test
     void stripsSpoofedIdentityAndPassesOnlyValidatedClaims() {
         var request = MockServerHttpRequest.get("/api/interprovince-fees")
@@ -182,6 +193,11 @@ class InterprovinceFeeSecurityTest {
 
         @PostMapping({"/internal/products/snapshot", "/catalog-service/internal/products/snapshot"})
         String internal() {
+            return "ok";
+        }
+
+        @GetMapping({"/api/vendors/{vendorId}", "/api/vendors/{vendorId}/summary"})
+        String vendor() {
             return "ok";
         }
     }

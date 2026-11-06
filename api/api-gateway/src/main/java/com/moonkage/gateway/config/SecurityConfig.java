@@ -116,6 +116,11 @@ public class SecurityConfig {
                                 "/quotation-service/api/suppliers",
                                 "/quotation-service/api/suppliers/**")
                         .permitAll()
+                        // B-3.2: the public summary of one shop (id, name, province, selling flags).
+                        // The matcher is the exact new path, not "/api/vendors/**": the profile
+                        // of a shop stays private to its owner and the admin.
+                        .pathMatchers(HttpMethod.GET, "/api/vendors/*/summary", "/vendor-service/api/vendors/*/summary")
+                        .permitAll()
                         // BR-25: VNPay calls the IPN server to server and redirects the payer to the return page,
                         // both without our token; payment-service checks vnp_SecureHash instead
                         .pathMatchers(

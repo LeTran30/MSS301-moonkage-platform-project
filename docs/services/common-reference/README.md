@@ -51,7 +51,9 @@ Package gốc `com.moonkage.reference`. Không có bean, không có auto-configu
 | identity-service | validator cho `province_code` của địa chỉ | `api/identity-service/src/main/java/com/moonkage/identity/address/ProvinceCodeValidator.java:18` — `Province.isKnown(value)` |
 | vendor-service | kiểm mã tỉnh trong vùng giao của người bán | `api/vendor-service/src/main/java/com/moonkage/vendor/common/vo/ProvinceCode.java:16` — `Province.isKnown(trimmed)` |
 | quotation-service | kiểm mã tỉnh trong địa chỉ giao của yêu cầu báo giá | `api/quotation-service/src/main/java/com/moonkage/quotation/service/impl/QuoteRequestServiceImpl.java:181` — `Province.isKnown(delivery.provinceCode())` |
-| catalog-service | kiểm mã tỉnh khi đọc bản đọc sản phẩm | `api/catalog-service/src/main/java/com/moonkage/catalog/service/impl/ProductReadServiceImpl.java:166` — `Province.isKnown(provinceCode)` |
+| catalog-service | kiểm mã tỉnh khi đọc bản đọc sản phẩm và khi chiếu dữ liệu người bán | `api/catalog-service/src/main/java/com/moonkage/catalog/service/impl/ProductReadServiceImpl.java:166` — `Province.isKnown(provinceCode)`; `api/catalog-service/src/main/java/com/moonkage/catalog/entity/projection/VendorProjectionRow.java:32` — `Province.isKnown(code)` cho mã tỉnh của Shop (B-3.1) và cho từng mã trong vùng giao |
+
+Ngoài ra `api/catalog-service/src/test/java/com/moonkage/catalog/repository/InterprovinceFeeIntegrationTest.java:89` giữ bảng `provinces` của catalog **bằng** danh sách của enum này (`Province.values()` → `getCode()`), nên hai danh sách không lệch nhau.
 
 ## Cấu hình
 

@@ -7,15 +7,16 @@
 -- vendors: the copy of the two vendors of the vendor seed, which writes them straight into vendor_db and so never sends
 -- vendor.updated. Same state and source_version 0 as there; a later vendor.updated (version 1+) replaces it. A row
 -- still at version 0 came from this seed, so a re-run refreshes it (e.g. a column added since); a projected one stays.
-INSERT INTO vendor_snapshots (vendor_id, owner_account_id, business_name, status, can_operate, sells_shop,
-                              accepts_orders, delivery_areas, local_delivery_fee, source_version)
+INSERT INTO vendor_snapshots (vendor_id, owner_account_id, business_name, province_code, status, can_operate,
+                              sells_shop, accepts_orders, delivery_areas, local_delivery_fee, source_version)
 VALUES ('00000000-0000-4000-8000-000200000001', '00000000-0000-4000-8000-000100000004',
-        'Doanh nghiệp tư nhân Bánh Trung Thu Trăng Vàng', 'APPROVED', true, true, true, '{79}', 30000, 0),
+        'Doanh nghiệp tư nhân Bánh Trung Thu Trăng Vàng', '79', 'APPROVED', true, true, true, '{79}', 30000, 0),
        ('00000000-0000-4000-8000-000200000002', '00000000-0000-4000-8000-000100000005',
-        'Hộ kinh doanh Bánh Quê', 'PENDING', false, true, false, '{01}', NULL, 0)
+        'Hộ kinh doanh Bánh Quê', '01', 'PENDING', false, true, false, '{01}', NULL, 0)
 ON CONFLICT (vendor_id) DO UPDATE
 SET owner_account_id = EXCLUDED.owner_account_id,
     business_name = EXCLUDED.business_name,
+    province_code = EXCLUDED.province_code,
     status = EXCLUDED.status,
     can_operate = EXCLUDED.can_operate,
     sells_shop = EXCLUDED.sells_shop,
