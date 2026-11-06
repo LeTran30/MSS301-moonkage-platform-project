@@ -1,4 +1,5 @@
 import { useCurrentUser } from '@/entities/user';
+import { EditProfileForm } from '@/features/edit-profile';
 import { Badge, Card, Icon } from '@/shared/ui';
 import styles from './ProfilePage.module.css';
 
@@ -13,11 +14,9 @@ export function ProfilePage() {
           <h3>Thông Tin Cá Nhân</h3>
         </div>
 
+        <EditProfileForm />
+
         <div className={styles.infoList}>
-          <div className={styles.infoRow}>
-            <span>Họ và tên:</span>
-            <strong>{user.name}</strong>
-          </div>
           <div className={styles.infoRow}>
             <span>Địa chỉ email:</span>
             <span>{user.email}</span>
