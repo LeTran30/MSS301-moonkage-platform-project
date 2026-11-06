@@ -29,7 +29,7 @@ describe('Feature resolve-disputes - resolveDisputeApi (FR-49)', () => {
       decisionReason: 'Hỗ trợ bánh nứt',
     });
 
-    expect(patch).toHaveBeenCalledWith('/order-service/api/orders/ORD-11/dispute', {
+    expect(patch).toHaveBeenCalledWith('/api/orders/ORD-11/dispute', {
       decision: 'PARTIAL_REFUND',
       refundAmount: 135000,
       decisionReason: 'Hỗ trợ bánh nứt',

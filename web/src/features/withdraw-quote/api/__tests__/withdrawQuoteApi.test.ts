@@ -20,7 +20,7 @@ describe('Feature withdraw-quote - withdrawQuoteApi (BR-05)', () => {
 
     const quote = await withdrawQuote('req-1', 'quo-1');
 
-    expect(patch).toHaveBeenCalledWith('/quotation-service/api/quote-requests/req-1/quotes/quo-1', {
+    expect(patch).toHaveBeenCalledWith('/api/quote-requests/req-1/quotes/quo-1', {
       status: 'WITHDRAWN',
     });
     expect(quote.status).toBe('WITHDRAWN');

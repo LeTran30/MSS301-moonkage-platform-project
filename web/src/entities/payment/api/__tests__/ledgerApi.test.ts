@@ -28,7 +28,7 @@ describe('Payment Entity - ledgerApi (FR-41, FR-43, FR-47, FR-48)', () => {
 
     const ledgers = await ledgerApi.getLedgers({ vendorId: 'ven-1' });
 
-    expect(get).toHaveBeenCalledWith('/payment-service/api/ledgers?vendorId=ven-1&size=200');
+    expect(get).toHaveBeenCalledWith('/api/ledgers?vendorId=ven-1&size=200');
     expect(ledgers).toHaveLength(1);
     expect(ledgers[0].orderId).toBe('ord-1');
     expect(ledgers[0].payable).toBe(true);
@@ -39,7 +39,7 @@ describe('Payment Entity - ledgerApi (FR-41, FR-43, FR-47, FR-48)', () => {
 
     await ledgerApi.getLedgers({ payableOnly: true });
 
-    expect(get).toHaveBeenCalledWith('/payment-service/api/ledgers?payableOnly=true&size=200');
+    expect(get).toHaveBeenCalledWith('/api/ledgers?payableOnly=true&size=200');
   });
 
   it('getEntries() đọc sổ ký quỹ của một đơn (NFR-07)', async () => {
@@ -56,7 +56,7 @@ describe('Payment Entity - ledgerApi (FR-41, FR-43, FR-47, FR-48)', () => {
 
     const entries = await ledgerApi.getEntries('ord-1');
 
-    expect(get).toHaveBeenCalledWith('/payment-service/api/ledgers/ord-1/entries');
+    expect(get).toHaveBeenCalledWith('/api/ledgers/ord-1/entries');
     expect(entries[0].amount).toBe(1_000_000);
   });
 });

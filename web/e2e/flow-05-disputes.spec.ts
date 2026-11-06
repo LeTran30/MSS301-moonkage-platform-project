@@ -61,7 +61,7 @@ test.describe('FLOW 5 — Khiếu nại & Phân xử tranh chấp', () => {
 
     const dispute = await apiGet<unknown>(
       page,
-      gatewayUrl(`/order-service/api/orders/${orderId}/dispute`),
+      gatewayUrl(`/api/orders/${orderId}/dispute`),
     );
     const dto = unwrapData<{ disputeId?: string } | null>(dispute);
 

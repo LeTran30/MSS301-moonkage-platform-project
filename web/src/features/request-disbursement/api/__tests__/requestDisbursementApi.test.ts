@@ -25,7 +25,7 @@ describe('Feature request-disbursement - requestDisbursementApi (FR-41)', () => 
     });
 
     // CreateDisbursementRequest của payment-service chỉ nhận {amount, purpose}.
-    expect(post).toHaveBeenCalledWith('/payment-service/api/ledgers/ord-1/disbursements', {
+    expect(post).toHaveBeenCalledWith('/api/ledgers/ord-1/disbursements', {
       amount: 4_200_000,
       purpose: 'MATERIALS',
     });

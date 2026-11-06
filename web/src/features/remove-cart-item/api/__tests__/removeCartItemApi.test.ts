@@ -12,6 +12,6 @@ describe('Feature remove-cart-item - removeCartItemApi (FR-08)', () => {
 
     await removeCartItem('line-1');
 
-    expect(del).toHaveBeenCalledWith('/order-service/api/carts/me/items/line-1');
+    expect(del).toHaveBeenCalledWith('/api/carts/me/items/line-1');
   });
 });

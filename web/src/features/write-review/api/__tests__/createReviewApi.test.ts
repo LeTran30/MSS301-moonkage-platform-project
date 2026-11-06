@@ -23,7 +23,7 @@ describe('Feature write-review - createReviewApi (FR-11, BR-32)', () => {
       rating: 4,
       content: 'Ổn',
     });
-    expect(post).toHaveBeenCalledWith('/order-service/api/orders/ORD-1/reviews', {
+    expect(post).toHaveBeenCalledWith('/api/orders/ORD-1/reviews', {
       productId: 'PROD-9',
       rating: 4,
       content: 'Ổn',

@@ -19,7 +19,7 @@ describe('Feature resolve-disputes - confirmManualRefund (AC-49.3)', () => {
 
     const refund = await confirmManualRefund('ref-1');
 
-    expect(patch).toHaveBeenCalledWith('/payment-service/api/refunds/ref-1');
+    expect(patch).toHaveBeenCalledWith('/api/refunds/ref-1');
     expect(refund?.status).toBe('SUCCEEDED');
   });
 });

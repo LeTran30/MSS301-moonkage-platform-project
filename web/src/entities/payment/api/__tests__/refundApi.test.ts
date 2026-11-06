@@ -33,7 +33,7 @@ describe('Payment Entity - refundApi (AC-49.3)', () => {
 
     const refunds = await refundApi.list();
 
-    expect(get.mock.calls[0][0]).toContain('/payment-service/api/refunds?');
+    expect(get.mock.calls[0][0]).toContain('/api/refunds?');
     expect(get.mock.calls[0][0]).toContain('status=MANUAL_REQUIRED');
     expect(refunds[0].refundId).toBe('ref-1');
     expect(refunds[0].status).toBe('MANUAL_REQUIRED');
@@ -44,7 +44,7 @@ describe('Payment Entity - refundApi (AC-49.3)', () => {
 
     const refund = await refundApi.getById('ref-1');
 
-    expect(get).toHaveBeenCalledWith('/payment-service/api/refunds/ref-1');
+    expect(get).toHaveBeenCalledWith('/api/refunds/ref-1');
     expect(refund?.amount).toBe(500000);
   });
 });

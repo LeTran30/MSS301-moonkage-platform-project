@@ -23,7 +23,7 @@ describe('Feature approve-disbursement - approveDisbursementApi (FR-47)', () => 
     });
 
     // ReviewDisbursementRequest của payment-service: {status, approvedAmount?, reason?}.
-    expect(patch).toHaveBeenCalledWith('/payment-service/api/ledgers/ord-1/disbursements/req-1', {
+    expect(patch).toHaveBeenCalledWith('/api/ledgers/ord-1/disbursements/req-1', {
       status: 'APPROVED',
       approvedAmount: 4_200_000,
     });
@@ -40,7 +40,7 @@ describe('Feature approve-disbursement - approveDisbursementApi (FR-47)', () => 
       reason: 'Vượt quá số tiền cọc đang giữ',
     });
 
-    expect(patch).toHaveBeenCalledWith('/payment-service/api/ledgers/ord-1/disbursements/req-1', {
+    expect(patch).toHaveBeenCalledWith('/api/ledgers/ord-1/disbursements/req-1', {
       status: 'REJECTED',
       reason: 'Vượt quá số tiền cọc đang giữ',
     });

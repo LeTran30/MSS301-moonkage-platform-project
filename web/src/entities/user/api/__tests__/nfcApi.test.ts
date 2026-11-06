@@ -18,7 +18,7 @@ describe('User Entity - nfcApi (FR-04, AC-04.1)', () => {
     );
 
     const status = await nfcApi.getSession('sess-1');
-    expect(get).toHaveBeenCalledWith('/identity-service/api/nfc/sessions/sess-1');
+    expect(get).toHaveBeenCalledWith('/api/nfc/sessions/sess-1');
     expect(status.status).toBe('VERIFIED');
   });
 
@@ -33,7 +33,7 @@ describe('User Entity - nfcApi (FR-04, AC-04.1)', () => {
     );
 
     const status = await nfcApi.getMyStatus();
-    expect(get).toHaveBeenCalledWith('/identity-service/api/nfc/status');
+    expect(get).toHaveBeenCalledWith('/api/nfc/status');
     expect(status.nfcStatus).toBe('VERIFIED');
     expect(status.idNumberMasked).toBe('0792••••4567');
   });

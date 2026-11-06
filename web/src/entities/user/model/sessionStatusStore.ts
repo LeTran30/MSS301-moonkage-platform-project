@@ -47,7 +47,7 @@ export function markAnonymous(): void {
  * cửa hay chuyển hướng. Nó gộp hai trường hợp:
  *
  * 1. `RESTORING` — `SessionBridge` đã báo rằng đang gọi
- *    `GET /identity-service/api/accounts/me`. Chưa có câu trả lời, nên chưa
+ *    `GET /api/accounts/me`. Chưa có câu trả lời, nên chưa
  *    thể kết luận người dùng là ai.
  * 2. `ANONYMOUS` **nhưng vault vẫn còn token** — đây là khoảnh khắc đầu
  *    tiên của một lần tải trang: store bắt đầu ở `ANONYMOUS`, còn

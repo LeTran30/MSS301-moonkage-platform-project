@@ -27,7 +27,7 @@ describe('Vendor Entity - vendorCatalogApi (FR-14, FR-27, FR-35)', () => {
 
     const vendors = await vendorCatalogApi.getVendors('Hà Nội');
 
-    expect(get).toHaveBeenCalledWith('/quotation-service/api/suppliers?provinceCode=01');
+    expect(get).toHaveBeenCalledWith('/api/suppliers?provinceCode=01');
     expect(vendors[0].name).toBe('Tiệm Bánh');
     expect(vendors[0].bulkMinQuantity).toBe(20);
   });

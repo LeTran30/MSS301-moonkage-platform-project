@@ -17,7 +17,7 @@ describe('Feature verify-nfc - nfcWriteApi (FR-04, AC-04.1)', () => {
     );
 
     const session = await createNfcSession();
-    expect(post).toHaveBeenCalledWith('/identity-service/api/nfc/sessions');
+    expect(post).toHaveBeenCalledWith('/api/nfc/sessions');
     expect(session.sessionId).toBe('sess-1');
   });
 });

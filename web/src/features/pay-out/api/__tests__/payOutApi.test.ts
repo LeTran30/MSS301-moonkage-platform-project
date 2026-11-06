@@ -19,7 +19,7 @@ describe('Feature pay-out - payOutApi (FR-48)', () => {
 
     const payout = await payOutLedger('ord-1');
 
-    expect(put).toHaveBeenCalledWith('/payment-service/api/ledgers/ord-1/payout');
+    expect(put).toHaveBeenCalledWith('/api/ledgers/ord-1/payout');
     expect(payout?.amount).toBe(4_200_000);
   });
 });

@@ -23,7 +23,7 @@ describe('Feature decline-invitation - declineInvitationApi (AC-36.3)', () => {
     });
 
     expect(patch).toHaveBeenCalledWith(
-      '/quotation-service/api/quote-requests/req-1/invitations/ven-1',
+      '/api/quote-requests/req-1/invitations/ven-1',
       { status: 'DECLINED', declineReason: 'Không đủ năng lực' },
     );
     expect(invitation?.status).toBe('DECLINED');

@@ -25,7 +25,7 @@ describe('Feature file-complaint - openDisputeApi (FR-12, AC-49.1)', () => {
       evidences: [{ tempKey: 'tmp/1' }],
     });
 
-    expect(post).toHaveBeenCalledWith('/order-service/api/orders/ORD-10/dispute', {
+    expect(post).toHaveBeenCalledWith('/api/orders/ORD-10/dispute', {
       reason: 'DAMAGED',
       description: 'Bánh vỡ',
       evidences: [{ tempKey: 'tmp/1' }],
@@ -44,7 +44,7 @@ describe('Feature file-complaint - openDisputeApi (FR-12, AC-49.1)', () => {
     );
 
     await addDisputeEvidence('ORD-12', { tempKey: 'tmp/2', note: 'Ảnh mới' });
-    expect(post).toHaveBeenCalledWith('/order-service/api/orders/ORD-12/dispute/evidences', {
+    expect(post).toHaveBeenCalledWith('/api/orders/ORD-12/dispute/evidences', {
       tempKey: 'tmp/2',
       note: 'Ảnh mới',
     });

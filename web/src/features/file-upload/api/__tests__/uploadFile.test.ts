@@ -23,7 +23,7 @@ describe('Feature file-upload - uploadFile (FR-26, FR-29)', () => {
     const file = new File(['bytes'], 'evidence.jpg', { type: 'image/jpeg' });
     const tempKey = await uploadFile('ORDER', file);
 
-    expect(post).toHaveBeenCalledWith('/order-service/api/orders/uploads', {
+    expect(post).toHaveBeenCalledWith('/api/orders/uploads', {
       contentType: 'image/jpeg',
       sizeBytes: file.size,
     });

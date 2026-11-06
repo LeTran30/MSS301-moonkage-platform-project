@@ -12,12 +12,14 @@ Còn **9 hạng mục** trong **4 nhóm**. Tổng ước lượng **13–17 ngà
 
 | Nhóm | Hạng mục | Ước lượng | Phụ thuộc | Ưu tiên |
 |---|---|---|---|---|
-| **A. Đường dẫn API** | A-1 · A-2 · A-3 | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
+| **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
 | **B. Luồng nghiệp vụ** | B-1 · B-2 · B-3 | 4–5 ngày | B-1 → B-2 | **P0** |
 | **C. Hạ tầng & chất lượng** | C-1 · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
 | **D. Tài liệu & quyết định** | D-1 · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
 
 > **Điểm quan trọng nhất của kế hoạch này:** phần lớn việc còn nợ **không** phụ thuộc app mobile. Chỉ **A-3 (tắt `discovery.locator`)** là cần xác nhận từ bên ngoài repo. Vì vậy A-1 và A-2 có thể làm ngay.
+>
+> **Tiến độ (2026-11-06):** A-1, A-2 và phần 308 của A-3 **đã xong**. Phần còn lại của A-3 (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) **vẫn chặn** ở app mobile.
 
 ---
 
@@ -47,6 +49,12 @@ D-18 đã chốt đường dẫn công khai là `/api/<tài-nguyên>/...`, **kh�
 **Tổng: 65 hằng đường dẫn cũ** trong 1 file, dùng bởi **61 file** trong `web/src`.
 
 `LegacyPathRedirectFilter` **cố ý** không redirect 4 service này — redirect `/order-service/api/carts/me` → `/api/carts/me` sẽ dẫn tới 404 vì không route nào phục vụ `/api/carts/me`.
+
+> **Cập nhật 2026-11-06 (A-1, A-2, A-3a đã xong):** cả 4 service trên **đã** có route chuẩn, 65 hằng **đã** chuyển sang `/api/...`, và `LegacyPathRedirectFilter` **đã** redirect dạng cũ của cả 4 service (HTTP 308). `discovery.locator` **vẫn bật** — xem A-3b.
+>
+> **Sai lệch so với bản kế hoạch gốc:** bản kế hoạch viết `/api/accounts/**` cho identity, nhưng `AccountController` **không** có `@RequestMapping` ở cấp class — nó ghi đầy đủ đường dẫn trong từng method (`@GetMapping("/api/accounts/me")`). Route viết theo bản kế hoạch gốc vẫn chạy được, nhưng nó **che mất** một đường dẫn nếu sau này thêm endpoint dưới `/api/accounts/...` (ví dụ `/api/accounts/me/profile` — hằng `UPDATE_PROFILE` trong `gateway.ts` đã trỏ tới một endpoint **chưa tồn tại**). Bản đã làm khai báo `/api/accounts,/api/accounts/**` để endpoint mới không bị bỏ sót.
+>
+> **Cũng lưu ý:** `web/src/shared/api/gateway.ts` có 2 hằng `BASE` (`QUOTATION.BASE`, `PAYMENT.BASE`) trỏ tới `/<service>/api` — **không** phải một aggregate root nào. Chúng được đổi thành `/api/quote-requests` và `/api/payments` (gốc của aggregate mà nhóm đó nói về), vì `/api` trần không phục vụ endpoint nào.
 
 ---
 
@@ -92,6 +100,31 @@ Thêm vào `api/api-gateway/src/main/resources/application.yml`, theo đúng map
 | payment | `LedgerController` | `/api/ledgers` |
 | payment | `RefundController` | `/api/refunds` |
 
+**Kết quả đã làm (2026-11-06)** — 4 route dưới đây được khai báo trong `application.yml`:
+
+```yaml
+- id: identity-service
+  uri: lb://identity-service
+  predicates:
+    - Path=/api/auth,/api/auth/**,/api/accounts,/api/accounts/**,/api/addresses,/api/addresses/**,/api/nfc,/api/nfc/**
+- id: quotation-service
+  uri: lb://quotation-service
+  predicates:
+    - Path=/api/quote-requests,/api/quote-requests/**,/api/suppliers,/api/suppliers/**
+- id: order-service
+  uri: lb://order-service
+  predicates:
+    - Path=/api/carts,/api/carts/**,/api/checkouts,/api/checkouts/**,/api/orders,/api/orders/**
+- id: payment-service
+  uri: lb://payment-service
+  predicates:
+    - Path=/api/payments,/api/payments/**,/api/ledgers,/api/ledgers/**,/api/refunds,/api/refunds/**
+```
+
+Mỗi route khai báo **cả** dạng gốc (`/api/x`) **và** dạng con (`/api/x/**`) vì `Path` của gateway là so khớp chính xác: `Path=/api/orders/**` **không** khớp `/api/orders` (không có dấu gạch chéo sau). Bản kế hoạch gốc chỉ viết dạng `/**` nên **không** phục vụ endpoint gốc — ví dụ `GET /api/orders` (danh sách đơn của tôi) và `GET /api/payments` sẽ trả 404 nếu chỉ khai báo `/api/orders/**`.
+
+**Không có aggregate root nào bị hai service phục vụ cùng lúc** (D-30 mục 4): `/api/products`, `/api/interprovince-fees` (catalog), `/api/vendors`, `/api/registration-fee-config`, `/api/cake-attributes` (vendor), `/api/notifications` (orchestrator), `/api/auth`, `/api/accounts`, `/api/addresses`, `/api/nfc` (identity), `/api/quote-requests`, `/api/suppliers` (quotation), `/api/carts`, `/api/checkouts`, `/api/orders` (order), `/api/payments`, `/api/ledgers`, `/api/refunds` (payment) — mỗi gốc thuộc đúng một service. `/api/refunds/**` và `/api/ledgers/**` **không** bị route nào cũ phủ, nên phải khai báo mới.
+
 **Việc cần làm:**
 
 1. Liệt kê **đầy đủ** endpoint công khai của 4 service bằng `rg "@(Get|Post|Put|Patch|Delete)Mapping" api/<service>/src/main/java/.../controller/` → suy ra tập `Path` cần khai báo.
@@ -101,6 +134,12 @@ Thêm vào `api/api-gateway/src/main/resources/application.yml`, theo đúng map
 5. Test: `LegacyPathRedirectFilterTest` mở rộng thêm case 4 route mới.
 
 **Xong khi:** mọi đường dẫn chuẩn của 4 service trả đúng HTTP status (không phải 404) khi gọi qua gateway.
+
+> **Đã xong (2026-11-06).** Đã kiểm chứng trên stack Docker thật: `/api/accounts/me`, `/api/addresses`, `/api/nfc/status`, `/api/quote-requests`, `/api/suppliers`, `/api/carts/me`, `/api/orders`, `/api/payments`, `/api/ledgers`, `/api/refunds` đều trả **200** qua gateway; `/internal/**` và `/*/internal/**` vẫn trả **403**.
+>
+> `SecurityConfig.java` chỉ thêm **một** matcher mới: `"/identity-service/api/auth/**", "/api/auth/**"` — vì đây là `permitAll()` duy nhất trong số các matcher đã có mà dạng chuẩn còn thiếu. Các matcher còn lại (`/api/suppliers/**`, `/api/payments/vnpay/*`) đã có cả hai dạng từ trước.
+>
+> **`/order-service/api/reviews/**` là matcher chết:** không controller nào phục vụ `/api/reviews/**` (`ReviewController` nằm dưới `/api/orders/{orderId}/reviews`). Nó **không** được xoá trong đợt này vì thuộc A-3 (dọn dạng cũ), nhưng cũng **không** được thêm dạng chuẩn — thêm `/api/reviews/**` sẽ mở một đường dẫn không có route.
 
 ---
 
@@ -133,6 +172,11 @@ Sửa **65 hằng** trong 1 file:
 
 > **Lưu ý về `catalog`:** 3 hằng cũ `/catalog-service/api/products` hiện **đã** được 308 chuyển hướng. A-2 chuyển nốt sang `/api/products` để web không phụ thuộc vào redirect.
 
+> **Đã xong (2026-11-06).** 65 hằng đã chuyển (không còn `-service/api/` nào trong `web/src`), 26 file test của web cập nhật theo, và 2 file E2E (`helpers.ts`, `flow-05-disputes.spec.ts`) chuyển sang đường dẫn chuẩn.
+>
+> Test khoá hành vi mới: `web/src/shared/api/__tests__/gatewayCanonicalPaths.test.ts` — duyệt **toàn bộ** bảng đường dẫn (kể cả hằng dựng bằng hàm) và fail nếu có đường dẫn chứa `-service/api/` hoặc không bắt đầu bằng `/api`.
+
+
 ---
 
 ### A-3 — Bật 308 cho 4 service & tắt `discovery.locator`
@@ -163,6 +207,12 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 **Phần 2 — tắt locator (CẦN app mobile):**
 
 Đặt `spring.cloud.gateway.discovery.locator.enabled: false` và **xoá** toàn bộ dạng cũ khỏi `SecurityConfig.java`.
+
+> **Phần 1 đã xong (2026-11-06):** 12 cặp redirect của 4 service đã được thêm vào `REDIRECTS` — giống hệt danh sách trên. `LegacyPathRedirectFilterTest` có thêm case cho từng cặp, case giữ nguyên method + query string, và một case đọc `application.yml` để khẳng định **mọi** đích canonical của danh sách đều có route.
+>
+> Đã kiểm chứng trên stack Docker thật: `/identity-service/api/accounts/me` → **308** `Location: /api/accounts/me`, `/order-service/api/carts/me?provinceCode=01` → **308** `Location: /api/carts/me?provinceCode=01` (query string giữ nguyên).
+>
+> **Phần 2 chưa làm** — `discovery.locator` **vẫn bật**, vì app mobile nằm ngoài repo này.
 
 **Điều kiện tiên quyết — không nằm trong repo này:**
 

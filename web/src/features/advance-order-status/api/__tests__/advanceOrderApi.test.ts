@@ -23,7 +23,7 @@ describe('Feature advance-order-status - advanceOrderApi (FR-32, FR-40, FR-42)',
       note: 'Đã chuẩn bị nguyên liệu',
     });
 
-    expect(patch).toHaveBeenCalledWith('/order-service/api/orders/ord-1', {
+    expect(patch).toHaveBeenCalledWith('/api/orders/ord-1', {
       status: 'CONFIRMED',
       note: 'Đã chuẩn bị nguyên liệu',
     });

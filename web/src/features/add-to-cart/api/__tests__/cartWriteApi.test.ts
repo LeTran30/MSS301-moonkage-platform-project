@@ -12,7 +12,7 @@ describe('Feature add-to-cart - cartWriteApi (FR-08, BR-28)', () => {
 
     await addCartItem({ productId: 'p-1', quantity: 2 });
 
-    expect(post).toHaveBeenCalledWith('/order-service/api/carts/me/items', {
+    expect(post).toHaveBeenCalledWith('/api/carts/me/items', {
       productId: 'p-1',
       quantity: 2,
     });
@@ -23,6 +23,6 @@ describe('Feature add-to-cart - cartWriteApi (FR-08, BR-28)', () => {
 
     await updateCartItem('line-1', 3);
 
-    expect(patch).toHaveBeenCalledWith('/order-service/api/carts/me/items/line-1', { quantity: 3 });
+    expect(patch).toHaveBeenCalledWith('/api/carts/me/items/line-1', { quantity: 3 });
   });
 });

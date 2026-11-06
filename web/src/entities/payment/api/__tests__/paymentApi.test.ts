@@ -24,7 +24,7 @@ describe('Payment Entity - paymentApi (FR-09, BR-25)', () => {
 
     const payment = await paymentApi.getById('pay-1');
 
-    expect(get).toHaveBeenCalledWith('/payment-service/api/payments/pay-1');
+    expect(get).toHaveBeenCalledWith('/api/payments/pay-1');
     expect(payment?.status).toBe('PENDING');
     expect(payment?.purpose).toBe('CHECKOUT');
   });

@@ -27,7 +27,7 @@ describe('Address Entity - addressApi (FR-03)', () => {
 
     const addresses = await addressApi.list();
 
-    expect(get).toHaveBeenCalledWith('/identity-service/api/addresses');
+    expect(get).toHaveBeenCalledWith('/api/addresses');
     expect(addresses).toHaveLength(1);
     expect(addresses[0].recipientName).toBe('Chị Lan');
     expect(addresses[0].isDefault).toBe(true);

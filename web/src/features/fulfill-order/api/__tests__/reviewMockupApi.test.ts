@@ -18,7 +18,7 @@ describe('Feature fulfill-order - reviewMockupApi (FR-20)', () => {
     );
 
     await reviewMockup('ORD-1', 3, { reviewStatus: 'APPROVED' });
-    expect(patch).toHaveBeenCalledWith('/order-service/api/orders/ORD-1/mockups/3', {
+    expect(patch).toHaveBeenCalledWith('/api/orders/ORD-1/mockups/3', {
       reviewStatus: 'APPROVED',
     });
   });

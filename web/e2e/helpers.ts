@@ -120,7 +120,7 @@ export function unwrapData<T>(payload: unknown): T {
  * đó thay vì đoán mã.
  */
 export async function firstOrderId(page: Page): Promise<string | null> {
-  const payload = await apiGet<unknown>(page, gatewayUrl('/order-service/api/orders?size=20'));
+  const payload = await apiGet<unknown>(page, gatewayUrl('/api/orders?size=20'));
   const data = unwrapData<{ content?: Array<{ id?: string }> }>(payload);
   const first = data?.content?.[0]?.id;
   return first ?? null;
