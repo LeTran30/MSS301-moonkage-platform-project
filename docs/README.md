@@ -36,6 +36,7 @@
 | **Làm backend** | [architecture/architecture-standards.md](architecture/architecture-standards.md) §2–§5 | [architecture/api-db/README.md](architecture/api-db/README.md), [architecture/api-db/decisions.md](architecture/api-db/decisions.md) |
 | **Làm API / hợp đồng** | [architecture/api-db/README.md](architecture/api-db/README.md) | [architecture/api-db/decisions.md](architecture/api-db/decisions.md), [architecture/api-db-alignment-plan.md](architecture/api-db-alignment-plan.md) |
 | **Triển khai / vận hành** | [guides/getting-started.md](guides/getting-started.md) | [guides/database.md](guides/database.md), [architecture/be-improve-progress-2026-11-04.md](architecture/be-improve-progress-2026-11-04.md) |
+| **Việc còn nợ — làm tiếp** | [architecture/debt-implementation-plan.md](architecture/debt-implementation-plan.md) | [architecture/codebase-conformance-review.md](architecture/codebase-conformance-review.md) §8, [architecture/user-flow-readiness.md](architecture/user-flow-readiness.md) |
 | **Sự cố production** | [architecture/software-design.md](architecture/software-design.md) (luồng sự kiện, mục 4–7) | [architecture/user-flow-readiness.md](architecture/user-flow-readiness.md), [guides/git-workflow.md](guides/git-workflow.md) |
 
 ## Cấu trúc
@@ -65,6 +66,7 @@ docs/
 │   ├── architecture-standards.md  Chuẩn kiến trúc bắt buộc (BẮT BUỘC / KHUYẾN NGHỊ)
 │   ├── codebase-conformance-review.md  Rà soát code thực tế so với chuẩn; backlog P0/P1/P2
 │   ├── api-db-alignment-plan.md   Kế hoạch đưa code về khớp phác thảo API–DB
+│   ├── debt-implementation-plan.md Kế hoạch thực hiện các việc còn nợ sau 2026-11-06
 │   ├── be-improve-progress-2026-11-04.md  Tiến độ cải thiện backend
 │   ├── user-flow-readiness.md     Mức độ sẵn sàng của từng luồng người dùng
 │   └── api-db/                    Phác thảo API + database theo từng service
