@@ -30,6 +30,12 @@ export const SEED_ACCOUNTS = {
   vendor: { username: 'member4@mk.com', password: '12345678' },
 } as const;
 
+/** Shop seed của `vendor-service` (sổ ID, docs/guides/database.md). */
+export const SEED_VENDORS = {
+  /** Trăng Vàng của member4: đã duyệt, đang bán. */
+  trangVang: { id: '00000000-0000-4000-8000-000200000001', name: /Trăng Vàng/ },
+} as const;
+
 /** Điều hướng tới một route của ứng dụng và chờ trang render xong. */
 export async function gotoRoute(page: Page, path: string): Promise<void> {
   await page.goto(path);
