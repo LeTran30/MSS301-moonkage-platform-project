@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -96,20 +97,97 @@ class LegacyPathRedirectFilterTest {
     }
 
     /**
+     * A-1: the four services that had no canonical route now have one, so their legacy form answers the redirect
+     * too. Every canonical target of the list is served by an explicit route of {@code application.yml}.
+     */
+    @Test
+    void theLegacyPathsOfTheFourMigratedServicesAreRedirectedToTheCanonicalOnes() {
+        for (String[] pair : new String[][] {
+            {"/identity-service/api/auth/login", "/api/auth/login"},
+            {"/identity-service/api/auth/refresh-token", "/api/auth/refresh-token"},
+            {"/identity-service/api/accounts/me", "/api/accounts/me"},
+            {"/identity-service/api/addresses", "/api/addresses"},
+            {"/identity-service/api/addresses/addr-1", "/api/addresses/addr-1"},
+            {"/identity-service/api/nfc/sessions", "/api/nfc/sessions"},
+            {"/identity-service/api/nfc/status", "/api/nfc/status"},
+            {"/quotation-service/api/quote-requests", "/api/quote-requests"},
+            {"/quotation-service/api/quote-requests/req-1/quotes", "/api/quote-requests/req-1/quotes"},
+            {"/quotation-service/api/suppliers", "/api/suppliers"},
+            {"/order-service/api/carts/me", "/api/carts/me"},
+            {"/order-service/api/carts/me/items/line-1", "/api/carts/me/items/line-1"},
+            {"/order-service/api/checkouts", "/api/checkouts"},
+            {"/order-service/api/orders", "/api/orders"},
+            {"/order-service/api/orders/ord-1/dispute", "/api/orders/ord-1/dispute"},
+            {"/payment-service/api/payments", "/api/payments"},
+            {"/payment-service/api/ledgers", "/api/ledgers"},
+            {"/payment-service/api/refunds", "/api/refunds"}
+        }) {
+            MockServerWebExchange exchange = exchange("GET", pair[0]);
+
+            statusOf(exchange);
+
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.PERMANENT_REDIRECT);
+            assertThat(exchange.getResponse().getHeaders().getFirst(HttpHeaders.LOCATION))
+                    .as("the legacy path %s must lead to %s", pair[0], pair[1])
+                    .isEqualTo(pair[1]);
+        }
+    }
+
+    /**
+     * The redirect keeps the method and the query string of the call, so the caller does not notice the migration:
+     * a write that is redirected with {@code 301} would arrive as a GET and lose its body.
+     */
+    @Test
+    void theRedirectKeepsTheMethodAndTheQueryString() {
+        MockServerWebExchange exchange = exchange("PATCH", "/order-service/api/orders/ord-1?dryRun=true");
+
+        statusOf(exchange);
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.PERMANENT_REDIRECT);
+        assertThat(exchange.getResponse().getHeaders().getFirst(HttpHeaders.LOCATION))
+                .isEqualTo("/api/orders/ord-1?dryRun=true");
+        assertThat(exchange.getRequest().getMethod()).isEqualTo(HttpMethod.PATCH);
+    }
+
+    /**
+     * The rule of the list: a redirect may only name a canonical prefix that the gateway serves. A prefix without a
+     * route would send the caller into a 404, which is worse than the answer it replaces.
+     */
+    @Test
+    void everyCanonicalTargetOfTheListIsServedByARoute() {
+        String routes = readRoutes();
+        for (LegacyPathRedirectFilter.Redirect redirect : LegacyPathRedirectFilter.REDIRECTS) {
+            assertThat(routes)
+                    .as(
+                            "the canonical path %s of the legacy path %s must have a route",
+                            redirect.canonical(), redirect.legacy())
+                    .contains(redirect.canonical() + "/**");
+        }
+    }
+
+    /** The path patterns of the explicit routes of {@code application.yml}. */
+    private static String readRoutes() {
+        try {
+            var resource = LegacyPathRedirectFilterTest.class.getClassLoader().getResource("application.yml");
+            assertThat(resource)
+                    .as("the gateway configuration must be on the classpath")
+                    .isNotNull();
+            try (var stream = resource.openStream()) {
+                return new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            }
+        } catch (java.io.IOException e) {
+            throw new AssertionError("the gateway configuration could not be read", e);
+        }
+    }
+
+    /**
      * The services whose canonical path the gateway does not serve yet keep their old form: redirecting them would
      * send the caller into a 404, which is worse than the answer it replaces.
      */
     @Test
-    void thePathsOfTheServicesThatHaveNotMigratedYetAreNotRedirected() {
-        for (String path : new String[] {
-            "/identity-service/api/auth/login",
-            "/quotation-service/api/quote-requests",
-            "/quotation-service/api/suppliers",
-            "/order-service/api/carts/me",
-            "/order-service/api/orders",
-            "/payment-service/api/payments",
-            "/payment-service/api/refunds"
-        }) {
+    void thePathsOfTheServicesThatHaveNoCanonicalRouteAreNotRedirected() {
+        for (String path :
+                new String[] {"/orchestrator-service/api/audit-logs", "/identity-service/internal/accounts/check"}) {
             MockServerWebExchange exchange = exchange("GET", path);
 
             statusOf(exchange);
@@ -122,9 +200,25 @@ class LegacyPathRedirectFilterTest {
 
     @Test
     void theCanonicalPathsAreNotTouched() {
-        for (String path :
-                new String[] {"/api/products", "/api/interprovince-fees", "/api/vendors", "/api/notifications", "/ws"
-                }) {
+        for (String path : new String[] {
+            "/api/products",
+            "/api/interprovince-fees",
+            "/api/vendors",
+            "/api/notifications",
+            "/api/auth/login",
+            "/api/accounts/me",
+            "/api/addresses",
+            "/api/nfc/sessions",
+            "/api/quote-requests",
+            "/api/suppliers",
+            "/api/carts/me",
+            "/api/checkouts",
+            "/api/orders",
+            "/api/payments",
+            "/api/ledgers",
+            "/api/refunds",
+            "/ws"
+        }) {
             MockServerWebExchange exchange = exchange("GET", path);
 
             statusOf(exchange);

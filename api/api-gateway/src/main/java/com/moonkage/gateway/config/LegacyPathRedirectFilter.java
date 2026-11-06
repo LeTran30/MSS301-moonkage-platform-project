@@ -20,10 +20,10 @@ import reactor.core.publisher.Mono;
  * The legacy paths that carry the name of the service answer with a permanent redirect to the canonical path (D-30).
  *
  * <p>Decision D-18 fixed the public path of a resource as {@code /api/<resource>/...}, without the name of the
- * service. The gateway still routes by the name of the service for some services, because their canonical path is
- * not served yet - see {@code application.yml}. D-30 asks for the old path to answer {@code 308} for one release
- * before {@code discovery.locator} is turned off, so that a client that still calls the old form (the mobile app
- * lives outside this repository) is sent to the new one instead of breaking.
+ * service. The gateway now routes every service by the aggregate root, but the clients that still use the old form
+ * (the mobile app lives outside this repository) must keep working for one release. D-30 asks for the old path to
+ * answer {@code 308} during that window, so a client that still calls the old form is sent to the new one instead of
+ * breaking.
  *
  * <p>Only the paths whose canonical form is <em>actually served</em> are redirected. A path whose canonical form has
  * no route yet would be redirected into a 404, which is worse than the answer it replaces - so those keep working
@@ -49,17 +49,34 @@ public class LegacyPathRedirectFilter implements WebFilter {
      * The legacy prefixes that are redirected, and the canonical prefix each of them becomes.
      *
      * <p>Every entry names a service whose canonical path the gateway already serves (the routes of
-     * {@code application.yml}), so the redirect never leads to a path nothing serves. The services whose canonical
-     * path is not served yet - identity, quotation, order and payment - are deliberately absent: their old form
-     * keeps working through the discovery locator.
+     * {@code application.yml}), so the redirect never leads to a path nothing serves. A path whose canonical form has
+     * no route yet would be redirected into a 404, which is worse than the answer it replaces - so that one keeps
+     * working through the discovery locator until it is migrated.
      */
-    private static final List<Redirect> REDIRECTS = List.of(
+    static final List<Redirect> REDIRECTS = List.of(
             new Redirect("/catalog-service/api/products", "/api/products"),
             new Redirect("/catalog-service/api/interprovince-fees", "/api/interprovince-fees"),
             new Redirect("/vendor-service/api/vendors", "/api/vendors"),
             new Redirect("/vendor-service/api/registration-fee-config", "/api/registration-fee-config"),
             new Redirect("/vendor-service/api/cake-attributes", "/api/cake-attributes"),
-            new Redirect("/orchestrator-service/api/notifications", "/api/notifications"));
+            new Redirect("/orchestrator-service/api/notifications", "/api/notifications"),
+            // identity-service (A-1 of debt-implementation-plan.md): the canonical routes are /api/auth/**,
+            // /api/accounts/**, /api/addresses/** and /api/nfc/**.
+            new Redirect("/identity-service/api/auth", "/api/auth"),
+            new Redirect("/identity-service/api/accounts", "/api/accounts"),
+            new Redirect("/identity-service/api/addresses", "/api/addresses"),
+            new Redirect("/identity-service/api/nfc", "/api/nfc"),
+            // quotation-service: the canonical routes are /api/quote-requests/** and /api/suppliers/**.
+            new Redirect("/quotation-service/api/quote-requests", "/api/quote-requests"),
+            new Redirect("/quotation-service/api/suppliers", "/api/suppliers"),
+            // order-service: the canonical routes are /api/carts/**, /api/checkouts/** and /api/orders/**.
+            new Redirect("/order-service/api/carts", "/api/carts"),
+            new Redirect("/order-service/api/checkouts", "/api/checkouts"),
+            new Redirect("/order-service/api/orders", "/api/orders"),
+            // payment-service: the canonical routes are /api/payments/**, /api/ledgers/** and /api/refunds/**.
+            new Redirect("/payment-service/api/payments", "/api/payments"),
+            new Redirect("/payment-service/api/ledgers", "/api/ledgers"),
+            new Redirect("/payment-service/api/refunds", "/api/refunds"));
 
     /** The longest prefix first, so the most specific one wins when two of them could match. */
     private static final List<Redirect> BY_LENGTH = REDIRECTS.stream()
@@ -122,7 +139,7 @@ public class LegacyPathRedirectFilter implements WebFilter {
      * @param legacy the prefix the caller uses today, e.g. {@code /catalog-service/api/products}
      * @param canonical the prefix the gateway serves, e.g. {@code /api/products}
      */
-    private record Redirect(String legacy, String canonical) {
+    record Redirect(String legacy, String canonical) {
         /** True when the path is the prefix itself or a path below it. */
         boolean matches(String path) {
             return path.equals(legacy) || path.startsWith(legacy + "/");

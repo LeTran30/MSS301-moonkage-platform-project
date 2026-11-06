@@ -94,7 +94,7 @@ public class SecurityConfig {
                         .pathMatchers(WEBSOCKET_PATH)
                         .permitAll()
                         // identity-service decides itself which auth endpoints need a token (/me)
-                        .pathMatchers("/identity-service/api/auth/**")
+                        .pathMatchers("/identity-service/api/auth/**", "/api/auth/**")
                         .permitAll()
                         // FR-04: guests browse products before logging in
                         .pathMatchers(

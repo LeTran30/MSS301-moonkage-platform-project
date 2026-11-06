@@ -22,14 +22,14 @@ spring:
     gateway:
       discovery:
         locator:
-          # D-30 (interim state, deliberate): the locator is still on because four services - identity, quotation,
-          # order and payment - do not serve their canonical /api/<resource> path yet. Their clients (the web, and
-          # the mobile app outside this repository) still call /<service>/api/..., so turning the locator off now
-          # would answer 404 on every one of those calls.
+          # D-30 (interim state, deliberate): the locator is still on because the mobile app - which lives outside
+          # this repository - still calls /<service>/api/... for every service, migrated or not. Turning the locator off
+          # now would break that app, so it stays on until the mobile team has shipped a release that uses
+          # /api/<resource>/... for all of them.
           #
-          # LegacyPathRedirectFilter answers 308 for the legacy form of the services that HAVE migrated
-          # (catalog, vendor, orchestrator), so their old path leads to the canonical one. The locator is turned off
-          # once every service serves /api/<resource>/... and the clients have moved over.
+          # LegacyPathRedirectFilter answers 308 for the legacy form of every service that has a canonical route, so
+          # their old path leads to the canonical one. The locator is the fallback for the paths that have no
+          # canonical route yet (/api/audit-logs, /internal/**) and for the clients that have not moved over.
           enabled: true
           lower-case-service-id: true
       server:
@@ -57,6 +57,46 @@ spring:
               uri: lb://orchestrator-service
               predicates:
                 - Path=/api/notifications,/api/notifications/**
+            # identity-service by aggregate root (A-1 of debt-implementation-plan.md, D-30). The path patterns are
+            # derived from every public endpoint of the service:
+            #   /api/auth/**       AuthController (@RequestMapping("/api/auth"))
+            #   /api/accounts/**   AccountController (@GetMapping("/api/accounts/me"), no class-level mapping)
+            #   /api/addresses/**  AddressController (@RequestMapping("/api/addresses"))
+            #   /api/nfc/**        KycController (@PostMapping("/api/nfc/sessions"), @GetMapping("/api/nfc/status"))
+            # The internal paths of the service (/internal/accounts/**, /internal/nfc/**) are deliberately absent:
+            # /internal/** is denied by the gateway (D-30 decision 5).
+            - id: identity-service
+              uri: lb://identity-service
+              predicates:
+                - Path=/api/auth,/api/auth/**,/api/accounts,/api/accounts/**,/api/addresses,/api/addresses/**,/api/nfc,/api/nfc/**
+            # quotation-service by aggregate root (A-1): the quote requests and the supplier directory.
+            #   /api/quote-requests/**  QuoteRequestController (@RequestMapping("/api/quote-requests"))
+            #   /api/suppliers/**       SupplierController (@RequestMapping("/api/suppliers"))
+            - id: quotation-service
+              uri: lb://quotation-service
+              predicates:
+                - Path=/api/quote-requests,/api/quote-requests/**,/api/suppliers,/api/suppliers/**
+            # order-service by aggregate root (A-1): the cart, the checkout and the orders.
+            #   /api/carts/**     CartController (@RequestMapping("/api/carts/me"))
+            #   /api/checkouts/** CheckoutController (@RequestMapping("/api/checkouts"))
+            #   /api/orders/**    OrderController, OrderDocumentController (@RequestMapping("/api/orders")),
+            #                     DisputeController (@RequestMapping("/api/orders/{orderId}/dispute")),
+            #                     ReviewController (@RequestMapping("/api/orders/{orderId}/reviews"))
+            # The internal path of the service (/internal/orders/**) is deliberately absent (D-30 decision 5).
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/api/carts,/api/carts/**,/api/checkouts,/api/checkouts/**,/api/orders,/api/orders/**
+            # payment-service by aggregate root (A-1): the payments, the ledgers and the refunds.
+            #   /api/payments/** PaymentController (@RequestMapping("/api/payments"))
+            #   /api/ledgers/**  LedgerController (@RequestMapping("/api/ledgers"))
+            #   /api/refunds/**  RefundController (@RequestMapping("/api/refunds"))
+            # The internal paths of the service (/internal/payments, /internal/refunds) are deliberately absent
+            # (D-30 decision 5).
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments,/api/payments/**,/api/ledgers,/api/ledgers/**,/api/refunds,/api/refunds/**
           # Gateway 4.1+ adds X-Forwarded-* (Host, Port, Proto, Prefix) only for clients matching this regex.
           # Without them every service builds its URLs (e.g. the Swagger "servers" URL) from its container IP,
           # which the browser cannot reach. Default: loopback and private networks (Docker bridge, LAN).
