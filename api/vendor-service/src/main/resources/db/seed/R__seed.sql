@@ -42,3 +42,53 @@ WHERE id = '00000000-0000-4000-8000-000200000001'
 UPDATE vendors
 SET representative_name = 'VO THI QUE'
 WHERE id = '00000000-0000-4000-8000-000200000002' AND representative_name IS NULL;
+
+-- ---------------------------------------------------------------------------------------------------------------
+-- Shop products of Trăng Vàng (member4), ON_SALE: what the buyer sees on the catalog pages. Written here (L-18); the
+-- same rows sit in catalog-service's seed as product_views, so the pages show them without waiting for an event.
+-- Both seeds use the product IDs of the registry in docs/guides/database.md (type 0003). No images: image_keys are
+-- object keys of the MinIO public bucket and the seed has no files to upload; the shop shows its placeholder.
+-- ---------------------------------------------------------------------------------------------------------------
+INSERT INTO products (id, vendor_id, name, description, brand, origin, resold, pieces_per_box, list_price, stock,
+                      expiry_date, delivery_label, quote_threshold, status, version)
+VALUES ('00000000-0000-4000-8000-000300000001', '00000000-0000-4000-8000-000200000001', 'Bánh nướng thập cẩm đặc biệt (hộp 4 bánh)', 'Vỏ nướng vàng mỏng, nhân thập cẩm hạt dưa, mứt bí, lạp xưởng và trứng muối. Mỗi bánh 150 g, đóng hộp giấy cứng.', 'Bánh Trung Thu Trăng Vàng', 'Thành phố Hồ Chí Minh', false, 4, 320000, 120, '2026-12-20', 'NATIONWIDE', 100, 'ON_SALE', 0),
+       ('00000000-0000-4000-8000-000300000002', '00000000-0000-4000-8000-000200000001', 'Bánh nướng đậu xanh trứng muối (hộp 2 bánh)', 'Nhân đậu xanh sên mịn, một hoặc hai lòng đỏ trứng muối. Mỗi bánh 180 g, ít ngọt.', 'Bánh Trung Thu Trăng Vàng', 'Thành phố Hồ Chí Minh', false, 2, 185000, 200, '2026-12-20', 'NATIONWIDE', 100, 'ON_SALE', 0),
+       ('00000000-0000-4000-8000-000300000003', '00000000-0000-4000-8000-000200000001', 'Bánh dẻo hạt sen (hộp 4 bánh)', 'Vỏ dẻo trắng mềm, nhân hạt sen Đồng Tháp bùi béo. Mỗi bánh 150 g, không chất bảo quản.', 'Bánh Trung Thu Trăng Vàng', 'Thành phố Hồ Chí Minh', false, 4, 295000, 90, '2026-12-05', 'NATIONWIDE', 100, 'ON_SALE', 0),
+       ('00000000-0000-4000-8000-000300000004', '00000000-0000-4000-8000-000200000001', 'Bánh dẻo khoai môn (hộp 4 bánh)', 'Vỏ dẻo, nhân khoai môn Lâm Đồng nghiền mịn, thơm mùi lá dứa. Giao nội thành trong ngày.', 'Bánh Trung Thu Trăng Vàng', 'Thành phố Hồ Chí Minh', false, 4, 265000, 60, '2026-11-25', 'LOCAL', NULL, 'ON_SALE', 0),
+       ('00000000-0000-4000-8000-000300000005', '00000000-0000-4000-8000-000200000001', 'Bánh lạnh trà xanh (hộp 4 bánh)', 'Bánh lạnh vỏ trong, nhân trà xanh matcha ít ngọt. Bảo quản ngăn mát, giao nội thành.', 'Bánh Trung Thu Trăng Vàng', 'Thành phố Hồ Chí Minh', false, 4, 350000, 40, '2026-11-20', 'LOCAL', NULL, 'ON_SALE', 0),
+       ('00000000-0000-4000-8000-000300000006', '00000000-0000-4000-8000-000200000001', 'Bánh lạnh sầu riêng (hộp 4 bánh)', 'Bánh lạnh nhân sầu riêng Ri6 nguyên múi, béo thơm. Bảo quản ngăn mát, giao nội thành.', 'Bánh Trung Thu Trăng Vàng', 'Thành phố Hồ Chí Minh', false, 4, 380000, 35, '2026-11-20', 'LOCAL', NULL, 'ON_SALE', 0),
+       ('00000000-0000-4000-8000-000300000007', '00000000-0000-4000-8000-000200000001', 'Hộp quà Trăng Vàng cao cấp (6 bánh phối vị)', 'Hộp gỗ sơn mài gồm 6 bánh nướng và dẻo: thập cẩm, hạt sen, trứng muối. Kèm túi quà và thiệp.', 'Bánh Trung Thu Trăng Vàng', 'Thành phố Hồ Chí Minh', false, 6, 580000, 50, '2026-12-31', 'NATIONWIDE', 100, 'ON_SALE', 0),
+       ('00000000-0000-4000-8000-000300000008', '00000000-0000-4000-8000-000200000001', 'Bánh nướng đậu đỏ Hương Việt (hộp 4 bánh)', 'Bánh nướng nhân đậu đỏ nghiền, vỏ mềm. Hàng nhập từ nhà sản xuất Hương Việt, bán lại.', 'Hương Việt', 'Việt Nam', true, 4, 245000, 150, '2027-01-15', 'NATIONWIDE', 100, 'ON_SALE', 0)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO product_cake_attributes (product_id, attribute_id)
+VALUES ('00000000-0000-4000-8000-000300000001', 'a1f0c0de-0000-4000-8000-000000000101'),
+       ('00000000-0000-4000-8000-000300000001', 'a1f0c0de-0000-4000-8000-000000000201'),
+       ('00000000-0000-4000-8000-000300000002', 'a1f0c0de-0000-4000-8000-000000000101'),
+       ('00000000-0000-4000-8000-000300000002', 'a1f0c0de-0000-4000-8000-000000000202'),
+       ('00000000-0000-4000-8000-000300000002', 'a1f0c0de-0000-4000-8000-000000000208'),
+       ('00000000-0000-4000-8000-000300000003', 'a1f0c0de-0000-4000-8000-000000000102'),
+       ('00000000-0000-4000-8000-000300000003', 'a1f0c0de-0000-4000-8000-000000000203'),
+       ('00000000-0000-4000-8000-000300000004', 'a1f0c0de-0000-4000-8000-000000000102'),
+       ('00000000-0000-4000-8000-000300000004', 'a1f0c0de-0000-4000-8000-000000000205'),
+       ('00000000-0000-4000-8000-000300000005', 'a1f0c0de-0000-4000-8000-000000000103'),
+       ('00000000-0000-4000-8000-000300000005', 'a1f0c0de-0000-4000-8000-000000000206'),
+       ('00000000-0000-4000-8000-000300000006', 'a1f0c0de-0000-4000-8000-000000000103'),
+       ('00000000-0000-4000-8000-000300000006', 'a1f0c0de-0000-4000-8000-000000000207'),
+       ('00000000-0000-4000-8000-000300000007', 'a1f0c0de-0000-4000-8000-000000000101'),
+       ('00000000-0000-4000-8000-000300000007', 'a1f0c0de-0000-4000-8000-000000000102'),
+       ('00000000-0000-4000-8000-000300000007', 'a1f0c0de-0000-4000-8000-000000000201'),
+       ('00000000-0000-4000-8000-000300000007', 'a1f0c0de-0000-4000-8000-000000000203'),
+       ('00000000-0000-4000-8000-000300000007', 'a1f0c0de-0000-4000-8000-000000000208'),
+       ('00000000-0000-4000-8000-000300000008', 'a1f0c0de-0000-4000-8000-000000000101'),
+       ('00000000-0000-4000-8000-000300000008', 'a1f0c0de-0000-4000-8000-000000000204')
+ON CONFLICT DO NOTHING;
+
+-- price tiers (BR-35): the unit price from a quantity upwards; the id is derived so a second run finds the same row
+INSERT INTO product_price_tiers (id, product_id, from_qty, unit_price)
+SELECT md5(t.product_id || ':' || t.from_qty)::uuid::text, t.product_id, t.from_qty, t.unit_price
+FROM (VALUES ('00000000-0000-4000-8000-000300000001', 10, 304000),
+             ('00000000-0000-4000-8000-000300000001', 50, 288000),
+             ('00000000-0000-4000-8000-000300000003', 10, 280000),
+             ('00000000-0000-4000-8000-000300000007', 20, 551000)) AS t (product_id, from_qty, unit_price)
+ON CONFLICT DO NOTHING;
