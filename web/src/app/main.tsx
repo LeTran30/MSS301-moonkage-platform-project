@@ -6,8 +6,9 @@ import './styles/reset.css';
 import './styles/global.css';
 import { migrateLegacyTokens } from './providers';
 import {
+  ENV,
   applyCspMeta,
-  cspConnectSources,
+  apiConnectSources,
   cspImageSources,
   setRuntimeFlags,
   type FeatureFlag,
@@ -44,7 +45,14 @@ migrateLegacyTokens();
  * Error" — kể cả bản build chạy qua `vite preview` (E2E).
  */
 if (import.meta.env.PROD) {
-  applyCspMeta(cspConnectSources(), cspImageSources());
+  /*
+   * `connect-src` phải khai báo origin của API gateway (`ENV.apiBaseUrl`) và
+   * `img-src` phải khai báo origin của object storage (MinIO): nếu chỉ có
+   * `'self'`, trình duyệt chặn mọi request XHR/fetch tới gateway và mọi ảnh
+   * trong danh mục hiện ô trống — kể cả bản build chạy qua `vite preview`
+   * (E2E).
+   */
+  applyCspMeta(apiConnectSources(ENV.apiBaseUrl), cspImageSources());
 }
 
 // Đường tắt tính năng không cần deploy: hệ thống config tập trung gọi
