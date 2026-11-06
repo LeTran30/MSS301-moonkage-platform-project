@@ -148,18 +148,30 @@ jobs:
 
       - name: Start the backend stack
         working-directory: .
-        run: |
-          docker compose up -d --build
-          # Wait for the gateway to answer: it is the single entry point and
-          # it only starts healthy once every business service registered.
-          for i in $(seq 1 60); do
-            if curl -fsS http://localhost:8080/actuator/health > /dev/null 2>&1; then
-              echo "gateway is up after ${i} tries"
-              break
-            fi
-            sleep 5
-          done
-          curl -fsS http://localhost:8080/catalog-service/api/products?provinceCode=01
+        run: docker compose up -d --build
+
+      # Wait until the backend really serves every service the E2E suite needs.
+      #
+      # `/actuator/health` of the gateway is NOT enough: it only says "the
+      # gateway is alive", not "every service registered in Eureka and is
+      # routable". The gateway answers 200 for health while business routes
+      # still answer 503 (`No servers available for service: ...`), and the
+      # E2E "no console error" tests then fail on that 503 — an
+      # infrastructure failure that looks like a product failure (and hides
+      # next to the CSP errors in the same array).
+      #
+      # The script probes one endpoint per service, with a real admin token,
+      # so a 503 means "not registered yet" and the wait continues.
+      - name: Wait for the backend stack
+        run: node scripts/wait-for-backend.mjs
+        env:
+          # Explicit, because the job-level env carries VITE_MEDIA_BASE_URL
+          # (the object storage origin) — not the gateway.
+          VITE_API_BASE_URL: http://localhost:8080
+          # The password of the seed accounts (SEED_PASSWORD in the root
+          # .env.example; the seed data is created by Flyway with it).
+          SEED_USERNAME: admin@mk.com
+          SEED_PASSWORD: 12345678
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium

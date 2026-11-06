@@ -1100,6 +1100,22 @@ Bản build mà E2E phục vụ (`vite preview` cổng 4173) **phải** khai bá
 
 Nếu thiếu `VITE_MEDIA_BASE_URL` trong bản build E2E: ảnh MinIO bị CSP chặn ⇒ trình duyệt ghi lỗi console ⇒ các test "trang ... không có lỗi console" đỏ. Lỗi này từng xảy ra vì CI thiếu biến còn máy developer có `.env` — tức là "CI lệch local".
 
+#### Chờ backend sẵn sàng thật, không chỉ "gateway còn sống"
+
+**Mức độ bắt buộc: BẮT BUỘC**
+
+`GET /actuator/health` của gateway chỉ nói *"gateway còn sống"*, **không** nói *"mọi service đã đăng ký trong Eureka và đã định tuyến được"*. Gateway trả `200` cho health trong khi route nghiệp vụ vẫn trả `503 Service Unavailable` (`No servers available for service: ...` trong log gateway) — đo được là khoảng **50 giây** sau khi gateway đã lên.
+
+Nếu E2E chạy trong khoảng đó thì các test "trang ... không có lỗi console" đỏ vì `503`. Đây là lỗi **hạ tầng**, không phải lỗi sản phẩm — và vì `503` nằm trong cùng mảng lỗi console với lỗi CSP nên nó rất dễ bị đọc nhầm là lỗi CSP.
+
+Vì vậy CI phải chờ **từng service** thật sự phục vụ được, qua `web/scripts/wait-for-backend.mjs`:
+
+- đăng nhập bằng tài khoản seed (`admin@mk.com`) để có token đọc được mọi service;
+- dò **một endpoint đại diện cho mỗi service** mà E2E cần (identity, catalog, vendor, quotation, order, payment, orchestrator);
+- coi là sẵn sàng khi **mọi** endpoint trả `2xx` — `503` (chưa đăng ký Eureka), `500` (service đang khởi động) và không có câu trả lời đều là "chưa xong".
+
+Không được thay bước chờ này bằng một lệnh `curl` đơn lẻ: `curl -fsS .../actuator/health` (hoặc một path legacy trả `308`) **không** bảo chứng service nào đã sẵn sàng.
+
 ### 7.4. Điều kiện merge
 
 **Mức độ bắt buộc: BẮT BUỘC**
