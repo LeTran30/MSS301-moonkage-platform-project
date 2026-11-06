@@ -105,6 +105,7 @@ docs/
 │   ├── mk-auth.json
 │   └── mk-vendor.json
 └── archive/                       ← KHÔNG SỬA NỮA
+    └── 2026-11-06-session-notes.md  Chuẩn hoá kiến trúc & cổng chất lượng (PR #98)
 ```
 
 ### Services
