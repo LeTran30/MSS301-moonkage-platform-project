@@ -73,6 +73,7 @@ const AddressesPage = page(() => import('@/pages/account/addresses'), 'Addresses
 const AddressFormPage = page(() => import('@/pages/account/address-form'), 'AddressFormPage');
 const NfcVerifyPage = page(() => import('@/pages/account/nfc-verify'), 'NfcVerifyPage');
 const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage');
+const MessagesPage = page(() => import('@/pages/account/messages'), 'MessagesPage');
 
 // Gateway Pages
 
@@ -218,6 +219,7 @@ const ROUTE_TABLE = [
           { path: 'dia-chi/:id', element: withSuspense(AddressFormPage) },
           { path: 'xac-minh', element: withSuspense(NfcVerifyPage) },
           { path: 'thong-tin', element: withSuspense(ProfilePage) },
+          { path: 'tin-nhan', element: withSuspense(MessagesPage) },
         ],
       },
     ],
