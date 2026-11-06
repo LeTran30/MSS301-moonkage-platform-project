@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * Pushes an order chat event to the open pages of its recipients. Nothing is stored and nothing is retried: the web
+ * Pushes a chat event to the open pages of its recipients. Nothing is stored and nothing is retried: the web
  * reads the thread from order-service, the push only saves it a poll.
  */
 @Component
@@ -19,8 +19,8 @@ public class ChatRealtimeRelay {
     private final RealtimePublisher realtimePublisher;
 
     public void relay(ChatEvent event) {
-        if (event == null || event.orderId() == null || event.type() == null || event.recipients() == null) {
-            throw new IllegalArgumentException("orderId, type and recipients are required for a chat event");
+        if (event == null || event.conversationId() == null || event.type() == null || event.recipients() == null) {
+            throw new IllegalArgumentException("conversationId, type and recipients are required for a chat event");
         }
         ChatPush push = ChatPush.from(event);
         event.recipients().stream()
@@ -32,7 +32,7 @@ public class ChatRealtimeRelay {
     /** What the web receives on {@code /user/queue/chat}: the event without its recipient list. */
     public record ChatPush(
             String type,
-            String orderId,
+            String conversationId,
             String senderAccountId,
             String senderParty,
             JsonNode message,
@@ -42,7 +42,7 @@ public class ChatRealtimeRelay {
         static ChatPush from(ChatEvent event) {
             return new ChatPush(
                     event.type(),
-                    event.orderId(),
+                    event.conversationId(),
                     event.senderAccountId(),
                     event.senderParty(),
                     event.message(),

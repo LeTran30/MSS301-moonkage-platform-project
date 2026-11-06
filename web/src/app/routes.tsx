@@ -62,6 +62,7 @@ const AddressesPage = page(() => import('@/pages/account/addresses'), 'Addresses
 const AddressFormPage = page(() => import('@/pages/account/address-form'), 'AddressFormPage');
 const NfcVerifyPage = page(() => import('@/pages/account/nfc-verify'), 'NfcVerifyPage');
 const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage');
+const MessagesPage = page(() => import('@/pages/account/messages'), 'MessagesPage');
 
 // Gateway Pages
 
@@ -69,6 +70,7 @@ const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage')
 const VendorOverviewPage = page(() => import('@/pages/vendor/overview'), 'VendorOverviewPage');
 const VendorFeePage = page(() => import('@/pages/vendor/fee'), 'VendorFeePage');
 const VendorOrdersPage = page(() => import('@/pages/vendor/orders'), 'VendorOrdersPage');
+const VendorMessagesPage = page(() => import('@/pages/vendor/messages'), 'VendorMessagesPage');
 const VendorOrderDetailPage = page(() => import('@/pages/vendor/order-detail'), 'VendorOrderDetailPage');
 const VendorRequestsPage = page(() => import('@/pages/vendor/requests'), 'VendorRequestsPage');
 const VendorRequestDetailPage = page(() => import('@/pages/vendor/request-detail'), 'VendorRequestDetailPage');
@@ -153,6 +155,7 @@ const ROUTE_TABLE = [
           { path: 'dia-chi/:id', element: withSuspense(AddressFormPage) },
           { path: 'xac-minh', element: withSuspense(NfcVerifyPage) },
           { path: 'thong-tin', element: withSuspense(ProfilePage) },
+          { path: 'tin-nhan', element: withSuspense(MessagesPage) },
         ],
       },
     ],
@@ -172,6 +175,7 @@ const ROUTE_TABLE = [
       { path: 'phi-mo-ban', element: withSuspense(VendorFeePage) },
       { path: 'don-hang', element: withSuspense(VendorOrdersPage) },
       { path: 'don-hang/:id', element: withSuspense(VendorOrderDetailPage) },
+      { path: 'tin-nhan', element: withSuspense(VendorMessagesPage) },
       { path: 'yeu-cau', element: withSuspense(VendorRequestsPage) },
       { path: 'yeu-cau/:id', element: withSuspense(VendorRequestDetailPage) },
       { path: 'yeu-cau/:id/bao-gia', element: withSuspense(VendorRequestDetailPage) },

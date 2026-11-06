@@ -14,7 +14,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
 
-/** One message of an order's chat: text, a file, or both. Never edited once sent. */
+/** One message of a buyer–Shop conversation: text, a file, or both. Never edited once sent. */
 @Entity
 @Table(name = "chat_messages")
 @Getter
@@ -31,8 +31,8 @@ public class ChatMessage {
     @Column(insertable = false, updatable = false)
     private Long seq;
 
-    @Column(nullable = false)
-    private String orderId;
+    @Column(nullable = false, length = 36)
+    private String conversationId;
 
     @Column(nullable = false, length = 36)
     private String senderAccountId;

@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, useRealtime } from '@/shared/api';
 import { chatApi, chatQueue, type ChatMessage, type ChatParty, type ChatPush, type ChatThread } from '../api/chatApi';
 
+/** Every inbox list (buyer and Shop side). */
+const INBOX_KEY = ['chat', 'inbox'];
 /** Without the socket, the thread is read again this often. */
 const POLL_MS = 10_000;
 /** "đang soạn tin…" disappears when no new signal comes within this time. */
@@ -23,13 +25,13 @@ function otherParty(party: ChatParty | null): ChatParty | null {
 }
 
 /**
- * The chat of one order: the latest page from order-service, kept current by
- * the pushes on `/user/queue/chat` (polling when the socket is down).
+ * One buyer–Shop conversation: the latest page from order-service, kept
+ * current by the pushes on `/user/queue/chat` (polling when the socket is down).
  */
-export function useOrderChat(orderId: string) {
+export function useConversation(conversationId: string) {
   const queryClient = useQueryClient();
   const { connected, subscribe } = useRealtime();
-  const key = useMemo(() => queryKeys.order.chat(orderId), [orderId]);
+  const key = useMemo(() => queryKeys.chat.thread(conversationId), [conversationId]);
   const [older, setOlder] = useState<ChatMessage[]>([]);
   const [olderHasMore, setOlderHasMore] = useState<boolean | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -40,8 +42,8 @@ export function useOrderChat(orderId: string) {
 
   const query = useQuery({
     queryKey: key,
-    queryFn: () => chatApi.thread(orderId),
-    enabled: Boolean(orderId),
+    queryFn: () => chatApi.thread(conversationId),
+    enabled: Boolean(conversationId),
     staleTime: 0,
     refetchInterval: connected ? false : POLL_MS,
   });
@@ -52,28 +54,32 @@ export function useOrderChat(orderId: string) {
     (update: (t: ChatThread) => ChatThread) => {
       queryClient.setQueryData<ChatThread>(key, (t) => (t ? update(t) : t));
     },
-    [queryClient, key]
+    [queryClient, key],
   );
 
   // a reconnect may have missed pushes: read the latest page again
   useEffect(() => {
-    if (connected && orderId) void queryClient.invalidateQueries({ queryKey: key });
-  }, [connected, orderId, queryClient, key]);
+    if (connected && conversationId) void queryClient.invalidateQueries({ queryKey: key });
+  }, [connected, conversationId, queryClient, key]);
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!conversationId) return;
     return subscribe<ChatPush>(chatQueue, (push) => {
-      if (push.orderId !== orderId) return;
+      if (push.conversationId !== conversationId) return;
+      if (push.type !== 'TYPING') void queryClient.invalidateQueries({ queryKey: INBOX_KEY });
       if (push.type === 'MESSAGE' && push.message) {
         const message = push.message;
-        patchThread((t) => ({ ...t, messages: mergeMessages(t.messages, [message]) }));
+        patchThread((t) => ({
+          ...t,
+          messages: mergeMessages(t.messages, [message]),
+        }));
         if (push.senderParty !== myParty) setOtherTyping(false);
       } else if (push.type === 'READ' && push.readUpToSeq != null) {
         const seq = push.readUpToSeq;
         patchThread((t) =>
           push.senderParty === 'BUYER'
             ? { ...t, buyerReadSeq: Math.max(t.buyerReadSeq, seq) }
-            : { ...t, vendorReadSeq: Math.max(t.vendorReadSeq, seq) }
+            : { ...t, vendorReadSeq: Math.max(t.vendorReadSeq, seq) },
         );
       } else if (push.type === 'TYPING' && push.senderParty !== myParty) {
         setOtherTyping(true);
@@ -81,13 +87,13 @@ export function useOrderChat(orderId: string) {
         typingTimer.current = setTimeout(() => setOtherTyping(false), TYPING_SHOWN_MS);
       }
     });
-  }, [orderId, subscribe, patchThread, myParty]);
+  }, [conversationId, subscribe, patchThread, myParty, queryClient]);
 
   useEffect(
     () => () => {
       if (typingTimer.current) clearTimeout(typingTimer.current);
     },
-    []
+    [],
   );
 
   const messages = mergeMessages(older, thread?.messages ?? []);
@@ -102,30 +108,35 @@ export function useOrderChat(orderId: string) {
     if (seq <= (myReadSeq ?? 0) || seq <= lastReadSent.current) return;
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
     lastReadSent.current = seq;
-    void chatApi.markRead(orderId, seq).then(() =>
+    void chatApi.markRead(conversationId, seq).then(() => {
+      void queryClient.invalidateQueries({ queryKey: INBOX_KEY });
       patchThread((t) =>
         myParty === 'BUYER'
           ? { ...t, buyerReadSeq: Math.max(t.buyerReadSeq, seq) }
-          : { ...t, vendorReadSeq: Math.max(t.vendorReadSeq, seq) }
-      )
-    );
-  }, [orderId, myParty, lastFromOther, myReadSeq, patchThread]);
+          : { ...t, vendorReadSeq: Math.max(t.vendorReadSeq, seq) },
+      );
+    });
+  }, [conversationId, myParty, lastFromOther, myReadSeq, patchThread, queryClient]);
 
   const send = useCallback(
     async (body: string, file: File | null) => {
-      const message = await chatApi.send(orderId, body, file);
-      patchThread((t) => ({ ...t, messages: mergeMessages(t.messages, [message]) }));
+      const message = await chatApi.send(conversationId, body, file);
+      patchThread((t) => ({
+        ...t,
+        messages: mergeMessages(t.messages, [message]),
+      }));
+      void queryClient.invalidateQueries({ queryKey: INBOX_KEY });
       return message;
     },
-    [orderId, patchThread]
+    [conversationId, patchThread, queryClient],
   );
 
   const signalTyping = useCallback(() => {
     const now = Date.now();
     if (!myParty || now - lastTypingSignal.current < TYPING_SIGNAL_MS) return;
     lastTypingSignal.current = now;
-    void chatApi.typing(orderId).catch(() => undefined);
-  }, [orderId, myParty]);
+    void chatApi.typing(conversationId).catch(() => undefined);
+  }, [conversationId, myParty]);
 
   const hasMore = olderHasMore ?? thread?.hasMore ?? false;
   const loadOlder = useCallback(async () => {
@@ -133,13 +144,13 @@ export function useOrderChat(orderId: string) {
     if (!first || loadingOlder) return;
     setLoadingOlder(true);
     try {
-      const page = await chatApi.thread(orderId, first.seq);
+      const page = await chatApi.thread(conversationId, first.seq);
       setOlder((current) => mergeMessages(current, page.messages));
       setOlderHasMore(page.hasMore);
     } finally {
       setLoadingOlder(false);
     }
-  }, [orderId, messages, loadingOlder]);
+  }, [conversationId, messages, loadingOlder]);
 
   return {
     status: query.isPending ? 'loading' : query.isError ? 'error' : 'ready',

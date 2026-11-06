@@ -81,6 +81,16 @@ export function ProductDetailPage() {
             <Link to={routes.base.vendor(product.vendorId)} className={styles.vendorLink}>
               <Icon name="store" size={14} /> {product.vendorName}
             </Link>
+            {!isOwner && (
+              <ButtonLink
+                to={routes.account.messagesWithShop(product.vendorId)}
+                variant="outline"
+                size="sm"
+                iconLeft="message"
+              >
+                Nhắn shop
+              </ButtonLink>
+            )}
           </div>
 
           <h1 className={styles.title}>{product.name}</h1>

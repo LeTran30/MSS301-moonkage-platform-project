@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
 import { Badge, ButtonLink, Card, Icon, Tabs } from '@/shared/ui';
+import { useCurrentUser } from '@/entities/user';
 import { useVendor } from '@/entities/vendor';
 import { ProductCard, useProducts } from '@/entities/product';
 import styles from './VendorDetailPage.module.css';
@@ -10,6 +11,7 @@ import styles from './VendorDetailPage.module.css';
 export function VendorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const vendor = useVendor(id || 'ven_hoa');
+  const user = useCurrentUser();
   const products = useProducts().filter((p) => p.vendorId === (id || 'ven_hoa') && p.status === 'ACTIVE');
 
   // IA Note M3.3: Gộp "trang Shop" và "hồ sơ nhận đặt hàng" vào một trang hai tab
@@ -61,6 +63,11 @@ export function VendorDetailPage() {
           </div>
 
           <div className={styles.headerActions}>
+            {user.vendorId !== vendor.id && (
+              <ButtonLink to={routes.account.messagesWithShop(vendor.id)} variant="outline" iconLeft="message">
+                Nhắn shop
+              </ButtonLink>
+            )}
             {acceptsCustom && (
               <ButtonLink to={routes.base.vendorRequest(vendor.id)} variant="primary" iconLeft="sparkle">
                 Gửi yêu cầu báo giá riêng

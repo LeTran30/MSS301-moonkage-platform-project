@@ -23,6 +23,7 @@ export function VendorSidebar({ hasShop = true, acceptsCustomOrders = true }: Pr
   const items: NavItem[] = [
     { title: 'Tổng quan bán hàng', path: routes.vendor.overview, icon: 'dashboard' },
     { title: 'Đơn hàng của Shop', path: routes.vendor.orders, icon: 'package' },
+    { title: 'Tin nhắn khách hàng', path: routes.vendor.messages, icon: 'message' },
     {
       title: 'Yêu cầu báo giá',
       path: routes.vendor.requests,

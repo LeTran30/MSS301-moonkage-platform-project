@@ -140,12 +140,13 @@ export const GATEWAY = {
     DISPUTE_EVIDENCES: (orderId: string) => `/order-service/api/orders/${orderId}/dispute/evidences`,
     // Đánh giá sản phẩm (ReviewController: @RequestMapping("/api/orders/{orderId}/reviews"))
     REVIEWS: (orderId: string) => `/order-service/api/orders/${orderId}/reviews`,
-    // Nhắn tin người mua ↔ chủ shop theo đơn (ChatController: @RequestMapping("/api/orders/{orderId}/chat")).
+    // Nhắn tin khách ↔ shop, mỗi cặp một cuộc trò chuyện (ChatController: @RequestMapping("/api/chat/conversations")).
     // Tin mới, đã xem và đang soạn được đẩy qua STOMP /user/queue/chat.
-    CHAT: (orderId: string) => `/order-service/api/orders/${orderId}/chat`,
-    CHAT_MESSAGES: (orderId: string) => `/order-service/api/orders/${orderId}/chat/messages`,
-    CHAT_READ: (orderId: string) => `/order-service/api/orders/${orderId}/chat/read`,
-    CHAT_TYPING: (orderId: string) => `/order-service/api/orders/${orderId}/chat/typing`,
+    CHAT_CONVERSATIONS: '/order-service/api/chat/conversations',
+    CHAT_CONVERSATION: (id: string) => `/order-service/api/chat/conversations/${id}`,
+    CHAT_MESSAGES: (id: string) => `/order-service/api/chat/conversations/${id}/messages`,
+    CHAT_READ: (id: string) => `/order-service/api/chat/conversations/${id}/read`,
+    CHAT_TYPING: (id: string) => `/order-service/api/chat/conversations/${id}/typing`,
   },
 
   // 6. Payment & Escrow Service (LedgerController, PaymentController)

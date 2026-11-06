@@ -1,0 +1,1 @@
+export { VendorMessagesPage } from './VendorMessagesPage';

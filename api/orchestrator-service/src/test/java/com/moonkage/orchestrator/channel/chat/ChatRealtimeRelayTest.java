@@ -34,7 +34,7 @@ class ChatRealtimeRelayTest {
         verify(publisher).publishToUser(eq("owner-1"), eq(RealtimeDestination.CHAT), any());
         verify(publisher, times(2)).publishToUser(anyString(), anyString(), any());
         ChatPush sent = (ChatPush) push.getValue();
-        assertEquals("order-1", sent.orderId());
+        assertEquals("conv-1", sent.conversationId());
         assertEquals(3L, sent.readUpToSeq());
     }
 
@@ -45,6 +45,6 @@ class ChatRealtimeRelayTest {
     }
 
     private static ChatEvent event(String type, List<String> recipients) {
-        return new ChatEvent("e1", type, "order-1", recipients, "buyer-1", "BUYER", null, 3L, Instant.now());
+        return new ChatEvent("e1", type, "conv-1", recipients, "buyer-1", "BUYER", null, 3L, Instant.now());
     }
 }

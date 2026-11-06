@@ -54,7 +54,7 @@ public class ChatSignalPublisher {
             byte[] body = objectMapper.writeValueAsBytes(event);
             rabbitTemplate.send(RabbitConfig.EVENTS_EXCHANGE, routingKey, new Message(body, props));
         } catch (JsonProcessingException | AmqpException e) {
-            log.warn("Chat {} of order {} not pushed: {}", event.type(), event.orderId(), e.getMessage());
+            log.warn("Chat {} of conversation {} not pushed: {}", event.type(), event.conversationId(), e.getMessage());
         }
     }
 }

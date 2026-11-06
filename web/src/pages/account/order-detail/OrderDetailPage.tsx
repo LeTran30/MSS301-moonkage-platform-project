@@ -23,11 +23,10 @@ import {
 import { useConfirmDelivery } from '@/features/confirm-delivery';
 import { usePayRemainder } from '@/features/pay-remainder';
 import { ReviewForm } from '@/features/write-review';
-import { OrderChatPanel } from '@/features/order-chat';
 import { MaketReviewPanel, useGetInvoiceLink, useReviewMockup } from '@/features/fulfill-order';
 import styles from './OrderDetailPage.module.css';
 
-type DetailTab = 'progress' | 'chat' | 'maket' | 'payment' | 'invoice' | 'reviews';
+type DetailTab = 'progress' | 'maket' | 'payment' | 'invoice' | 'reviews';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -78,7 +77,6 @@ export function OrderDetailPage() {
   // Tabs cho đơn đặt hàng (M6.1.2): Tiến độ · Maket · Thanh toán · Hóa đơn
   const tabItems: { id: DetailTab; label: string }[] = [
     { id: 'progress', label: 'Tiến độ đơn hàng' },
-    { id: 'chat', label: 'Nhắn tin với shop' },
     ...(isBulk && order.maketVersions?.length
       ? [{ id: 'maket' as const, label: 'Bản thiết kế Maket (in logo)' }]
       : []),
@@ -164,6 +162,14 @@ export function OrderDetailPage() {
         </div>
 
         <div className={styles.headerAction}>
+          <ButtonLink
+            to={routes.account.messagesWithShop(order.vendorId)}
+            variant="outline"
+            size="sm"
+            iconLeft="message"
+          >
+            Nhắn shop
+          </ButtonLink>
           {order.status === 'DELIVERED' && (
             <>
               <Button variant="primary" size="sm" loading={busy} onClick={handleConfirmReceived}>
@@ -187,13 +193,6 @@ export function OrderDetailPage() {
         <div className={styles.tabSection}>
           <OrderProgressList order={order} progressUpdates={progressUpdates} />
           <OrderItemsList order={order} />
-        </div>
-      )}
-
-      {/* Nhắn tin với chủ shop về đơn này */}
-      {activeTab === 'chat' && (
-        <div className={styles.tabSection}>
-          <OrderChatPanel orderId={order.id} counterpartName={order.vendorName || 'shop'} />
         </div>
       )}
 

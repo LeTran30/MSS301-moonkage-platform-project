@@ -20,6 +20,7 @@ export function AccountLayout() {
   const navItems: Array<{ path: string; label: string; icon: IconName; badge?: number }> = [
     { path: routes.account.overview, label: 'Tổng quan tài khoản', icon: 'dashboard' },
     { path: routes.account.orders, label: 'Đơn hàng của tôi', icon: 'package' },
+    { path: routes.account.messages, label: 'Tin nhắn với shop', icon: 'message' },
     { path: routes.account.requests, label: 'Yêu cầu và báo giá', icon: 'file', badge: openRequestsCount },
     { path: routes.account.addresses, label: 'Địa chỉ giao hàng', icon: 'mapPin' },
     { path: routes.account.verify, label: 'Xác minh danh tính NFC', icon: 'shield' },
