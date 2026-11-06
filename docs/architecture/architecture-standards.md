@@ -812,6 +812,29 @@ Kèm theo đó, `connect-src` phải khai báo **cả hai** biến thể `http:/
 
 Header khác phải gửi ở production: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Strict-Transport-Security`.
 
+#### `img-src` phải khai báo origin của object storage (bằng `VITE_MEDIA_BASE_URL`)
+
+**Mức độ bắt buộc: BẮT BUỘC**
+
+Ảnh sản phẩm và ảnh báo giá do backend trả về từ MinIO — tức là một **origin khác** với origin của ứng dụng. `img-src 'self' data: blob:` một mình sẽ chặn toàn bộ ảnh đó.
+
+`cspImageSources()` đọc `VITE_MEDIA_BASE_URL` (nhiều origin thì tách bằng dấu phẩy) và thêm origin tương ứng vào `img-src`. Hệ quả khi thiếu biến này ở một bản build:
+
+- Ảnh hiện ô trống trong danh mục / trang quản lý sản phẩm;
+- trình duyệt ghi lỗi console dạng `violates the following Content Security Policy directive: "img-src 'self' data: blob:"` ⇒ mọi test E2E kiểu "trang ... không có lỗi console" đỏ, dù ứng dụng chạy đúng.
+
+**Mọi bản build phải tự đủ cấu hình, không được dựa vào file `.env` cục bộ.** `web/.env` và `web/.env.local` là file của developer (đã gitignore) nên CI checkout sạch không có chúng. Nếu chỉ dựa vào file đó thì CI lệch local: local xanh, CI đỏ — và lỗi lộ ra muộn, ở bước E2E, trông như lỗi sản phẩm.
+
+Cơ chế bắt buộc:
+
+| Nơi | Cách khai báo |
+|---|---|
+| CI (`.github/workflows/web-quality.yml`) | `env:` ở cấp job: `VITE_MEDIA_BASE_URL: http://localhost:9000` — khớp `MINIO_API_PORT` trong `.env.example` và `MINIO_BROWSER_URL` mặc định của backend (`${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT:9000}}`). |
+| E2E cục bộ (`web/playwright.config.ts`) | `webServer.env.VITE_MEDIA_BASE_URL` = `process.env.VITE_MEDIA_BASE_URL ?? process.env.MINIO_BROWSER_URL ?? http://localhost:${MINIO_API_PORT ?? 9000}`. Vì `command` của `webServer` chạy `npm run build`, Vite đọc `process.env` và ưu tiên hơn `.env` ⇒ giá trị truyền vào luôn thắng. |
+| Cổng chất lượng | `node scripts/check-csp-media-origin.mjs` xác nhận bản build trong `dist/assets` có chứa origin ảnh; chạy trong `npm run check`. |
+
+Giá trị mặc định trong `web/.env.example` là `http://localhost:9000`.
+
 ### 5.7. Bí mật
 
 **Mức độ bắt buộc: BẮT BUỘC**
@@ -1062,6 +1085,20 @@ cd web && npm run e2e
 ```
 
 Không có chế độ demo: mọi khẳng định phải chạy trên hệ thống thật.
+
+#### Bản build E2E phải tự đủ cấu hình (không dựa vào `.env` cục bộ)
+
+Bản build mà E2E phục vụ (`vite preview` cổng 4173) **phải** khai báo mọi origin mà ứng dụng dùng, vì CSP được nhúng lúc build:
+
+| Biến | Vai trò |
+|---|---|
+| `VITE_API_BASE_URL` | Origin của API Gateway cho `connect-src` |
+| `VITE_WS_URL` | Origin WebSocket cho `connect-src` |
+| `VITE_MEDIA_BASE_URL` | Origin của object storage (MinIO) cho `img-src` — xem [§5.6](#56-csp-và-header-bảo-mật-ở-frontend) |
+
+`web/.env` và `web/.env.local` là file **cục bộ** của developer (đã gitignore, CI checkout sạch không có). E2E vì vậy **không** được dựa vào chúng: `web/playwright.config.ts` truyền các biến trên qua `webServer.env` (Vite đọc `process.env` và ưu tiên hơn `.env`), và CI khai báo tường minh trong `env:` của job `verify`.
+
+Nếu thiếu `VITE_MEDIA_BASE_URL` trong bản build E2E: ảnh MinIO bị CSP chặn ⇒ trình duyệt ghi lỗi console ⇒ các test "trang ... không có lỗi console" đỏ. Lỗi này từng xảy ra vì CI thiếu biến còn máy developer có `.env` — tức là "CI lệch local".
 
 ### 7.4. Điều kiện merge
 
