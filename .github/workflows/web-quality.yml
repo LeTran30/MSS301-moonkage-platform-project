@@ -26,6 +26,23 @@ jobs:
     defaults:
       run:
         working-directory: web
+    env:
+      # Origin của object storage (MinIO) phục vụ ảnh sản phẩm — phải khai
+      # báo tường minh cho **mọi** bản build trong CI, vì `web/.env` /
+      # `web/.env.local` là file cục bộ của developer (đã gitignore, CI
+      # checkout sạch nên không có).
+      #
+      # Giá trị này khớp với `MINIO_API_PORT=9000` trong `.env.example` ở thư
+      # mục gốc và với `MINIO_BROWSER_URL` mặc định của backend
+      # (`${MINIO_BROWSER_URL:http://localhost:${MINIO_API_PORT:9000}}` trong
+      # `api/*/src/main/resources/application.yml`) — nên URL ảnh mà backend
+      # trả về có đúng origin này.
+      #
+      # Nếu thiếu: CSP của ứng dụng chỉ có `img-src 'self' data: blob:` ⇒
+      # trình duyệt chặn mọi ảnh MinIO ⇒ log console đỏ ⇒ các test "trang ...
+      # không có lỗi console" đỏ. Đây chính là lỗi "CI lệch local" đã xảy
+      # ra: local có `.env` nên xanh, CI không có nên đỏ.
+      VITE_MEDIA_BASE_URL: http://localhost:9000
     steps:
       - uses: actions/checkout@v7
 
@@ -86,6 +103,14 @@ jobs:
       # otherwise only be noticed by users complaining that the app got slow.
       - name: Bundle size budget
         run: node scripts/check-bundle-size.mjs
+
+      # The build must declare the object-storage origin in its CSP. Without
+      # `VITE_MEDIA_BASE_URL` the CSP only allows `img-src 'self' data: blob:`
+      # ⇒ every MinIO image is blocked, the console fills with CSP violations
+      # and the E2E "no console error" tests fail. This catches a missing
+      # variable at build time instead of at the (much slower) E2E step.
+      - name: CSP media origin in build
+        run: node scripts/check-csp-media-origin.mjs
 
       - name: Unit tests (vitest)
         run: npm test

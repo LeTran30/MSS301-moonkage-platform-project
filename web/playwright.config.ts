@@ -31,6 +31,38 @@ const API_BASE_URL = process.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8080';
 // cả hai vế thấy cùng một giá trị — nếu lệch host, CSP chặn `fetch` của test
 // và test chết với "Failed to fetch" (lỗi hạ tầng, không phải lỗi sản phẩm).
 process.env.VITE_API_BASE_URL = API_BASE_URL;
+
+/**
+ * Origin của object storage (MinIO) phục vụ ảnh sản phẩm / ảnh báo giá.
+ *
+ * Vì sao E2E cần khai báo tường minh:
+ *
+ * - CSP của ứng dụng khai báo `img-src 'self' data: blob:` cộng thêm các
+ *   origin đọc từ `VITE_MEDIA_BASE_URL` (xem `cspImageSources()`).
+ * - Ảnh trả về từ backend nằm ở **origin khác** (MinIO, ví dụ
+ *   `http://localhost:9000`). Nếu origin đó không có trong `img-src`, trình
+ *   duyệt chặn ảnh ⇒ ảnh hỏng **và** console ghi lỗi
+ *   "violates the following Content Security Policy directive".
+ * - Test "trang ... không có lỗi console" gom mọi lỗi console rồi khẳng
+ *   định mảng rỗng ⇒ một ảnh bị CSP chặn làm test đỏ, dù ứng dụng chạy đúng.
+ *
+ * Vì sao không được dựa vào `web/.env`:
+ *
+ * `web/.env` và `web/.env.local` là file **cục bộ** của developer (đã
+ * gitignore, không có trong repo). CI checkout sạch nên không có chúng ⇒
+ * `VITE_MEDIA_BASE_URL` rỗng ⇒ bản build E2E trong CI thiếu origin ảnh ⇒
+ * CI đỏ trong khi local xanh. Đó là lỗi "môi trường CI lệch môi trường
+ * local" và cách chữa đúng là cho **bản build E2E tự đủ cấu hình**.
+ *
+ * Ở đây biến được truyền qua `webServer.env`, mà `command` chạy
+ * `npm run build` ⇒ Vite đọc `process.env` và ưu tiên hơn file `.env` ⇒
+ * giá trị truyền vào luôn thắng, kể cả khi developer có file `.env` local.
+ */
+const MEDIA_BASE_URL =
+  process.env.VITE_MEDIA_BASE_URL ??
+  process.env.MINIO_BROWSER_URL ??
+  `http://localhost:${process.env.MINIO_API_PORT ?? '9000'}`;
+
 export default defineConfig({
   testDir: './e2e',
   // Loại trừ file debug tạm: glob mặc định của Playwright là `**/*.@(spec|test)...`
@@ -85,6 +117,8 @@ export default defineConfig({
     env: {
       VITE_API_BASE_URL: API_BASE_URL,
       VITE_WS_URL: process.env.VITE_WS_URL ?? 'ws://127.0.0.1:8080/ws',
+      // Luôn là chuỗi: Playwright không chấp nhận `undefined` trong `env`.
+      VITE_MEDIA_BASE_URL: MEDIA_BASE_URL,
     },
   },
 });
