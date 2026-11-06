@@ -1,6 +1,18 @@
-# Đề xuất contract catalog — cần nhóm duyệt
+# Contract catalog v1
 
-**ĐỀ XUẤT, CHƯA ĐƯỢC NHÓM DUYỆT.** Ngày 26/10/2026, sau Phase A/B trên `feat/catalog-service`. Tài liệu này không cấp phép bật adapter, đổi schema thêm hoặc bắt đầu Phase D. Chỉ Lê Trần xác nhận **“contract đã được nhóm duyệt”** mới mở gate D; ghi lại commit tài liệu, các chỉnh sửa được duyệt, người duyệt và thời điểm ở đầu báo cáo D.
+**ĐÃ DUYỆT.** Lê Trần duyệt toàn bộ contract ngày 02/11/2026, kèm các khuyến nghị ở §10 và các chỗ lệch ghi ở §0; Lam toàn quyền quyết định triển khai (ghi nhận theo xác nhận của Lam ngày 02/11/2026). Bản đề xuất gốc soạn ngày 26/10/2026 sau Phase A/B trên `feat/catalog-service`.
+
+## 0. Trạng thái triển khai, 02/11/2026
+
+Phase D đã nối adapter theo tài liệu này (xem [implementation-plan](implementation-plan.md#phase-d-02112026-nối-adapter)); gate D mở ngày 02/11/2026. Adapter đọc đúng payload vendor-service và order-service đang phát. Chỗ khác với đề xuất bên dưới:
+
+- **review.created** đã theo envelope v1 (§7) từ 02/11/2026: order-service phát qua `OutboxService.enqueueState` với aggregateType REVIEW, aggregateId = reviewId, sourceVersion 1; `data` có thêm `orderId`, catalog bỏ qua. Trước ngày này sự kiện nằm ở gốc JSON; bản cũ còn trong inbox sẽ giữ pending vì thiếu schemaVersion.
+- product.upserted có thêm `resold`; catalog bỏ qua (không có cột).
+- vendor snapshot có thêm `statusReason`, `acceptsOrders`, `orderProfile`, `changedBy`; catalog chỉ giữ phần của `VendorProjectionRow`. `acceptsOrders` có cột `vendor_snapshots.accepts_orders` từ migration `V2026_11_02_1000` và ra API là `vendorAcceptsOrders` (§6).
+- `priceTiers` lưu đúng dạng `{fromQty, unitPrice}`, kiểm `> 0`, fromQty tăng dần và không trùng (§4).
+- Tìm kiếm nhiều tiêu chí và facets (`GET /api/products`, `GET /api/products/facets`) theo mã crust/filling của vendor; web lấy nhãn từ `GET /api/cake-attributes`. Xem [README](README.md#api-đọc).
+- Writer sản phẩm cũ của catalog đã xóa; gateway route gốc `/api/products`, chặn `/internal/**` và `/*/internal/**`.
+- Chưa làm: full rebuild từ feed của producer (§9), resolver nhãn ẩn (§8), review sửa/xóa (§7).
 
 ## 1. Phần đã xác nhận và phần đang đề xuất
 
@@ -11,7 +23,7 @@
 | Migration catalog đã merge: product_views, vendor_snapshots, product_reviews, processed_events và arrays/jsonb; 34 mã tỉnh | Bổ sung acceptsOrders vào read model, cơ chế restore/rebuild generation, contract tests producer-consumer |
 | [API/DB vendor](../../architecture/api-db/vendor.md): root /api/cake-attributes; crustCodes/fillingCodes, seed/code và validation L-19 | Bản triển khai endpoint và producer chạy thật; tài liệu API không đồng nghĩa code đã hoàn thành |
 
-Phase A đã nhận develop `6523d00`, giữ nguyên migration `V2026_10_22_1510` theo ngoại lệ Lê Trần cho phép. Không tự sửa migration đó. Phase B chỉ có raw inbox capture/recovery skeleton, **không có adapter nghiệp vụ production**. Xem [audit C2](c2-contract-audit.md) và [báo cáo A–C](phase-abc-report.md).
+Phase A đã nhận develop `6523d00`, giữ nguyên migration `V2026_10_22_1510` theo ngoại lệ Lê Trần cho phép. Không tự sửa migration đó. Phase B chỉ có raw inbox capture/recovery skeleton, **không có adapter nghiệp vụ production**. Xem [audit C2](../../archive/2026-10-26-catalog-c2-contract-audit.md) và [báo cáo A–C](../../archive/2026-10-26-catalog-phase-abc-report.md).
 
 ## 2. Envelope đề xuất v1
 
@@ -70,7 +82,7 @@ Producer vendor-service. aggregateId = data.productId; sourceVersion ở envelop
 
 Những field có thể null vẫn phải xuất hiện trong full snapshot. `imageKeys: []`, `priceTiers: []`, `origin: null` thay thế giá trị cũ; không có nghĩa “giữ nguyên” như patch. Không nhận ratingAvg/ratingCount, ownerAccountId, canOperate hay localDeliveryFee từ product event để ghi vào projection.
 
-Ví dụ minh họa **chưa được duyệt** (ID là dữ liệu mẫu):
+Ví dụ (ID là dữ liệu mẫu):
 
 ```json
 {
@@ -120,7 +132,7 @@ Envelope VENDOR, aggregateId=data.vendorId; cả hai keys dùng cùng sourceVers
 - vendor.locked khuyến nghị cùng full snapshot, status=LOCKED và canOperate=false. Lock trước snapshot đầu vẫn đủ owner/name/areas để dựng vendor row một lần. Unlock phát vendor.updated full state/version mới hơn; late locked cũ bị gate. Không dùng bộ đếm/sourceVersion riêng cho locked.
 - Nếu nhóm chọn locked **signal** chỉ có vendorId/version, cần thêm vendor tombstone/watermark/pending hydration hoặc authoritative fetch; không ghi các field thiếu thành rỗng hoặc ghi đè owner/fee. Chưa có source API đó, nên C2 chỉ capture signal pending, không tự hydrate.
 - Product event không ghi vendor fields; vendor event không ghi product metadata/rating/version. Chỉ một row vendor đổi trạng thái, view join chặn public products của shop khóa. Dữ liệu chậm vẫn cần order/vendor chặn ở bước ghi theo BR-20/22.
-- acceptsOrders phục vụ lối gửi yêu cầu ở detail; catalog schema hiện chưa có cột này. Sau duyệt, thêm migration **mới** ở D; không sửa V2/L-19. QuoteThreshold/stock không tự biến thành lệnh gửi báo giá.
+- acceptsOrders phục vụ lối gửi yêu cầu ở detail; đã thêm bằng migration mới `V2026_11_02_1000` (cột `accepts_orders`, mặc định false), không sửa V2/L-19. QuoteThreshold/stock không tự biến thành lệnh gửi báo giá.
 - Profile quotation/capabilities có thể cùng vendor event nhưng phải chốt schema theo consumer quotation; catalog không chép giấy tờ, NFC, CCCD, ngân hàng, hồ sơ PII hoặc tự làm tem sản phẩm.
 
 ## 7. review.created — đề xuất wire và sửa/xóa
@@ -178,13 +190,13 @@ Phải duyệt các điểm sau trước full rebuild:
 
 | Mục | Khuyến nghị | Tình trạng duyệt |
 | --- | --- | --- |
-| Envelope/schemaVersion/types/null semantics | §2, full state §3 | CHƯA DUYỆT |
-| Product fields/tiers/arrays và nguồn sourceVersion mọi stock change | §4; crustCodes theo L-19, không shellCodes song song | CHƯA DUYỆT wire/tiers/version |
-| Removed terminal hay admin restore | Terminal; restore phải thiết kế riêng | CHƯA DUYỆT chi tiết wire/restore |
-| Locked full hay signal; version stream; acceptsOrders | Full, cùng vendor version; thêm acceptsOrders bằng migration mới sau duyệt | CHƯA DUYỆT |
-| Review immutable hay sửa/xóa; precision | Immutable v1, microsecond; mở correction sau contract mới | CHƯA DUYỆT |
-| Public resolver nhãn hidden | Vendor resolver theo group/code, không public picker hidden | CHƯA DUYỆT endpoint |
-| Replay feed/checkpoint/target generation | Full snapshot manifest + order reviews, inbox retry; generation riêng nếu full rebuild | CHƯA DUYỆT |
+| Envelope/schemaVersion/types/null semantics | §2, full state §3 | ĐÃ DUYỆT |
+| Product fields/tiers/arrays và nguồn sourceVersion mọi stock change | §4; crustCodes theo L-19, không shellCodes song song | ĐÃ DUYỆT |
+| Removed terminal hay admin restore | Terminal; restore phải thiết kế riêng | ĐÃ DUYỆT |
+| Locked full hay signal; version stream; acceptsOrders | Full, cùng vendor version; thêm acceptsOrders bằng migration mới sau duyệt | ĐÃ DUYỆT |
+| Review immutable hay sửa/xóa; precision | Immutable v1, microsecond; mở correction sau contract mới | ĐÃ DUYỆT |
+| Public resolver nhãn hidden | Vendor resolver theo group/code, không public picker hidden | ĐÃ DUYỆT |
+| Replay feed/checkpoint/target generation | Full snapshot manifest + order reviews, inbox retry; generation riêng nếu full rebuild | ĐÃ DUYỆT |
 | Endpoint sản phẩm vendor thay writer legacy | Owner triển khai và nghiệm thu trước xóa writer catalog | CHƯA CÓ endpoint thay thế |
 | Audit phí liên tỉnh | [Handoff orchestrator](orchestrator-handoff.md): bind/adapter/processed_events atomic | CHƯA CÓ adapter E2E |
 
@@ -197,4 +209,4 @@ Phải duyệt các điểm sau trước full rebuild:
 - Shipping/snapshot nguồn giá-tồn chính xác ở vendor, một phí/shop, phí chưa cấu hình không thành 0; root routes/internal deny theo C4.
 - Rebuild có feed/checkpoint thật, không reset markers; so trạng thái/ratings/tombstone trước/sau, audit E2E và phối hợp UI theo phạm vi C5.
 
-**Dừng sau Phase C. Không có dòng xác nhận “đã duyệt” trong tài liệu này.** Các ví dụ ở đây chỉ để nhóm review, không phải payload đã được chấp nhận để chạy production adapter.
+Đã duyệt 02/11/2026 (xem đầu tài liệu); ví dụ trong tài liệu là payload hợp lệ của contract v1.

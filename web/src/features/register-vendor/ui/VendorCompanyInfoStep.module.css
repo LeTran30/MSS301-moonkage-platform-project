@@ -1,0 +1,22 @@
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.stepContent h3 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}

@@ -1,20 +1,31 @@
-import { apiClient, type ApiResponse } from '@/shared/api/client';
-import { registrationFeeConfigApi } from '@/shared/api/gateway';
-import { mockResponse } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
-import { VENDOR_FEE } from '../model/vendorFee';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
 
-interface RegistrationFeeConfigDto {
+/**
+ * Wire shape of `com.moonkage.vendor.registrationfee.dto.RegistrationFeeConfigResponse`.
+ *
+ * The one registration fee level in effect (AC-26.9, FR-53). The endpoint is
+ * open to guests so the profile form shows the fee before anyone registers.
+ */
+export interface RegistrationFeeConfig {
   amount: number;
-  effectiveFrom: string;
+  effectiveFrom?: string;
 }
 
-export async function fetchRegistrationFeeConfig(): Promise<number> {
-  if (config.demoMode) return mockResponse(VENDOR_FEE);
-  try {
-    const res = await apiClient.get<ApiResponse<RegistrationFeeConfigDto>>(registrationFeeConfigApi);
-    return res.data.data?.amount ?? VENDOR_FEE;
-  } catch {
-    return VENDOR_FEE;
-  }
+/** Wire shape of `com.moonkage.vendor.vendor.dto.response.RegistrationFeePaymentLinkResponse`. */
+export interface RegistrationFeePaymentLink {
+  paymentId: string;
+  amount: number;
+  paymentUrl: string;
 }
+
+export const registrationFeeApi = {
+  /** The registration fee level in effect. */
+  async getConfig(): Promise<RegistrationFeeConfig | null> {
+    if (isDemoMode()) {
+      return { amount: 200000, effectiveFrom: new Date().toISOString() };
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.VENDOR.REGISTRATION_FEE_CONFIG);
+    return unwrap<RegistrationFeeConfig>(res);
+  },
+};

@@ -1,0 +1,182 @@
+.form {
+  max-width: 720px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 720px) {
+  .gridTwo {
+    grid-template-columns: 1fr;
+  }
+}
+.label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+.documentCard {
+  background: var(--color-surface-2);
+  padding: 16px;
+  border-radius: 8px;
+}
+.documentLabel {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.uploadBox {
+  padding: 20px 24px;
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  text-align: center;
+  background: var(--color-surface);
+  font-size: var(--text-xs);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.uploadName {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.uploadState {
+  color: var(--color-text-muted);
+}
+.fileInput {
+  display: none;
+}
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-family: inherit;
+}
+.select:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+.formCard {
+  max-width: 800px;
+}
+.formBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+@media (max-width: 640px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.verifiedNotice {
+  font-size: var(--text-xs);
+  color: var(--color-success-ink);
+  margin-top: 2px;
+}
+.inputHint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  margin-top: var(--space-2);
+}
+.checkboxRow input {
+  margin-top: 3px;
+}
+.modeCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+.modeCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.modeCard:hover {
+  border-color: var(--color-primary-light);
+}
+.modeActive {
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
+  border-color: var(--color-secondary);
+}
+.modeCard p {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+  margin-top: var(--space-2);
+}
+.provinceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-2);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.provinceItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.provinceItem input {
+  margin-top: 3px;
+}

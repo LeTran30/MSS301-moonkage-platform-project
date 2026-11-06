@@ -1,17 +1,18 @@
 package com.moonkage.catalog;
 
 import com.moonkage.catalog.config.DotEnvConfig;
-import com.moonkage.storage.StorageAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@EnableFeignClients
+/**
+ * catalog-service is a read model (L-18): it copies the products of vendor-service through the projection and
+ * serves them. It never writes a product itself.
+ */
 @EnableScheduling
 @ConfigurationPropertiesScan
-@SpringBootApplication(exclude = StorageAutoConfiguration.class)
+@SpringBootApplication
 public class CatalogServiceApplication {
 
     public static void main(String[] args) {

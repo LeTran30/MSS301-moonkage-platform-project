@@ -1,1 +1,1 @@
-export * from './AdminOverviewPage';
+export { AdminOverviewPage } from './AdminOverviewPage';

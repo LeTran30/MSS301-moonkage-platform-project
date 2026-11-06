@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
@@ -58,6 +59,26 @@ class InterprovinceFeeSecurityTest {
                     .exchange()
                     .expectStatus()
                     .isOk();
+        }
+    }
+
+    @Test
+    void guestsReadProductsOnBothPathsButNeverReachInternalEndpoints() {
+        for (String path : new String[] {
+            "/api/products", "/api/products/p1", "/catalog-service/api/products", "/catalog-service/api/products/p1"
+        }) {
+            client.get().uri(path).exchange().expectStatus().isOk();
+        }
+        when(jwtDecoder.decode("admin")).thenReturn(Mono.just(token("admin", "ADMIN")));
+        for (String path :
+                new String[] {"/internal/products/snapshot", "/catalog-service/internal/products/snapshot"}) {
+            client.post().uri(path).exchange().expectStatus().isUnauthorized();
+            client.post()
+                    .uri(path)
+                    .headers(headers -> headers.setBearerAuth("admin"))
+                    .exchange()
+                    .expectStatus()
+                    .isForbidden();
         }
     }
 
@@ -108,6 +129,21 @@ class InterprovinceFeeSecurityTest {
 
         @PutMapping({"/api/interprovince-fees", "/catalog-service/api/interprovince-fees"})
         String write() {
+            return "ok";
+        }
+
+        @GetMapping({
+            "/api/products",
+            "/api/products/{id}",
+            "/catalog-service/api/products",
+            "/catalog-service/api/products/{id}"
+        })
+        String products() {
+            return "ok";
+        }
+
+        @PostMapping({"/internal/products/snapshot", "/catalog-service/internal/products/snapshot"})
+        String internal() {
             return "ok";
         }
     }

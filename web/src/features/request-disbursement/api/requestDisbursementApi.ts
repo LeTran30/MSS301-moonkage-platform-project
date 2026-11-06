@@ -1,17 +1,38 @@
-import { DISBURSEMENT_PURPOSES, disbursementStore, ledgerPath, type Disbursement } from '@/entities/payout';
-import { apiClient } from '@/shared/api/client';
-import { mockResponse } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
+import type { CreateDisbursementPayload, DisbursementDto } from '@/entities/payment';
 
-export type DisbursementPurpose = (typeof DISBURSEMENT_PURPOSES)[number]['code'];
+/**
+ * The write side of the escrow disbursements (FR-41, FR-47, FR-48).
+ *
+ * The payment entity owns the read (`getLedgers`, `getDisbursements`) and the
+ * shape of the money; the writes live here because they move the money, not
+    10| * the ledger data (package-architecture §3 — `api/` of a feature holds the
+ * writes).
+ */
 
-/** FR-41: part of a held deposit, for one purpose; an admin approves it (FR-47). */
-export async function requestDisbursement(orderId: string, purpose: DisbursementPurpose, amount: number, heldNow: number) {
-  if (!config.demoMode) {
-    await apiClient.post(`${ledgerPath(orderId)}/disbursements`, { amount, purpose });
-    return;
+/**
+ * FR-41: the vendor owner asks for part of the deposit (or the final
+ * payment) of one order; an admin reviews it (FR-47).
+ *
+ * The backend only takes `{amount, purpose}` (`CreateDisbursementRequest`);
+ * `purpose` is one of `MATERIALS`, `PRINTING`, `PACKAGING`, `RESTOCK`.
+ */
+export async function requestDisbursement(
+  orderId: string,
+  payload: CreateDisbursementPayload
+): Promise<DisbursementDto | null> {
+  // Funnel giải ngân (FR-41). Không ghi `amount` — đó là dữ liệu tài chính
+  // của đơn hàng (NFR-03).
+  trackEvent(ANALYTICS_EVENTS.requestDisbursement, { purpose: payload.purpose });
+
+  if (isDemoMode()) {
+    return null;
   }
-  const milestone = DISBURSEMENT_PURPOSES.find((p) => p.code === purpose)?.label ?? purpose;
-  disbursementStore.update((list) => [{ orderId, milestone, amount, heldAfter: heldNow - amount, state: 'Chờ quản trị duyệt' } as Disbursement, ...list]);
-  await mockResponse(true);
+  const res = await apiClient.post<unknown>(
+    GATEWAY.PAYMENT.LEDGER_DISBURSEMENTS(orderId),
+    payload
+  );
+  return unwrap<DisbursementDto>(res);
 }

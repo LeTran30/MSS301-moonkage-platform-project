@@ -1,5 +1,6 @@
 package com.moonkage.order.service.impl;
 
+import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.CatalogClient;
 import com.moonkage.order.client.PaymentClient;
 import com.moonkage.order.client.VendorClient;
@@ -73,6 +74,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final OrderProperties properties;
     private final TransactionTemplate transactionTemplate;
     private final EntityManager entityManager;
+    private final MoneyMetrics moneyMetrics;
 
     @Override
     public CreateCheckoutResponse create(CurrentUserInfo caller, CreateCheckoutRequest request) {
@@ -114,15 +116,18 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         CreatePaymentResponse payment;
         try {
-            payment = paymentClient.createPayment(new CreatePaymentRequest(
-                    CreatePaymentRequest.CHECKOUT,
+            // The checkout id is the idempotency key (BE-08b): a retry answers the same payment.
+            payment = paymentClient.createPayment(
                     checkoutId,
-                    caller.accountId(),
-                    checkout.getTotalAmount(),
-                    paymentExpiresAt,
-                    groups.values().stream()
-                            .map(g -> new CreatePaymentRequest.Allocation(g.getOrderId(), g.totalAmount()))
-                            .toList()));
+                    new CreatePaymentRequest(
+                            CreatePaymentRequest.CHECKOUT,
+                            checkoutId,
+                            caller.accountId(),
+                            checkout.getTotalAmount(),
+                            paymentExpiresAt,
+                            groups.values().stream()
+                                    .map(g -> new CreatePaymentRequest.Allocation(g.getOrderId(), g.totalAmount()))
+                                    .toList()));
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(status -> checkoutRepository
                     .findForUpdateById(checkoutId)
@@ -252,6 +257,8 @@ public class CheckoutServiceImpl implements CheckoutService {
                     .filter(line -> line.getVendorId().equals(group.getVendorId()))
                     .forEach(line -> orderItemRepository.save(toItem(order, line)));
             entityManager.flush();
+            // BE-11b: the counter that is compared with payment.succeeded to catch money without an order
+            moneyMetrics.orderCreated(OrderKind.BUY_NOW.name());
             orderEvents.announce(RabbitConfig.ORDER_CREATED_ROUTING_KEY, order);
         }
         cartItemRepository.deleteBought(

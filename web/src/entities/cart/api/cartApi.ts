@@ -1,40 +1,72 @@
-import { apiClient, type ApiResponse } from '@/shared/api/client';
-import { cartApi } from '@/shared/api/gateway';
-import type { CartLine } from '../model/cartModel';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { provinceCodeOf } from '@/shared/config';
+import type { CartState } from '../model/cartStore';
+import type { CartItem } from '../model/cartStore';
 
-/** order-service `CartResponse.Line`. */
-interface CartLineDto {
-  itemId: string;
-  productId: string;
-  productName: string;
-  unitPrice: number;
-  quantity: number;
-  available: boolean;
+/**
+ * Wire shape of `com.moonkage.order.dto.response.CartResponse`.
+ *
+ * The cart is split by shop: every group carries its own delivery fee and its lines.
+ * `provinceCode` is mandatory on the backend (`@RequestParam String provinceCode`).
+ */
+export interface CartDto {
+  provinceCode?: string;
+  groups?: Array<{
+    vendorId: string;
+    vendorName: string;
+    deliverable?: boolean;
+    interprovince?: boolean;
+    shippingFee?: number | null;
+    subtotal?: number;
+    items?: Array<{
+      itemId: string;
+      productId: string;
+      productName: string;
+      unitPrice: number;
+      quantity: number;
+      available?: boolean;
+    }>;
+  }>;
+  totalAmount?: number;
 }
 
-/** order-service `CartResponse`: the cart split by Shop, fees to `provinceCode` (AC-09.1). */
-interface CartResponseDto {
-  provinceCode: string;
-  groups: { vendorId: string; items: CartLineDto[] }[];
-  totalAmount: number;
+/** Map the backend cart to the UI cart shape. */
+export function mapCartDtoToEntity(dto: CartDto): CartState {
+  return {
+    groups: (dto.groups ?? []).map((group) => ({
+      vendorId: group.vendorId,
+      vendorName: group.vendorName,
+      shippingFee: group.shippingFee ?? 0,
+      items: (group.items ?? []).map((line) => ({
+        itemId: line.itemId,
+        productId: line.productId,
+        name: line.productName,
+        price: line.unitPrice,
+        image: '/images/banh-nuong.jpg',
+        vendorId: group.vendorId,
+        vendorName: group.vendorName,
+        quantity: line.quantity,
+        stock: 0,
+      })),
+    })),
+  };
 }
 
-const toLine = (dto: CartLineDto): CartLine => ({ itemId: dto.itemId, productId: dto.productId, quantity: dto.quantity });
+export const cartApi = {
+  /**
+   * The caller's own multi-shop cart.
+   *
+   * This is the read side of the cart; the writes (`addCartItem`,
+   * `updateCartItem`) belong to the `add-to-cart` feature
+   * (package-architecture §3 — `api/` of a feature holds the writes).
+   */
+  async getMine(province?: string): Promise<CartState> {
+    const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
+    const res = await apiClient.get<unknown>(`${GATEWAY.ORDER.CART}?${params.toString()}`);
+    const dto = unwrap<CartDto>(res);
+    return dto ? mapCartDtoToEntity(dto) : { groups: [] };
+  },
+};
 
-export async function fetchCartLines(provinceCode: string): Promise<CartLine[]> {
-  const res = await apiClient.get<ApiResponse<CartResponseDto>>(cartApi, { params: { provinceCode } });
-  return res.data.data.groups.flatMap((g) => g.items.map(toLine));
-}
-
-/** 409 CART_004 / CART_005 above the stock or at the quote threshold (AC-08.2). */
-export async function addCartItem(productId: string, quantity: number): Promise<void> {
-  await apiClient.post<ApiResponse<CartLineDto>>(`${cartApi}/items`, { productId, quantity });
-}
-
-export async function updateCartItem(itemId: string, quantity: number): Promise<void> {
-  await apiClient.patch<ApiResponse<CartLineDto>>(`${cartApi}/items/${encodeURIComponent(itemId)}`, { quantity });
-}
-
-export async function removeCartItem(itemId: string): Promise<void> {
-  await apiClient.delete(`${cartApi}/items/${encodeURIComponent(itemId)}`);
-}
+/** Re-export for call sites that build a cart item from a product. */
+export type { CartItem };

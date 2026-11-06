@@ -1,0 +1,19 @@
+/* Bố cục trang dùng design token của hệ thống (không dùng inline style). */
+
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  width: 100%;
+}
+.headerSkeleton {
+  margin-bottom: 16px;
+}
+.bodySkeleton {
+  margin-bottom: 32px;
+}
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}

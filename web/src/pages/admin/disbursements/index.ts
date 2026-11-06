@@ -1,1 +1,1 @@
-export * from './AdminDisbursementsPage';
+export { AdminDisbursementsPage } from './AdminDisbursementsPage';

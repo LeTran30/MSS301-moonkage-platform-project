@@ -25,7 +25,7 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED("COMMON_405", HttpStatus.METHOD_NOT_ALLOWED, "error.common.method_not_allowed"),
     /** A business operation asked of a resource in the wrong status (api-db README, API rule 3). */
     INVALID_STATE_TRANSITION("COMMON_409", HttpStatus.CONFLICT, "error.common.invalid_state_transition"),
-    /** An endpoint whose business logic is not written yet (docs/services/vendor/completion-plan.md). */
+    /** An endpoint whose business logic is not written yet (docs/archive/2026-10-26-vendor-completion-plan.md). */
     NOT_IMPLEMENTED("COMMON_501", HttpStatus.NOT_IMPLEMENTED, "error.common.not_implemented"),
     /** Another service did not answer, or answered with a server error. */
     DEPENDENCY_UNAVAILABLE("COMMON_503", HttpStatus.SERVICE_UNAVAILABLE, "error.common.dependency_unavailable"),

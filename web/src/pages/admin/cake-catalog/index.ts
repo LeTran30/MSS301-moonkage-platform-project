@@ -1,0 +1,1 @@
+export { AdminCakeCatalogPage } from './AdminCakeCatalogPage';

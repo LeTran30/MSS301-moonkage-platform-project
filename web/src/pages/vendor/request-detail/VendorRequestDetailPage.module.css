@@ -1,0 +1,94 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0;
+  font-family: var(--font-heading);
+}
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cardTitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0;
+}
+.specList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: var(--text-sm);
+}
+.specRow {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+  gap: var(--space-3);
+}
+.noteLabel {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+.noteBox {
+  background: var(--color-surface-2);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.totalRow {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.totalValue {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.submitBtn {
+  width: 100%;
+}
+.error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}

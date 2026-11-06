@@ -1,113 +1,267 @@
-/* [NGUYÊN TẮC 3: TẦNG TOÀN CỤC]
-   tokens.css — Khai báo CSS Variables theo Design System "DS: Moonkage v2"
-   (https://claude.ai/artifact/GGUiHf9RjvveUzR3geFsCN). */
-:root, [data-theme="light"] {
-  --surface: #ffffff; /* Nền trang. Sáng: trắng tinh như Shopcart; tối: xanh than gần đen. */
-  --surface-muted: #f5f6f6; /* Nền khung ảnh sản phẩm, ô danh mục chưa có màu, nền section xen kẽ. Đây là màu quan trọng nhất của hệ: mọi ảnh sản phẩm nằm trên đúng nền này. */
-  --surface-sunk: #eceeef; /* Vùng lõm: hàng tiêu đề bảng, ô nhập khoá, khung ảnh khi chưa tải. */
-  --surface-hover: #f0f2f3; /* Nền khi rê chuột lên nút viền, chip đang tắt, hàng trong menu. */
-  --ink: #1d2433; /* Chữ chính và tiêu đề trên mọi nền surface, brand-soft và tint. ≥12:1. */
-  --ink-muted: #5c6370; /* Chữ phụ: tên Shop, quy cách, hạn dùng, ghi chú. ≥4.9:1 trên mọi nền surface và tint ở cả hai theme. */
-  --line: #e4e7ea; /* Vách ngăn giữa các hàng và viền thẻ thông tin. Không dùng làm viền control (dưới 3:1). */
-  --line-strong: #868e99; /* Viền nút viền (outline), ô nhập, chip. ≥3:1 trên surface và surface-muted. */
-  --brand: #1c2b4b; /* Màu thương hiệu duy nhất: thanh tiện ích trên cùng, nút chính, chip đang chọn, tiêu đề hero, khối banner. Dùng ít: khoảng 5% bề mặt. */
-  --brand-hover: #2d4170; /* Nền nút chính khi rê chuột hoặc nhấn. */
-  --on-brand: #ffffff; /* Chữ và icon trên brand và brand-hover. */
-  --brand-soft: #e6ecf6; /* Nền nhạt của brand: hàng đang chọn trong PriceTiers, thông báo nhẹ. */
-  --gold: #c9a14a; /* Vàng của logo: nền huy hiệu nhỏ (Đặt sớm, Custom nổi bật), sao đánh giá. Không làm chữ trên nền sáng. */
-  --on-gold: #1d2433; /* Chữ trên gold. */
-  --gold-ink: #7a560c; /* Khi cần chữ màu vàng: phần trăm giảm, con số tốt nhất trong QuoteCompare. */
-  --danger: #b3261e; /* Lỗi, cảnh báo, giá gạch khi hết hàng. Không còn là màu nút mua: nút mua dùng brand. */
-  --on-danger: #ffffff; /* Chữ trên nền danger. */
-  --success: #2f6a49; /* Đã duyệt, đã giao. Luôn đi kèm chữ. */
-  --tint-gold: #f8edd6; /* Nền ô danh mục và khối khuyến mãi (1/4 màu tint). Chữ ink. */
-  --tint-rose: #f9e2dc; /* Nền ô danh mục và khối khuyến mãi (2/4). Chữ ink. */
-  --tint-jade: #dcefe4; /* Nền ô danh mục và khối khuyến mãi (3/4). Chữ ink. */
-  --tint-sky: #e3eaf6; /* Nền ô danh mục và khối khuyến mãi (4/4). Chữ ink. */
-  --focus: #1c2b4b; /* Vòng focus bàn phím trên nền sáng: viền liền border-thick, cách border-thick. */
-  --focus-on-brand: #e4c47e; /* Vòng focus cho control đặt trên nền brand (thanh tiện ích, banner). Bật bằng class mk-on-brand. */
-  --shadow-pop: 0 12px 32px -8px rgba(16, 24, 40, 0.18); /* Bóng duy nhất, chỉ cho menu thả xuống và hộp thoại. Thẻ, nút, bảng phẳng hoàn toàn. */
-}
-[data-theme="dark"] {
-  --surface: #10141c;
-  --surface-muted: #181e29;
-  --surface-sunk: #0b0e14;
-  --surface-hover: #222a38;
-  --ink: #f1f3f6;
-  --ink-muted: #a7afbb;
-  --line: #283142;
-  --line-strong: #6f7a8c;
-  --brand: #a9bfe8;
-  --brand-hover: #c3d3f1;
-  --on-brand: #0f1a30;
-  --brand-soft: #22314f;
-  --gold: #d8b45e;
-  --on-gold: #10141c;
-  --gold-ink: #e4c47e;
-  --danger: #f08a80;
-  --on-danger: #1a0806;
-  --success: #8fcaa2;
-  --tint-gold: #3a3020;
-  --tint-rose: #3d2a2a;
-  --tint-jade: #1f3529;
-  --tint-sky: #212d43;
-  --focus: #e4c47e;
-  --focus-on-brand: #0f1a30;
-  --shadow-pop: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
-}
+/* app/styles/tokens.css — NGUỒN DUY NHẤT của giá trị thiết kế (package-architecture §6).
+   Bảng màu "Đêm rằm": giấy kem, đỏ son, vàng đồng; chế độ tối là đêm trăng ấm. */
 :root {
-  /* Semantic Color Aliases */
-  --color-primary: var(--brand);
-  --color-primary-hover: var(--brand-hover);
-  --color-danger: var(--danger);
-  --color-success: var(--success);
+  /* Màu nền và mực */
+  --color-bg: #fbf6ec;
+  --color-bg-deep: #f4ead8;
+  --color-surface: #fffdf8;
+  --color-surface-2: #f7efe1;
+  --color-surface-3: #efe3cd;
+  --color-text: #2a1d14;
+  --color-text-muted: #75604f;
+  --color-text-subtle: #9d8877;
+  --color-border: #e8dcc6;
+  --color-border-strong: #d6c4a6;
 
-  /* Spacing Scale */
-  --space-1: 4px; /* Icon với chữ, giá với ghi chú. */
-  --space-2: 8px; /* Giữa các huy hiệu, giữa nhãn và ô nhập. */
-  --space-3: 12px; /* Giữa dòng trong thẻ, padding dọc nút nhỏ. */
-  --space-4: 16px; /* Lề màn hình 360px, khoảng giữa thẻ trên mobile. */
-  --space-5: 20px; /* Giữa các trường trong form. */
-  --space-6: 24px; /* Khoảng giữa thẻ trong lưới desktop, padding khối. */
-  --space-8: 32px; /* Giữa tiêu đề section và nội dung. */
-  --space-12: 48px; /* Padding trong banner, khoảng cách section trên mobile. */
-  --space-20: 80px; /* Khoảng cách giữa các section trên desktop. Khoảng thở lớn là một nửa vẻ đẹp kiểu Shopcart. */
+  /* Thương hiệu */
+  --color-primary: #b3261e;
+  --color-primary-hover: #921d17;
+  --color-primary-soft: #f8e1dc;
+  --color-on-primary: #fffaf3;
+  --color-gold: #b8862b;
+  --color-gold-hover: #9b6f1f;
+  --color-gold-soft: #f5e6c4;
+  --color-gold-bright: #e2b25c;
+  --color-ink: #2f4b6e;
+  --color-ink-soft: #e1e9f3;
 
-  /* Shape & Sizing */
-  --radius-sm: 6px; /* Ô trong bảng, checkbox. */
-  --radius-md: 10px; /* Thẻ, khung ảnh, ô danh mục, banner, bảng. Ngôn ngữ hình khối thứ nhất. */
-  --radius-full: 999px; /* Nút, chip, ô tìm kiếm, ô nhập, huy hiệu, nút tim. Ngôn ngữ hình khối thứ hai. */
-  --control-h: 48px; /* Chiều cao nút lớn, ô tìm kiếm, ô nhập. */
-  --control-h-sm: 40px; /* Nút trên thẻ, chip lọc. */
-  --border-thin: 1px; /* Viền nút viền, ô nhập, vách ngăn. */
-  --border-thick: 2px; /* Viền focus, viền lỗi, đường nối timeline, gạch chân tab đang chọn. */
+  /* Trạng thái */
+  --color-success: #2f7a4a;
+  --color-success-soft: #dff0e3;
+  --color-warning: #a8670f;
+  --color-warning-soft: #f9ead0;
+  --color-danger: #b3261e;
+  --color-danger-soft: #f8e1dc;
+  --color-info: #2f5d8a;
+  --color-info-soft: #e0eaf5;
+
+  /* Màu theo khu (đổi bằng data-zone ở layout) */
+  --color-zone: var(--color-primary);
+  --color-zone-soft: var(--color-primary-soft);
+
+  /* Màu phụ trợ — module CSS dùng token, không hardcode hex ở nơi khác (§6) */
+  --color-white: #ffffff;
+  --color-text-on-dark: #f4ead9;
+  --color-gold-ink: #2a1a06;
+  --color-success-ink: #1b5e20;
+  --color-info-bright: #2196f3;
+  --color-shadow: #000000;
+  --color-shadow-deep: #0e0a07;
+  --color-shadow-warm: #3c1e0a;
+  --color-night-1: #18110b;
+  --color-night-2: #120d09;
+
+  /* Tên cũ, giữ lại để không phá vỡ các module đang dùng */
+  --color-text-secondary: var(--color-text-muted);
+  --color-bg-alt: var(--color-surface-2);
+  --color-bg-secondary: var(--color-surface-2);
+  --color-secondary: var(--color-gold);
+  --color-secondary-dark: var(--color-gold-hover);
+  --color-primary-dark: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-soft);
+  --color-blue: var(--color-info);
+  --color-green: var(--color-success);
+  --color-red: var(--color-danger);
+
+  /* Gradient & Theme Patterns */
+  --gradient-gold: linear-gradient(135deg, #e9c27a 0%, #b8862b 55%, #8f6418 100%);
+  --gradient-ember: linear-gradient(135deg, #d8452f 0%, #b3261e 50%, #7d1712 100%);
+  --gradient-night: linear-gradient(160deg, #2a1810 0%, #160d08 100%);
+  --gradient-paper: radial-gradient(1200px 600px at 85% -10%, rgb(226 178 92 / 0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgb(179 38 30 / 0.08), transparent 60%);
+  --gradient-moon: radial-gradient(circle at 50% 50%, #fff7d6 0%, #fbd578 45%, #e29e2e 85%, #b57416 100%);
+  --gradient-lacquer: linear-gradient(135deg, #3d1411 0%, #240c0b 50%, #120504 100%);
+
+  /* Glow Effects */
+  --glow-moon: 0 0 60px 20px rgba(245, 187, 86, 0.35);
+  --glow-gold: 0 0 24px -2px rgba(226, 178, 92, 0.4);
+  --glow-lantern: 0 8px 30px rgba(216, 69, 47, 0.35);
 
   /* Typography */
-  --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
-  --text-display: 700 56px/64px var(--font-sans); /* Tiêu đề hero trang chủ. Mỗi trang một lần. Viết hoa chữ đầu câu. */
-  --text-title: 700 40px/48px var(--font-sans); /* Tiêu đề banner (PromoBanner) và tiêu đề trang chi tiết. */
-  --text-heading: 700 26px/32px var(--font-sans); /* Tiêu đề mỗi section trên trang chủ và trang danh sách. */
-  --text-card-title: 600 16px/24px var(--font-sans); /* Tên bánh trên ProductCard, tên lò trên VendorTile, tên cột QuoteCompare. */
-  --text-body: 400 16px/26px var(--font-sans); /* Đoạn văn, mô tả. */
-  --text-body-strong: 600 16px/24px var(--font-sans); /* Tiêu đề mốc timeline, hàng tổng trong bảng. */
-  --text-body-sm: 400 14px/20px var(--font-sans); /* Thông tin phụ trên thẻ, hàng trong bảng, gợi ý dưới ô nhập. */
-  --text-label: 600 14px/20px var(--font-sans); /* Chữ trên nút, chip, nhãn ô nhập, link điều hướng. */
-  --text-price: 700 18px/24px var(--font-sans); /* Giá trên thẻ và trang chi tiết; đặt cùng hàng với tên bánh, căn phải. Dùng chữ số tabular. */
-  --text-caption: 500 12px/16px var(--font-sans); /* Ghi chú dưới giá, chữ trong huy hiệu, thanh tiện ích trên cùng. */
-  --tracking-display: -0.02em;
-  --tracking-title: -0.01em;
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-heading: var(--font-display);
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+  --text-5xl: 3.75rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --leading-tight: 1.2;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
 
-  /* Motion */
-  --duration-fast: 150ms;
-  --duration-base: 250ms;
-  --duration-spin: 800ms;
-  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  /* Khoảng cách */
+  --space-0: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* Kích thước */
+  --container: 1240px;
+  --container-narrow: 860px;
+  --header-h: 72px;
+  --sidebar-w: 248px;
+  --control-h: 42px;
+  --control-h-sm: 34px;
+  --control-h-lg: 50px;
+
+  /* Bo góc, bóng */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --shadow-xs: 0 1px 2px rgb(60 30 10 / 0.06);
+  --shadow-sm: 0 2px 6px rgb(60 30 10 / 0.07), 0 1px 2px rgb(60 30 10 / 0.05);
+  --shadow-md: 0 10px 30px -10px rgb(60 30 10 / 0.18), 0 2px 6px rgb(60 30 10 / 0.06);
+  --shadow-lg: 0 24px 60px -20px rgb(60 30 10 / 0.3);
+  --shadow-glow: 0 0 0 4px rgb(184 134 43 / 0.18);
+  --ring: 0 0 0 3px rgb(179 38 30 / 0.25);
+
+  /* Chuyển động */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 220ms;
+  --duration-slow: 420ms;
+  --transition-fast: 120ms;
+  --toast-duration: 4000ms;
+
+  /* Lớp chồng */
+  --z-header: 50;
+  --z-dropdown: 60;
+  --z-dialog: 100;
+  --z-toast: 120;
+
+  color-scheme: light;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --duration-fast: 0ms;
-    --duration-base: 0ms;
-    --duration-spin: 2400ms;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #140e0a;
+    --color-bg-deep: #0f0a07;
+    --color-surface: #1d1611;
+    --color-surface-2: #261d16;
+    --color-surface-3: #31261d;
+    --color-text: #f4ead9;
+    --color-text-muted: #bba68f;
+    --color-text-subtle: #8c7a68;
+    --color-border: #3a2d22;
+    --color-border-strong: #4d3d2f;
+    --color-primary: #e0574b;
+    --color-primary-hover: #ec6e62;
+    --color-primary-soft: #3b1a16;
+    --color-on-primary: #1a0f0b;
+    --color-gold: #e2b25c;
+    --color-gold-hover: #efc77c;
+    --color-gold-soft: #3a2c15;
+    --color-ink: #8fb3e0;
+    --color-ink-soft: #1c2a3c;
+    --color-success: #74c58f;
+    --color-success-soft: #173323;
+    --color-warning: #e7b05c;
+    --color-warning-soft: #3a2a12;
+    --color-danger: #ef7468;
+    --color-danger-soft: #3b1a16;
+    --color-info: #8fb3e0;
+    --color-info-soft: #1c2a3c;
+    --gradient-paper: radial-gradient(1200px 600px at 85% -10%, rgb(226 178 92 / 0.12), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgb(224 87 75 / 0.08), transparent 60%);
+    --shadow-md: 0 10px 30px -10px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7);
+    --color-white: #ffffff;
+    --color-text-on-dark: #f4ead9;
+    --color-gold-ink: #1a0f0b;
+    --color-success-ink: #74c58f;
+    --color-info-bright: #64b5f6;
+    --color-shadow: #000000;
+    --color-shadow-deep: #0e0a07;
+    --color-shadow-warm: #3c1e0a;
+    --color-night-1: #18110b;
+    --color-night-2: #120d09;
+    --color-white: #ffffff;
+  --color-text-on-dark: #f4ead9;
+  --color-gold-ink: #1a0f0b;
+  --color-success-ink: #74c58f;
+  --color-info-bright: #64b5f6;
+  --color-shadow: #000000;
+  --color-shadow-deep: #0e0a07;
+  --color-shadow-warm: #3c1e0a;
+  --color-night-1: #18110b;
+  --color-night-2: #120d09;
+  --color-text-secondary: var(--color-text-muted);
+  --color-bg-alt: var(--color-surface-2);
+  --color-bg-secondary: var(--color-surface-2);
+  --color-secondary: var(--color-gold);
+  --color-secondary-dark: var(--color-gold-hover);
+  --color-primary-dark: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-soft);
+  --color-blue: var(--color-info);
+  --color-green: var(--color-success);
+  --color-red: var(--color-danger);
+  color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #140e0a;
+  --color-bg-deep: #0f0a07;
+  --color-surface: #1d1611;
+  --color-surface-2: #261d16;
+  --color-surface-3: #31261d;
+  --color-text: #f4ead9;
+  --color-text-muted: #bba68f;
+  --color-text-subtle: #8c7a68;
+  --color-border: #3a2d22;
+  --color-border-strong: #4d3d2f;
+  --color-primary: #e0574b;
+  --color-primary-hover: #ec6e62;
+  --color-primary-soft: #3b1a16;
+  --color-on-primary: #1a0f0b;
+  --color-gold: #e2b25c;
+  --color-gold-hover: #efc77c;
+  --color-gold-soft: #3a2c15;
+  --color-ink: #8fb3e0;
+  --color-ink-soft: #1c2a3c;
+  --color-success: #74c58f;
+  --color-success-soft: #173323;
+  --color-warning: #e7b05c;
+  --color-warning-soft: #3a2a12;
+  --color-danger: #ef7468;
+  --color-danger-soft: #3b1a16;
+  --color-info: #8fb3e0;
+  --color-info-soft: #1c2a3c;
+  --gradient-paper: radial-gradient(1200px 600px at 85% -10%, rgb(226 178 92 / 0.12), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgb(224 87 75 / 0.08), transparent 60%);
+  --shadow-md: 0 10px 30px -10px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+/* Màu theo khu: Kênh người bán dùng vàng đồng, Quản trị dùng mực xanh */
+[data-zone='vendor'] {
+  --color-zone: var(--color-gold);
+  --color-zone-soft: var(--color-gold-soft);
+}
+[data-zone='admin'] {
+  --color-zone: var(--color-ink);
+  --color-zone-soft: var(--color-ink-soft);
 }

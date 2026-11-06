@@ -1,96 +1,84 @@
-import { apiClient, type ApiResponse } from '@/shared/api/client';
-import { paymentsPath, vnpayReturnPath } from '@/shared/api/gateway';
-import { mockResponse, seedStore } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
-import { formatDate } from '@/shared/utils/format';
+import { apiClient, GATEWAY, unwrap, unwrapPage } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
 
 /**
- * One VNPay payment (M4.2): checkout of ready-made orders, a deposit, the rest of a custom order, or the vendor fee.
- * In the demo the VNPay page is simulated; `context` carries what the page that started it needs afterwards.
+ * Wire shape of `com.moonkage.payment.dto.response.PaymentResponse`.
+ *
+ * `PENDING` after the VNPay return page only means the IPN has not arrived yet:
+ * the result page polls until the status changes (BR-25).
  */
-export type PaymentPurpose = 'checkout' | 'deposit' | 'remaining' | 'vendor-fee';
-
-export interface Payment {
-  id: string;
-  purpose: PaymentPurpose;
-  amount: number;
-  description: string;
-  /** Free-form data the starting page reads back on the result page; from the server, `referenceId`. */
-  context: Record<string, unknown>;
-  status: 'pending' | 'paid' | 'cancelled';
-  at: string;
-}
-
-/** Where the payer goes to pay: the VNPay page, or the simulated one (an app path) in demo mode. */
-export interface PaymentLink {
+export interface PaymentDto {
   paymentId: string;
-  paymentUrl: string;
-}
-
-type PaymentPurposeDto = 'CHECKOUT' | 'DEPOSIT' | 'REMAINDER' | 'REGISTRATION_FEE';
-type PaymentStatusDto = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'DUPLICATE';
-
-/** payment-service `PaymentResponse`. */
-interface PaymentDto {
-  paymentId: string;
-  purpose: PaymentPurposeDto;
-  /** checkoutId, acceptanceId, orderId or vendorId, by purpose */
-  referenceId: string;
+  purpose: 'CHECKOUT' | 'DEPOSIT' | 'REMAINDER' | 'REGISTRATION_FEE';
+  /** checkoutId, acceptanceId, orderId or vendorId, by purpose. */
+  referenceId?: string | null;
   amount: number;
-  status: PaymentStatusDto;
-  gatewayResponseCode: string | null;
-  expiresAt: string | null;
-  paidAt: string | null;
-}
-
-const purposeOf: Record<PaymentPurposeDto, PaymentPurpose> = {
-  CHECKOUT: 'checkout',
-  DEPOSIT: 'deposit',
-  REMAINDER: 'remaining',
-  REGISTRATION_FEE: 'vendor-fee',
-};
-
-/** DUPLICATE is a second success, refunded by the server (P-03): the payer did pay. */
-const statusOf: Record<PaymentStatusDto, Payment['status']> = {
-  PENDING: 'pending',
-  SUCCEEDED: 'paid',
-  FAILED: 'cancelled',
-  DUPLICATE: 'paid',
-};
-
-const descriptionOf: Record<PaymentPurpose, string> = {
-  checkout: 'Mua hàng có sẵn',
-  deposit: 'Đặt cọc đơn đặt hàng',
-  remaining: 'Phần còn lại đơn đặt hàng',
-  'vendor-fee': 'Phí mở bán',
-};
-
-function fromPaymentDto(dto: PaymentDto): Payment {
-  const purpose = purposeOf[dto.purpose];
-  return {
-    id: dto.paymentId,
-    purpose,
-    amount: dto.amount,
-    description: descriptionOf[purpose],
-    context: { referenceId: dto.referenceId },
-    status: statusOf[dto.status],
-    at: formatDate(dto.paidAt ?? dto.expiresAt),
-  };
-}
-
-export const paymentStore = seedStore<Payment[]>('payments', []);
-
-export async function fetchPayment(paymentId: string): Promise<Payment | null> {
-  if (config.demoMode) return mockResponse(paymentStore.get().find((p) => p.id === paymentId) ?? null);
-  const res = await apiClient.get<ApiResponse<PaymentDto>>(`${paymentsPath}/${encodeURIComponent(paymentId)}`);
-  return fromPaymentDto(res.data.data);
+  status: 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'DUPLICATE';
+  gatewayResponseCode?: string | null;
+  expiresAt?: string | null;
+  paidAt?: string | null;
 }
 
 /**
- * The query VNPay redirected the payer back with, checked by payment-service: which payment it was. It marks
- * nothing paid; the IPN does (BR-25).
+ * The read side of a payment (FR-09).
+ *
+ * The result page polls this endpoint: a payment created by the checkout only
+ * becomes `SUCCEEDED` when the VNPay IPN arrives (BR-25).
  */
-export async function fetchVnpayReturn(query: URLSearchParams): Promise<Payment> {
-  const res = await apiClient.get<ApiResponse<PaymentDto>>(vnpayReturnPath, { params: query });
-  return fromPaymentDto(res.data.data);
+/** Demo mode has no gateway and no IPN: every payment the demo opens is paid. */
+function demoPaidPayment(paymentId: string): PaymentDto {
+  return { paymentId, purpose: 'CHECKOUT', amount: 0, status: 'SUCCEEDED', paidAt: new Date().toISOString() };
 }
+
+export const paymentApi = {
+  /** The state of one payment of the caller. */
+  async getById(paymentId: string): Promise<PaymentDto | null> {
+    if (isDemoMode()) {
+      return demoPaidPayment(paymentId);
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.PAYMENT_BY_ID(paymentId));
+    const dto = unwrap<PaymentDto>(res);
+    return dto ?? null;
+  },
+
+  /**
+   * The payment the gateway redirected the payer back to (BR-25).
+   *
+   * `GET /api/payments/vnpay/return` checks the signature of the query VNPay
+   * sent and answers which payment it was; it changes nothing. The result page
+   * calls it so it knows the payment id even when the browser lost the state
+   * of the checkout.
+   */
+  async readVnpayReturn(callback: Record<string, string>): Promise<PaymentDto | null> {
+    if (isDemoMode()) {
+      // demoPaymentUrl() names the payment in `paymentId`.
+      return callback.paymentId ? demoPaidPayment(callback.paymentId) : null;
+    }
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(callback)) {
+      params.set(key, value);
+    }
+    const res = await apiClient.get<unknown>(
+      `${GATEWAY.PAYMENT.VNPAY_RETURN}?${params.toString()}`
+    );
+    const dto = unwrap<PaymentDto>(res);
+    return dto ?? null;
+  },
+
+  /**
+   * The payments the caller may read (AC-51.3).
+   *
+   * `purpose` narrows the list, e.g. `REGISTRATION_FEE` for the registration
+   * fees the platform collected.
+   */
+  async list(options?: { purpose?: PaymentDto['purpose'] }): Promise<PaymentDto[]> {
+    if (isDemoMode()) {
+      return [];
+    }
+    const params = new URLSearchParams();
+    if (options?.purpose) params.set('purpose', options.purpose);
+    params.set('size', '100');
+    const res = await apiClient.get<unknown>(`${GATEWAY.PAYMENT.PAYMENTS}?${params.toString()}`);
+    return unwrapPage<PaymentDto>(res);
+  },
+};

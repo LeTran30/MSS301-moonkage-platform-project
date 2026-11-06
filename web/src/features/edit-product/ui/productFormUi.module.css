@@ -1,0 +1,87 @@
+.label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.gridThree {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.gridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .gridThree,
+  .gridTwo {
+    grid-template-columns: 1fr;
+  }
+}
+.fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.blockLabel {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.chipRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.taxonomyChip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+.taxonomyChipActive {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.taxonomyChipGold {
+  border: 1px solid var(--color-gold);
+  background: var(--color-gold);
+  color: var(--color-white);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: inherit;
+  font-size: var(--text-sm);
+}
+.textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--text-sm);
+}

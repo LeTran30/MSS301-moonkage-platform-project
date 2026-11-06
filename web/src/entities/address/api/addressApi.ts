@@ -1,24 +1,15 @@
-import { apiClient, type ApiResponse } from '@/shared/api/client';
-import { identityApi } from '@/shared/api/gateway';
-import { mockResponse, seedStore } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
-import { provinceCodeOf, provinceNameOf, provinceOfficialNameOf } from '@/shared/config/provinces';
+import { apiClient, GATEWAY, unwrapList } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import type { Address } from '../model/types';
 
-export const addressesPath = `${identityApi}/addresses`;
-
-export interface Address {
-  id: string;
-  label: string;
-  name: string;
-  phone: string;
-  province: string;
-  provinceCode?: string;
-  ward?: string;
-  line: string;
-  isDefault: boolean;
-}
-
-export interface AddressResponseDto {
+/**
+ * Wire shape of `com.moonkage.identity.address.dto.AddAddressResponse`.
+ *
+ * The backend sends `fullAddress` (ready to show) and `areaCode` (the key to
+ * filter products and sellers by delivery area, AC-03.2); both are kept so the
+ * UI never has to rebuild the line itself.
+ */
+export interface AddressDto {
   id: string;
   recipientName: string;
   recipientPhone: string;
@@ -27,102 +18,46 @@ export interface AddressResponseDto {
   wardName: string;
   detail: string;
   fullAddress: string;
-  areaCode: string;
-  label: string | null;
-  isDefault: boolean;
+  areaCode?: string;
+  label?: string;
+  isDefault?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-interface SaveAddressRequestDto {
-  recipientName: string;
-  recipientPhone: string;
-  provinceCode: string;
-  provinceName: string;
-  wardName: string;
-  detail: string;
-  label: string;
-  isDefault: boolean;
-}
-
-function normalizeDisplayPhone(raw: string): string {
-  const trimmed = raw.trim();
-  if (/^[35789]\d{8}$/.test(trimmed)) return `0${trimmed}`;
-  return trimmed;
-}
-
-function splitLineAndWard(line: string, explicitWard?: string, fallbackWard = 'Phường trung tâm'): { detail: string; wardName: string } {
-  const trimmed = line.trim();
-  if (explicitWard?.trim()) {
-    return { detail: trimmed, wardName: explicitWard.trim() };
-  }
-  const lastComma = trimmed.lastIndexOf(',');
-  if (lastComma > 0 && lastComma < trimmed.length - 1) {
-    const detail = trimmed.slice(0, lastComma).trim();
-    const wardName = trimmed.slice(lastComma + 1).trim();
-    if (detail && wardName) return { detail, wardName };
-  }
-  return { detail: trimmed, wardName: fallbackWard };
-}
-
-export function fromAddressDto(dto: AddressResponseDto): Address {
-  const province = provinceNameOf(dto.provinceCode || dto.provinceName);
-  const detail = dto.detail?.trim() ?? '';
-  const ward = dto.wardName?.trim() ?? '';
-  const line =
-    ward && ward !== province && ward !== dto.provinceName && !detail.toLowerCase().includes(ward.toLowerCase())
-      ? `${detail}, ${ward}`
-      : detail;
+/** Map the backend address to the UI entity. */
+export function mapAddressDtoToEntity(dto: AddressDto): Address {
   return {
     id: dto.id,
-    label: dto.label?.trim() || 'Địa chỉ',
-    name: dto.recipientName,
-    phone: normalizeDisplayPhone(dto.recipientPhone),
-    province,
+    recipientName: dto.recipientName,
+    recipientPhone: dto.recipientPhone,
     provinceCode: dto.provinceCode,
-    ward,
-    line,
+    provinceName: dto.provinceName,
+    wardName: dto.wardName,
+    detail: dto.detail,
+    fullAddress: dto.fullAddress,
+    areaCode: dto.areaCode,
+    label: dto.label,
     isDefault: Boolean(dto.isDefault),
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
   };
 }
 
-export function toSaveAddressDto(input: Omit<Address, 'id'>): SaveAddressRequestDto {
-  const provinceCode = input.provinceCode || provinceCodeOf(input.province);
-  const provinceName = provinceOfficialNameOf(provinceCode);
-  const { detail, wardName } = splitLineAndWard(input.line, input.ward, provinceNameOf(provinceCode));
-  return {
-    recipientName: input.name.trim(),
-    recipientPhone: input.phone.replace(/\s+/g, ''),
-    provinceCode,
-    provinceName,
-    wardName,
-    detail,
-    label: input.label.trim() || 'Địa chỉ',
-    isDefault: input.isDefault,
-  };
-}
-
-/** Seed from the wireframe (m6-3) for demo mode. */
-const seed: Address[] = [
-  { id: 'a1', label: 'Nhà', name: 'Anh Minh', phone: '0912 345 678', province: 'Hà Nội', provinceCode: '01', ward: 'Phường Quán Thánh', line: '18 Hoàng Diệu', isDefault: true },
-  { id: 'a2', label: 'Văn phòng', name: 'Anh Minh', phone: '0912 345 678', province: 'Hà Nội', provinceCode: '01', ward: 'Phường Dịch Vọng Hậu', line: 'Tòa Landmark', isDefault: false },
-  { id: 'a3', label: 'Chi nhánh HCM', name: 'Chị Lan', phone: '0988 223 344', province: 'TP Hồ Chí Minh', provinceCode: '79', ward: 'Phường Bến Nghé', line: '124 Nguyễn Huệ', isDefault: false },
-];
-
-export const addressStore = seedStore<Address[]>('addresses', seed);
-
-export async function fetchAddresses(): Promise<Address[]> {
-  if (config.demoMode) return mockResponse(addressStore.get());
-  const response = await apiClient.get<ApiResponse<AddressResponseDto[]>>(addressesPath);
-  return response.data.data.map(fromAddressDto);
-}
-
-export async function fetchAddress(id: string): Promise<Address | null> {
-  if (!id) return null;
-  if (config.demoMode) return mockResponse(addressStore.get().find((a) => a.id === id) ?? null);
-  const list = await fetchAddresses();
-  return list.find((a) => a.id === id) ?? null;
-}
-
-/** Street and ward, without the province; the line of a server address already carries its ward. */
-export const formatAddressDetail = (a: Address) => (a.ward && !a.line.includes(a.ward) ? `${a.line}, ${a.ward}` : a.line);
-
-export const formatAddress = (a: Address) => `${formatAddressDetail(a)}, ${a.province}`;
+/**
+ * The read side of the address book (FR-03).
+ *
+ * The writes (`createAddress`, `updateAddress`, `deleteAddress`) belong to the
+ * `edit-address` feature (package-architecture §3 — `api/` of a feature holds
+ * the writes).
+ */
+export const addressApi = {
+  /** The addresses of the caller. */
+  async list(): Promise<Address[]> {
+    if (isDemoMode()) {
+      return [];
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.IDENTITY.ADDRESSES);
+    return unwrapList<AddressDto>(res).map(mapAddressDtoToEntity);
+  },
+};

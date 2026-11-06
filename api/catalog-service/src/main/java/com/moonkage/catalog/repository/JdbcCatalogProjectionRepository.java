@@ -96,11 +96,12 @@ public class JdbcCatalogProjectionRepository implements CatalogProjectionReposit
         int changed = namedJdbc.update(
                 """
                 INSERT INTO vendor_snapshots(vendor_id, owner_account_id, business_name, status, can_operate,
-                    sells_shop, delivery_areas, local_delivery_fee, source_version)
-                VALUES (:id, :owner, :name, :status, :operate, :shop, :areas, :fee, :version)
+                    sells_shop, accepts_orders, delivery_areas, local_delivery_fee, source_version)
+                VALUES (:id, :owner, :name, :status, :operate, :shop, :orders, :areas, :fee, :version)
                 ON CONFLICT (vendor_id) DO UPDATE SET owner_account_id=EXCLUDED.owner_account_id,
                     business_name=EXCLUDED.business_name, status=EXCLUDED.status, can_operate=EXCLUDED.can_operate,
-                    sells_shop=EXCLUDED.sells_shop, delivery_areas=EXCLUDED.delivery_areas,
+                    sells_shop=EXCLUDED.sells_shop, accepts_orders=EXCLUDED.accepts_orders,
+                    delivery_areas=EXCLUDED.delivery_areas,
                     local_delivery_fee=EXCLUDED.local_delivery_fee,
                     source_version=EXCLUDED.source_version, updated_at=now()
                 WHERE vendor_snapshots.source_version < EXCLUDED.source_version
@@ -112,6 +113,7 @@ public class JdbcCatalogProjectionRepository implements CatalogProjectionReposit
                         .addValue("status", row.status())
                         .addValue("operate", row.canOperate())
                         .addValue("shop", row.sellsShop())
+                        .addValue("orders", row.acceptsOrders())
                         .addValue("areas", sqlArray(row.deliveryAreas()))
                         .addValue("fee", row.localDeliveryFee())
                         .addValue("version", row.sourceVersion()));

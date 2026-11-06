@@ -1,5 +1,6 @@
 package com.moonkage.order.service.impl;
 
+import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
 import com.moonkage.order.client.dto.CreatePaymentRequest;
 import com.moonkage.order.client.dto.CreatePaymentResponse;
@@ -35,8 +36,11 @@ import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +63,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderProperties properties;
     private final EntityManager entityManager;
     private final OrderFileService fileService;
+    private final MoneyMetrics moneyMetrics;
 
     @Override
     @Transactional(readOnly = true)
@@ -85,9 +90,14 @@ public class OrderServiceImpl implements OrderService {
             buyerAccountId = caller.accountId();
         }
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
-        return PageResponse.from(orderRepository
-                .search(buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable)
-                .map(order -> toResponse(order, List.of())));
+        Page<Order> orders = orderRepository.search(
+                buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable);
+        Map<String, List<OrderItem>> itemsByOrder = orders.isEmpty()
+                ? Map.of()
+                : orderItemRepository.findByOrderIdIn(orders.map(Order::getId).toList()).stream()
+                        .collect(Collectors.groupingBy(item -> item.getOrder().getId()));
+        return PageResponse.from(
+                orders.map(order -> toResponse(order, itemsByOrder.getOrDefault(order.getId(), List.of()))));
     }
 
     @Override
@@ -147,13 +157,15 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
         try {
-            CreatePaymentResponse payment = paymentClient.createPayment(new CreatePaymentRequest(
-                    CreatePaymentRequest.REMAINDER,
+            CreatePaymentResponse payment = paymentClient.createPayment(
                     orderId,
-                    caller.accountId(),
-                    order.getRemainingAmount(),
-                    null,
-                    null));
+                    new CreatePaymentRequest(
+                            CreatePaymentRequest.REMAINDER,
+                            orderId,
+                            caller.accountId(),
+                            order.getRemainingAmount(),
+                            null,
+                            null));
             return new PaymentLinkResponse(payment.paymentId(), payment.paymentUrl());
         } catch (FeignException.Conflict e) {
             // P-03: already paid; payment.succeeded completes the order
@@ -199,6 +211,8 @@ public class OrderServiceImpl implements OrderService {
         entityManager.persist(order);
         quote.items().forEach(line -> orderItemRepository.save(toItem(order, event.quoteId(), line)));
         entityManager.flush();
+        // BE-11b: the counter that is compared with payment.succeeded to catch money without an order
+        moneyMetrics.orderCreated(OrderKind.CUSTOM_ORDER.name());
         orderEvents.announce(RabbitConfig.ORDER_CREATED_ROUTING_KEY, order);
     }
 

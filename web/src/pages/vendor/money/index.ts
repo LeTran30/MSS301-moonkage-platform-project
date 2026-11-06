@@ -1,1 +1,1 @@
-export * from './VendorMoneyPage';
+export { VendorMoneyPage } from './VendorMoneyPage';

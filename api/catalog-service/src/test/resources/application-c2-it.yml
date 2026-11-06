@@ -25,3 +25,5 @@ catalog:
     enabled: false
   projections:
     capture-enabled: true
+    # tests drive the replay themselves; the scheduled projector would race their assertions
+    apply-enabled: false

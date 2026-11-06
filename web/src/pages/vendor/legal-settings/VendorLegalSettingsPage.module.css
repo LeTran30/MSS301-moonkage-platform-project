@@ -1,0 +1,24 @@
+/* Bố cục trang dùng design token của hệ thống (không dùng inline style). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0px;
+  font-family: var(--font-heading);
+}
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}

@@ -1,43 +1,53 @@
-import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
-import { routes } from '@/shared/config/routes';
+import { useEffect } from 'react';
+import { useRouteError, isRouteErrorResponse, Link } from 'react-router-dom';
+import { Button, Card, Icon } from '@/shared/ui';
+import { captureUnexpectedError } from '@/shared/observability';
+import styles from './RouteErrorBoundary.module.css';
 
 export function RouteErrorBoundary() {
   const error = useRouteError();
-  const isChunkError =
-    error instanceof Error &&
-    /loading dynamically imported module|failed to fetch dynamically imported module/i.test(error.message);
 
-  let title = 'Đã có lỗi xảy ra';
-  let message = 'Không thể tải nội dung trang. Vui lòng thử lại sau.';
+  let errorMessage = 'Đã có sự cố bất ngờ xảy ra khi tải dữ liệu giao diện.';
+  let statusCode = 500;
 
   if (isRouteErrorResponse(error)) {
-    title = `Lỗi ${error.status}`;
-    message = error.statusText || message;
-  } else if (isChunkError) {
-    title = 'Phiên bản mới đã được cập nhật';
-    message = 'Một số tệp ứng dụng đã được cập nhật trên máy chủ. Vui lòng tải lại trang để nhận bản mới nhất.';
-  } else if (error instanceof Error && error.message) {
-    message = error.message;
+    statusCode = error.status;
+    errorMessage = error.statusText || error.data?.message || errorMessage;
+  } else if (error instanceof Error) {
+    errorMessage = error.message;
   }
 
+  // Lỗi route là lỗi ứng dụng (không phải lỗi dữ liệu người dùng nhập sai):
+  // báo để đội vận hành thấy màn hình nào đang hỏng.
+  // Báo trong effect chứ không trong render: boundary render lại nhiều lần,
+  // báo trong render sẽ tạo bản sao lặp lại của cùng một lỗi.
+  useEffect(() => {
+    captureUnexpectedError(error, { source: 'route-error-boundary', statusCode });
+  }, [error, statusCode]);
+
+  const handleReload = () => {
+    window.location.reload();
+  };
+
   return (
-    <div className="shop__inner" style={{ paddingBlock: 'var(--space-12)' }}>
-      <div className="panel" style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center', justifyItems: 'center' }}>
-        <h1 className="heading-text">{title}</h1>
-        <p className="muted">{message}</p>
-        <div className="row" style={{ marginTop: 'var(--space-4)', justifyContent: 'center' }}>
-          <button
-            type="button"
-            className="mk-btn mk-btn--primary"
-            onClick={() => window.location.reload()}
-          >
-            Tải lại trang
-          </button>
-          <a href={routes.base.home} className="mk-btn mk-btn--quiet">
-            Về trang chủ
-          </a>
+    <div className={styles.container} role="alert" aria-live="assertive">
+      <Card padding="lg" className={styles.errorCard}>
+        <div className={styles.iconWrap}>
+          <Icon name="alert" size={48} />
         </div>
-      </div>
+        <span className={styles.errorCode}>MÃ LỖI {statusCode}</span>
+        <h2 className={styles.title}>Không thể hiển thị trang</h2>
+        <p className={styles.message}>{errorMessage}</p>
+
+        <div className={styles.actions}>
+          <Button variant="primary" size="md" onClick={handleReload}>
+            🔄 Tải lại trang
+          </Button>
+          <Link to="/" className={styles.homeLink}>
+            Về trang chủ Moonkage
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }

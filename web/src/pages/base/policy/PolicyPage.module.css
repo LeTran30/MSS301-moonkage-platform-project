@@ -1,0 +1,81 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+}
+
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.desc {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  max-width: 650px;
+}
+
+.cardsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.policyCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-bottom: 1px dashed var(--color-border);
+  padding-bottom: var(--space-3);
+}
+
+.icon {
+  font-size: 32px;
+}
+
+.sectionTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 2px;
+}
+
+.content {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.content ul {
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.content li {
+  line-height: 1.5;
+}

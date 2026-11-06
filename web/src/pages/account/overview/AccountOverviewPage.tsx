@@ -1,54 +1,106 @@
 import { Link } from 'react-router-dom';
-import { activeOrderCount, orderTasks, useOrders } from '@/entities/order';
-import { openRequestCount, requestTasks, useRequests } from '@/entities/quote';
+import { routes } from '@/shared/config';
+import { Badge, ButtonLink, Card, Icon } from '@/shared/ui';
 import { useCurrentUser } from '@/entities/user';
-import { useNfcStatus } from '@/entities/user';
-import { routes } from '@/shared/config/routes';
-import { LoadingState, PageHeader, TaskList } from '@/shared/ui';
+import { useOrders } from '@/entities/order';
+import { useRequests } from '@/entities/request';
+import styles from './AccountOverviewPage.module.css';
 
-/** M6.0: what needs the buyer now, then a few counters. */
 export function AccountOverviewPage() {
-  const session = useCurrentUser();
+  const user = useCurrentUser();
   const orders = useOrders();
   const requests = useRequests();
-  const { status } = useNfcStatus();
-  if (orders.kind === 'loading' || requests.kind === 'loading') return <LoadingState />;
-  const orderList = orders.kind === 'loaded' ? orders.data : [];
-  const requestList = requests.kind === 'loaded' ? requests.data : [];
-  const tasks = [...orderTasks(orderList), ...requestTasks(requestList)];
-  const verified = status.kind === 'loaded' && status.info.nfcStatus === 'VERIFIED';
 
+  const pendingMaketOrders = orders.filter((o) => o.status === 'WAITING_MAKET');
+  const openRequests = requests.filter((r) => r.status === 'OPEN');
   return (
-    <div className="stack-lg">
-      <PageHeader title="Tài khoản của tôi" lead={`Xin chào, ${session?.displayName ?? ''}.`} />
-      <section aria-labelledby="todo-heading" className="stack">
-        <h2 id="todo-heading" className="detail-heading">
-          Việc cần bạn <span className="mk-badge mk-badge--brand mk-num">{tasks.length}</span>
-        </h2>
-        <TaskList tasks={tasks} empty="Không có việc nào chờ bạn." />
-      </section>
-      <section aria-labelledby="recent-heading" className="stack">
-        <h2 id="recent-heading" className="detail-heading">
-          Gần đây
-        </h2>
-        <div className="stat-grid">
-          <Link to={routes.account.orders} className="stat-tile">
-            <span className="muted">Đơn đang chạy</span>
-            <span className="stat-tile__num mk-num">{activeOrderCount(orderList)}</span>
-            <span className="stat-tile__go">Đơn hàng</span>
-          </Link>
-          <Link to={routes.account.quoteRequests} className="stat-tile">
-            <span className="muted">Yêu cầu đang mở</span>
-            <span className="stat-tile__num mk-num">{openRequestCount(requestList)}</span>
-            <span className="stat-tile__go">Yêu cầu và báo giá</span>
-          </Link>
-          <Link to={routes.account.verifyNfc} className="stat-tile">
-            <span className="muted">Xác minh danh tính</span>
-            <span className="stat-tile__num">{status.kind !== 'loaded' ? '…' : verified ? 'Đã xác minh' : 'Chưa'}</span>
-            <span className="stat-tile__go">Xem trạng thái</span>
+    <div className={styles.container}>
+      {/* Khối "Việc cần bạn" (M6.0 Spec) */}
+      {(pendingMaketOrders.length > 0 || openRequests.length > 0) && (
+        <Card padding="md" tone="gold" className={styles.urgentCard}>
+          <div className={styles.urgentHeader}>
+            <Icon name="sparkle" size={18} />
+            <h3>Khối "Việc cần bạn" (M6.0)</h3>
+          </div>
+          <div className={styles.urgentList}>
+            {pendingMaketOrders.map((o) => (
+              <div key={o.id} className={styles.urgentItem}>
+                <div>
+                  <strong>Đơn hàng #{o.id}:</strong> Bản vẽ maket in logo đang chờ bạn phê duyệt.
+                </div>
+                <ButtonLink to={routes.account.order(o.id)} variant="gold" size="sm">
+                  Duyệt maket ngay
+                </ButtonLink>
+              </div>
+            ))}
+            {openRequests.map((r) => (
+              <div key={r.id} className={styles.urgentItem}>
+                <div>
+                  <strong>Yêu cầu #{r.id}:</strong> Có {r.quotes.length} xưởng đã gửi bảng so sánh báo giá.
+                </div>
+                <ButtonLink to={routes.account.request(r.id)} variant="primary" size="sm">
+                  Xem &amp; So sánh giá
+                </ButtonLink>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Tóm tắt thống kê */}
+      <div className={styles.statsGrid}>
+        <Card padding="md" className={styles.statCard}>
+          <Icon name="package" size={24} className={styles.statIcon} />
+          <div>
+            <div className={styles.statNumber}>{orders.length}</div>
+            <div className={styles.statLabel}>Tổng đơn hàng đã tạo</div>
+          </div>
+        </Card>
+        <Card padding="md" className={styles.statCard}>
+          <Icon name="file" size={24} className={styles.statIcon} />
+          <div>
+            <div className={styles.statNumber}>{requests.length}</div>
+            <div className={styles.statLabel}>Yêu cầu báo giá số lượng lớn</div>
+          </div>
+        </Card>
+        <Card padding="md" className={styles.statCard}>
+          <Icon name="shield" size={24} className={styles.statIcon} />
+          <div>
+            <div className={styles.statNumber}>
+              {user.nfcStatus === 'VERIFIED' ? 'Đã duyệt' : 'Chưa'}
+            </div>
+            <div className={styles.statLabel}>Trạng thái CCCD NFC</div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Đơn hàng gần đây */}
+      <Card padding="md" className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h3>Đơn hàng mua gần nhất</h3>
+          <Link to={routes.account.orders} className={styles.viewAll}>
+            Xem tất cả →
           </Link>
         </div>
-      </section>
+        <div className={styles.recentOrders}>
+          {orders.slice(0, 2).map((o) => (
+            <div key={o.id} className={styles.recentRow}>
+              <div>
+                <strong>#{o.id}</strong> · {o.vendorName}
+                <div className={styles.orderSub}>{o.items[0]?.name}</div>
+              </div>
+              <div className={styles.recentRight}>
+                <Badge tone={o.status === 'DELIVERED' ? 'green' : 'amber'} size="sm">
+                  {o.status}
+                </Badge>
+                <ButtonLink to={routes.account.order(o.id)} variant="secondary" size="sm">
+                  Chi tiết
+                </ButtonLink>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

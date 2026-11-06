@@ -12,6 +12,8 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR("COMMON_500", HttpStatus.INTERNAL_SERVER_ERROR, "error.common.internal"),
     INVALID_INPUT("COMMON_400", HttpStatus.BAD_REQUEST, "error.common.invalid_input"),
     MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "error.common.malformed_json"),
+    /** A required query parameter is missing, e.g. {@code provinceCode} on GET /api/carts/me. */
+    PARAMETER_REQUIRED("COMMON_400_PARAM", HttpStatus.BAD_REQUEST, "error.common.parameter_required"),
     /** No X-Account-Id / X-User-Role: the call did not come through the gateway with a token. */
     UNAUTHENTICATED("COMMON_401", HttpStatus.UNAUTHORIZED, "error.common.unauthenticated"),
     ACCESS_DENIED("COMMON_403", HttpStatus.FORBIDDEN, "error.common.access_denied"),

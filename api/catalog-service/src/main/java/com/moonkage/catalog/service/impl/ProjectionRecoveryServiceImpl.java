@@ -5,6 +5,7 @@ import com.moonkage.catalog.dto.response.RebuildRatingsResponse;
 import com.moonkage.catalog.dto.response.ReplayBatchResponse;
 import com.moonkage.catalog.entity.projection.ProjectionRowValidation;
 import com.moonkage.catalog.enums.ProjectionOutcome;
+import com.moonkage.catalog.exception.CatalogException;
 import com.moonkage.catalog.repository.ProjectionRecoveryRepository;
 import com.moonkage.catalog.service.CatalogProjectionService;
 import com.moonkage.catalog.service.ProjectionRecoveryService;
@@ -12,8 +13,11 @@ import com.moonkage.catalog.service.ProjectionReplayEntryService;
 import com.moonkage.catalog.service.replay.ProjectionReplayAdapter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectionRecoveryServiceImpl implements ProjectionRecoveryService {
@@ -32,6 +36,7 @@ public class ProjectionRecoveryServiceImpl implements ProjectionRecoveryService 
         int applied = 0;
         int skipped = 0;
         int deferred = 0;
+        int failed = 0;
         for (var event : batch) {
             var matching = adapters.stream()
                     .filter(adapter -> event.routingKey().equals(adapter.routingKey()))
@@ -41,17 +46,31 @@ public class ProjectionRecoveryServiceImpl implements ProjectionRecoveryService 
             }
             if (matching.isEmpty()) {
                 deferred++;
-            } else if (entryService.replay(event.eventId(), matching.getFirst()) == ProjectionOutcome.APPLIED) {
-                applied++;
             } else {
-                skipped++;
+                try {
+                    if (entryService.replay(event.eventId(), matching.getFirst()) == ProjectionOutcome.APPLIED) {
+                        applied++;
+                    } else {
+                        skipped++;
+                    }
+                } catch (IllegalArgumentException | CatalogException | DataAccessException exception) {
+                    // the entry's own transaction rolled back: it stays pending and the rest of the batch goes on;
+                    // never log the payload (contract §2)
+                    failed++;
+                    log.warn(
+                            "Projection of inbox event {} ({}) failed: {}",
+                            event.eventId(),
+                            event.routingKey(),
+                            exception.getMessage());
+                }
             }
         }
         ReplayCheckpoint next = batch.isEmpty()
                 ? after
                 : new ReplayCheckpoint(
                         batch.getLast().receivedAt(), batch.getLast().eventId());
-        return new ReplayBatchResponse(batch.size(), applied, skipped, deferred, next, candidates.size() > limit);
+        return new ReplayBatchResponse(
+                batch.size(), applied, skipped, deferred, failed, next, candidates.size() > limit);
     }
 
     @Override

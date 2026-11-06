@@ -1,0 +1,20 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.cardTitle {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.invoiceInfoBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.invoiceDownloadBtn {
+  margin-top: var(--space-3);
+}

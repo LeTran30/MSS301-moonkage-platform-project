@@ -1,89 +1,89 @@
-export type ReadyStatus = 'pending' | 'shipping' | 'delivered' | 'cancelled';
-export type CustomStep = 'deposit' | 'mockup' | 'production' | 'delivery' | 'remaining' | 'done';
+// IA Sheet 7.1 & Bảng tính:
+// Trạng thái đơn mua lẻ (5 bước): Đã thanh toán -> Người bán xác nhận -> Đang giao -> Đã giao -> Hoàn tất
+export type RetailOrderStatus =
+  | 'PAID'
+  | 'CONFIRMED'
+  | 'SHIPPING'
+  | 'DELIVERED'
+  | 'COMPLETED';
 
-export interface OrderLine {
-  name: string;
-  price: number;
-  quantity: number;
-}
+// Trạng thái đơn đặt hàng số lượng lớn (6 bước): Đã cọc -> Chờ duyệt maket (bỏ khi không custom) -> Đang sản xuất -> Sẵn sàng giao -> Đã giao -> Hoàn tất
+export type BulkOrderStatus =
+  | 'DEPOSITED'
+  | 'WAITING_MAKET'
+  | 'IN_PRODUCTION'
+  | 'READY_TO_SHIP'
+  | 'DELIVERED'
+  | 'COMPLETED';
 
-/** Who and where an order is delivered to, as recorded on the order. */
-export interface DeliveryAddress {
-  name: string;
-  phone: string;
-  line: string;
-}
+export type OrderType = 'RETAIL' | 'BULK';
 
-export interface Invoice {
-  company: string;
-  taxCode: string;
-  email: string;
-}
-
-/** An order of ready-made products: one shop, paid with others in one VNPay payment (M6.1.1). */
-export interface ReadyOrder {
-  kind: 'ready';
-  id: string;
-  shop: string;
-  paymentId: string;
-  /** DD/MM/YYYY */
-  placedAt: string;
-  lines: OrderLine[];
-  shippingFee: number;
-  status: ReadyStatus;
-  tracking?: string;
-  expectedAt?: string;
-  deliveredAt?: string;
-  /** The buyer confirmed receipt (FR-11); the demo seed does not carry it. */
-  receivedConfirmed?: boolean;
-  address: DeliveryAddress;
-  invoice?: Invoice;
-  /** The shop attached its invoice file (FR-44); the demo seed does not carry it. */
-  invoiceAttached?: boolean;
-  history: { label: string; at: string }[];
-  /** Days after delivery during which "Báo vấn đề với đơn" shows. */
-  complaintDays: number;
-  complaintId?: string;
-}
-
-export interface Mockup {
+export type MaketVersion = {
   version: number;
-  sentAt: string;
-  note: string;
-  state: 'waiting' | 'revise' | 'approved';
+  imageUrl: string;
+  submittedAt: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  comment?: string;
   feedback?: string;
-  /** Short-lived link to the file; none in the demo. */
-  fileUrl?: string;
-}
+};
 
-/** An order to request (custom): deposit, mockup, production, delivery, rest (M6.1.2). */
-export interface CustomOrder {
-  kind: 'custom';
+export type ProductionProgressMilestone = {
   id: string;
-  vendorName: string;
   title: string;
-  /** The quote request it came from; the server order only keeps the quote, so it is known in the demo only. */
-  requestId?: string;
-  value: number;
-  depositPercent: number;
-  depositPaidAt: string;
-  step: CustomStep;
-  mockups: Mockup[];
-  progress: { label: string; at: string }[];
+  timestamp: string;
+  note?: string;
+  imageUrl?: string;
+  completed: boolean;
+};
+
+export type Order = {
+  id: string; // #MK-1042
+  type: OrderType;
+  buyerId: string;
+  buyerName: string;
+  vendorId: string;
+  vendorName: string;
+  createdAt: string;
+  subtotal: number;
+  shippingFee: number;
+  total: number;
+  depositAmount?: number; // Cọc F2 (ví dụ 40%)
+  remainingAmount?: number; // Phần còn lại (60%)
+  remainingPaid?: boolean;
+  status: RetailOrderStatus | BulkOrderStatus;
+  items: Array<{
+    /** The catalogue product; a review names it (FR-11). Absent on demo orders. */
+    productId?: string;
+    name: string;
+    quantity: number;
+    price: number;
+    image: string;
+  }>;
+  shippingAddress: {
+    receiver: string;
+    phone: string;
+    address: string;
+    province: string;
+  };
+  trackingCode?: string; // Có nếu liên tỉnh
+  /** The shop and the buyer are in different provinces: shipping needs a tracking code (AC-32.3). */
+  interprovince?: boolean;
   deliveredAt?: string;
-  invoiceAttached: boolean;
-}
-
-export type Order = ReadyOrder | CustomOrder;
-
-export interface Complaint {
-  id: string;
-  orderId: string;
-  shop: string;
-  reason: string;
-  description: string;
-  photos: number;
-  sentAt: string;
-  events: { label: string; at: string }[];
-  decision?: { title: string; amount: number; body: string; at: string };
-}
+  disputeDeadline?: string; // 3 ngày nội thành, 7 ngày liên tỉnh/đặt hàng (Q-10)
+  hasDispute?: boolean;
+  disputeId?: string;
+  hasInvoice?: boolean;
+  invoiceFile?: string;
+  invoiceCompanyInfo?: {
+    name: string;
+    taxCode: string;
+    address: string;
+    email: string;
+  };
+  // Dành riêng cho Bulk (F2)
+  customLogo?: string;
+  customRequirements?: string;
+  maketVersions?: MaketVersion[];
+  progressMilestones?: ProductionProgressMilestone[];
+  disbursementRequested?: boolean; // B5.2, Q4.1
+};

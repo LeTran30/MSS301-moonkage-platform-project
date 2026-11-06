@@ -1,0 +1,197 @@
+import { createStore } from '@/shared/lib';
+import { isDemoMode } from '@/shared/config';
+
+/**
+ * Backend `com.moonkage.quotation.enums.QuoteStatus`.
+ *
+ * The UI used `SENT | REVOKED`, which do not exist on the backend: a quote that
+ * was sent is `SUBMITTED`, and a quote the vendor took back is `WITHDRAWN`.
+ */
+export type QuoteStatus =
+  | 'SUBMITTED'
+  | 'WITHDRAWN'
+  | 'EXPIRED'
+  | 'ACCEPTED'
+  | 'CLOSED'
+  | 'REJECTED';
+
+/** Backend `com.moonkage.quotation.enums.RequestStatus`. */
+export type RequestStatus = 'OPEN' | 'AWARDED' | 'CLOSED' | 'EXPIRED';
+
+/** Backend `com.moonkage.quotation.enums.RequestType`. */
+export type RequestType = 'OPEN' | 'DIRECT';
+
+/**
+ * Backend `com.moonkage.quotation.enums.CustomType` (BR-14): the only custom
+ * work a request may ask for and the only custom lines a quote may contain.
+ */
+export type CustomType = 'BAG' | 'CARD' | 'STICKER' | 'TEMPLATE_BOX';
+
+/** Vietnamese labels of the request status (shown in the buyer and vendor UI). */
+export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
+  OPEN: 'Đang mở',
+  AWARDED: 'Đã chốt xưởng',
+  CLOSED: 'Đã đóng',
+  EXPIRED: 'Hết hạn',
+};
+
+/** Vietnamese labels of the quote status. */
+export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
+  SUBMITTED: 'Đã gửi báo giá',
+  WITHDRAWN: 'Đã rút báo giá',
+  EXPIRED: 'Hết hiệu lực',
+  ACCEPTED: 'Đã được chấp nhận',
+  CLOSED: 'Đã kết thúc',
+  REJECTED: 'Bị từ chối',
+};
+
+/** Vietnamese labels of the custom work types (BR-14). */
+export const CUSTOM_TYPE_LABELS: Record<CustomType, string> = {
+  BAG: 'Túi giấy',
+  CARD: 'Thiệp chúc mừng',
+  STICKER: 'Sticker thương hiệu',
+  TEMPLATE_BOX: 'Hộp theo mẫu riêng',
+};
+
+/** The four custom types a buyer may pick, in the order the UI shows them. */
+export const CUSTOM_TYPES: readonly CustomType[] = ['BAG', 'CARD', 'STICKER', 'TEMPLATE_BOX'];
+
+export type Quote = {
+  id: string;
+  vendorId: string;
+  vendorName: string;
+  vendorRating: number;
+  unitPrice: number;
+  shippingFee: number;
+  totalPrice: number;
+  depositPercent: number; // Tỷ lệ cọc (VD: 40)
+  depositAmount: number;
+  remainingAmount: number;
+  estimatedDeliveryDate: string;
+  deliveryMethod: string;
+  validUntil: string;
+  samplePhotoUrl?: string;
+  note?: string;
+  status: QuoteStatus;
+  /** Backend `revisionNo`: a revision of the same vendor quote (BR-05). */
+  revisionNo?: number;
+  /** Backend `acceptable`: false once expired or withdrawn, so the button is off. */
+  acceptable?: boolean;
+};
+
+export type QuoteRequest = {
+  id: string; // #REQ-502
+  type: RequestType;
+  buyerId: string;
+  buyerName: string;
+  targetVendorId?: string;
+  targetVendorName?: string;
+  quantity: number;
+  deliveryDeadline: string;
+  deliveryAddress: string;
+  deliveryProvince: string;
+  budgetPerBox?: number;
+  customLogoFileName?: string;
+  customRequirements?: string;
+  crustPreference?: string;
+  fillingPreference?: string;
+  createdAt: string;
+  status: RequestStatus;
+  invitedVendorsCount: number;
+  quotes: Quote[];
+  /** Backend `CreateQuoteRequestRequest.delivery.recipientName`. */
+  recipientName?: string;
+  /** Backend `CreateQuoteRequestRequest.delivery.recipientPhone` (`0\d{9}`). */
+  recipientPhone?: string;
+  /** Backend `CreateQuoteRequestRequest.delivery.provinceCode` (2 digits). */
+  provinceCode?: string;
+  /** The custom work the buyer asked for (BR-14). */
+  customTypes?: CustomType[];
+  /** Backend `CreateQuoteRequestRequest.productId`, when the request is about a product. */
+  productId?: string;
+  /** Backend `QuoteRequestResponse.quoteCount`: live quotes received (AC-16.3). */
+  quoteCount?: number;
+};
+
+export const MOCK_REQUESTS: QuoteRequest[] = [
+  {
+    id: 'REQ-502',
+    type: 'OPEN',
+    buyerId: 'usr_lan',
+    buyerName: 'Chị Lan (HR Doanh nghiệp)',
+    recipientName: 'Chị Lan (HR Doanh nghiệp)',
+    recipientPhone: '0918889999',
+    provinceCode: '01',
+    quantity: 150,
+    deliveryDeadline: '2026-11-10',
+    deliveryAddress: 'Tòa tháp Capital Place, 29 Liễu Giai, Ba Đình',
+    deliveryProvince: 'Hà Nội',
+    budgetPerBox: 160000,
+    customLogoFileName: 'logo_aurora_vector.pdf',
+    customRequirements: 'In logo ép kim lên hộp cứng nam châm + thiệp chúc mừng riêng từng hộp',
+    customTypes: ['BAG', 'CARD'],
+    crustPreference: 'Bánh nướng truyền thống',
+    fillingPreference: 'Thập cẩm, Hạt sen, Đậu xanh trứng muối',
+    createdAt: '2026-10-18T10:00:00Z',
+    status: 'OPEN',
+    invitedVendorsCount: 4,
+    quoteCount: 2,
+    quotes: [
+      {
+        id: 'QUO-01',
+        vendorId: 'ven_hoa',
+        vendorName: 'Xưởng Bánh Truyền Thống Cô Hoa',
+        vendorRating: 4.9,
+        unitPrice: 150000,
+        shippingFee: 0,
+        totalPrice: 22500000,
+        depositPercent: 40,
+        depositAmount: 9000000,
+        remainingAmount: 13500000,
+        estimatedDeliveryDate: '08/11/2026',
+        deliveryMethod: 'Xe tải riêng của xưởng giao tận văn phòng',
+        validUntil: '30/10/2026',
+        samplePhotoUrl: '/images/doanh-nghiep.jpg',
+        note: 'Xưởng miễn phí thiết kế maket và in thiệp chúc mừng cho đơn 150 hộp.',
+        status: 'SUBMITTED',
+        revisionNo: 1,
+        acceptable: true,
+      },
+      {
+        id: 'QUO-02',
+        vendorId: 'ven_quan',
+        vendorName: 'Hiệu Bánh Gia Truyền Bảo An',
+        vendorRating: 4.8,
+        unitPrice: 155000,
+        shippingFee: 150000,
+        totalPrice: 23400000,
+        depositPercent: 50,
+        depositAmount: 11700000,
+        remainingAmount: 11700000,
+        estimatedDeliveryDate: '07/11/2026',
+        deliveryMethod: 'Giao hàng chuyên nghiệp Bảo An Express',
+        validUntil: '28/10/2026',
+        note: 'Bánh nướng mẫu khuôn hoa sen đặc biệt mừng Trung Thu 2026.',
+        status: 'SUBMITTED',
+        revisionNo: 1,
+        acceptable: true,
+      },
+    ],
+  },
+];
+
+/**
+ * The quote requests of the caller.
+ *
+ * In demo mode the store starts with the mock list; against a live backend it
+ * starts empty and is filled by `useRequests` from `quotation-service`.
+ */
+export const requestStore = createStore<QuoteRequest[]>(
+  isDemoMode() ? MOCK_REQUESTS : [],
+  isDemoMode() ? 'moonkage_quote_requests' : undefined
+);
+
+/** The store without the React binding (see `useRequests` in the API layer). */
+export function getRequests(): QuoteRequest[] {
+  return requestStore.get();
+}

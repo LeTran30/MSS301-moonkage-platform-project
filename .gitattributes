@@ -12,3 +12,15 @@
 *.gif binary
 *.ico binary
 *.jar binary
+*.webp binary
+*.svgz binary
+*.pdf binary
+*.xlsx binary
+*.docx binary
+*.pptx binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.mp4 binary

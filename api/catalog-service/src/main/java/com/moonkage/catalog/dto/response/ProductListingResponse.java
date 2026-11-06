@@ -32,5 +32,6 @@ public record ProductListingResponse(
         JsonNode priceTiers,
         BigDecimal ratingAvg,
         int ratingCount,
+        boolean vendorAcceptsOrders,
         boolean isOwn,
         Instant updatedAt) {}

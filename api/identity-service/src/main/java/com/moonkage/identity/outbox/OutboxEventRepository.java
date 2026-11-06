@@ -10,4 +10,7 @@ interface OutboxEventRepository extends JpaRepository<OutboxEvent, String> {
 
     /** Oldest first, so events of one account reach consumers in the order they happened. */
     List<OutboxEvent> findByPublishedAtIsNullOrderByCreatedAtAsc(Pageable page);
+
+    /** How many events are written but not published yet: the sign that the relay is stuck (BE-11b). */
+    long countByPublishedAtIsNull();
 }

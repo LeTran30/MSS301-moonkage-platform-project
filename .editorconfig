@@ -20,3 +20,7 @@ trim_trailing_whitespace = false
 
 [*.{js,jsx,ts,tsx,css,html}]
 indent_size = 2
+
+# Windows scripts keep CRLF, as in .gitattributes
+[*.{cmd,bat}]
+end_of_line = crlf

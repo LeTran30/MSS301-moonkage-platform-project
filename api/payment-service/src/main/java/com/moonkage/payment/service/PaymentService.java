@@ -16,8 +16,11 @@ public interface PaymentService {
     /**
      * A PENDING payment and its VNPay pay URL; only the root that owns the reference calls it (POST
      * /internal/payments). Refused when the purpose and reference are already paid (P-03).
+     *
+     * <p>Idempotent: the same {@code idempotencyKey} always answers the same payment, so a retried call
+     * (a lost answer) never creates a second one (BE-08b).
      */
-    CreatePaymentResponse create(CreatePaymentRequest request);
+    CreatePaymentResponse create(CreatePaymentRequest request, String idempotencyKey);
 
     /**
      * Records the result VNPay sends server to server (BR-25): the only place a payment becomes SUCCEEDED or is

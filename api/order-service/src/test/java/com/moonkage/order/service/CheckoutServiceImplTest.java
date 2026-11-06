@@ -11,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.CatalogClient;
 import com.moonkage.order.client.PaymentClient;
 import com.moonkage.order.client.VendorClient;
@@ -40,6 +41,7 @@ import com.moonkage.order.security.Role;
 import com.moonkage.order.service.impl.CheckoutServiceImpl;
 import feign.FeignException;
 import feign.Request;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -85,7 +87,8 @@ class CheckoutServiceImplTest {
                 paymentClient,
                 new OrderProperties(),
                 new TransactionTemplate(mock(PlatformTransactionManager.class)),
-                entityManager);
+                entityManager,
+                new MoneyMetrics(new SimpleMeterRegistry()));
         when(cartItemRepository.findByBuyerAccountIdOrderByCreatedAtAsc(BUYER.accountId()))
                 .thenReturn(List.of(cartItem("p1", "v1", 2), cartItem("p2", "v2", 1)));
         when(checkoutRepository.findForUpdateById(anyString())).thenReturn(Optional.empty());
@@ -102,7 +105,8 @@ class CheckoutServiceImplTest {
                         List.of(
                                 new StockReservationResponse.Item("p1", "v1", 2, 100_000L),
                                 new StockReservationResponse.Item("p2", "v2", 1, 250_000L))));
-        when(paymentClient.createPayment(any())).thenReturn(new CreatePaymentResponse("pay-1", "https://vnpay"));
+        when(paymentClient.createPayment(anyString(), any()))
+                .thenReturn(new CreatePaymentResponse("pay-1", "https://vnpay"));
 
         var answer = service.create(BUYER, ADDRESS);
 
@@ -110,7 +114,7 @@ class CheckoutServiceImplTest {
         assertEquals(525_000L, answer.totalAmount());
         assertEquals("https://vnpay", answer.paymentUrl());
         ArgumentCaptor<CreatePaymentRequest> payment = ArgumentCaptor.forClass(CreatePaymentRequest.class);
-        verify(paymentClient).createPayment(payment.capture());
+        verify(paymentClient).createPayment(eq(answer.checkoutId()), payment.capture());
         assertEquals(CreatePaymentRequest.CHECKOUT, payment.getValue().purpose());
         assertEquals(answer.checkoutId(), payment.getValue().referenceId());
         assertEquals(
@@ -139,7 +143,8 @@ class CheckoutServiceImplTest {
                         "HELD",
                         Instant.now(),
                         List.of(new StockReservationResponse.Item("p1", "v1", 2, 100_000L))));
-        when(paymentClient.createPayment(any())).thenThrow(new IllegalStateException("payment-service down"));
+        when(paymentClient.createPayment(anyString(), any()))
+                .thenThrow(new IllegalStateException("payment-service down"));
 
         assertThrows(IllegalStateException.class, () -> service.create(BUYER, ADDRESS));
 

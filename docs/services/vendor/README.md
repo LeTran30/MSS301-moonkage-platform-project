@@ -3,7 +3,7 @@
 vendor-service giữ hồ sơ người bán, phí đăng ký, cài đặt bán, danh mục vỏ và nhân, phía ghi của sản phẩm Shop và hàng giữ cho checkout. Người mua đọc sản phẩm ở catalog-service, nơi giữ bản sao dựng từ sự kiện của vendor (L-18).
 
 - Đích thiết kế (bảng, API, sự kiện): [api-db/vendor.md](../../architecture/api-db/vendor.md). Khi tài liệu này lệch với đích, `vendor.md` đúng.
-- Các giai đoạn đã làm và điểm khác đề xuất: [completion-plan.md](completion-plan.md). Đánh giá tính đúng đắn theo tầng: [correctness-review.md](correctness-review.md).
+- Các giai đoạn đã làm và điểm khác đề xuất: [completion-plan.md](../../archive/2026-10-26-vendor-completion-plan.md). Đánh giá tính đúng đắn theo tầng: [correctness-review.md](correctness-review.md).
 
 Mọi request đi qua gateway `http://localhost:8080`, theo hai dạng đường dẫn: `/api/vendors/**`, `/api/registration-fee-config/**`, `/api/cake-attributes/**` (theo tên root, L-17), hoặc `/vendor-service/api/**` (theo tên service, còn dùng tới khi mọi service chuyển xong).
 

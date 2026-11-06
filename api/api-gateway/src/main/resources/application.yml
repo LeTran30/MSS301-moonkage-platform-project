@@ -1,6 +1,20 @@
 server:
   port: 8080
 
+# health for the container healthcheck; prometheus for the metrics (BE-11b)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
 spring:
   application:
     name: api-gateway
@@ -13,10 +27,11 @@ spring:
       server:
         webflux:
           routes:
-            - id: catalog-interprovince-fees
+            # catalog-service by resource (contract catalog v1); /catalog-service/** still works through the locator
+            - id: catalog-service
               uri: lb://catalog-service
               predicates:
-                - Path=/api/interprovince-fees,/api/interprovince-fees/**
+                - Path=/api/products,/api/products/**,/api/interprovince-fees,/api/interprovince-fees/**
             # STOMP over WebSocket of orchestrator-service (Software Design 5.1 rule 9). Open at the HTTP level:
             # a browser cannot send a header on the handshake, so the access token is checked on STOMP CONNECT.
             - id: orchestrator-websocket
@@ -29,6 +44,11 @@ spring:
               uri: lb://vendor-service
               predicates:
                 - Path=/api/vendors/**,/api/registration-fee-config/**,/api/cake-attributes/**
+            # orchestrator-service by aggregate root (BE-04b): the notification inbox (NFR-10).
+            - id: orchestrator-notifications
+              uri: lb://orchestrator-service
+              predicates:
+                - Path=/api/notifications,/api/notifications/**
           # Gateway 4.1+ adds X-Forwarded-* (Host, Port, Proto, Prefix) only for clients matching this regex.
           # Without them every service builds its URLs (e.g. the Swagger "servers" URL) from its container IP,
           # which the browser cannot reach. Default: loopback and private networks (Docker bridge, LAN).
@@ -49,6 +69,19 @@ jwt:
 moonkage:
   cors:
     allowed-origins: ${CORS_ORIGINS}
+  # BE-07: the gateway limits the endpoints worth attacking (login, OTP, NFC, the VNPay IPN).
+  # Off by default because the limit is per instance: with several gateways behind a balancer each one keeps its
+  # own counter, so the effective limit is the number of instances times the number below.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:false}
+    rules:
+      login: ${RATE_LIMIT_LOGIN:10}
+      otp: ${RATE_LIMIT_OTP:5}
+      nfc: ${RATE_LIMIT_NFC:10}
+      ipn: ${RATE_LIMIT_IPN:120}
+      registration: ${RATE_LIMIT_REGISTRATION:60}
+      replenish-period: ${RATE_LIMIT_REPLENISH_PERIOD:60s}
+      key-by-account: true
 
 springdoc:
   webjars:

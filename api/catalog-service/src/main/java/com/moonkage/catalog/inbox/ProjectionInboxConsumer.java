@@ -8,13 +8,11 @@ import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 /** Captures only. ACK means inbox committed, not business projection completed. */
 @Component
-@Profile("!legacy-writer")
 @RequiredArgsConstructor
 @ConditionalOnProperty(
         prefix = "catalog.projections",

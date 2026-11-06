@@ -1,51 +1,55 @@
-import { startDemoPayment, type PaymentLink } from '@/entities/payment';
-import { deposit, fetchRequest, quoteRequestStore, type Quote, type QuoteRequest } from '@/entities/quote';
-import { ApiError, apiClient, type ApiResponse } from '@/shared/api/client';
-import { quoteRequestsApi } from '@/shared/api/gateway';
-import { mockResponse } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import { demoPaymentUrl } from '@/shared/lib';
+import { generateEntityId } from '@/shared/utils';
+import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
+import type { AcceptQuoteResponseDto, InvoiceInfoPayload } from '@/entities/request';
 
-export async function closeRequest(requestId: string): Promise<QuoteRequest | null> {
-  const next = quoteRequestStore.update((list) => list.map((r) => (r.id === requestId ? { ...r, status: 'closed' } : r)));
-  if (config.demoMode) {
-    return mockResponse(next.find((r) => r.id === requestId) ?? null);
-  }
-  const current = await fetchRequest(requestId);
-  return current ? { ...current, status: 'closed' } : null;
-}
+/**
+ * The write side of accepting a quote (FR-19).
+ *
+ * The request entity owns the read and the shape of the quote; the write lives
+ * here because it accepts the quote, not the quote data
+ * (package-architecture §3 — `api/` of a feature holds the writes).
+ */
 
-const QUOTE_WITHOUT_ID_MSG = 'Không tìm thấy báo giá này trên máy chủ. Tải lại trang rồi thử lại.';
-
-/** quotation-service `AcceptQuoteResponse`: where to pay the deposit (BR-04). */
-interface AcceptQuoteResponseDto {
-  acceptanceId: string;
-  depositAmount: number;
-  paymentId: string;
-  paymentUrl: string;
-  paymentExpiresAt: string;
+/** Wire shape of `com.moonkage.quotation.dto.request.AcceptQuoteRequest`. */
+export interface AcceptQuotePayload {
+  invoiceInfo?: InvoiceInfoPayload;
 }
 
 /**
- * Accepting one quote is binding: the other quotes of the request close (BR-17). Answers where to pay the deposit;
- * the order exists only after it succeeds.
+ * The buyer accepts a quote (FR-19).
+ *
+ * The backend freezes the binding copy and answers where to pay the deposit;
+ * the order exists only after the deposit succeeds (BR-04).
  */
-export async function acceptQuote(request: QuoteRequest, quote: Quote): Promise<PaymentLink> {
-  if (config.demoMode) {
-    quoteRequestStore.update((list) => list.map((r) => (r.id === request.id ? { ...r, status: 'accepted', acceptedVendorId: quote.vendorId } : r)));
-    return startDemoPayment('deposit', deposit(quote), `Đặt cọc ${quote.depositPercent}% · ${request.id} · ${quote.vendorName}`, {
-      requestId: request.id,
-      vendorName: quote.vendorName,
-      title: `${quote.boxes} hộp · ${quote.custom.toLowerCase()}`,
-      value: quote.total,
-      depositPercent: quote.depositPercent,
-    });
+export async function acceptQuote(
+  requestId: string,
+  quoteId: string,
+  payload?: AcceptQuotePayload
+): Promise<AcceptQuoteResponseDto> {
+  // Funnel chấp nhận báo giá (FR-19). Không ghi `invoiceInfo` — đó là thông
+  // tin hóa đơn của người mua (NFR-03).
+  trackEvent(ANALYTICS_EVENTS.acceptQuote, { request_id: requestId });
+
+  if (isDemoMode()) {
+    const demoPaymentId = generateEntityId('pay');
+    return {
+      acceptanceId: generateEntityId('acc'),
+      status: 'PENDING_PAYMENT',
+      depositAmount: 0,
+      paymentId: demoPaymentId,
+      paymentUrl: demoPaymentUrl(demoPaymentId),
+    };
   }
-  // a server quote always has its id; only seed quotes lack one
-  if (!quote.id) throw new ApiError(0, null, QUOTE_WITHOUT_ID_MSG);
-  const res = await apiClient.post<ApiResponse<AcceptQuoteResponseDto>>(
-    `${quoteRequestsApi}/${encodeURIComponent(request.id)}/quotes/${encodeURIComponent(quote.id)}/acceptance`,
-    {},
+  const res = await apiClient.post<unknown>(
+    GATEWAY.QUOTATION.ACCEPT_QUOTE(requestId, quoteId),
+    payload ?? {}
   );
-  const { paymentId, paymentUrl } = res.data.data;
-  return { paymentId, paymentUrl };
+  const dto = unwrap<AcceptQuoteResponseDto>(res);
+  if (!dto) {
+    throw new Error('Máy chủ không trả về thông tin đặt cọc.');
+  }
+  return dto;
 }

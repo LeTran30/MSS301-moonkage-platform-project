@@ -1,149 +1,122 @@
-import { mockResponse, seedStore } from '@/shared/api/mock';
-import { fetchVendorNames } from '@/shared/api/vendors';
-import { disputeDecisionLabel, disputeReasonLabel } from '@/shared/config/disputes';
-import { config } from '@/shared/config/env';
-import { provinceNameOf } from '@/shared/config/provinces';
-import type { Complaint, CustomOrder, CustomStep, Mockup, Order, ReadyOrder, ReadyStatus } from '../model/types';
-import {
-  complaintDaysOf,
-  dateOf,
-  depositPercentOf,
-  fetchDispute,
-  fetchOrderBundle,
-  fetchOrderBundles,
-  historyOf,
-  linesOf,
-  newestFirst,
-  titleOf,
-  type DisputeDto,
-  type MockupReviewStatusDto,
-  type OrderBundle,
-  type OrderStatusDto,
-} from './orderDto';
-import { seedComplaints, seedOrders } from './seed';
+import { apiClient, GATEWAY, unwrap, unwrapList, unwrapPage } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
+import { useEffect, useState } from 'react';
+import { useStore } from '@/shared/lib';
+import { orderStore, type Order } from '../model';
+import { mapOrderDtoToEntity, mapProgressUpdateDto } from './orderMappers';
+import type { CheckoutDto, OrderDto, ProgressUpdate, ProgressUpdateDto } from './orderDto';
 
-/** Demo mode answers from the seed (seed.ts); changes are kept in the demo store. */
-export const orderStore = seedStore<Order[]>('buyer-orders', seedOrders);
-export const complaintStore = seedStore<Complaint[]>('buyer-complaints', seedComplaints);
+/**
+ * The read side of the order-service (FR-11, FR-21, FR-32).
+ *
+ * The writes (checkout, mockup upload, delivery confirmation) live in the
+ * features that own them.
+ */
+export const orderApi = {
+  /**
+   * The orders the caller takes part in.
+   *
+   * `vendorId` answers the orders of one shop (the vendor channel), `status` and
+   * `kind` narrow the list further (FR-32, AC-44.3).
+   */
+  async getOrders(options?: {
+    vendorId?: string;
+    kind?: 'BUY_NOW' | 'CUSTOM_ORDER';
+    status?: string;
+    missingInvoice?: boolean;
+    openDispute?: boolean;
+  }): Promise<Order[]> {
+    if (isDemoMode()) {
+      const all = orderStore.get();
+      if (!options?.vendorId) return all;
+      return all.filter((o) => o.vendorId === options.vendorId);
+    }
+    const params = new URLSearchParams();
+    if (options?.vendorId) params.set('vendorId', options.vendorId);
+    if (options?.kind) params.set('kind', options.kind);
+    if (options?.status) params.set('status', options.status);
+    if (options?.missingInvoice) params.set('missingInvoice', 'true');
+    // FR-49: `disputeStatus=OPEN` keeps only the orders waiting for a decision.
+    if (options?.openDispute) params.set('disputeStatus', 'OPEN');
+    params.set('size', '100');
 
-const readyStatusOf: Partial<Record<OrderStatusDto, ReadyStatus>> = {
-  PAID: 'pending',
-  CONFIRMED: 'pending',
-  SHIPPING: 'shipping',
-  DELIVERED: 'delivered',
-  COMPLETED: 'delivered',
+    const query = params.toString();
+    const res = await apiClient.get<unknown>(
+      query ? `${GATEWAY.ORDER.ORDERS}?${query}` : GATEWAY.ORDER.ORDERS
+    );
+    return unwrapPage<OrderDto>(res).map(mapOrderDtoToEntity);
+  },
+
+  async getOrderById(id: string): Promise<Order | null> {
+    if (isDemoMode()) {
+      return orderStore.get().find((o) => o.id === id) || null;
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.ORDER.ORDER_BY_ID(id));
+    // OrderController.get trả về MỘT `OrderResponse` trong envelope, không phải
+    // danh sách: `unwrapList` trả về mảng rỗng và chi tiết đơn luôn trống.
+    const dto = unwrap<OrderDto>(res);
+    return dto ? mapOrderDtoToEntity(dto) : null;
+  },
+
+  /**
+   * FR-21: the order's progress history, read only.
+   */
+  async getProgressUpdates(orderId: string): Promise<ProgressUpdate[]> {
+    if (isDemoMode()) {
+      return [];
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.ORDER.PROGRESS_UPDATES(orderId));
+    return unwrapList<ProgressUpdateDto>(res).map(mapProgressUpdateDto);
+  },
+
+  /**
+   * The state of a checkout (FR-09, AC-09.7).
+   *
+   * `GET /api/checkouts/{checkoutId}` answers the status and the ids of the
+   * orders it created, one per Shop, once the payment succeeded. The result
+   * page polls it while the status is still `PENDING_PAYMENT`.
+   */
+  async getCheckout(checkoutId: string): Promise<CheckoutDto | null> {
+    if (isDemoMode()) {
+      return null;
+    }
+    const res = await apiClient.get<unknown>(GATEWAY.ORDER.CHECKOUT_BY_ID(checkoutId));
+    const dto = unwrap<CheckoutDto>(res);
+    return dto ?? null;
+  },
 };
 
-/** DEPOSITED waits for the first mockup; DELIVERED for the rest of the money (FR-22). */
-export const customStepOf: Partial<Record<OrderStatusDto, CustomStep>> = {
-  DEPOSITED: 'mockup',
-  AWAITING_MOCKUP_APPROVAL: 'mockup',
-  IN_PRODUCTION: 'production',
-  READY_TO_SHIP: 'delivery',
-  DELIVERED: 'remaining',
-  COMPLETED: 'done',
-};
+/**
+ * The orders of the caller, kept in the entity store so every screen
+ * (account, vendor, overview) reads the same data.
+ */
+export function useOrders(): Order[] {
+  const orders = useStore(orderStore);
+  const [, setNonce] = useState(0);
 
-const mockupStateOf: Record<MockupReviewStatusDto, Mockup['state']> = {
-  PENDING_REVIEW: 'waiting',
-  CHANGES_REQUESTED: 'revise',
-  APPROVED: 'approved',
-};
-
-function toBuyerOrder({ order: o, progress, mockups }: OrderBundle, shopName: string): Order {
-  if (o.kind === 'BUY_NOW') {
-    const ready: ReadyOrder = {
-      kind: 'ready',
-      id: o.id,
-      shop: shopName,
-      paymentId: o.paymentGroupId ?? o.id,
-      placedAt: dateOf(o.createdAt) ?? '',
-      lines: linesOf(o),
-      shippingFee: o.shippingFee,
-      status: readyStatusOf[o.status] ?? 'pending',
-      tracking: o.trackingCode ?? undefined,
-      expectedAt: dateOf(o.deliveryDate),
-      deliveredAt: dateOf(o.deliveredAt),
-      receivedConfirmed: o.receivedConfirmedAt !== null,
-      address: { name: o.recipientName, phone: o.recipientPhone, line: `${o.addressDetail}, ${provinceNameOf(o.provinceCode)}` },
-      invoice: o.invoiceInfo ? { company: o.invoiceInfo.name, taxCode: o.invoiceInfo.taxCode, email: o.invoiceInfo.email } : undefined,
-      invoiceAttached: o.hasInvoiceFile,
-      history: historyOf(progress).reverse(),
-      complaintDays: complaintDaysOf(o),
+  useEffect(() => {
+    let current = true;
+    orderApi
+      .getOrders()
+      .then((loaded) => {
+        if (current && loaded.length > 0) {
+          orderStore.set(loaded);
+          setNonce((n) => n + 1);
+        }
+      })
+      .catch(() => {
+        // The screens that load the orders themselves show the error.
+      });
+    return () => {
+      current = false;
     };
-    return ready;
-  }
-  const custom: CustomOrder = {
-    kind: 'custom',
-    id: o.id,
-    vendorName: shopName,
-    title: titleOf(o),
-    value: o.totalAmount,
-    depositPercent: depositPercentOf(o),
-    depositPaidAt: dateOf(o.createdAt) ?? '',
-    step: customStepOf[o.status] ?? 'mockup',
-    mockups: newestFirst(mockups).map((m) => ({
-      version: m.versionNo,
-      sentAt: dateOf(m.uploadedAt) ?? '',
-      note: '',
-      state: mockupStateOf[m.reviewStatus],
-      feedback: m.reviewNote ?? undefined,
-      fileUrl: m.downloadUrl,
-    })),
-    progress: historyOf(progress),
-    deliveredAt: dateOf(o.deliveredAt),
-    invoiceAttached: o.hasInvoiceFile,
-  };
-  return custom;
+  }, []);
+
+  return orders;
 }
 
-async function toBuyerOrders(bundles: OrderBundle[]): Promise<Order[]> {
-  const names = await fetchVendorNames();
-  return bundles.map((b) => toBuyerOrder(b, names.get(b.order.vendorId) ?? b.order.vendorId));
-}
-
-/** The caller's own purchases (FR-10). */
-export async function fetchOrders(): Promise<Order[]> {
-  if (config.demoMode) return mockResponse(orderStore.get());
-  return toBuyerOrders(await fetchOrderBundles());
-}
-
-export async function fetchOrder(orderId: string): Promise<Order | null> {
-  if (config.demoMode) return mockResponse(orderStore.get().find((o) => o.id === orderId) ?? null);
-  const [bundle, dispute] = await Promise.all([fetchOrderBundle(orderId), fetchDispute(orderId)]);
-  if (!bundle) return null;
-  const [order] = await toBuyerOrders([bundle]);
-  return order.kind === 'ready' && dispute ? { ...order, complaintId: dispute.disputeId } : order;
-}
-
-/** What the buyer follows of their complaint (M6.1.3), newest event first. */
-function toComplaint(d: DisputeDto, shop: string): Complaint {
-  const buyerEvidences = d.evidences.filter((e) => e.party === 'BUYER');
-  const events = [
-    { label: 'Bạn gửi báo vấn đề', at: dateOf(d.createdAt) ?? '' },
-    ...d.evidences
-      .filter((e) => e.party === 'VENDOR')
-      .map((e) => ({ label: e.note ? `Người bán phản hồi: ${e.note}` : 'Người bán gửi bằng chứng', at: dateOf(e.createdAt) ?? '' })),
-    ...(d.resolvedAt ? [{ label: 'Quản trị quyết định', at: dateOf(d.resolvedAt) ?? '' }] : []),
-  ].reverse();
-  return {
-    id: d.disputeId,
-    orderId: d.orderId,
-    shop,
-    reason: disputeReasonLabel(d.reason),
-    description: d.description,
-    photos: buyerEvidences.length,
-    sentAt: dateOf(d.createdAt) ?? '',
-    events,
-    decision:
-      d.status === 'RESOLVED' && d.decision
-        ? { title: disputeDecisionLabel(d.decision), amount: d.refundAmount ?? 0, body: d.decisionReason ?? '', at: dateOf(d.resolvedAt) ?? '' }
-        : undefined,
-  };
-}
-
-export async function fetchComplaintOfOrder(orderId: string): Promise<Complaint | null> {
-  if (config.demoMode) return mockResponse(complaintStore.get().find((c) => c.orderId === orderId) ?? null);
-  const [dispute, order] = await Promise.all([fetchDispute(orderId), fetchOrder(orderId)]);
-  return dispute && toComplaint(dispute, order?.kind === 'ready' ? order.shop : '');
+/** One order of the caller. */
+export function useOrder(id: string): Order | undefined {
+  const orders = useOrders();
+  return orders.find((o) => o.id === id);
 }

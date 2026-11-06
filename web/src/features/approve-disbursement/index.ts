@@ -1,1 +1,1 @@
-export { DisbursementApprovals } from './ui/DisbursementApprovals';
+export { useApproveDisbursement } from './model/useApproveDisbursement';

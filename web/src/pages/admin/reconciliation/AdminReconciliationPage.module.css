@@ -1,0 +1,57 @@
+/* Bố cục trang dùng design token của hệ thống (không dùng inline style). */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0px;
+  font-family: var(--font-heading);
+}
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 4px 0 0;
+}
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.statValuePrimary {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-top: 4px;
+}
+.statValueGold {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-gold);
+  margin-top: 4px;
+}
+.statValueBlue {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-blue);
+  margin-top: 4px;
+}
+.statValueGreen {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-green);
+  margin-top: 4px;
+}

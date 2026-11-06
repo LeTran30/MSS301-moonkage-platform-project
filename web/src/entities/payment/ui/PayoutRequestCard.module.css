@@ -1,0 +1,68 @@
+.payoutCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.payoutHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px dashed var(--color-border);
+  padding-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.poId {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.poVendor {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+.poBank {
+  font-size: var(--text-xs);
+  color: var(--color-text);
+}
+.amountCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.poAmount {
+  font-size: var(--text-lg);
+  color: var(--color-primary);
+}
+.poBody {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  background: var(--color-bg-alt);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+}
+@media (max-width: 768px) {
+  .poBody {
+    grid-template-columns: 1fr;
+  }
+}
+.poItem {
+  display: flex;
+  flex-direction: column;
+}
+.poItem span {
+  color: var(--color-text-muted);
+}
+.poNote {
+  grid-column: 1 / -1;
+  font-size: var(--text-xs);
+  color: var(--color-text);
+  margin-top: 4px;
+}
+.poActions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -56,7 +56,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * Vendor profile, submission, review, registration fee, delivery fee and lock (phases 1 to 3 of
- * docs/services/vendor/completion-plan.md). Every change other services copy ends with a snapshot
+ * docs/archive/2026-10-26-vendor-completion-plan.md). Every change other services copy ends with a snapshot
  * (vendor.updated / vendor.locked).
  */
 @Service
@@ -308,6 +308,7 @@ class VendorServiceImpl implements VendorService {
         vendor.checkRegistrationFeePayable();
         Price fee = registrationFeeService.getCurrentFee();
         CreatePaymentResponse payment = paymentClient.createPayment(
+                vendorId,
                 new CreatePaymentRequest(PaymentPurpose.REGISTRATION_FEE, vendorId, caller.accountId(), fee.value()));
         return new RegistrationFeePaymentLinkResponse(payment.paymentId(), fee.value(), payment.paymentUrl());
     }

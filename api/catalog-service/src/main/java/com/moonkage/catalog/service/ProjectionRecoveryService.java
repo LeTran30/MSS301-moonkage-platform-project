@@ -4,7 +4,7 @@ import com.moonkage.catalog.dto.replay.ReplayCheckpoint;
 import com.moonkage.catalog.dto.response.RebuildRatingsResponse;
 import com.moonkage.catalog.dto.response.ReplayBatchResponse;
 
-/** Operator/internal port; deliberately no controller, scheduler or fake producer feed. */
+/** Internal port: PendingInboxProjector applies pending events with it; no controller and no fake producer feed. */
 public interface ProjectionRecoveryService {
     ReplayBatchResponse replayPending(ReplayCheckpoint after, int limit);
 

@@ -1,33 +1,27 @@
-import { startDemoPayment, type PaymentLink } from '@/entities/payment';
-import { getMyVendorDetail, VENDOR_FEE, vendorDemoState } from '@/entities/vendor';
-import { ApiError, apiClient, type ApiResponse } from '@/shared/api/client';
-import { vendorsApi } from '@/shared/api/gateway';
-import { mockResponse } from '@/shared/api/mock';
-import { config } from '@/shared/config/env';
-import { today } from '@/shared/utils/format';
+import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { isDemoMode } from '@/shared/config';
 
-const NO_VENDOR_MSG = 'Không tìm thấy hồ sơ người bán của tài khoản này.';
+/**
+ * The write side of the registration fee payment (FR-27, FR-53).
+ *
+ * The vendor entity owns the read and the shape of the fee; the write lives
+ * here because it creates the payment, not the fee data
+ * (package-architecture §3 — `api/` of a feature holds the writes).
+ */
 
-/** vendor-service `RegistrationFeePaymentLinkResponse`; `amount` is the fee in effect now (AC-53.3). */
-interface FeePaymentLinkDto {
-  paymentId: string;
-  amount: number;
-  paymentUrl: string;
-}
-
-/** AC-27.4: where to pay the vendor fee. */
-export async function payVendorFee(shopName: string): Promise<PaymentLink> {
-  if (config.demoMode) return startDemoPayment('vendor-fee', VENDOR_FEE, `Phí mở bán · ${shopName}`);
-  const detail = await getMyVendorDetail();
-  if (!detail) throw new ApiError(0, null, NO_VENDOR_MSG);
-  const res = await apiClient.post<ApiResponse<FeePaymentLinkDto>>(`${vendorsApi}/${encodeURIComponent(detail.id)}/registration-fee-payments`);
-  const { paymentId, paymentUrl } = res.data.data;
-  return { paymentId, paymentUrl };
-}
-
-/** Demo mode, after the simulated VNPay: the shop opens. On the server the payment event opens it. */
-export async function markFeePaid(): Promise<boolean> {
-  if (!config.demoMode) return true;
-  vendorDemoState.set({ state: 'open', approvedAt: vendorDemoState.get()?.approvedAt ?? today() });
-  return mockResponse(true);
+/**
+ * The registration fee payment link (FR-27, FR-53): the owner pays the
+ * registration fee once the profile is approved.
+ *
+ * `RegistrationFeePaymentLinkResponse`: the fee level in effect when the
+ * payment was created (AC-53.3), and the VNPay page to open.
+ */
+export async function createRegistrationFeePayment(
+  vendorId: string
+): Promise<{ paymentId: string; amount: number; paymentUrl: string } | null> {
+  if (isDemoMode()) {
+    return null;
+  }
+  const res = await apiClient.post<unknown>(GATEWAY.VENDOR.REGISTRATION_FEE_PAYMENT(vendorId));
+  return unwrap<{ paymentId: string; amount: number; paymentUrl: string }>(res);
 }

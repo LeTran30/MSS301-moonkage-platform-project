@@ -1,6 +1,6 @@
 import { Client, type StompSubscription } from '@stomp/stompjs';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { realtimePath, websocketUrl } from '../gateway';
+import { websocketUrl } from '../gateway';
 import { RealtimeContext, type Unsubscribe } from './realtimeContext';
 
 /** Wait before reconnecting after the socket drops (gateway or orchestrator-service restart). */
@@ -13,9 +13,11 @@ interface Listener {
 }
 
 /**
- * One STOMP connection per access token (orchestrator-service, Software Design 4.8). Listeners are kept here
- * and subscribed again after every reconnect, so a page subscribes once and never deals with the socket.
- * Without a token (logged out) nothing connects.
+ * One STOMP connection per access token (orchestrator-service). The listeners
+ * live here and are subscribed again after every reconnect, so a screen
+ * subscribes once and never deals with the socket.
+ *
+ * Without a token (logged out) or in demo mode (no server) nothing connects.
  */
 export function RealtimeProvider({ token, children }: { token: string | null; children: ReactNode }) {
   const clientRef = useRef<Client | null>(null);
@@ -37,7 +39,7 @@ export function RealtimeProvider({ token, children }: { token: string | null; ch
     if (!token) return;
     const listeners = listenersRef.current;
     const client = new Client({
-      brokerURL: websocketUrl(realtimePath),
+      brokerURL: websocketUrl('/ws'),
       connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: RECONNECT_DELAY_MS,
       onConnect: () => {
@@ -63,7 +65,11 @@ export function RealtimeProvider({ token, children }: { token: string | null; ch
   const subscribe = useCallback(
     <T,>(destination: string, onMessage: (body: T) => void): Unsubscribe => {
       const id = nextIdRef.current++;
-      const listener: Listener = { destination, onMessage: onMessage as (body: unknown) => void, subscription: null };
+      const listener: Listener = {
+        destination,
+        onMessage: onMessage as (body: unknown) => void,
+        subscription: null,
+      };
       listenersRef.current.set(id, listener);
       const client = clientRef.current;
       if (client?.connected) attach(client, listener);
@@ -75,6 +81,9 @@ export function RealtimeProvider({ token, children }: { token: string | null; ch
     [attach],
   );
 
-  const value = useMemo(() => ({ connected: Boolean(token) && connected, subscribe }), [token, connected, subscribe]);
+  const value = useMemo(
+    () => ({ connected: Boolean(token) && connected, subscribe }),
+    [token, connected, subscribe],
+  );
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
 }
