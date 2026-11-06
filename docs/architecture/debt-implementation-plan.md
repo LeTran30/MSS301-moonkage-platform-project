@@ -14,12 +14,12 @@ Còn **9 hạng mục** trong **4 nhóm**. Tổng ước lượng **13–17 ngà
 |---|---|---|---|---|
 | **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
 | **B. Luồng nghiệp vụ** | B-1 · B-2 · B-3 | 4–5 ngày | B-1 → B-2 | **P0** |
-| **C. Hạ tầng & chất lượng** | C-1 · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
-| **D. Tài liệu & quyết định** | D-1 · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
+| **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
+| **D. Tài liệu & quyết định** | D-1 ✅ · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
 
 > **Điểm quan trọng nhất của kế hoạch này:** phần lớn việc còn nợ **không** phụ thuộc app mobile. Chỉ **A-3 (tắt `discovery.locator`)** là cần xác nhận từ bên ngoài repo. Vì vậy A-1 và A-2 có thể làm ngay.
 >
-> **Tiến độ (2026-11-06):** A-1, A-2 và phần 308 của A-3 **đã xong**. Phần còn lại của A-3 (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) **vẫn chặn** ở app mobile.
+> **Tiến độ (2026-11-06):** A-1, A-2 và phần 308 của A-3 **đã xong**. Phần còn lại của A-3 (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) **vẫn chặn** ở app mobile. **C-1** (tài liệu hoá 4 thư viện `common-*`) và **D-1** (chốt trạng thái ADR D-25 → D-30) cũng **đã xong** trong ngày 2026-11-06.
 
 ---
 
@@ -299,6 +299,12 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 **Xong khi:** có `docs/services/common-{api,outbox,reference,observability}/README.md`, và bảng "Cố ý không có README" trong `docs/README.md` cập nhật (4 dòng này **không** còn "cố ý không có" nữa — phải bỏ khỏi danh sách).
 
+> **Đã xong (2026-11-06).** Đã tạo 4 README theo mẫu `docs/services/common-storage/README.md`: [common-api](../services/common-api/README.md) (7 class: `ApiResponse` + `ApiResponse.FieldError`, `PageResponse`, `GatewayHeader`, `GatewayRole`, `CommonErrorCode` — 17 mã, `CommonExceptionHandler` — 7 handler, `CommonExceptionHandlerAutoConfiguration`), [common-outbox](../services/common-outbox/README.md) (6 class), [common-reference](../services/common-reference/README.md) (1 class: `Province`), [common-observability](../services/common-observability/README.md) (5 class). Mỗi README có mục *Trách nhiệm* / *Không có trách nhiệm* / *API của thư viện* / *Cấu hình*, kèm auto-configuration mà module đóng góp (`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`) và một call site thật cho mỗi class.
+>
+> Bảng "Cố ý không có README" trong [../README.md](../README.md) còn lại `api-gateway`, `discovery-server` và `config`; 4 thư viện `common-*` đã được thêm vào bảng "Services" kèm cây tài liệu.
+>
+> **Chi tiết khác với bảng kế hoạch:** `common-api` có đúng **7** class ở cấp package như bảng kế hoạch liệt kê; README tài liệu thêm một dòng cho `ApiResponse.FieldError` (record lồng trong `ApiResponse`, không phải class ở cấp package) vì web hiển thị thông báo theo từng trường. `common-outbox` (6) và `common-observability` (5) đúng như đã liệt kê; `common-reference` đúng 1 class.
+
 ---
 
 ### C-2 — OpenTelemetry tracing (BE-11)
@@ -354,6 +360,19 @@ Cả 6 ADR trong [api-db/decisions.md](api-db/decisions.md) đều ghi **"Đề 
 | D-30 | Đường dẫn theo aggregate root, tắt locator theo từng service | Chuyển **Đã chốt** sau A-3; **trước đó** giữ "Đề xuất" |
 
 **Nguyên tắc** ([docs/README.md](../README.md) quy tắc 5): ADR đã chốt **không sửa nội dung** — sai thì thêm ADR mới. Chuyển Status là ngoại lệ được phép vì không đổi nội dung quyết định.
+
+> **Đã xong (2026-11-06).** Đã đổi Status trong [api-db/decisions.md](api-db/decisions.md), **không đổi nội dung** quyết định:
+>
+> | ADR | Trước | Sau |
+> |---|---|---|
+> | D-25 | Đề xuất (2026-11-05) | **Đã chốt (2026-11-06)** |
+> | D-26 | Đề xuất (2026-11-05) | **Đã chốt (2026-11-06)** |
+> | D-27 | Đề xuất (2026-11-05) | **Đã chốt (2026-11-06)** |
+> | D-28 | Đề xuất (2026-11-05) | **Đã chốt (2026-11-06)** |
+> | D-29 | Đề xuất (2026-11-05) | **Đã chốt (2026-11-06)** |
+> | D-30 | Đề xuất (2026-11-05) | **Đề xuất (2026-11-05)** — giữ nguyên, kèm ghi chú ngày 2026-11-06 |
+>
+> Riêng D-25 còn một dòng ở mục Consequences nói CORS đọc qua `@Value` — dòng đó **đã được sửa** cho khớp code (`CorsProperties`, `@ConfigurationProperties`, prefix `moonkage.cors`) ở cả gateway và orchestrator-service. D-30 giữ "Đề xuất" vì phần cuối (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) vẫn chặn ở app mobile; ghi chú dưới D-30 nói rõ canonical route và 308 đã xong, `discovery.locator` cố ý còn bật.
 
 ### D-2 — Dọn đường dẫn cũ còn sót trong CSS và copy
 

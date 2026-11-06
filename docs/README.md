@@ -100,7 +100,11 @@ docs/
 │   ├── payment/README.md          Tổng quan payment-service
 │   ├── orchestrator/README.md     Tổng quan orchestrator-service
 │   ├── common-storage/README.md   Tổng quan thư viện lưu trữ đối tượng
-│   └── common-storage/classes/    Tài liệu thư viện lưu trữ đối tượng
+│   ├── common-storage/classes/    Tài liệu thư viện lưu trữ đối tượng
+│   ├── common-api/README.md       Tổng quan thư viện hợp đồng HTTP
+│   ├── common-outbox/README.md    Tổng quan thư viện relay outbox
+│   ├── common-reference/README.md Tổng quan thư viện danh mục tham chiếu
+│   └── common-observability/README.md  Tổng quan thư viện metric dùng chung
 ├── scripts/                   ← SCRIPT kiểm tài liệu (chạy tay và trong CI)
 │   └── check-class-docs.mjs    Tài liệu class còn khớp với mã nguồn không
 ├── api/                           ← BỘ REQUEST MẪU (Postman)
@@ -122,8 +126,12 @@ docs/
 | payment | [services/payment/README.md](services/payment/README.md) | — |
 | orchestrator | [services/orchestrator/README.md](services/orchestrator/README.md) | — |
 | common-storage (thư viện) | [services/common-storage/README.md](services/common-storage/README.md) | [classes/](services/common-storage/classes/) |
+| common-api (thư viện) | [services/common-api/README.md](services/common-api/README.md) | — |
+| common-outbox (thư viện) | [services/common-outbox/README.md](services/common-outbox/README.md) | — |
+| common-reference (thư viện) | [services/common-reference/README.md](services/common-reference/README.md) | — |
+| common-observability (thư viện) | [services/common-observability/README.md](services/common-observability/README.md) | — |
 
-Bảy service nghiệp vụ (`identity`, `catalog`, `quotation`, `vendor`, `order`, `payment`, `orchestrator`) và một thư viện dùng chung (`common-storage`) đều có README.
+Bảy service nghiệp vụ (`identity`, `catalog`, `quotation`, `vendor`, `order`, `payment`, `orchestrator`) và năm thư viện dùng chung (`common-storage`, `common-api`, `common-outbox`, `common-reference`, `common-observability`) đều có README.
 
 **Cố ý không có README** — các module còn lại trong `api/pom.xml` không phải service nghiệp vụ:
 
@@ -131,13 +139,9 @@ Bảy service nghiệp vụ (`identity`, `catalog`, `quotation`, `vendor`, `orde
 |---|---|
 | `api-gateway` | **Hạ tầng.** Chỉ định tuyến, kiểm token, rate limit — không có bounded context, không sở hữu dữ liệu, không có aggregate root. Xem [architecture/software-design.md](architecture/software-design.md) và [guides/getting-started.md](guides/getting-started.md) |
 | `discovery-server` | **Hạ tầng.** Chỉ đăng ký Eureka — không có bounded context, không sở hữu dữ liệu |
-| `common-api` | **Thư viện.** `ApiResponse`, `PageResponse`, `GatewayHeader`, `GatewayRole`, `CommonErrorCode` — không chạy, không có cổng, không có DB |
-| `common-outbox` | **Thư viện.** Relay outbox dùng chung — không chạy, không có cổng, không có DB |
-| `common-reference` | **Thư viện.** Enum `Province` (A-18) — không chạy, không có cổng, không có DB |
-| `common-observability` | **Thư viện.** Tên metric và bộ đếm dùng chung — không chạy, không có cổng, không có DB |
 | `config` | **Cấu hình build.** Bộ luật ArchUnit và Checkstyle dùng chung, không phải artifact Maven |
 
-`common-storage` được tài liệu hoá như một thư viện vì nó đã có tài liệu class sẵn ([services/common-storage/classes/](services/common-storage/classes/)) và là thư viện duy nhất có hợp đồng cấu hình (`storage.*`) mà từng service phải tự khai báo. Ba thư viện `common-*` còn lại chưa có thư mục tài liệu — xem P2-12 trong [architecture/codebase-conformance-review.md](architecture/codebase-conformance-review.md).
+`common-storage` được tài liệu hoá như một thư viện vì nó đã có tài liệu class sẵn ([services/common-storage/classes/](services/common-storage/classes/)) và là thư viện duy nhất có hợp đồng cấu hình (`storage.*`) mà từng service phải tự khai báo. Bốn thư viện `common-*` còn lại được tài liệu hoá theo cùng mẫu (P2-12, xong 2026-11-06): [common-api](services/common-api/README.md) (vỏ câu trả lời HTTP, mã lỗi framework, ranh giới lỗi dùng chung), [common-outbox](services/common-outbox/README.md) (relay phát sự kiện lên RabbitMQ), [common-reference](services/common-reference/README.md) (enum `Province`, A-18) và [common-observability](services/common-observability/README.md) (tên metric dùng chung, che PII).
 
 Service chưa có thư mục thì tạo `services/<tên>/README.md` khi viết tài liệu đầu tiên.
 

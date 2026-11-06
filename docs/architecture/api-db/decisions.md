@@ -118,7 +118,7 @@ Chi tiết và SQL ở [db-review-proposals.md](db-review-proposals.md). Tất c
 
 ---
 
-## Quyết định kiến trúc D-25 → D-30 (đề xuất 2026-11-05)
+## Quyết định kiến trúc D-25 → D-30 (rút ra 2026-11-05; D-25 → D-29 đã chốt 2026-11-06, D-30 còn "Đề xuất")
 
 Những quyết định dưới đây được rút ra từ rà soát code thực tế ngày 2026-11-05 (xem [../codebase-conformance-review.md](../codebase-conformance-review.md)). Mỗi mục dùng đúng bốn phần: Context / Decision / Consequences / Status. Số mã tiếp tục từ D-24 của [software-design.md](../software-design.md).
 
@@ -138,10 +138,10 @@ Những quyết định dưới đây được rút ra từ rà soát code thự
 
 - Vì gateway là điểm tin cậy duy nhất, mọi service đều phải tin `X-Account-Id`; nếu một service bị truy cập **trực tiếp** (bypass gateway, ví dụ trong môi trường dev nội bộ) thì nó tin header giả. Đây là hệ quả được chấp nhận: môi trường dev chỉ mở cổng gateway ra ngoài; các cổng service (`8081`–`8088`) chỉ nằm trong mạng Docker.
 - Danh sách origin phải cập nhật mỗi khi đổi domain hoặc thêm môi trường; quên cập nhật sẽ ra lỗi CORS ở trình duyệt chứ không phải ở server.
-- Cấu hình CORS nằm trong `application.yml` của gateway và đọc qua `@Value`, chưa theo `@ConfigurationProperties` như chuẩn §4.8 — cần hợp nhất sau.
+- Cấu hình CORS nằm trong `application.yml` của gateway và đọc qua `@ConfigurationProperties` (`CorsProperties`, prefix `moonkage.cors`) — không còn đọc `@Value` như chuẩn §4.8 yêu cầu.
 - Việc không khai báo `X-User-*` trong `allowedHeaders` là biện pháp phòng thủ thứ hai; biện pháp chính vẫn là xoá header ở gateway.
 
-**Status.** Đề xuất (2026-11-05). Cần duyệt bởi BE lead.
+**Status.** Đã chốt (2026-11-06). Trạng thái trước đây là "Đề xuất (2026-11-05)"; quyết định đã được hiện thực trong code nên chuyển sang **Đã chốt** (quy tắc 5 của [../../README.md](../../README.md) cho phép đổi Status khi nội dung quyết định không đổi). Phần "CORS đọc qua `@Value`" ở mục Consequences **đã được sửa**: cả gateway (`api/api-gateway/src/main/java/com/moonkage/gateway/config/CorsProperties.java`) và orchestrator-service (`api/orchestrator-service/src/main/java/com/moonkage/orchestrator/infrastructure/websocket/CorsProperties.java`) nay đọc `moonkage.cors.allowed-origins` qua `@ConfigurationProperties` (`CorsProperties`), không còn `@Value`.
 
 ### D-26: Sổ ID xác định và ranh giới dữ liệu PII trong seed
 
@@ -167,7 +167,7 @@ Những quyết định dưới đây được rút ra từ rà soát code thự
 - Hồ sơ NFC seed không nhất quán giữa các máy (khóa mã hóa khác nhau) — đây là chủ ý: dữ liệu dev không cần giống hệt nhau, chỉ cần đủ để chạy luồng.
 - Seed chứa số định danh của người thật là rủi ro; sổ ID và `nfc-profiles.json` phải được coi là dữ liệu nhạy cảm, không được đẩy lên repo công khai.
 
-**Status.** Đề xuất (2026-11-05). Cần bổ sung hai dòng còn thiếu (`000300000101`, `0009`) vào `docs/guides/database.md`.
+**Status.** Đã chốt (2026-11-06). Trạng thái trước đây là "Đề xuất (2026-11-05)". Hai dòng sổ còn thiếu đã được bổ sung vào [../../guides/database.md](../../guides/database.md) mục 5: bậc giá `…-000300000101` và outbox event loại `0009` (`…-000900000001`).
 
 ### D-27: Catalog giữ bản đọc sản phẩm; nhất quán cuối cùng chấp nhận được
 
@@ -189,7 +189,7 @@ Những quyết định dưới đây được rút ra từ rà soát code thự
 - View phải được khai báo lại theo mỗi lần đổi cột — công việc lặp lại nhỏ nhưng dễ sót, nên migration mới phải kèm câu lệnh kiểm tra (ví dụ `SELECT` thử từ view sau khi tạo).
 - `applyMaxPages` giới hạn số trang mỗi lần chạy để một lần phát lại luôn kết thúc; đổi tham số này ảnh hưởng tới thời gian một lần replay.
 
-**Status.** Đề xuất (2026-11-05). Phần "bỏ bảng `products` cũ" có thể chuyển sang **Đã chốt** ngay vì L-18 đã chốt nguyên tắc.
+**Status.** Đã chốt (2026-11-06). Trạng thái trước đây là "Đề xuất (2026-11-05)". Phần "bỏ bảng `products` cũ" đã làm: migration `api/catalog-service/src/main/resources/db/migration/V2026_11_06_1000__drop_legacy_products_table.sql` (idempotent, `V1__baseline.sql` không bị sửa vì Flyway ghi checksum).
 
 ### D-28: Hợp đồng `Idempotency-Key` cho endpoint tiền và đặt cọc
 
@@ -216,7 +216,7 @@ Những quyết định dưới đây được rút ra từ rà soát code thự
 - Số ID bị dùng làm key (checkoutId, orderId…) phải là duy nhất theo ý định; không được dùng lại một ID cho hai ý định khác nhau.
 - Việc web chưa gửi key là khoảng trống thật: chốt D-28 không xoá được khoảng trống đó, cần một PR FE riêng kèm test.
 
-**Status.** Đề xuất (2026-11-05). Phần "server tái sử dụng theo `purpose` + `referenceId` + `amount`" có thể chuyển sang **Đã chốt** ngay vì đã là hành vi đang chạy.
+**Status.** Đã chốt (2026-11-06). Trạng thái trước đây là "Đề xuất (2026-11-05)". Phần "server tái sử dụng theo `purpose` + `referenceId` + `amount`" đã là hành vi đang chạy (`findReusable` trong `api/payment-service/src/main/java/com/moonkage/payment/service/impl/PaymentServiceImpl.java:114`). Phần web chưa gửi `Idempotency-Key` vẫn là khoảng trống đã ghi ở mục Consequences — nó không chặn việc chốt quyết định này.
 
 ### D-29: Ranh giới sở hữu phí giao hàng
 
@@ -237,7 +237,7 @@ Những quyết định dưới đây được rút ra từ rà soát code thự
 - Catalog phải luôn có bản sao `vendor_snapshots` đủ mới; nếu bản sao cũ, phí nội thành tính ra có thể lệch — vì vậy tồn kho và phí đều phụ thuộc độ trễ projection của D-27.
 - Người bán không đặt phí (`null`) thì khách không mua được trong vùng của họ; đây là hành vi có chủ đích, cần hiển thị rõ trong UI quản lý sản phẩm.
 
-**Status.** Đề xuất (2026-11-05). Phần "order chỉ chép phí" và "vendor chỉ giữ mức phí" có thể chuyển sang **Đã chốt** ngay vì đúng với D-14 đã chốt.
+**Status.** Đã chốt (2026-11-06). Trạng thái trước đây là "Đề xuất (2026-11-05)". Ranh giới "catalog tính phí" / "order chỉ chép phí" / "vendor chỉ giữ mức phí" đúng với D-14 đã chốt và đã là hành vi đang chạy.
 
 ### D-30: Gateway định tuyến theo aggregate root; tắt `discovery.locator` theo từng service
 
@@ -275,6 +275,8 @@ Phía web, `web/src/shared/api/gateway.ts` đang trộn **cả hai** kiểu đư
 - Chưa chốt được ngày tắt locator vì còn phụ thuộc tiến độ app mobile — app Flutter gọi dạng có tên service và nằm ngoài repo này, nên không thể kiểm chứng từ đây.
 
 **Status.** Đề xuất (2026-11-05). Thay cho D-24 đang "Mở". Cần BE lead + FE lead duyệt, và cần xác nhận từ phía app mobile.
+
+> **Cập nhật 2026-11-06 — phần đường dẫn đã xong, phần tắt locator còn mở.** Đường dẫn canonical theo aggregate root đã khai báo cho **cả 7 service** trong `api/api-gateway/src/main/resources/application.yml` (khai báo cả dạng gốc `/api/x` lẫn dạng con `/api/x/**`); 65 hằng đường dẫn cũ trong `web/src/shared/api/gateway.ts` đã chuyển sang `/api/...`; và `LegacyPathRedirectFilter` đã trả **308** cho dạng cũ của cả 7 service (giữ nguyên method và query string). `spring.cloud.gateway.discovery.locator.enabled` **cố ý vẫn bật** — app mobile (Flutter, nằm ngoài repo này) chưa chuyển sang `/api/...`. **Chỉ còn phần cuối** — tắt `discovery.locator` và dọn dạng cũ khỏi `SecurityConfig` — là còn mở, và nó chỉ mở được sau khi app mobile đã phát hành một release dùng đường dẫn canonical. Vì vậy D-30 **giữ "Đề xuất"** cho tới lúc đó. Chi tiết: [../debt-implementation-plan.md](../debt-implementation-plan.md) §1 (A-1, A-2, A-3).
 
 ---
 
