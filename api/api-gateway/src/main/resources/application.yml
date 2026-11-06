@@ -82,11 +82,12 @@ spring:
             #   /api/orders/**    OrderController, OrderDocumentController (@RequestMapping("/api/orders")),
             #                     DisputeController (@RequestMapping("/api/orders/{orderId}/dispute")),
             #                     ReviewController (@RequestMapping("/api/orders/{orderId}/reviews"))
+            #   /api/chat/**      ChatController (@RequestMapping("/api/chat/conversations"))
             # The internal path of the service (/internal/orders/**) is deliberately absent (D-30 decision 5).
             - id: order-service
               uri: lb://order-service
               predicates:
-                - Path=/api/carts,/api/carts/**,/api/checkouts,/api/checkouts/**,/api/orders,/api/orders/**
+                - Path=/api/carts,/api/carts/**,/api/checkouts,/api/checkouts/**,/api/orders,/api/orders/**,/api/chat,/api/chat/**
             # payment-service by aggregate root (A-1): the payments, the ledgers and the refunds.
             #   /api/payments/** PaymentController (@RequestMapping("/api/payments"))
             #   /api/ledgers/**  LedgerController (@RequestMapping("/api/ledgers"))
