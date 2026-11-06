@@ -77,8 +77,8 @@ export class LayoutErrorBoundary extends Component<Props, State> {
               <Button variant="primary" size="sm" onClick={this.handleRetry}>
                 <Icon name="check" size={14} /> Thử lại khu vực này
               </Button>
-              <Button variant="outline" size="sm" onClick={this.handleReload}>
-                🔄 Tải lại trang
+              <Button variant="outline" size="sm" onClick={this.handleReload} iconLeft="refresh">
+                Tải lại trang
               </Button>
             </div>
           </Card>

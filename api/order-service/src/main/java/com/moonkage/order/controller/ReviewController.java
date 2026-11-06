@@ -1,8 +1,8 @@
 package com.moonkage.order.controller;
 
+import com.moonkage.api.ApiResponse;
 import com.moonkage.order.dto.request.CreateReviewRequest;
 import com.moonkage.order.dto.response.ReviewResponse;
-import com.moonkage.order.exception.ApiResponse;
 import com.moonkage.order.security.CurrentUser;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.ReviewService;

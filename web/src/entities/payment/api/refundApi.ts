@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap, unwrapPage } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * Wire shape of `com.moonkage.payment.dto.response.RefundResponse`.
@@ -33,9 +32,6 @@ export interface ManualRefundDto {
 export const refundApi = {
   /** The refunds of the platform, newest first. */
   async list(options?: { status?: ManualRefundDto['status'] }): Promise<ManualRefundDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const params = new URLSearchParams();
     // The backend defaults to MANUAL_REQUIRED: the ones that still need a hand.
     params.set('status', options?.status ?? 'MANUAL_REQUIRED');
@@ -46,9 +42,6 @@ export const refundApi = {
 
   /** One refund of the platform. */
   async getById(refundId: string): Promise<ManualRefundDto | null> {
-    if (isDemoMode()) {
-      return null;
-    }
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.REFUND_BY_ID(refundId));
     const dto = unwrap<ManualRefundDto>(res);
     return dto ?? null;

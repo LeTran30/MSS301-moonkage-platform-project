@@ -1,4 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+
 import { mapOrderDtoToEntity, type OrderDto } from '@/entities/order';
 import type { Order } from '@/entities/order';
 
@@ -30,10 +31,7 @@ export interface UpdateOrderPayload {
 /**
  * The vendor moves the order one step forward (FR-32, FR-40, FR-42).
  */
-export async function advanceOrder(
-  orderId: string,
-  payload: UpdateOrderPayload
-): Promise<Order> {
+export async function advanceOrder(orderId: string, payload: UpdateOrderPayload): Promise<Order> {
   const res = await apiClient.patch<unknown>(GATEWAY.ORDER.ORDER_UPDATE(orderId), payload);
   const dto = unwrap<OrderDto>(res);
   if (!dto) {

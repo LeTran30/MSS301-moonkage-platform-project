@@ -44,7 +44,7 @@
   border-radius: var(--radius-lg);
 }
 .qrTimer {
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   color: var(--color-primary);
   font-weight: var(--weight-medium);
 }
@@ -92,4 +92,12 @@
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   max-width: 44ch;
+}
+
+/* Màn hình hẹp: mã QR và hướng dẫn xếp dọc thay vì cạnh nhau. */
+@media (max-width: var(--breakpoint-md)) {
+  .unverifiedBox {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
 }

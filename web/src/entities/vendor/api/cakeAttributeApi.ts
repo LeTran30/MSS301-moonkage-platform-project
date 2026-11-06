@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrapList } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { CakeAttributeDto } from './vendorDto';
 
 /**
@@ -12,9 +12,6 @@ import type { CakeAttributeDto } from './vendorDto';
 export const cakeAttributeApi = {
   /** The catalogue values, optionally of one group only. */
   async list(group?: 'CRUST' | 'FILLING', includeHidden = false): Promise<CakeAttributeDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const params = new URLSearchParams();
     if (group) params.set('group', group);
     if (includeHidden) params.set('includeHidden', 'true');
@@ -27,7 +24,7 @@ export const cakeAttributeApi = {
 
   /** The labels of the given codes, hidden ones included (AC-54.4). */
   async labelsOf(codes: string[]): Promise<CakeAttributeDto[]> {
-    if (isDemoMode() || codes.length === 0) {
+    if (codes.length === 0) {
       return [];
     }
     const params = new URLSearchParams();

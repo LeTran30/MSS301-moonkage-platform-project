@@ -74,8 +74,9 @@ Seed không bao giờ đụng tới tài khoản người dùng tự tạo: emai
 | | | `…-000600000003` | địa chỉ của member2 | identity |
 | delivery area | `0007` | `…-000700000001`, `…02` | vùng giao của 2 shop (79, 01) | vendor |
 | registration fee config | `0008` | `…-000800000001` | mức phí đăng ký mặc định 200.000đ (nằm trong migration, mọi môi trường) | vendor |
+| price tier | | `md5(product_id:from_qty)` | bậc giá số lượng lớn (BR-35) của các sản phẩm `0003`; ID suy ra từ sản phẩm và mốc số lượng nên chạy lại seed vẫn ra cùng dòng | vendor |
 
-Loại mới thì lấy mã tiếp theo (`0008`…) và thêm một dòng vào bảng.
+Loại mới thì lấy mã tiếp theo (`0009`…) và thêm một dòng vào bảng. ID của bản ghi trong seed phải có dòng tương ứng ở đây — xem quy tắc trong [../architecture/api-db/decisions.md](../architecture/api-db/decisions.md) (D-26).
 
 ## 6. Làm lại từ đầu
 

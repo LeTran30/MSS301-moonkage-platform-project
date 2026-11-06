@@ -1,4 +1,11 @@
-import { apiClient, GATEWAY, unwrapList, unwrapOrThrow, uploadFile } from '@/shared/api';
+import {
+  apiClient,
+  createUploadLink,
+  GATEWAY,
+  unwrapList,
+  unwrapOrThrow,
+  uploadFileToLink,
+} from '@/shared/api';
 
 /** `ChatParty`: the buyer of the order or the owner of its vendor. */
 export type ChatParty = 'BUYER' | 'VENDOR';
@@ -53,6 +60,23 @@ export interface ChatPush {
   occurredAt: string;
 }
 
+
+/**
+ * Sends an attachment to the order bucket of the object storage and returns its tempKey.
+ * A feature may not import another feature (FSD), so this uses the shared transport directly.
+ */
+async function uploadAttachment(file: File): Promise<string> {
+  const link = await createUploadLink(
+    GATEWAY.ORDER.UPLOADS,
+    file.type || 'application/octet-stream',
+    file.size,
+  );
+  if (!link?.uploadUrl || !link.tempKey) {
+    throw new Error('Máy chủ không trả về liên kết tải tệp lên.');
+  }
+  await uploadFileToLink(link, file);
+  return link.tempKey;
+}
 export const chatQueue = '/user/queue/chat';
 
 /** Files the order bucket accepts (order.file.allowed-content-types). */
@@ -82,7 +106,7 @@ export const chatApi = {
 
   /** A file is sent to the object storage first; only its tempKey rides on the message. */
   async send(conversationId: string, body: string, file: File | null): Promise<ChatMessage> {
-    const tempKey = file ? await uploadFile('ORDER', file) : null;
+    const tempKey = file ? await uploadAttachment(file) : null;
     const res = await apiClient.post<unknown>(GATEWAY.ORDER.CHAT_MESSAGES(conversationId), {
       body: body.trim() || null,
       attachmentTempKey: tempKey,

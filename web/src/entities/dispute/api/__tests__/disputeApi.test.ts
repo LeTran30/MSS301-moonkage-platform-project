@@ -1,10 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  disputeApi,
-  mapDisputeDtoToEntity,
-  type DisputeDto,
-} from '../disputeApi';
-import * as envModule from '@/shared/config/env';
+import { disputeApi, mapDisputeDtoToEntity, type DisputeDto } from '../disputeApi';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -43,7 +38,6 @@ describe('Dispute Entity - disputeApi (FR-12, FR-49)', () => {
   });
 
   it('disputeApi.getByOrderId() bóc envelope và trả về hồ sơ', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope({
         disputeId: 'DISP-9',
@@ -51,7 +45,7 @@ describe('Dispute Entity - disputeApi (FR-12, FR-49)', () => {
         reason: 'WRONG_ITEM',
         description: 'Sai mẫu',
         status: 'OPEN',
-      })
+      }),
     );
 
     const dispute = await disputeApi.getByOrderId('ORD-9');

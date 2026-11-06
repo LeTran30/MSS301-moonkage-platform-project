@@ -11,10 +11,10 @@
   flex-wrap: wrap;
 }
 .title {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-primary-dark);
+  color: var(--color-zone);
   margin-bottom: var(--space-1);
 }
 .desc {
@@ -22,6 +22,9 @@
   color: var(--color-text-muted);
 }
 .ruleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   background: color-mix(in srgb, var(--color-gold) 12%, transparent);
   color: var(--color-secondary-dark);
   border: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
@@ -31,6 +34,9 @@
   font-weight: 600;
 }
 .alertSuccess {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   background: color-mix(in srgb, var(--color-success) 12%, transparent);
   color: var(--color-success-ink);
   border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);

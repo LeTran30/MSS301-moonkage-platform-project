@@ -83,7 +83,6 @@ export const routes = {
     cakeCatalog: '/quan-tri/cau-hinh/vo-nhan', // Q6.4
   },
   system: {
-    sitemap: '/so-do-giao-dien',
     notFound: '/404',
   },
 } as const;
@@ -126,6 +125,4 @@ export const ROUTES = {
   ADMIN_MONEY: routes.admin.money,
   ADMIN_DISPUTES: routes.admin.disputes,
   ADMIN_CONFIG: routes.admin.config,
-
-  SITEMAP: routes.system.sitemap,
 } as const;

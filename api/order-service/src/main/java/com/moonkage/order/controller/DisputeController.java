@@ -1,10 +1,10 @@
 package com.moonkage.order.controller;
 
+import com.moonkage.api.ApiResponse;
 import com.moonkage.order.dto.request.EvidenceRequest;
 import com.moonkage.order.dto.request.OpenDisputeRequest;
 import com.moonkage.order.dto.request.ResolveDisputeRequest;
 import com.moonkage.order.dto.response.DisputeResponse;
-import com.moonkage.order.exception.ApiResponse;
 import com.moonkage.order.security.CurrentUser;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.DisputeService;

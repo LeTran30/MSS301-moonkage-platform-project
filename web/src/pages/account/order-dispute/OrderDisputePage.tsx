@@ -2,9 +2,20 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, ButtonLink, Card, Icon, Select, toast } from '@/shared/ui';
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  ErrorState,
+  Icon,
+  PageLoader,
+  Select,
+  Textarea,
+  toast,
+} from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useOrder } from '@/entities/order';
+import { useOrderDetail } from '@/entities/order';
 import {
   disputeStore,
   useDisputes,
@@ -14,6 +25,7 @@ import {
   type Dispute,
 } from '@/entities/dispute';
 import { useOpenDispute } from '@/features/file-complaint';
+import { useFileUpload } from '@/features/file-upload';
 import styles from './OrderDisputePage.module.css';
 
 const REASON_OPTIONS: Array<{ value: DisputeReason; label: string }> = (
@@ -22,30 +34,47 @@ const REASON_OPTIONS: Array<{ value: DisputeReason; label: string }> = (
 
 export function OrderDisputePage() {
   const { id } = useParams<{ id: string }>();
-  const order = useOrder(id || 'MK-1042');
+  const orderId = id || '';
+  // FR-12: `GET /api/orders/{orderId}` — chi tiết đơn đọc thẳng từ máy chủ.
+  const asyncOrder = useOrderDetail(orderId);
+  const order = asyncOrder.kind === 'loaded' ? asyncOrder.data : null;
   const disputes = useDisputes();
   const navigate = useNavigate();
   const { busy, run, error } = useAction();
   const openDispute = useOpenDispute();
+  // Bằng chứng tải vào kho đơn hàng — feature `file-upload` giữ trạng thái
+  // (đang tải / lỗi / huỷ) thay vì page tự gọi API.
+  const evidenceUpload = useFileUpload('ORDER');
 
-  const existingDispute = disputes.find((d) => d.orderId === id);
+  const existingDispute = disputes.find((d) => d.orderId === orderId);
 
   const [reason, setReason] = useState<DisputeReason>('DAMAGED');
-  const [description, setDescription] = useState(
-    'Bánh nhận được bị móp vỡ góc hộp do va chạm trong quá trình vận chuyển, mong sàn hỗ trợ hoàn tiền phần bánh hỏng.'
-  );
+  const [description, setDescription] = useState('');
+  // Bằng chứng là tệp thật do người dùng chọn, tải lên kho riêng rồi gửi
+  // `tempKey` cho máy chủ (FR-12, AC-49.1).
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
 
   function handleSubmitDispute(e: React.FormEvent) {
     e.preventDefault();
     if (!order) return;
 
     void run(async () => {
+      // Bằng chứng (nếu có) phải lên kho trước: `POST /api/orders/uploads` xin
+      // liên kết có chữ ký, rồi gửi thẳng tệp lên kho đó.
+      const evidences: Array<{ tempKey: string; note?: string }> = [];
+      if (evidenceFile) {
+        const tempKey = await evidenceUpload.upload(evidenceFile);
+        if (tempKey) {
+          evidences.push({ tempKey, note: 'Ảnh chụp bằng chứng' });
+        }
+      }
+
       // Backend FR-12: POST /api/orders/{orderId}/dispute với
       // OpenDisputeRequest { reason, description, evidences }.
       const created = await openDispute(order.id, {
         reason,
         description,
-        evidences: [{ tempKey: '/images/banh-nuong.jpg', note: 'Ảnh chụp bằng chứng' }],
+        evidences,
       });
 
       // Giữ lại các thông tin sổ tiền mà backend không trả về trong hồ sơ khiếu nại.
@@ -62,15 +91,23 @@ export function OrderDisputePage() {
                 escrowHoldingAmount: order.total,
                 maxRefundableAmount: order.total,
               }
-            : d
-        )
+            : d,
+        ),
       );
 
       toast.success(
-        'Khiếu nại đã được gửi! Hệ thống đã khóa tiền tạm giữ Escrow và thông báo cho người bán + quản trị.'
+        'Khiếu nại đã được gửi! Hệ thống đã khóa tiền tạm giữ Escrow và thông báo cho người bán + quản trị.',
       );
       navigate(routes.account.order(order.id));
     });
+  }
+
+  if (asyncOrder.kind === 'loading') {
+    return <PageLoader />;
+  }
+
+  if (asyncOrder.kind === 'error') {
+    return <ErrorState message={asyncOrder.message} onRetry={asyncOrder.reload} />;
   }
 
   if (!order) return <div>Không tìm thấy đơn</div>;
@@ -83,10 +120,12 @@ export function OrderDisputePage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>KHIẾU NẠI ĐƠN HÀNG (M6.1.3, FLOW 5, FR-12)</div>
+        <div className={styles.eyebrow}>KHIẾU NẠI ĐƠN HÀNG</div>
         <h2 className={styles.title}>Báo Vấn Đề Với Đơn #{order.id}</h2>
         <p className={styles.lead}>
-          Hạn khiếu nại còn lại: <strong>{order.disputeDeadline ? '3 ngày nội thành' : 'Hợp lệ'}</strong>. Tiền sẽ được giữ an toàn trên sàn trong suốt thời gian xử lý.
+          Hạn khiếu nại còn lại:{' '}
+          <strong>{order.disputeDeadline ? '3 ngày nội thành' : 'Hợp lệ'}</strong>. Tiền sẽ được giữ
+          an toàn trên sàn trong suốt thời gian xử lý.
         </p>
       </div>
 
@@ -107,7 +146,9 @@ export function OrderDisputePage() {
             <div>
               <strong>Lý do:</strong> {DISPUTE_REASON_LABELS[existingDispute.reason]}
             </div>
-            <div><strong>Mô tả của bạn:</strong> {existingDispute.description}</div>
+            <div>
+              <strong>Mô tả của bạn:</strong> {existingDispute.description}
+            </div>
             <div>
               <strong>Tiền tạm giữ trên sàn:</strong>{' '}
               {formatCurrency(existingDispute.escrowHoldingAmount)}
@@ -148,7 +189,7 @@ export function OrderDisputePage() {
             <div className={styles.decisionBox}>
               <Icon name="shield" size={20} />
               <div>
-                <strong>Quyết định của Quản trị sàn (FR-49):</strong>
+                <strong>Quyết định của Quản trị sàn:</strong>
                 <p>
                   {DISPUTE_DECISION_LABELS[existingDispute.decision]} —{' '}
                   {formatCurrency(existingDispute.refundAmount || 0)} qua VNPay.
@@ -163,20 +204,17 @@ export function OrderDisputePage() {
         <form onSubmit={handleSubmitDispute} className={styles.form}>
           <Card padding="lg" className={styles.card}>
             <Select
-              label="Lý do khiếu nại (FR-12 Taxonomy)"
+              label="Lý do khiếu nại"
               options={REASON_OPTIONS}
               value={reason}
-              onChange={(e) => setReason(e.target.value as DisputeReason)}
+              onChange={(v) => setReason(v as DisputeReason)}
               required
             />
 
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="dispute-description">
-                Mô tả chi tiết vấn đề gặp phải
-              </label>
-              <textarea
+              <Textarea
                 id="dispute-description"
-                className={styles.textarea}
+                label="Mô tả chi tiết vấn đề gặp phải"
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -189,15 +227,31 @@ export function OrderDisputePage() {
               <Icon name="image" size={24} />
               <div>
                 <strong>Ảnh chụp bằng chứng bánh nhận được</strong>
-                <p>JPG/PNG dung lượng tối đa 20MB theo chuẩn NFR-08</p>
+                <p>JPG/PNG dung lượng tối đa 20MB</p>
               </div>
-              <Badge tone="neutral" size="sm">1 ảnh đã đính kèm</Badge>
+              <label className={styles.evidencePicker}>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={(e) => setEvidenceFile(e.target.files?.[0] ?? null)}
+                />
+                {evidenceFile ? (
+                  <Badge tone="green" size="sm">
+                    {evidenceFile.name}
+                  </Badge>
+                ) : (
+                  <Badge tone="neutral" size="sm">
+                    Chọn ảnh
+                  </Badge>
+                )}
+              </label>
             </div>
 
             <div className={styles.escrowNotice}>
               <Icon name="shield" size={16} />
               <span>
-                Khi bạn bấm gửi, số tiền {formatCurrency(order.total)} sẽ lập tức bị khóa chuyển cho người bán cho tới khi có quyết định từ Đội Vận Hành Moonkage.
+                Khi bạn bấm gửi, số tiền {formatCurrency(order.total)} sẽ lập tức bị khóa chuyển cho
+                người bán cho tới khi có quyết định từ Đội Vận Hành Moonkage.
               </span>
             </div>
 
@@ -211,7 +265,14 @@ export function OrderDisputePage() {
               <ButtonLink to={routes.account.order(order.id)} variant="secondary">
                 Hủy
               </ButtonLink>
-              <Button type="submit" variant="primary" size="lg" iconLeft="alert" loading={busy} disabled={busy}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                iconLeft="alert"
+                loading={busy}
+                disabled={busy}
+              >
                 {busy ? 'Đang gửi khiếu nại...' : 'Gửi khiếu nại tới sàn'}
               </Button>
             </div>
@@ -221,4 +282,3 @@ export function OrderDisputePage() {
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, toast } from '@/shared/ui';
+import { Button, Card, Select, Textarea, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { queryClient, queryKeys } from '@/shared/api';
 import { useCreateReview } from '../model/useCreateReview';
@@ -25,7 +25,9 @@ export function ReviewForm({ orderId, products }: ReviewFormProps) {
   const [content, setContent] = useState('');
 
   if (products.length === 0) return null;
-  const selected = products.some((p) => p.productId === productId) ? productId : products[0].productId;
+  const selected = products.some((p) => p.productId === productId)
+    ? productId
+    : products[0].productId;
 
   function handleSubmit() {
     void run(async () => {
@@ -36,7 +38,9 @@ export function ReviewForm({ orderId, products }: ReviewFormProps) {
       });
       toast.success('Cảm ơn bạn đã đánh giá sản phẩm!');
       setContent('');
-      await queryClient.invalidateQueries({ queryKey: queryKeys.order.reviews(orderId) });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.order.reviews(orderId),
+      });
     });
   }
 
@@ -44,37 +48,26 @@ export function ReviewForm({ orderId, products }: ReviewFormProps) {
     <Card padding="md" className={styles.card}>
       <h3 className={styles.title}>Viết đánh giá</h3>
       {products.length > 1 && (
-        <label className={styles.field}>
-          <span className={styles.label}>Sản phẩm</span>
-          <select className={styles.control} value={selected} onChange={(e) => setProductId(e.target.value)}>
-            {products.map((p) => (
-              <option key={p.productId} value={p.productId}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <label className={styles.field}>
-        <span className={styles.label}>Số sao</span>
-        <select className={styles.control} value={rating} onChange={(e) => setRating(Number(e.target.value))}>
-          {RATINGS.map((r) => (
-            <option key={r} value={r}>
-              {'★'.repeat(r)} ({r} sao)
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className={styles.field}>
-        <span className={styles.label}>Nhận xét</span>
-        <textarea
-          className={styles.control}
-          rows={3}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Bánh có ngon không, đóng gói thế nào…"
+        <Select
+          label="Sản phẩm"
+          options={products.map((p) => ({ value: p.productId, label: p.name }))}
+          value={selected}
+          onChange={(v) => setProductId(v)}
         />
-      </label>
+      )}
+      <Select
+        label="Số sao"
+        options={RATINGS.map((r) => ({ value: String(r), label: `${r} sao` }))}
+        value={String(rating)}
+        onChange={(v) => setRating(Number(v))}
+      />
+      <Textarea
+        label="Nhận xét"
+        rows={3}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Ví dụ: Bánh có vị đậu xanh ngọt, đóng gói kín, giao đúng hẹn 15/9."
+      />
       {error && (
         <p role="alert" className={styles.error}>
           {error}

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { orderApi } from '../orderApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope, page } from '@/shared/api/__tests__/envelopeFixtures';
 import type { OrderDto } from '../orderDto';
@@ -10,14 +9,7 @@ describe('Order Entity - orderApi (T-01)', () => {
     vi.restoreAllMocks();
   });
 
-  it('orderApi.getOrders() trả về dữ liệu trong orderStore khi isDemoMode() = true', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
-    const orders = await orderApi.getOrders();
-    expect(orders.length).toBeGreaterThan(0);
-  });
-
   it('orderApi.getOrders() bóc đúng envelope phân trang của backend', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const listing: OrderDto[] = [
       {
         id: 'ORD-API-99',
@@ -39,10 +31,13 @@ describe('Order Entity - orderApi (T-01)', () => {
   });
 
   it('orderApi.getOrders() gửi bộ lọc vendorId, kind và openDispute (FR-32, FR-49)', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(envelope(page([])) as never);
 
-    await orderApi.getOrders({ vendorId: 'ven-1', kind: 'CUSTOM_ORDER', openDispute: true });
+    await orderApi.getOrders({
+      vendorId: 'ven-1',
+      kind: 'CUSTOM_ORDER',
+      openDispute: true,
+    });
 
     const url = String(get.mock.calls[0][0]);
     expect(url).toContain('vendorId=ven-1');
@@ -51,9 +46,14 @@ describe('Order Entity - orderApi (T-01)', () => {
   });
 
   it('orderApi.getProgressUpdates() đọc lịch sử tiến độ của đơn (FR-21)', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     vi.spyOn(apiClient, 'get').mockResolvedValue(
-      envelope([{ milestone: 'IN_PRODUCTION', note: 'Đang làm bánh', createdAt: '2026-10-25T10:00:00Z' }]) as never,
+      envelope([
+        {
+          milestone: 'IN_PRODUCTION',
+          note: 'Đang làm bánh',
+          createdAt: '2026-10-25T10:00:00Z',
+        },
+      ]) as never,
     );
 
     const updates = await orderApi.getProgressUpdates('ord-1');

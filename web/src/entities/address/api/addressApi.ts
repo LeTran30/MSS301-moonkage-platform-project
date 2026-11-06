@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrapList } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { Address } from '../model/types';
 
 /**
@@ -54,9 +54,6 @@ export function mapAddressDtoToEntity(dto: AddressDto): Address {
 export const addressApi = {
   /** The addresses of the caller. */
   async list(): Promise<Address[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.IDENTITY.ADDRESSES);
     return unwrapList<AddressDto>(res).map(mapAddressDtoToEntity);
   },

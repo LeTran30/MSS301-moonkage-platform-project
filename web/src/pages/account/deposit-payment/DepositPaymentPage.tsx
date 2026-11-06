@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Breadcrumbs, Button, ButtonLink, Card, Icon, toast } from '@/shared/ui';
+import { Badge, Breadcrumbs, Button, ButtonLink, Card, Icon, Radio, toast } from '@/shared/ui';
 import { openPaymentPage, useAction } from '@/shared/lib';
 import { useQuoteRequest } from '@/entities/request';
 import { useAcceptQuote } from '@/features/accept-quote';
@@ -71,7 +71,10 @@ export function DepositPaymentPage() {
         items={[
           { label: 'Tài khoản', to: routes.account.overview },
           { label: 'Yêu cầu báo giá sỉ', to: routes.account.requests },
-          { label: req.customRequirements || req.id, to: routes.account.request(req.id) },
+          {
+            label: req.customRequirements || req.id,
+            to: routes.account.request(req.id),
+          },
           { label: 'Ký quỹ đặt cọc Escrow' },
         ]}
       />
@@ -94,7 +97,9 @@ export function DepositPaymentPage() {
           <div className={styles.specList}>
             <div className={styles.specRow}>
               <span>Mục tiêu:</span>
-              <span className={styles.strong}>{req.customRequirements || 'Đặt bánh theo yêu cầu'}</span>
+              <span className={styles.strong}>
+                {req.customRequirements || 'Khách không nêu yêu cầu riêng'}
+              </span>
             </div>
             <div className={styles.specRow}>
               <span>Số lượng đặt:</span>
@@ -107,16 +112,22 @@ export function DepositPaymentPage() {
             <div className={styles.specRow}>
               <span>Tổng giá trị hợp đồng:</span>
               <span className={styles.totalValue}>
-                {formatCurrency(acceptedQuote?.totalPrice ?? req.quantity * (req.budgetPerBox ?? 0))}
+                {formatCurrency(
+                  acceptedQuote?.totalPrice ?? req.quantity * (req.budgetPerBox ?? 0),
+                )}
               </span>
             </div>
           </div>
 
           <div className={styles.escrowBox}>
-            <h3 className={styles.escrowTitle}>🛡️ Cam kết an toàn Escrow (AC-49.3)</h3>
+            <h3 className={styles.escrowTitle}>
+              <Icon name="shield" size={18} /> Cam kết an toàn Escrow
+            </h3>
             <ul className={styles.escrowList}>
               <li>Tiền cọc được phong tỏa trong tài khoản trung gian của Moonkage.</li>
-              <li>Xưởng bánh nhận thông báo tiền cọc để tiến hành nhập nguyên liệu và in ấn maket.</li>
+              <li>
+                Xưởng bánh nhận thông báo tiền cọc để tiến hành nhập nguyên liệu và in ấn maket.
+              </li>
               <li>Nếu xưởng vi phạm tiến độ hoặc mẫu hộp sai lệch, bạn được hoàn cọc 100%.</li>
             </ul>
           </div>
@@ -133,15 +144,18 @@ export function DepositPaymentPage() {
               <label
                 className={`${styles.paymentOption} ${paymentMethod === 'VNPAY' ? styles.paymentOptionActive : ''}`}
               >
-                <input
-                  type="radio"
+                <Radio
                   name="pm"
                   value="VNPAY"
                   checked={paymentMethod === 'VNPAY'}
                   onChange={() => setPaymentMethod('VNPAY')}
+                  inputClassName={styles.paymentRadioInput}
+                  aria-label="Cổng thanh toán VNPay (ATM / Thẻ quốc tế / QR Pay)"
                 />
                 <div>
-                  <div className={styles.strong}>Cổng thanh toán VNPay (ATM / Thẻ quốc tế / QR Pay)</div>
+                  <div className={styles.strong}>
+                    Cổng thanh toán VNPay (ATM / Thẻ quốc tế / QR Pay)
+                  </div>
                   <div className={styles.optionHint}>
                     Xác nhận ký quỹ tức thì qua hệ thống ngân hàng
                   </div>
@@ -151,16 +165,21 @@ export function DepositPaymentPage() {
               <label
                 className={`${styles.paymentOption} ${paymentMethod === 'VIETQR' ? styles.paymentOptionActive : ''}`}
               >
-                <input
-                  type="radio"
+                <Radio
                   name="pm"
                   value="VIETQR"
                   checked={paymentMethod === 'VIETQR'}
                   onChange={() => setPaymentMethod('VIETQR')}
+                  inputClassName={styles.paymentRadioInput}
+                  aria-label="Chuyển khoản VietQR Doanh Nghiệp (Ủy nhiệm chi)"
                 />
                 <div>
-                  <div className={styles.strong}>Chuyển khoản VietQR Doanh Nghiệp (Ủy nhiệm chi)</div>
-                  <div className={styles.optionHint}>Cung cấp hóa đơn VAT và hợp đồng mẫu 3 bên</div>
+                  <div className={styles.strong}>
+                    Chuyển khoản VietQR Doanh Nghiệp (Ủy nhiệm chi)
+                  </div>
+                  <div className={styles.optionHint}>
+                    Cung cấp hóa đơn VAT và hợp đồng mẫu 3 bên
+                  </div>
                 </div>
               </label>
             </div>
@@ -191,4 +210,3 @@ export function DepositPaymentPage() {
     </div>
   );
 }
-

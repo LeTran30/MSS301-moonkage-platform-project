@@ -6,7 +6,6 @@ import {
   mapDeliveryLabel,
   type VendorProductDto,
 } from '../vendorProductApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -56,10 +55,11 @@ describe('Vendor Entity - vendorProductApi (T-02)', () => {
   });
 
   it('getProducts() gọi đúng URL của vendor-service', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
-    const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
-      envelope([{ id: 'p-1', name: 'Bánh nướng', listPrice: 1000, status: 'ON_SALE' }]) as never,
-    );
+    const get = vi
+      .spyOn(apiClient, 'get')
+      .mockResolvedValue(
+        envelope([{ id: 'p-1', name: 'Bánh nướng', listPrice: 1000, status: 'ON_SALE' }]) as never,
+      );
 
     const products = await vendorProductApi.getProducts('ven-1');
     expect(get).toHaveBeenCalledWith('/api/vendors/ven-1/products');

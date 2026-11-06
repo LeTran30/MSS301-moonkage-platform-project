@@ -33,7 +33,7 @@
 - 🚧 Địa chỉ, đăng ký nhà bán (vendor), khu vực giao hàng, đánh giá
 - 🚧 Đấu thầu: yêu cầu báo giá, báo giá, mùa bán hàng
 - 🚧 Giỏ hàng, đơn hàng, thanh toán ký quỹ, mockup, khiếu nại, voucher, đối soát, hoa hồng
-- ✅ Web portal: 73 màn hình theo IA (4 khu vực M/B/Q/V), 7 luồng nghiệp vụ F1–F7, chế độ demo chạy độc lập
+- ✅ Web portal: 64 màn hình theo IA (6 khu vực: base / auth / account / vendor / admin / system), 7 luồng nghiệp vụ F1–F7, tất cả nối API thật qua gateway (không còn chế độ demo)
 
 ## Tech Stack
 | Tầng | Công nghệ |
@@ -98,6 +98,7 @@ flowchart LR
 | **MinIO** | S3-compatible | Lưu file: ảnh sản phẩm (public), file riêng tư; API / web console | `9000` / `9001` |
 | **common-storage** | Thư viện Java | Không phải service: presigned upload/xem file MinIO cho service sở hữu file | – |
 | **common-reference** | Thư viện Java | Không phải service: danh mục dùng chung, hiện có 34 tỉnh/thành (Quyết định 19/2025/QĐ-TTg) | – |
+| **common-observability** | Thư viện Java | Không phải service: audit log toàn nền tảng, correlation id, tracing | – |
 | **Web Portal** | React SPA | Giao diện cho người mua, người bán, quản trị | `5173` |
 
 Mọi request đi qua gateway với prefix là tên service, ví dụ `http://localhost:8080/identity-service/api/auth/login`. Khi chạy bằng Docker, các business service không mở port ra máy host. Đường dẫn `/internal/**` chỉ dùng cho các service gọi nhau, gateway luôn chặn.
@@ -119,6 +120,7 @@ cd web && npm install && npm run dev   # http://localhost:5173
 │   ├── config/                 # Luật Checkstyle, ArchUnit dùng chung
 │   ├── common-storage/         # Thư viện presigned upload/xem file MinIO (không phải service)
 │   ├── common-reference/       # Thư viện danh mục dùng chung: tỉnh/thành (không phải service)
+│   ├── common-observability/   # Thư viện quan sát dùng chung: audit log, correlation id, tracing
 │   ├── discovery-server/       # Eureka Server
 │   ├── api-gateway/            # Gateway, JWT, CORS, Swagger tổng
 │   ├── identity-service/       # Tài khoản, hồ sơ người dùng, địa chỉ, xác minh NFC
@@ -130,7 +132,7 @@ cd web && npm install && npm run dev   # http://localhost:5173
 │   ├── orchestrator-service/   # Audit log (RabbitMQ), thông báo
 │       (mỗi service có Dockerfile riêng, build context = api/;
 │        schema ở src/main/resources/db/migration, dữ liệu mẫu ở db/seed)
-├── web/                        # React SPA (web portal) — FSD 2.0, 73 màn hình IA
+├── web/                        # React SPA (web portal) — FSD 2.0, 64 màn hình IA
 ├── docs/                       # Toàn bộ tài liệu, mục lục ở docs/README.md
 ├── infra/minio/init.sh         # Tạo bucket, user, policy MinIO (container minio-init)
 ├── .githooks/pre-commit        # kiểm tra format/style trước mỗi commit
@@ -165,7 +167,7 @@ Mục lục đầy đủ: [docs/README.md](docs/README.md).
 - [ ] Đấu thầu: yêu cầu báo giá, lời mời, báo giá
 - [ ] Giỏ hàng, đơn hàng, thanh toán ký quỹ, mockup, theo dõi sản xuất
 - [ ] Khiếu nại, voucher, đối soát, hoa hồng
-- [x] Giao diện web portal (73 màn hình IA, 7 luồng F1–F7)
+- [x] Giao diện web portal (64 màn hình IA, 7 luồng F1–F7)
 
 ## Đóng góp
 Quy trình branch, commit, PR và review: [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md). Trước khi push: `cd api && ./mvnw clean verify` (giống CI).

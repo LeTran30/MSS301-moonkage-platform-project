@@ -1,4 +1,4 @@
-import styles from './productFormUi.module.css';
+import { Select, Textarea } from '@/shared/ui';
 
 interface ProductDeliveryDescriptionProps {
   deliveryLabel: 'LOCAL' | 'NATIONWIDE';
@@ -17,31 +17,26 @@ export function ProductDeliveryDescription({
   return (
     <>
       <div>
-        <label className={styles.label} htmlFor="product-delivery">
-          Phương thức giao nhận
-        </label>
-        <select
+        <Select
           id="product-delivery"
+          label="Phương thức giao nhận"
+          options={[
+            { value: 'NATIONWIDE', label: 'Giao toàn quốc' },
+            { value: 'LOCAL', label: 'Chỉ giao nội thành (Bánh tươi/Bánh lạnh)' },
+          ]}
           value={deliveryLabel}
-          onChange={(e) => onDeliveryLabelChange(e.target.value as 'LOCAL' | 'NATIONWIDE')}
-          className={styles.input}
-        >
-          <option value="NATIONWIDE">Giao toàn quốc</option>
-          <option value="LOCAL">Chỉ giao nội thành (Bánh tươi/Bánh lạnh)</option>
-        </select>
+          onChange={(v) => onDeliveryLabelChange(v as 'LOCAL' | 'NATIONWIDE')}
+        />
       </div>
 
       <div>
-        <label className={styles.label} htmlFor="product-desc">
-          Mô tả hương vị, nguyên liệu &amp; chứng nhận VSATTP
-        </label>
-        <textarea
+        <Textarea
           id="product-desc"
+          label="Mô tả hương vị, nguyên liệu & chứng nhận VSATTP"
           rows={4}
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Ghi rõ xuất xứ nguyên liệu, hạn sử dụng, hướng dẫn bảo quản..."
-          className={styles.textarea}
         />
       </div>
     </>

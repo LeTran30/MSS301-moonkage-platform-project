@@ -1,9 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import {
-  mapFeeTableDto,
-  type InterprovinceFeeTable,
-} from '@/entities/interprovince-fee';
+
+import { mapFeeTableDto, type InterprovinceFeeTable } from '@/entities/interprovince-fee';
 
 /**
  * The write side of the interprovincial fee table (FR-52, AC-52.1, AC-52.3).
@@ -28,9 +25,6 @@ export type FeeRow = {
  * the screen shows what the backend kept.
  */
 export async function replaceFeeTable(fees: FeeRow[]): Promise<InterprovinceFeeTable> {
-  if (isDemoMode()) {
-    return { fees: [], complete: false };
-  }
   const res = await apiClient.put<unknown>(GATEWAY.LOGISTICS.INTERPROVINCE_FEES, { fees });
   const dto = unwrap<Parameters<typeof mapFeeTableDto>[0]>(res);
   if (!dto) {

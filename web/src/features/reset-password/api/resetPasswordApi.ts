@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * The write side of the password reset (AC-01.6).
@@ -13,9 +12,6 @@ import { isDemoMode } from '@/shared/config';
  * Send the OTP that authorises a password reset (AC-01.6).
  */
 export async function sendResetPasswordOtp(email: string): Promise<void> {
-  if (isDemoMode()) {
-    return;
-  }
   await apiClient.post(GATEWAY.IDENTITY.SEND_RESET_PASSWORD_OTP, { email });
 }
 
@@ -23,10 +19,11 @@ export async function sendResetPasswordOtp(email: string): Promise<void> {
 export async function resetPassword(
   email: string,
   otp: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<void> {
-  if (isDemoMode()) {
-    return;
-  }
-  await apiClient.post(GATEWAY.IDENTITY.RESET_PASSWORD, { email, otp, newPassword });
+  await apiClient.post(GATEWAY.IDENTITY.RESET_PASSWORD, {
+    email,
+    otp,
+    newPassword,
+  });
 }

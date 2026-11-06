@@ -4,7 +4,7 @@
   gap: var(--space-3);
 }
 .cardTitle {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--color-border);
@@ -19,8 +19,9 @@
   font-size: var(--text-sm);
 }
 .reviewRating {
-  color: var(--color-gold);
-  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-gold-text);
 }
 .reviewContent {
   color: var(--color-text);
@@ -33,4 +34,14 @@
   margin: 0;
   font-size: var(--text-sm);
   color: var(--color-danger);
+}
+
+/* Màn hình hẹp: xếp chồng đánh giá — nội dung — ngày thay vì ba cột. */
+@media (max-width: var(--breakpoint-sm)) {
+  .reviewRow {
+    grid-template-columns: auto 1fr;
+  }
+  .reviewDate {
+    grid-column: 2;
+  }
 }

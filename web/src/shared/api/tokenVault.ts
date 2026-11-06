@@ -14,7 +14,7 @@
  * This lowers the blast radius of an XSS bug, but it is **not** a full fix:
  * script running inside the page can still read module memory. The only real
  * cure is an `HttpOnly; Secure; SameSite=Strict` cookie owned by the backend —
- * see `doc/DANH_GIA_FE_DOANH_NGHIEP_02-11-2026.md` §8.
+ * see `doc/danh-gia-fe-doanh-nghiep-2026-11-02.md` §8.
  */
 
 const STORAGE_KEY = 'moonkage_session_tokens';

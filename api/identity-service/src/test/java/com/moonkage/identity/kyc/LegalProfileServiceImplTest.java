@@ -39,7 +39,7 @@ class LegalProfileServiceImplTest {
     void setUp() {
         accountService = mock(AccountService.class);
         legalProfileRepository = mock(LegalProfileRepository.class);
-        hasher = new IdNumberHasher("test-pepper");
+        hasher = new IdNumberHasher(propertiesWithPepper("test-pepper"));
         attemptTracker = new NfcAttemptTracker(new NfcProperties());
         service = new LegalProfileServiceImpl(
                 accountService, legalProfileRepository, hasher, attemptTracker, Clock.systemUTC());
@@ -145,5 +145,11 @@ class LegalProfileServiceImplTest {
                         .idNumberMasked(IdNumberHasher.mask(ID_NUMBER))
                         .nfcVerifiedAt(VERIFIED_AT)
                         .build()));
+    }
+
+    private static NfcProperties propertiesWithPepper(String pepper) {
+        NfcProperties properties = new NfcProperties();
+        properties.setIdHashPepper(pepper);
+        return properties;
     }
 }

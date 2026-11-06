@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { ManualRefundDto } from '@/entities/payment';
 
 /**
@@ -10,9 +10,6 @@ import type { ManualRefundDto } from '@/entities/payment';
  * (`RefundController.confirmManual`).
  */
 export async function confirmManualRefund(refundId: string): Promise<ManualRefundDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.patch<unknown>(GATEWAY.PAYMENT.REFUND_BY_ID(refundId));
   const dto = unwrap<ManualRefundDto>(res);
   return dto ?? null;

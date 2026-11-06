@@ -16,7 +16,7 @@
 }
 
 .title {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: var(--text-3xl);
   font-weight: 700;
   color: var(--color-primary-dark);
@@ -49,7 +49,15 @@
 }
 
 .icon {
-  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--color-zone-soft);
+  color: var(--color-gold-text);
 }
 
 .sectionTitle {

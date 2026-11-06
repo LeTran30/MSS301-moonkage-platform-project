@@ -65,7 +65,7 @@ export function VendorReviewStep({
           disabled={busy}
           onClick={onSubmit}
         >
-          {busy ? 'Đang nộp hồ sơ xét duyệt...' : 'Nộp hồ sơ xét duyệt (M7.1)'}
+          {busy ? 'Đang nộp hồ sơ xét duyệt...' : 'Nộp hồ sơ xét duyệt'}
         </Button>
       </div>
     </div>

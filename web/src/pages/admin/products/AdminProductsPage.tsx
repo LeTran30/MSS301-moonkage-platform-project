@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AsyncState, Badge, Button, Modal, toast } from '@/shared/ui';
+import { AsyncState, Badge, Button, Icon, Modal, Textarea, toast } from '@/shared/ui';
 import { formatCurrency } from '@/shared/utils';
 import { useAction } from '@/shared/lib';
 import { useChangeProductStatus } from '@/features/edit-product';
@@ -63,7 +63,7 @@ export function AdminProductsPage() {
     void run(async () => {
       // Không thể khôi phục sản phẩm đã REMOVED (BR-24); chỉ mở lại sản phẩm HIDDEN.
       if (p.status === 'REMOVED') {
-        toast.warning('Sản phẩm đã bị gỡ vĩnh viễn nên không thể khôi phục (BR-24).');
+        toast.warning('Sản phẩm đã bị gỡ vĩnh viễn nên không thể khôi phục.');
         return;
       }
       await changeProductStatus(p.vendorId ?? '', p.id, { status: 'ON_SALE' });
@@ -76,9 +76,9 @@ export function AdminProductsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Kiểm duyệt sản phẩm toàn sàn (Q3.0)</h1>
+          <h1 className={styles.title}>Kiểm duyệt sản phẩm toàn sàn</h1>
           <p className={styles.desc}>
-            Giám sát danh mục bánh trung thu niêm yết, kiểm tra tiêu chuẩn phân loại Vỏ & Nhân (FR-54), gỡ bỏ sản phẩm vi phạm.
+            Giám sát danh mục bánh trung thu niêm yết, kiểm tra tiêu chuẩn phân loại Vỏ &amp; Nhân, gỡ bỏ sản phẩm vi phạm.
           </p>
         </div>
       </div>
@@ -90,7 +90,7 @@ export function AdminProductsPage() {
       )}
 
       <div className={styles.ruleNotice}>
-        ℹ️ <strong>BR-24:</strong> gỡ bỏ sản phẩm là trạng thái <strong>REMOVED</strong> có lý do, không phải
+        <Icon name="info" size={16} /> Gỡ bỏ sản phẩm là trạng thái <strong>REMOVED</strong> có lý do, không phải
         xóa vĩnh viễn — dữ liệu đối soát và lịch sử đơn hàng vẫn giữ nguyên.
       </div>
 
@@ -130,8 +130,8 @@ export function AdminProductsPage() {
                     <th>Hình ảnh & Tên bánh</th>
                     <th>Xưởng sản xuất</th>
                     <th>Giá niêm yết</th>
-                    <th>Phân loại Vỏ (FR-54)</th>
-                    <th>Phân loại Nhân (FR-54)</th>
+                    <th>Phân loại Vỏ</th>
+                    <th>Phân loại Nhân</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
                   </tr>
@@ -217,17 +217,15 @@ export function AdminProductsPage() {
             Một thông báo lý do sẽ được gửi tự động tới gian hàng <strong>{selectedProduct?.vendorName}</strong>.
           </p>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label} htmlFor="take-down-reason">Lý do gỡ sản phẩm *</label>
-            <textarea
-              id="take-down-reason"
-              className={styles.textarea}
-              rows={3}
-              value={takeDownReason}
-              onChange={(e) => setTakeDownReason(e.target.value)}
-              placeholder="Nhập lý do chi tiết..."
-            />
-          </div>
+          <Textarea
+            id="take-down-reason"
+            label="Lý do gỡ sản phẩm"
+            required
+            rows={3}
+            value={takeDownReason}
+            onChange={(e) => setTakeDownReason(e.target.value)}
+            placeholder="Ví dụ: Thông tin nguyên liệu chưa được cấp phép"
+          />
         </div>
       </Modal>
     </div>

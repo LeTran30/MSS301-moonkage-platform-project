@@ -17,13 +17,39 @@ export function AccountLayout() {
   const pendingMaketCount = orders.filter((o) => o.status === 'WAITING_MAKET').length;
   const openRequestsCount = requests.filter((r) => r.status === 'OPEN').length;
 
-  const navItems: Array<{ path: string; label: string; icon: IconName; badge?: number }> = [
-    { path: routes.account.overview, label: 'Tổng quan tài khoản', icon: 'dashboard' },
+  const navItems: Array<{
+    path: string;
+    label: string;
+    icon: IconName;
+    badge?: number;
+  }> = [
+    {
+      path: routes.account.overview,
+      label: 'Tổng quan tài khoản',
+      icon: 'dashboard',
+    },
     { path: routes.account.orders, label: 'Đơn hàng của tôi', icon: 'package' },
-    { path: routes.account.messages, label: 'Tin nhắn với shop', icon: 'message' },
-    { path: routes.account.requests, label: 'Yêu cầu và báo giá', icon: 'file', badge: openRequestsCount },
-    { path: routes.account.addresses, label: 'Địa chỉ giao hàng', icon: 'mapPin' },
-    { path: routes.account.verify, label: 'Xác minh danh tính NFC', icon: 'shield' },
+    {
+      path: routes.account.messages,
+      label: 'Tin nhắn với shop',
+      icon: 'message',
+    },
+    {
+      path: routes.account.requests,
+      label: 'Yêu cầu và báo giá',
+      icon: 'file',
+      badge: openRequestsCount,
+    },
+    {
+      path: routes.account.addresses,
+      label: 'Địa chỉ giao hàng',
+      icon: 'mapPin',
+    },
+    {
+      path: routes.account.verify,
+      label: 'Xác minh danh tính NFC',
+      icon: 'shield',
+    },
     { path: routes.account.profile, label: 'Thông tin cá nhân', icon: 'user' },
   ];
 
@@ -49,7 +75,7 @@ export function AccountLayout() {
             </div>
           </Card>
 
-          {/* Khối "Việc cần bạn" (M6.0) */}
+          {/* Khối "Việc cần bạn" */}
           {(pendingMaketCount > 0 || openRequestsCount > 0) && (
             <Card tone="gold" padding="sm" className={styles.actionNeededCard}>
               <div className={styles.actionNeededTitle}>

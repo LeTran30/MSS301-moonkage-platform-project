@@ -55,6 +55,7 @@ export const queryKeys = {
   dispute: {
     open: () => ['dispute', 'open'] as const,
     byOrder: (orderId: string) => ['dispute', 'by-order', orderId] as const,
+    byId: (disputeId: string) => ['dispute', 'by-id', disputeId] as const,
   },
   ledger: {
     list: (vendorId?: string) => ['ledger', 'list', vendorId ?? ''] as const,

@@ -37,7 +37,7 @@ export function AdminDisbursementsPage() {
     (asyncVendors.kind === 'loaded' ? asyncVendors.data : []).map((v) => [
       v.id,
       v.businessName ?? v.id,
-    ])
+    ]),
   );
 
   const approveDisbursement = useApproveDisbursement();
@@ -63,7 +63,7 @@ export function AdminDisbursementsPage() {
       });
       if (reviewed) {
         toast.success(
-          `Đã phê duyệt lệnh giải ngân ${row.requestId}! Hệ thống đã lập ủy nhiệm chi VietQR.`
+          `Đã phê duyệt lệnh giải ngân ${row.requestId}! Hệ thống đã lập ủy nhiệm chi VietQR.`,
         );
       } else {
         toast.info('Lệnh giải ngân đã được ghi nhận. Vui lòng kiểm tra lại danh sách.');
@@ -85,7 +85,7 @@ export function AdminDisbursementsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Phê Duyệt Lệnh Giải Ngân Ký Quỹ Escrow (Q4.1)</h1>
+          <h1 className={styles.title}>Phê Duyệt Lệnh Giải Ngân Ký Quỹ Escrow</h1>
           <p className={styles.subtitle}>
             Kiểm soát các lệnh rút tiền từ xưởng bánh sau khi đơn hàng được đối soát hợp lệ
           </p>
@@ -138,7 +138,15 @@ export function AdminDisbursementsPage() {
                       {r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '—'}
                     </td>
                     <td className={styles.tableCell}>
-                      <Badge tone={r.status === 'APPROVED' ? 'green' : r.status === 'REJECTED' ? 'red' : 'amber'}>
+                      <Badge
+                        tone={
+                          r.status === 'APPROVED'
+                            ? 'green'
+                            : r.status === 'REJECTED'
+                              ? 'red'
+                              : 'amber'
+                        }
+                      >
                         {r.status === 'APPROVED'
                           ? 'Đã duyệt'
                           : r.status === 'REJECTED'
@@ -170,4 +178,3 @@ export function AdminDisbursementsPage() {
     </div>
   );
 }
-

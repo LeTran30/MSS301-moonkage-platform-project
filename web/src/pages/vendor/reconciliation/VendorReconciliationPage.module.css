@@ -13,10 +13,7 @@
   gap: 16px;
 }
 .title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0px;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .subtitle {
   color: var(--color-text-muted);
@@ -27,6 +24,7 @@
 }
 .table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   text-align: left;
   font-size: var(--text-sm);

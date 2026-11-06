@@ -13,7 +13,6 @@ import java.text.ParseException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,8 +25,8 @@ class NfcTransportDecryptor {
     private final String privateKey;
 
     /** {@code privateKey}: the PKCS#8 PEM body (Base64) on one line; BEGIN / END lines are ignored. */
-    public NfcTransportDecryptor(@Value("${nfc.transport-private-key}") String privateKey) {
-        this.privateKey = privateKey;
+    public NfcTransportDecryptor(NfcProperties nfcProperties) {
+        this.privateKey = nfcProperties.getTransportPrivateKey();
     }
 
     /**

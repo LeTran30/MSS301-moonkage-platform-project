@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { RegistrationFeeConfig } from '@/entities/vendor';
 
 /**
@@ -11,12 +11,7 @@ import type { RegistrationFeeConfig } from '@/entities/vendor';
  */
 
 /** The admin sets a new level, in effect from now on (FR-53). */
-export async function changeRegistrationFee(
-  amount: number
-): Promise<RegistrationFeeConfig | null> {
-  if (isDemoMode()) {
-    return { amount, effectiveFrom: new Date().toISOString() };
-  }
+export async function changeRegistrationFee(amount: number): Promise<RegistrationFeeConfig | null> {
   const res = await apiClient.put<unknown>(GATEWAY.VENDOR.REGISTRATION_FEE_CONFIG, { amount });
   return unwrap<RegistrationFeeConfig>(res);
 }

@@ -1,6 +1,6 @@
 # Xác thực (FR-01, FR-02)
 
-Cách làm theo project Capstone (E-commerce): `Account` có vai (`Role` enum), JWT không lưu DB (jjwt), OTP giữ trong bộ nhớ và gửi qua email (sự kiện RabbitMQ, orchestrator-service gửi), `JwtFilter` + `@CurrentUser`.
+Cách làm theo project Capstone (E-commerce): `Account` có vai (`Role` enum, chỉ hai giá trị `MEMBER` và `ADMIN` theo D-19 — *chủ người bán không phải một vai*), JWT không lưu DB (jjwt), OTP giữ trong bộ nhớ và gửi qua email (sự kiện RabbitMQ, orchestrator-service gửi), `JwtFilter` + `@CurrentUser`.
 
 Mọi request đi qua gateway `http://localhost:8080`. Prefix của identity-service: `/identity-service/api/auth`.
 
@@ -29,15 +29,15 @@ Mỗi package cấp một dưới `com.moonkage.identity` là một **component*
 |---|---|---|---|
 | `web` | — | Controller: `AuthController`, `AccountController`, `AddressController`, `KycController` | mọi service public |
 | `auth` | — (luồng đăng ký, OTP, đăng nhập) | `AuthService`, `auth.dto` | `account`, `profile`, `otp`, `email`, `security` |
-| `account` | `accounts` | `AccountService`, `account.dto` (`AccountView`, `AccountCredentials`, `AccountResponse`), `account.atom` (`Email`, `PhoneNumber`, `PasswordHash`, `PasswordConstant`, `Role`) | — |
+| `account` | `accounts` | `AccountService`, `account.dto` (`AccountView`, `AccountCredentials`, `AccountResponse`), `account.atom` (`Email`, `PhoneNumber`, `PasswordHash`, `PasswordConstant`, `Role` — enum `MEMBER` / `ADMIN`, D-19) | — |
 | `profile` | `user_profiles`; ghép `GET /api/accounts/me` | `UserProfileService`, `ProfileConstant` | `account` |
 | `address` | `addresses` | `AddressService`, `address.dto` | `account` |
 | `kyc` | `legal_profiles`, phiên NFC và bộ đếm/khóa NFC (RAM) | `NfcService`, `LegalProfileService`, `kyc.dto`, enum NFC | `account`, `outbox` |
 | `otp` | mã OTP (RAM) | `OtpService`, `OtpPurpose` | — |
 | `email` | — (sự kiện RabbitMQ) | `EmailService` | — |
 | `outbox` | `outbox_events` | `OutboxService` | — |
-| `security` | — | `JwtTokenProvider`, `AccountPrincipal`, `CurrentUser(Info)` | `account` |
-| `common` | — | `BaseEntity`, `AppException`, `ErrorCode`, `ApiResponse`, cấu hình | — |
+| `security` | — | `JwtTokenProvider`, `JwtClaims`, `JwtFilter`, `AccountPrincipal`, `CurrentUser(Info)`, `CurrentUserArgumentResolver`, `SecurityConfig`, `SecurityConstant`, `SecurityProperties` | `account` |
+| `common` | — | `BaseEntity`, `DomainGuard`, `RequestText`, `TimeConstant`, `AppException`, `ErrorCode`, cấu hình (`ClockConfig`, `DotEnvConfig`, `LocaleConfig`, `OpenApiConfig`, `RabbitConfig`) | — |
 
 Mọi component đều dùng `common` và atom của `account.atom` (atom là thành phần cấu tạo nên entity, nằm cùng component với entity; `account` là component dưới cùng nên ai cũng dùng được). Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ComponentArchitectureTest` (entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [domain-model-plan.md](domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
 

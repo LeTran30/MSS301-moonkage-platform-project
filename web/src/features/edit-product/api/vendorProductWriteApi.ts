@@ -1,4 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 import type {
   SaveVendorProductPayload,
@@ -17,7 +18,7 @@ import type {
 /** FR-29: a new product, on sale at once (BR-24). */
 export async function createVendorProduct(
   vendorId: string,
-  payload: SaveVendorProductPayload
+  payload: SaveVendorProductPayload,
 ): Promise<VendorProductDto | null> {
   // Funnel người bán (FR-29). Chỉ ghi mã sản phẩm và hành động — không ghi
   // tên hay giá sản phẩm (NFR-03).
@@ -34,13 +35,13 @@ export async function createVendorProduct(
 export async function replaceVendorProduct(
   vendorId: string,
   productId: string,
-  payload: SaveVendorProductPayload
+  payload: SaveVendorProductPayload,
 ): Promise<VendorProductDto | null> {
   trackEvent(ANALYTICS_EVENTS.saveProduct, { action: 'update' });
 
   const res = await apiClient.put<unknown>(
     GATEWAY.VENDOR.PRODUCT_BY_ID(vendorId, productId),
-    payload
+    payload,
   );
   return unwrap<VendorProductDto>(res);
 }
@@ -51,7 +52,7 @@ export async function replaceVendorProduct(
 export async function updateVendorProductStatus(
   vendorId: string,
   productId: string,
-  payload: UpdateVendorProductPayload
+  payload: UpdateVendorProductPayload,
 ): Promise<VendorProductDto | null> {
   trackEvent(ANALYTICS_EVENTS.changeProductStatus, {
     action: payload.status,
@@ -59,7 +60,7 @@ export async function updateVendorProductStatus(
 
   const res = await apiClient.patch<unknown>(
     GATEWAY.VENDOR.PRODUCT_BY_ID(vendorId, productId),
-    payload
+    payload,
   );
   return unwrap<VendorProductDto>(res);
 }

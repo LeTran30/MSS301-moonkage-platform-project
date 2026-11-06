@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { resolveDispute } from '../resolveDisputeApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -10,7 +9,6 @@ describe('Feature resolve-disputes - resolveDisputeApi (FR-49)', () => {
   });
 
   it('resolveDispute() gửi PATCH với ResolveDisputeRequest', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     const patch = vi.spyOn(apiClient, 'patch').mockResolvedValue(
       envelope({
         disputeId: 'DISP-11',
@@ -22,7 +20,7 @@ describe('Feature resolve-disputes - resolveDisputeApi (FR-49)', () => {
         refundAmount: 135000,
         decisionReason: 'Hỗ trợ bánh nứt',
         resolvedAt: '2026-10-27T09:00:00Z',
-      })
+      }),
     );
 
     const resolved = await resolveDispute('ORD-11', {
@@ -31,7 +29,7 @@ describe('Feature resolve-disputes - resolveDisputeApi (FR-49)', () => {
       decisionReason: 'Hỗ trợ bánh nứt',
     });
 
-    expect(patch).toHaveBeenCalledWith('/order-service/api/orders/ORD-11/dispute', {
+    expect(patch).toHaveBeenCalledWith('/api/orders/ORD-11/dispute', {
       decision: 'PARTIAL_REFUND',
       refundAmount: 135000,
       decisionReason: 'Hỗ trợ bánh nứt',

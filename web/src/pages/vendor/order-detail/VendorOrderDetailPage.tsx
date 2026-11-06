@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency, formatDate } from '@/shared/utils';
-import { Badge, Button, ButtonLink, Card, Breadcrumbs, Input, toast } from '@/shared/ui';
+import { Badge, Button, ButtonLink, Card, Breadcrumbs, Icon, Input, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import {
   nextOrderStatus,
@@ -90,7 +90,7 @@ export function VendorOrderDetailPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Xử Lý Đơn Hàng #{order.id} (B2.1, B2.2)</h1>
+          <h1 className={styles.title}>Xử Lý Đơn Hàng #{order.id}</h1>
           <p className={styles.subtitle}>
             Ngày đặt: {formatDate(order.createdAt)} · Người nhận: {order.shippingAddress.receiver} (
             {order.shippingAddress.phone})
@@ -155,7 +155,7 @@ export function VendorOrderDetailPage() {
                   <div
                     className={`${styles.stepBadge} ${done ? styles.stepBadgeDone : styles.stepBadgePending}`}
                   >
-                    {done ? '✓' : i + 1}
+                    {done ? <Icon name="check" size={13} /> : i + 1}
                   </div>
                   <div className={styles.productInfo}>
                     <div className={`${styles.stepTitle} ${done ? '' : styles.stepTitlePending}`}>

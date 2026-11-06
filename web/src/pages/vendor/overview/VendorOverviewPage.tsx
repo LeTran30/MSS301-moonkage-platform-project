@@ -75,10 +75,14 @@ export function VendorOverviewPage() {
           <div className={styles.preLaunchIcon}>
             <Icon name="store" size={40} />
           </div>
-          <h2>Hồ Sơ Cửa Hàng &amp; Phí Mở Bán (B1.0, B1.1)</h2>
+          <h2>Hồ Sơ Cửa Hàng &amp; Phí Mở Bán</h2>
           <p>
             Trạng thái xét duyệt hồ sơ:{' '}
-            <Badge tone={isApproved ? 'green' : 'amber'}>{vendor?.status || 'PENDING'}</Badge>
+            {/* Trạng thái đọc từ máy chủ; khi chưa tải xong thì không hiện một
+                trạng thái bịa. */}
+            <Badge tone={isApproved ? 'green' : 'amber'}>
+              {vendor?.status ?? 'Đang tải…'}
+            </Badge>
           </p>
 
           {error && <p role="alert">{error}</p>}
@@ -86,8 +90,8 @@ export function VendorOverviewPage() {
           {!isFeePaid && isApproved && (
             <div className={styles.feeActionBox}>
               <p>
-                Hồ sơ của bạn đã được <strong>Quản trị viên phê duyệt</strong>! Vui lòng nộp phí mở bán
-                niêm yết để bắt đầu đăng sản phẩm và tiếp nhận đơn hàng.
+                Hồ sơ của bạn đã được <strong>Quản trị viên phê duyệt</strong>! Vui lòng nộp phí mở
+                bán niêm yết để bắt đầu đăng sản phẩm và tiếp nhận đơn hàng.
               </p>
               <Button
                 variant="primary"
@@ -96,7 +100,7 @@ export function VendorOverviewPage() {
                 loading={busy}
                 onClick={handlePayOpeningFee}
               >
-                Nộp phí mở bán qua VNPay (B1.1, FR-53)
+                Nộp phí mở bán qua VNPay
               </Button>
             </div>
           )}
@@ -125,7 +129,7 @@ export function VendorOverviewPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <div className={styles.eyebrow}>KÊNH BÁN HÀNG · TỔNG QUAN (B1.0, FLOW 4)</div>
+          <div className={styles.eyebrow}>KÊNH BÁN HÀNG · TỔNG QUAN</div>
           <h1 className={styles.title}>
             {vendor?.businessName || user.vendorName || 'Gian hàng của tôi'}
           </h1>
@@ -136,12 +140,12 @@ export function VendorOverviewPage() {
 
         <div className={styles.headerActions}>
           <ButtonLink to={routes.vendor.productNew} variant="primary" iconLeft="plus">
-            Thêm sản phẩm mới (B4.1)
+            Thêm sản phẩm mới
           </ButtonLink>
         </div>
       </div>
 
-      {/* Khối "Việc cần làm" (B1.0 Spec) */}
+      {/* Khối "Việc cần làm" */}
       <Card padding="md" tone="gold" className={styles.actionCard}>
         <div className={styles.actionCardHeader}>
           <Icon name="sparkle" size={18} />
@@ -151,22 +155,22 @@ export function VendorOverviewPage() {
           {pendingOrders.length > 0 && (
             <div className={styles.actionItem}>
               <div>
-                <strong>{pendingOrders.length} đơn hàng mới cần xử lý:</strong> Xác nhận đơn và cập nhật mã
-                vận đơn hoặc bản vẽ maket.
+                <strong>{pendingOrders.length} đơn hàng mới cần xử lý:</strong> Xác nhận đơn và cập
+                nhật mã vận đơn hoặc bản vẽ maket.
               </div>
               <ButtonLink to={routes.vendor.orders} variant="primary" size="sm">
-                Xử lý đơn ngay (B2.0)
+                Xử lý đơn ngay
               </ButtonLink>
             </div>
           )}
           {pendingRequests.length > 0 && (
             <div className={styles.actionItem}>
               <div>
-                <strong>{pendingRequests.length} yêu cầu báo giá doanh nghiệp mới:</strong> Cần soạn báo
-                giá chiết khấu.
+                <strong>{pendingRequests.length} yêu cầu báo giá doanh nghiệp mới:</strong> Cần soạn
+                báo giá chiết khấu.
               </div>
               <ButtonLink to={routes.vendor.requests} variant="gold" size="sm">
-                Soạn báo giá (B3.2)
+                Soạn báo giá
               </ButtonLink>
             </div>
           )}
@@ -228,7 +232,7 @@ export function VendorOverviewPage() {
                   {o.status}
                 </Badge>
                 <ButtonLink to={routes.vendor.order(o.id)} variant="secondary" size="sm">
-                  Chi tiết (B2.1/B2.2)
+                  Chi tiết (/)
                 </ButtonLink>
               </div>
             </div>

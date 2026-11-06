@@ -17,9 +17,15 @@ interface Listener {
  * live here and are subscribed again after every reconnect, so a screen
  * subscribes once and never deals with the socket.
  *
- * Without a token (logged out) or in demo mode (no server) nothing connects.
+ * Without a token (logged out) nothing connects.
  */
-export function RealtimeProvider({ token, children }: { token: string | null; children: ReactNode }) {
+export function RealtimeProvider({
+  token,
+  children,
+}: {
+  token: string | null;
+  children: ReactNode;
+}) {
   const clientRef = useRef<Client | null>(null);
   const listenersRef = useRef(new Map<number, Listener>());
   const nextIdRef = useRef(0);

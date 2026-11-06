@@ -18,15 +18,19 @@ interface Props {
  * every total, the deposit and the remainder (the client sends no amount).
  */
 export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) {
-  const [unitPrice, setUnitPrice] = useState('145000');
-  const [depositPercent, setDepositPercent] = useState('40');
+  /*
+   * Báo giá phải do xưởng tự nhập. Trước đây modal điền sẵn 145.000đ/hộp, cọc
+   * 40%, ngày giao 08/11/2026 và ghi chú về "dập nhũ vàng" — xưởng có thể gửi
+   * một báo giá bịa mà không nhập gì. Nay mọi ô để trống (trừ số ngày hiệu
+   * lực, mặc định 7 ngày theo quy định của sàn).
+   */
+  const [unitPrice, setUnitPrice] = useState('');
+  const [depositPercent, setDepositPercent] = useState('');
   const [shippingFee, setShippingFee] = useState('0');
-  const [deliveryDate, setDeliveryDate] = useState('2026-11-08');
-  const [deliveryMethod, setDeliveryMethod] = useState('Xe tải xưởng giao tận văn phòng');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [deliveryMethod, setDeliveryMethod] = useState('');
   const [validDays, setValidDays] = useState('7');
-  const [notes, setNotes] = useState(
-    'Bao gồm dập nhũ vàng logo doanh nghiệp, khay lụa vàng và túi giấy cao cấp đi kèm.'
-  );
+  const [notes, setNotes] = useState('');
   const { busy, run, error } = useAction();
   const submitQuote = useSubmitQuote();
 
@@ -39,6 +43,22 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
   const total = price * quantity + fee;
 
   function handleSubmit() {
+    if (!unitPrice || Number(unitPrice) <= 0) {
+      toast.error('Vui lòng nhập đơn giá mỗi hộp.');
+      return;
+    }
+    if (!depositPercent || Number(depositPercent) <= 0) {
+      toast.error('Vui lòng nhập tỷ lệ đặt cọc sản xuất.');
+      return;
+    }
+    if (!deliveryDate) {
+      toast.error('Vui lòng chọn ngày giao hàng cam kết.');
+      return;
+    }
+    if (!deliveryMethod) {
+      toast.error('Vui lòng chọn phương thức giao hàng.');
+      return;
+    }
     void run(async () => {
       const quote = await submitQuote(request!.id, {
         items: [
@@ -57,7 +77,9 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
       });
 
       onSubmit(quote);
-      toast.success(`Đã gửi báo giá ${formatCurrency(quote.unitPrice)}/hộp cho yêu cầu #${request!.id}!`);
+      toast.success(
+        `Đã gửi báo giá ${formatCurrency(quote.unitPrice)}/hộp cho yêu cầu #${request!.id}!`,
+      );
       onClose();
     });
   }
@@ -88,7 +110,7 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
           required
         />
         <Input
-          label="Tỷ lệ đặt cọc sản xuất (%) - Quy định B5.2"
+          label="Tỷ lệ đặt cọc sản xuất (%)"
           type="number"
           value={depositPercent}
           onChange={(e) => setDepositPercent(e.target.value)}
@@ -104,12 +126,21 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
         <Select
           label="Phương thức giao hàng"
           options={[
-            { value: 'Xe tải xưởng giao tận văn phòng', label: 'Xe tải xưởng giao tận văn phòng' },
-            { value: 'Giao hàng chuyên nghiệp', label: 'Giao hàng chuyên nghiệp' },
-            { value: 'Khách tự đến xưởng lấy', label: 'Khách tự đến xưởng lấy' },
+            {
+              value: 'Xe tải xưởng giao tận văn phòng',
+              label: 'Xe tải xưởng giao tận văn phòng',
+            },
+            {
+              value: 'Giao hàng chuyên nghiệp',
+              label: 'Giao hàng chuyên nghiệp',
+            },
+            {
+              value: 'Khách tự đến xưởng lấy',
+              label: 'Khách tự đến xưởng lấy',
+            },
           ]}
           value={deliveryMethod}
-          onChange={(e) => setDeliveryMethod(e.target.value)}
+          onChange={(v) => setDeliveryMethod(v)}
           required
         />
         <Input

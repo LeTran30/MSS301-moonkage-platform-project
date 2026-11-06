@@ -1,5 +1,6 @@
 package com.moonkage.order.controller;
 
+import com.moonkage.api.ApiResponse;
 import com.moonkage.order.dto.request.MarkChatReadRequest;
 import com.moonkage.order.dto.request.SendChatMessageRequest;
 import com.moonkage.order.dto.request.StartConversationRequest;
@@ -7,7 +8,6 @@ import com.moonkage.order.dto.response.ChatMessageResponse;
 import com.moonkage.order.dto.response.ChatThreadResponse;
 import com.moonkage.order.dto.response.ConversationResponse;
 import com.moonkage.order.enums.ChatParty;
-import com.moonkage.order.exception.ApiResponse;
 import com.moonkage.order.security.CurrentUser;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.ChatService;

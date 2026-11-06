@@ -2,7 +2,7 @@ import { memo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Card, Icon } from '@/shared/ui';
+import { Badge, Card, Icon, ProductImage } from '@/shared/ui';
 import type { Product } from '../model/types';
 import styles from './ProductCard.module.css';
 
@@ -19,23 +19,25 @@ type Props = {
  * bộ lọc, mọi thẻ không bị ảnh hưởng sẽ không render lại. `actions` là element
  * do cha tạo nên vẫn phải memo ở chỗ gọi (xem `CatalogPage`).
  */
-export const ProductCard = memo(function ProductCard({ product, actions, showVendor = true }: Props) {
+export const ProductCard = memo(function ProductCard({
+  product,
+  actions,
+  showVendor = true,
+}: Props) {
   return (
     <Card as="article" padding="none" interactive className={styles.card}>
       <Link to={routes.base.product(product.id)} className={styles.imageLink}>
-        <img
-          src={product.images[0] || '/images/banh-nuong.jpg'}
-          alt={product.name}
-          className={styles.image}
-          loading="lazy"
-          decoding="async"
-        />
+        <ProductImage src={product.images[0]} alt={product.name} className={styles.image} />
         <div className={styles.tagWrap}>
           <Badge tone={product.deliveryTag === 'Giao toàn quốc' ? 'gold' : 'neutral'} size="sm">
             <Icon name="truck" size={12} /> {product.deliveryTag}
           </Badge>
           {product.bulkQuoteThreshold && (
-            <Badge tone="red" size="sm" title={`Đặt trên ${product.bulkQuoteThreshold} hộp có thể yêu cầu báo giá`}>
+            <Badge
+              tone="red"
+              size="sm"
+              title={`Đặt trên ${product.bulkQuoteThreshold} hộp có thể yêu cầu báo giá`}
+            >
               Báo giá sỉ &gt;{product.bulkQuoteThreshold}
             </Badge>
           )}
@@ -57,11 +59,23 @@ export const ProductCard = memo(function ProductCard({ product, actions, showVen
         </h3>
         <div className={styles.priceRow}>
           <span className={styles.price}>{formatCurrency(product.price)}</span>
-          <div className={styles.rating}>
-            <Icon name="star" size={13} className={styles.starIcon} />
-            <span>{product.rating}</span>
-            <span className={styles.sold}>({product.soldCount} đã bán)</span>
-          </div>
+          {/*
+            Điểm đánh giá và số lượng đã bán chỉ hiện khi máy chủ thật sự có dữ
+            liệu: `catalog-service` chưa trả `soldCount`, nên hiện "0 đã bán" là
+            con số bịa. Trường hợp thiếu thì ẩn hẳn, không hiện số 0.
+          */}
+          {(product.rating > 0 || product.reviewCount > 0 || product.soldCount > 0) && (
+            <div className={styles.rating}>
+              {product.rating > 0 && (
+                <>
+                  <Icon name="star" size={13} className={styles.starIcon} />
+                  <span>{product.rating}</span>
+                </>
+              )}
+              {product.reviewCount > 0 && <span className={styles.sold}>({product.reviewCount} đánh giá)</span>}
+              {product.soldCount > 0 && <span className={styles.sold}>({product.soldCount} đã bán)</span>}
+            </div>
+          )}
         </div>
         {actions && <div className={styles.actions}>{actions}</div>}
       </div>

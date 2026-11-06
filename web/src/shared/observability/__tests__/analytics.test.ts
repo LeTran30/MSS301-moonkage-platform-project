@@ -99,7 +99,10 @@ describe('analytics khi đã bật', () => {
   it('đẩy sự kiện vào dataLayer', () => {
     const layer = (window as unknown as { dataLayer?: unknown[] }).dataLayer ?? [];
 
-    trackEvent(ANALYTICS_EVENTS.addToCart, { product_id: 'prod_01', quantity: 2 });
+    trackEvent(ANALYTICS_EVENTS.addToCart, {
+      product_id: 'prod_01',
+      quantity: 2,
+    });
 
     expect(layer.length).toBeGreaterThan(0);
     const last = layer[layer.length - 1] as unknown[];
@@ -110,7 +113,10 @@ describe('analytics khi đã bật', () => {
   it('lọc PII trước khi gửi', () => {
     const layer = (window as unknown as { dataLayer?: unknown[] }).dataLayer ?? [];
 
-    trackEvent(ANALYTICS_EVENTS.login, { email: 'an@example.com', role: 'BUYER' });
+    trackEvent(ANALYTICS_EVENTS.login, {
+      email: 'an@example.com',
+      role: 'BUYER',
+    });
 
     const last = layer[layer.length - 1] as unknown[];
     const params = last[2] as Record<string, unknown>;

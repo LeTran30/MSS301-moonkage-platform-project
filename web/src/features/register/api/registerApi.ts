@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { RegisterDto } from '@/entities/user';
 
 /**
@@ -22,15 +22,6 @@ export async function registerAccount(payload: {
   fullName: string;
   password: string;
 }): Promise<RegisterDto> {
-  if (isDemoMode()) {
-    return {
-      id: 'usr_new',
-      email: payload.email,
-      phoneNumber: payload.phoneNumber ?? '',
-      verified: false,
-      otpSent: true,
-    };
-  }
   const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.REGISTER, {
     email: payload.email,
     phoneNumber: payload.phoneNumber ?? '',

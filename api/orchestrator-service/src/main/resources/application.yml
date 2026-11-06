@@ -2,10 +2,15 @@ server:
   port: 8088
   # trust X-Forwarded-* from the gateway so Swagger "Try it out" calls go through http://localhost:8080/<service>
   forward-headers-strategy: framework
+  # RT-02: finish the requests in flight before the container stops
+  shutdown: graceful
 
 spring:
   application:
     name: orchestrator-service
+  # RT-02: how long the container waits for the requests in flight
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   datasource:
     url: "jdbc:postgresql://${ORCHESTRATOR_DB_HOST}:${ORCHESTRATOR_DB_PORT}/orchestrator_db"
     username: ${DB_USERNAME}
@@ -18,9 +23,11 @@ spring:
     baseline-on-migrate: true
     baseline-version: 1
   jpa:
+    # no lazy loading in the web layer: every query the response needs is written out (DP-02)
+    open-in-view: false
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect

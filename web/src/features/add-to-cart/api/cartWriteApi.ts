@@ -1,4 +1,5 @@
 import { apiClient, GATEWAY } from '@/shared/api';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 
 /**

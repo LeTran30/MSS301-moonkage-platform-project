@@ -1,6 +1,12 @@
 import { provinceNameOf } from '@/shared/config';
 import type { Order } from '../model/types';
-import type { OrderDto, ProgressUpdate, ProgressUpdateDto, UiOrderStatus, BackendOrderStatus } from './orderDto';
+import type {
+  OrderDto,
+  ProgressUpdate,
+  ProgressUpdateDto,
+  UiOrderStatus,
+  BackendOrderStatus,
+} from './orderDto';
 const STATUS_MAP: Record<string, UiOrderStatus> = {
   PAID: 'PAID',
   CONFIRMED: 'CONFIRMED',
@@ -80,9 +86,9 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
     trackingCode: dto.trackingCode,
     interprovince: dto.interprovince === true,
     shippingAddress: {
-      receiver: dto.recipientName || 'Khách hàng Moonkage',
-      phone: dto.recipientPhone || '',
-      address: dto.addressDetail || '',
+      receiver: dto.recipientName ?? '',
+      phone: dto.recipientPhone ?? '',
+      address: dto.addressDetail ?? '',
       province: provinceNameOf(dto.provinceCode) || dto.provinceCode || '',
     },
     items: (dto.items ?? []).map((item) => ({
@@ -90,7 +96,9 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
       name: item.productName,
       quantity: item.quantity,
       price: item.unitPrice,
-      image: '/images/banh-nuong.jpg',
+      // Máy chủ không trả ảnh theo dòng đơn; ảnh thuộc về sản phẩm trong danh mục.
+      // `image` để trống ⇒ UI hiện ảnh đại diện trung tính, không dùng ảnh mẫu.
+      image: '',
     })),
     hasInvoice: Boolean(dto.invoiceInfo),
     invoiceCompanyInfo: dto.invoiceInfo,

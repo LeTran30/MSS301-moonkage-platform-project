@@ -10,7 +10,7 @@
  *
  * Chạy: `node scripts/check-bundle-size.mjs`
  */
-import { readdirSync, statSync, readFileSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIST = join(process.cwd(), 'dist', 'assets');

@@ -16,7 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class JwtTokenProviderTest {
 
@@ -26,13 +25,18 @@ class JwtTokenProviderTest {
     private JwtTokenProvider jwtTokenProvider;
     private AccountView account;
 
+    /** The properties as the yml sets them: the same key, one hour and seven days. */
+    private static JwtProperties properties(String secret, long expirationMs, long refreshExpirationMs) {
+        JwtProperties properties = new JwtProperties();
+        properties.setSecret(secret);
+        properties.setExpiration(expirationMs);
+        properties.setRefreshExpiration(refreshExpirationMs);
+        return properties;
+    }
+
     @BeforeEach
     void setUp() {
-        jwtTokenProvider = new JwtTokenProvider();
-
-        ReflectionTestUtils.setField(jwtTokenProvider, "secretKey", BASE64_SECRET);
-        ReflectionTestUtils.setField(jwtTokenProvider, "expirationMs", 3600000L); // 1 hour
-        ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationMs", 604800000L); // 7 days
+        jwtTokenProvider = new JwtTokenProvider(properties(BASE64_SECRET, 3600000L, 604800000L));
 
         account = new AccountView(ACCOUNT_ID, "user@moonkage.vn", null, Role.MEMBER, true, null);
     }
@@ -100,7 +104,7 @@ class JwtTokenProviderTest {
 
     @Test
     void parseExpiredTokenThrowsTokenExpired() {
-        ReflectionTestUtils.setField(jwtTokenProvider, "expirationMs", -1000L);
+        jwtTokenProvider = new JwtTokenProvider(properties(BASE64_SECRET, -1000L, 604800000L));
         String expiredToken = jwtTokenProvider.createAccessToken(account);
 
         AppException ex = assertThrows(AppException.class, () -> jwtTokenProvider.parseAccessToken(expiredToken));
@@ -109,7 +113,7 @@ class JwtTokenProviderTest {
 
     @Test
     void parseExpiredRefreshTokenThrowsRefreshTokenInvalid() {
-        ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationMs", -1000L);
+        jwtTokenProvider = new JwtTokenProvider(properties(BASE64_SECRET, 3600000L, -1000L));
         String expiredRefreshToken = jwtTokenProvider.createRefreshToken(account);
 
         AppException ex =
@@ -120,8 +124,8 @@ class JwtTokenProviderTest {
     @Test
     void tokenSignedWithAnotherKeyIsInvalid() {
         String token = jwtTokenProvider.createAccessToken(account);
-        ReflectionTestUtils.setField(
-                jwtTokenProvider, "secretKey", "5A7134743777217A25432A462D4A614E645267556B58703273357638792F423F");
+        jwtTokenProvider = new JwtTokenProvider(
+                properties("5A7134743777217A25432A462D4A614E645267556B58703273357638792F423F", 3600000L, 604800000L));
 
         AppException ex = assertThrows(AppException.class, () -> jwtTokenProvider.parseAccessToken(token));
         assertEquals(ErrorCode.TOKEN_INVALID, ex.getErrorCode());

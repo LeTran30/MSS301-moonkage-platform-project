@@ -126,7 +126,10 @@ export interface SubmitVendorPayload {
   bankName: string;
   bankAccountNumber: string;
   bankAccountHolder: string;
-  documents: Array<{ kind: 'BUSINESS_LICENSE' | 'FOOD_SAFETY'; objectKey: string }>;
+  documents: Array<{
+    kind: 'BUSINESS_LICENSE' | 'FOOD_SAFETY';
+    objectKey: string;
+  }>;
 }
 
 /**

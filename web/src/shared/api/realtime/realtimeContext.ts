@@ -10,8 +10,8 @@ export interface RealtimeContextValue {
 }
 
 /**
- * Without a provider (logged out, demo mode, tests) nothing is pushed and the
- * screens rely on polling.
+ * Without a provider (logged out, tests) nothing is pushed and the screens
+ * rely on polling.
  */
 export const offlineRealtime: RealtimeContextValue = {
   connected: false,

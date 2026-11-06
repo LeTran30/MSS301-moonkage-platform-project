@@ -1,9 +1,9 @@
 package com.moonkage.order.controller;
 
+import com.moonkage.api.ApiResponse;
 import com.moonkage.order.dto.request.CreateCheckoutRequest;
 import com.moonkage.order.dto.response.CheckoutResponse;
 import com.moonkage.order.dto.response.CreateCheckoutResponse;
-import com.moonkage.order.exception.ApiResponse;
 import com.moonkage.order.security.CurrentUser;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.CheckoutService;

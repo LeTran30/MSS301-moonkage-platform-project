@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { refundApi } from '../refundApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -19,17 +18,22 @@ const REFUND_DTO = {
 describe('Payment Entity - refundApi (AC-49.3)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('list mặc định lấy các hoàn tiền cần xử lý tay', async () => {
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
-      envelope({ content: [REFUND_DTO], page: 0, size: 100, totalElements: 1, totalPages: 1 }) as never,
+      envelope({
+        content: [REFUND_DTO],
+        page: 0,
+        size: 100,
+        totalElements: 1,
+        totalPages: 1,
+      }) as never,
     );
 
     const refunds = await refundApi.list();
 
-    expect(get.mock.calls[0][0]).toContain('/payment-service/api/refunds?');
+    expect(get.mock.calls[0][0]).toContain('/api/refunds?');
     expect(get.mock.calls[0][0]).toContain('status=MANUAL_REQUIRED');
     expect(refunds[0].refundId).toBe('ref-1');
     expect(refunds[0].status).toBe('MANUAL_REQUIRED');
@@ -40,7 +44,7 @@ describe('Payment Entity - refundApi (AC-49.3)', () => {
 
     const refund = await refundApi.getById('ref-1');
 
-    expect(get).toHaveBeenCalledWith('/payment-service/api/refunds/ref-1');
+    expect(get).toHaveBeenCalledWith('/api/refunds/ref-1');
     expect(refund?.amount).toBe(500000);
   });
 });

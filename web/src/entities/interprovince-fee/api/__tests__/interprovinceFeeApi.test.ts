@@ -1,13 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { interprovinceFeeApi } from '../interprovinceFeeApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 const TABLE_DTO = {
   fees: [
-    { provinceCode: '01', provinceName: 'Hà Nội', fee: 35000, effectiveFrom: '2026-11-01T00:00:00Z' },
-    { provinceCode: '79', provinceName: 'TP Hồ Chí Minh', fee: 45000, effectiveFrom: '2026-11-01T00:00:00Z' },
+    {
+      provinceCode: '01',
+      provinceName: 'Hà Nội',
+      fee: 35000,
+      effectiveFrom: '2026-11-01T00:00:00Z',
+    },
+    {
+      provinceCode: '79',
+      provinceName: 'TP Hồ Chí Minh',
+      fee: 45000,
+      effectiveFrom: '2026-11-01T00:00:00Z',
+    },
   ],
   complete: true,
 };
@@ -15,7 +24,6 @@ const TABLE_DTO = {
 describe('InterprovinceFee Entity - interprovinceFeeApi (FR-52, A-18)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('getTable đọc cả bảng qua path định tuyến riêng của gateway', async () => {

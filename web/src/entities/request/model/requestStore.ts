@@ -1,5 +1,4 @@
 import { createStore } from '@/shared/lib';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * Backend `com.moonkage.quotation.enums.QuoteStatus`.
@@ -8,12 +7,7 @@ import { isDemoMode } from '@/shared/config';
  * was sent is `SUBMITTED`, and a quote the vendor took back is `WITHDRAWN`.
  */
 export type QuoteStatus =
-  | 'SUBMITTED'
-  | 'WITHDRAWN'
-  | 'EXPIRED'
-  | 'ACCEPTED'
-  | 'CLOSED'
-  | 'REJECTED';
+  'SUBMITTED' | 'WITHDRAWN' | 'EXPIRED' | 'ACCEPTED' | 'CLOSED' | 'REJECTED';
 
 /** Backend `com.moonkage.quotation.enums.RequestStatus`. */
 export type RequestStatus = 'OPEN' | 'AWARDED' | 'CLOSED' | 'EXPIRED';
@@ -113,83 +107,12 @@ export type QuoteRequest = {
   quoteCount?: number;
 };
 
-export const MOCK_REQUESTS: QuoteRequest[] = [
-  {
-    id: 'REQ-502',
-    type: 'OPEN',
-    buyerId: 'usr_lan',
-    buyerName: 'Chị Lan (HR Doanh nghiệp)',
-    recipientName: 'Chị Lan (HR Doanh nghiệp)',
-    recipientPhone: '0918889999',
-    provinceCode: '01',
-    quantity: 150,
-    deliveryDeadline: '2026-11-10',
-    deliveryAddress: 'Tòa tháp Capital Place, 29 Liễu Giai, Ba Đình',
-    deliveryProvince: 'Hà Nội',
-    budgetPerBox: 160000,
-    customLogoFileName: 'logo_aurora_vector.pdf',
-    customRequirements: 'In logo ép kim lên hộp cứng nam châm + thiệp chúc mừng riêng từng hộp',
-    customTypes: ['BAG', 'CARD'],
-    crustPreference: 'Bánh nướng truyền thống',
-    fillingPreference: 'Thập cẩm, Hạt sen, Đậu xanh trứng muối',
-    createdAt: '2026-10-18T10:00:00Z',
-    status: 'OPEN',
-    invitedVendorsCount: 4,
-    quoteCount: 2,
-    quotes: [
-      {
-        id: 'QUO-01',
-        vendorId: 'ven_hoa',
-        vendorName: 'Xưởng Bánh Truyền Thống Cô Hoa',
-        vendorRating: 4.9,
-        unitPrice: 150000,
-        shippingFee: 0,
-        totalPrice: 22500000,
-        depositPercent: 40,
-        depositAmount: 9000000,
-        remainingAmount: 13500000,
-        estimatedDeliveryDate: '08/11/2026',
-        deliveryMethod: 'Xe tải riêng của xưởng giao tận văn phòng',
-        validUntil: '30/10/2026',
-        samplePhotoUrl: '/images/doanh-nghiep.jpg',
-        note: 'Xưởng miễn phí thiết kế maket và in thiệp chúc mừng cho đơn 150 hộp.',
-        status: 'SUBMITTED',
-        revisionNo: 1,
-        acceptable: true,
-      },
-      {
-        id: 'QUO-02',
-        vendorId: 'ven_quan',
-        vendorName: 'Hiệu Bánh Gia Truyền Bảo An',
-        vendorRating: 4.8,
-        unitPrice: 155000,
-        shippingFee: 150000,
-        totalPrice: 23400000,
-        depositPercent: 50,
-        depositAmount: 11700000,
-        remainingAmount: 11700000,
-        estimatedDeliveryDate: '07/11/2026',
-        deliveryMethod: 'Giao hàng chuyên nghiệp Bảo An Express',
-        validUntil: '28/10/2026',
-        note: 'Bánh nướng mẫu khuôn hoa sen đặc biệt mừng Trung Thu 2026.',
-        status: 'SUBMITTED',
-        revisionNo: 1,
-        acceptable: true,
-      },
-    ],
-  },
-];
-
 /**
  * The quote requests of the caller.
  *
- * In demo mode the store starts with the mock list; against a live backend it
- * starts empty and is filled by `useRequests` from `quotation-service`.
+ * The store starts empty and is filled by `useRequests` from `quotation-service`.
  */
-export const requestStore = createStore<QuoteRequest[]>(
-  isDemoMode() ? MOCK_REQUESTS : [],
-  isDemoMode() ? 'moonkage_quote_requests' : undefined
-);
+export const requestStore = createStore<QuoteRequest[]>([]);
 
 /** The store without the React binding (see `useRequests` in the API layer). */
 export function getRequests(): QuoteRequest[] {

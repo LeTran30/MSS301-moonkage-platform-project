@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
  * shared {@code jwt.secret}, not expired, {@code type = ACCESS} (refresh tokens are refused, docs/auth.md).
  */
 @Component
+@EnableConfigurationProperties(JwtProperties.class)
 public class AccessTokenVerifier {
 
     static final String CLAIM_TYPE = "type";
@@ -29,8 +30,8 @@ public class AccessTokenVerifier {
     private final Clock clock;
 
     @Autowired
-    public AccessTokenVerifier(@Value("${jwt.secret}") String secret) {
-        this(secret, Clock.systemUTC());
+    public AccessTokenVerifier(JwtProperties jwtProperties) {
+        this(jwtProperties.getSecret(), Clock.systemUTC());
     }
 
     AccessTokenVerifier(String secret, Clock clock) {
