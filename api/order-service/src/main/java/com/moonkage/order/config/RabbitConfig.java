@@ -30,6 +30,10 @@ public class RabbitConfig {
     public static final String MOCKUP_UPLOADED_ROUTING_KEY = "mockup.uploaded";
     public static final String MOCKUP_REVIEWED_ROUTING_KEY = "mockup.reviewed";
     public static final String INVOICE_ATTACHED_ROUTING_KEY = "invoice.attached";
+    // read by orchestrator, pushed to the open pages of both sides of an order's chat
+    public static final String CHAT_MESSAGE_SENT_ROUTING_KEY = "chat.message_sent";
+    public static final String CHAT_READ_ROUTING_KEY = "chat.read";
+    public static final String CHAT_TYPING_ROUTING_KEY = "chat.typing";
     // read by catalog (product reviews and rating)
     public static final String REVIEW_CREATED_ROUTING_KEY = "review.created";
 

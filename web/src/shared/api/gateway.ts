@@ -140,6 +140,12 @@ export const GATEWAY = {
     DISPUTE_EVIDENCES: (orderId: string) => `/order-service/api/orders/${orderId}/dispute/evidences`,
     // Đánh giá sản phẩm (ReviewController: @RequestMapping("/api/orders/{orderId}/reviews"))
     REVIEWS: (orderId: string) => `/order-service/api/orders/${orderId}/reviews`,
+    // Nhắn tin người mua ↔ chủ shop theo đơn (ChatController: @RequestMapping("/api/orders/{orderId}/chat")).
+    // Tin mới, đã xem và đang soạn được đẩy qua STOMP /user/queue/chat.
+    CHAT: (orderId: string) => `/order-service/api/orders/${orderId}/chat`,
+    CHAT_MESSAGES: (orderId: string) => `/order-service/api/orders/${orderId}/chat/messages`,
+    CHAT_READ: (orderId: string) => `/order-service/api/orders/${orderId}/chat/read`,
+    CHAT_TYPING: (orderId: string) => `/order-service/api/orders/${orderId}/chat/typing`,
   },
 
   // 6. Payment & Escrow Service (LedgerController, PaymentController)
