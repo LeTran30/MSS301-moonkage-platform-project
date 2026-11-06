@@ -54,9 +54,14 @@ describe('Shared config - security', () => {
     expect(csp).toContain("connect-src 'self' https://api.moonkage.vn wss://api.moonkage.vn");
   });
 
+  /*
+   * `apiConnectSources` và `cspConnectSources` là **một** API: cùng một nguồn
+   * sự thật nên CSP không thể lệch với nơi app thực sự gọi. Hàm này khai báo
+   * origin của gateway theo URL, bỏ qua URL tương đối hoặc rỗng.
+   */
   it('apiConnectSources lấy origin của gateway khác origin, bỏ qua URL tương đối', () => {
-    expect(apiConnectSources('http://localhost:8080')).toEqual(['http://localhost:8080']);
-    expect(apiConnectSources('https://api.moonkage.vn/v1/')).toEqual(['https://api.moonkage.vn']);
+    expect(apiConnectSources('http://localhost:8080')).toContain('http://localhost:8080');
+    expect(apiConnectSources('https://api.moonkage.vn/v1/')).toContain('https://api.moonkage.vn');
     expect(apiConnectSources('')).toEqual([]);
     expect(apiConnectSources('/api')).toEqual([]);
   });

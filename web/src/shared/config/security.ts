@@ -139,6 +139,19 @@ export function isSecureOrigin(protocol?: string): boolean {
 export const HEADER_ONLY_DIRECTIVES: readonly string[] = ['frame-ancestors \'none\''];
 
 /**
+ * Origin của API gateway khi nó khác origin của ứng dụng.
+ *
+ * Hàm này là **lớp bọc mỏng** của `cspConnectSources` — cùng một nguồn sự
+ * thật, nên CSP không thể lệch với nơi app thực sự gọi. Giữ hàm này vì
+ * `ENV.apiBaseUrl` là nơi ứng dụng biết chắc gateway của chính nó.
+ *
+ * URL tương đối hoặc rỗng không cần khai báo thêm (`'self'` đã đủ).
+ */
+export function apiConnectSources(apiBaseUrl: string): string[] {
+  return cspConnectSources(apiBaseUrl);
+}
+
+/**
  * Các nguồn `connect-src` phải khai báo cho CSP.
  *
  * `connect-src 'self'` một mình chặn mọi request XHR/fetch tới API gateway:
@@ -148,10 +161,10 @@ export const HEADER_ONLY_DIRECTIVES: readonly string[] = ['frame-ancestors \'non
  * Lấy từ `VITE_API_BASE_URL` / `VITE_WS_URL` — cùng nguồn với phần cấu hình
  * mà `apiClient` dùng, nên CSP không bao giờ lệch với nơi app thực sự gọi.
  */
-export function cspConnectSources(): string[] {
+export function cspConnectSources(apiBaseUrl?: string): string[] {
   const sources = new Set<string>();
 
-  const apiBase = env.VITE_API_BASE_URL?.trim();
+  const apiBase = (apiBaseUrl ?? env.VITE_API_BASE_URL)?.trim();
   if (apiBase) {
     try {
       const url = new URL(apiBase);

@@ -7,6 +7,7 @@ export {
   apiCredentials,
   buildCspHeader,
   applyCspMeta,
+  apiConnectSources,
   cspConnectSources,
   cspImageSources,
   CSP_DIRECTIVES,
