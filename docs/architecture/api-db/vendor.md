@@ -107,7 +107,7 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 
 - Gọi identity: `GET /internal/nfc/status/{accountId}`, `POST /internal/accounts/check`
 - Gọi payment: `POST /internal/payments` (`purpose = REGISTRATION_FEE`)
-- Cung cấp `GET /internal/vendors/by-owner/{accountId}` cho catalog, quotation, order
+- Cung cấp `GET /internal/vendors/by-owner/{accountId}` cho catalog, quotation, order; `GET /internal/vendors/{vendorId}` (chủ shop) cho order (chat)
 - Cung cấp cho order (order điều khiển, vendor không nghe sự kiện thanh toán):
   - `POST /internal/stock/reservations` `{checkoutId, expiresAt, items[{productId, qty}]}` → `{checkoutId, status, expiresAt, items[{productId, vendorId, qty, unitPrice}]}`. Giữ đủ hoặc không giữ gì; thiếu → 409 `VENDOR_032`, mỗi sản phẩm thiếu là một `errors[].field` mang `productId`. Gọi lại cùng `checkoutId` trả kết quả cũ; khác dòng → 409 `VENDOR_033`.
   - `POST /internal/stock/reservations/{checkoutId}/commit` khi `payment.succeeded`: `HELD → COMMITTED`; đã `RELEASED` (IPN trễ) thì lấy hàng lại, không đủ → 409 `VENDOR_032` để order hoàn tiền `LATE_PAYMENT`. Gọi lại trả 200.

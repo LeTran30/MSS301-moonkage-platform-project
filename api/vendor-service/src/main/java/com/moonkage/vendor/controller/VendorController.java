@@ -199,6 +199,16 @@ public class VendorController {
                 .body(ApiResponse.created(vendorService.createRegistrationFeePayment(caller, vendorId)));
     }
 
+    /**
+     * Who owns a vendor, for other services (order-service tells the owner about a chat message). Same body as
+     * by-owner; 404 VENDOR_NOT_FOUND. OpenFeign only, unwrapped.
+     */
+    @Hidden
+    @GetMapping("/internal/vendors/{vendorId}")
+    public ResponseEntity<VendorView> getView(@PathVariable String vendorId) {
+        return ResponseEntity.ok(vendorService.getView(vendorId));
+    }
+
     /** Called by other services through OpenFeign only; the gateway blocks /internal/** from outside. Unwrapped. */
     @Hidden
     @GetMapping("/internal/vendors/by-owner/{accountId}")
