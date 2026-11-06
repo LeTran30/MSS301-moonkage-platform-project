@@ -37,7 +37,10 @@ export const queryKeys = {
     reviews: (orderId: string) => ['order', 'reviews', orderId] as const,
     mockups: (orderId: string) => ['order', 'mockups', orderId] as const,
     invoice: (orderId: string) => ['order', 'invoice', orderId] as const,
-    chat: (orderId: string) => ['order', 'chat', orderId] as const,
+  },
+  chat: {
+    inbox: (as: string) => ['chat', 'inbox', as] as const,
+    thread: (conversationId: string) => ['chat', 'thread', conversationId] as const,
   },
   cart: {
     mine: (provinceCode: string) => ['cart', 'mine', provinceCode] as const,

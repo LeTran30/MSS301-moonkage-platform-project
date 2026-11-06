@@ -10,7 +10,7 @@ import java.time.Instant;
 public record ChatMessageResponse(
         String id,
         long seq,
-        String orderId,
+        String conversationId,
         String senderAccountId,
         String senderParty,
         String body,

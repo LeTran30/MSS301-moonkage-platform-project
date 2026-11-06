@@ -13,7 +13,6 @@ import {
   useOrderDetail,
 } from '@/entities/order';
 import { useAdvanceOrder } from '@/features/advance-order-status';
-import { OrderChatPanel } from '@/features/order-chat';
 
 /**
  * B2.1, B2.2 — the shop moves one order forward (FR-32, FR-40).
@@ -205,8 +204,6 @@ export function VendorOrderDetailPage() {
           </div>
         </Card>
       </div>
-
-      <OrderChatPanel orderId={order.id} counterpartName="người mua" />
     </div>
   );
 }

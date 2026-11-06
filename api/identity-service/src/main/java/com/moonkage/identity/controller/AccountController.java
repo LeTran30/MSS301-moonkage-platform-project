@@ -6,6 +6,7 @@ import com.moonkage.identity.kyc.LegalProfileService;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.dto.AccountNameResponse;
 import com.moonkage.identity.profile.dto.UpdateProfileRequest;
 import com.moonkage.identity.security.CurrentUser;
 import com.moonkage.identity.security.CurrentUserInfo;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,6 +43,13 @@ public class AccountController {
             @CurrentUser CurrentUserInfo currentUser, @RequestBody @Valid UpdateProfileRequest request) {
         return ResponseEntity.ok(
                 ApiResponse.ok(userProfileService.updateFullName(currentUser.accountId(), request.fullName())));
+    }
+
+    /** The name an account shows, for other services (order-service chat). 404 USER_PROFILE_NOT_FOUND. */
+    @Hidden
+    @GetMapping("/internal/accounts/{accountId}/name")
+    public ResponseEntity<AccountNameResponse> getName(@PathVariable String accountId) {
+        return ResponseEntity.ok(new AccountNameResponse(accountId, userProfileService.getFullName(accountId)));
     }
 
     /**

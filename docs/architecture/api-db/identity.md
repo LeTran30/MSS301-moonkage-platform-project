@@ -41,7 +41,7 @@ Auth giữ nguyên như code vì đăng nhập, OTP, refresh không phải tài 
 | Method, đường dẫn | Ai | Mục đích | FR |
 | --- | --- | --- | --- |
 | `GET /api/accounts/me` | M | Tài khoản + `profile` + `nfcStatus`, `idNumberMasked` | FR-02 |
-| `PATCH /api/accounts/me/profile` | M | Sửa họ tên hiển thị, ảnh đại diện | FR-02 |
+| `PATCH /api/accounts/me/profile` | M | Sửa họ tên hiển thị (ảnh đại diện chưa làm) | FR-02 |
 | `GET\|POST /api/accounts/me/addresses` | M | Danh sách, thêm địa chỉ | FR-03 |
 | `PUT\|DELETE /api/accounts/me/addresses/{addressId}` | M | Sửa (gồm `isDefault`), xóa | FR-03 |
 | `POST /api/accounts/me/nfc-sessions` | M | Tạo phiên → `{sessionId, expiresAt}` | AC-04.1 |
@@ -67,6 +67,7 @@ So với code: `/api/addresses` → `/api/accounts/me/addresses`; `/api/nfc/sess
 
 - Cung cấp `GET /internal/nfc/status/{accountId}` cho vendor, quotation (BR-23, AC-45.1)
 - Cung cấp `POST /internal/accounts/check` cho vendor: băm số định danh, so với CCCD của chủ (BR-27)
+- Cung cấp `GET /internal/accounts/{accountId}/name` cho order: tên hiển thị của khách trong hộp thư chat của shop
 
 ## Quyết định liên quan
 

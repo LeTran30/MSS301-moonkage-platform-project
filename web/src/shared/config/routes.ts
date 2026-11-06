@@ -41,6 +41,8 @@ export const routes = {
     addressNew: '/tai-khoan/dia-chi/moi',
     verify: '/tai-khoan/xac-minh', // M6.4
     profile: '/tai-khoan/thong-tin', // M6.5
+    messages: '/tai-khoan/tin-nhan', // Nhắn tin với shop
+    messagesWithShop: (vendorId: string) => `/tai-khoan/tin-nhan?shop=${encodeURIComponent(vendorId)}`,
   },
   vendor: {
     overview: '/kenh-ban', // B1.0
@@ -56,6 +58,7 @@ export const routes = {
     money: '/kenh-ban/tien', // B5.0
     reconciliation: '/kenh-ban/tien/doi-soat', // B5.1
     disbursements: '/kenh-ban/tien/giai-ngan', // B5.2
+    messages: '/kenh-ban/tin-nhan', // Hộp thư khách hỏi shop
     settings: '/kenh-ban/cai-dat', // B6.0
     legal: '/kenh-ban/cai-dat/phap-ly', // B6.1
     zones: '/kenh-ban/cai-dat/vung-giao', // B6.2
