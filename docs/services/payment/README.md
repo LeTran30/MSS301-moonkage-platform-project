@@ -143,10 +143,25 @@ Cổng `8087`, database `payment_db` (`PAYMENT_DB_HOST` / `PAYMENT_DB_PORT`, m�
 | `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` | Mã thương mại và secret của sandbox VNPay; thiếu thì `PAYMENT_005` (`GATEWAY_NOT_CONFIGURED`) |
 | `VNPAY_PAY_URL` | Mặc định `https://sandbox.vnpayment.vn/paymentv2/vpcpay.html` |
 | `VNPAY_RETURN_URL` | Mặc định `http://localhost:5173/thanh-toan/ket-qua` (trang kết quả của web) |
+| `VNPAY_CONFIRM_ON_RETURN` | Mặc định `false`. Đặt `true` khi chạy local: VNPay không gọi được IPN về `localhost`, nên `GET /api/payments/vnpay/return` (trang kết quả chuyển tiếp query đã được VNPay ký) được ghi nhận như một IPN. Chữ ký vẫn bị kiểm, và ghi nhận lặp lại không đổi gì. Ở nơi VNPay gọi được IPN thì để `false`: khi đó chỉ IPN mới đánh dấu đã trả tiền (BR-25) |
 | `VNPAY_API_URL` | Endpoint `merchant_webapi` dùng cho hoàn tiền (AC-49.3) |
 | `vnpay.default-lifetime` | `15m` — hạn thanh toán mặc định |
 | `payment.expiry-sweep-interval` | `60s` |
 | `payment.refund-interval` | `30s` |
+
+### Mã sandbox VNPay
+
+Mỗi người tự đăng ký merchant sandbox tại `https://sandbox.vnpayment.vn/devreg/`, bấm link kích hoạt trong email, rồi chép `vnp_TmnCode` và `vnp_HashSecret` từ email đó vào `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` của `.env`. Sau đó chạy `docker compose up -d payment-service` để container đọc lại `.env`.
+
+Nếu bấm thanh toán mà VNPay chuyển sang `Payment/Error.html?code=…`, xem mã lỗi:
+
+| Mã | Nghĩa | Cách sửa |
+|---|---|---|
+| `71` | "Website này chưa được phê duyệt": mã merchant có tồn tại nhưng chưa kích hoạt hoặc đã bị khoá. VNPay kiểm tình trạng merchant trước, nên vẫn ra 71 dù chữ ký đúng hay sai | Kích hoạt qua email, hoặc đăng ký mã mới |
+| `72` | Không có mã merchant này | Sửa `VNPAY_TMN_CODE` |
+| `70` | Sai chữ ký | Sửa `VNPAY_HASH_SECRET` (secret phải đi cùng mã merchant) |
+
+Khi chạy local, VNPay không gọi được IPN về máy, nên cần bật `VNPAY_CONFIRM_ON_RETURN=true`. Khi chưa có mã merchant dùng được, vẫn chạy được luồng thanh toán bằng một IPN giả: ký đúng bằng `VNPAY_HASH_SECRET` rồi gọi `GET /api/payments/vnpay/ipn`.
 
 Chạy:
 

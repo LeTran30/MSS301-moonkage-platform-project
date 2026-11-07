@@ -90,6 +90,8 @@ vnpay:
   # signed query and asks payment-service which payment it was.
   return-url: ${VNPAY_RETURN_URL:http://localhost:5173/thanh-toan/ket-qua}
   default-lifetime: 15m
+  # true only where VNPay cannot call the IPN (localhost): the signed return query then counts as the IPN
+  confirm-on-return: ${VNPAY_CONFIRM_ON_RETURN:false}
   # merchant_webapi: refunds (AC-49.3)
   api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}
 

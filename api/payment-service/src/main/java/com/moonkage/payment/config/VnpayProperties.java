@@ -28,6 +28,13 @@ public class VnpayProperties {
     /** Web page VNPay sends the payer back to; it only shows the result (BR-25). */
     private String returnUrl;
 
+    /**
+     * Local runs only: VNPay cannot reach an IPN URL on localhost, so the signed return query, forwarded by the web
+     * result page, is recorded the way an IPN is. Off everywhere VNPay can call the IPN, which stays the only proof
+     * of payment there (BR-25).
+     */
+    private boolean confirmOnReturn;
+
     /** Used when the root that creates a payment gives no deadline (P-01: order and quotation always give one). */
     private Duration defaultLifetime = Duration.ofMinutes(15);
 

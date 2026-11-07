@@ -59,12 +59,12 @@ class PaymentServiceImplTest {
     private final RefundService refundService = mock(RefundService.class);
     private final OutboxService outboxService = mock(OutboxService.class);
 
+    private final VnpayProperties properties = new VnpayProperties();
     private PaymentServiceImpl service;
     private Payment payment;
 
     @BeforeEach
     void setUp() {
-        VnpayProperties properties = new VnpayProperties();
         properties.setTmnCode("TMN");
         properties.setHashSecret(SECRET);
         properties.setReturnUrl("http://localhost:5173/thanh-toan/ket-qua");
@@ -104,6 +104,39 @@ class PaymentServiceImplTest {
         verify(ledgerService).collect("order-1", 100_000L, PAYMENT_ID);
         verify(ledgerService).collect("order-2", 150_000L, PAYMENT_ID);
         verify(outboxService).enqueue(anyString(), eq(RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY), any());
+    }
+
+    @Test
+    void theReturnChangesNothingWhereVnpayCanCallTheIpn() {
+        when(paymentRepository.findByGatewayTxnRef(TXN_REF)).thenReturn(Optional.of(payment));
+
+        assertEquals(
+                PaymentStatus.PENDING, service.readReturn(ipn("00", AMOUNT)).status());
+        verifyNoInteractions(ledgerService, outboxService);
+    }
+
+    @Test
+    void onALocalRunTheSignedReturnIsRecordedAsTheIpn() {
+        properties.setConfirmOnReturn(true);
+        when(paymentRepository.findByGatewayTxnRef(TXN_REF)).thenReturn(Optional.of(payment));
+
+        assertEquals(
+                PaymentStatus.SUCCEEDED, service.readReturn(ipn("00", AMOUNT)).status());
+        verify(ledgerService).collect("order-1", 100_000L, PAYMENT_ID);
+        verify(outboxService).enqueue(anyString(), eq(RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY), any());
+    }
+
+    @Test
+    void aForgedReturnIsRefusedEvenOnALocalRun() {
+        properties.setConfirmOnReturn(true);
+        Map<String, String> forged = ipn("00", AMOUNT);
+        forged.put(VnpaySigner.SECURE_HASH, "00ff");
+
+        assertEquals(
+                ErrorCode.GATEWAY_SIGNATURE_INVALID,
+                assertThrows(AppException.class, () -> service.readReturn(forged))
+                        .getErrorCode());
+        verifyNoInteractions(ledgerService, outboxService);
     }
 
     @Test

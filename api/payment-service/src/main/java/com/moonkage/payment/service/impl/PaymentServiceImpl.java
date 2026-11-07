@@ -151,10 +151,14 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public PaymentResponse readReturn(Map<String, String> callback) {
         if (!vnpayGateway.isAuthentic(callback)) {
             throw new AppException(ErrorCode.GATEWAY_SIGNATURE_INVALID);
+        }
+        if (vnpayProperties.isConfirmOnReturn()) {
+            // same signed fields as the IPN; recording twice changes nothing (ALREADY_CONFIRMED)
+            VnpayIpnResponse recorded = handleIpn(callback);
+            log.info("VNPay return {} recorded as IPN: {}", callback.get(VnpayGateway.TXN_REF), recorded.rspCode());
         }
         return paymentRepository
                 .findByGatewayTxnRef(callback.get(VnpayGateway.TXN_REF))
