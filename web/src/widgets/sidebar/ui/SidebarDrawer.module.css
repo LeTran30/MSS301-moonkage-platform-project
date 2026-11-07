@@ -94,7 +94,7 @@
 }
 
 /* Nút mở drawer chỉ hiện ở màn hình hẹp (≤lg). */
-@media (max-width: 1024px) {
+@media (max-width: var(--breakpoint-lg)) {
   .trigger {
     display: inline-flex;
   }
