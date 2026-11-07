@@ -60,6 +60,8 @@ public enum ErrorCode {
     INVOICE_NOT_ATTACHED("ORDER_007", HttpStatus.NOT_FOUND, "error.order.invoice_not_attached"),
     /** An upload that is missing, of another type, too large or not the declared format (common-storage). */
     FILE_INVALID("ORDER_008", HttpStatus.BAD_REQUEST, "error.order.file_invalid"),
+    /** GET /api/orders/stats: {@code from} after {@code to}, or longer than order.stats-max-days. */
+    STATS_RANGE_INVALID("ORDER_009", HttpStatus.BAD_REQUEST, "error.order.stats_range_invalid"),
 
     // Disputes (FR-12, FR-49, BR-18, P-02)
     DISPUTE_NOT_FOUND("DISPUTE_001", HttpStatus.NOT_FOUND, "error.dispute.not_found"),
