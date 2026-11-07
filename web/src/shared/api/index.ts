@@ -1,5 +1,6 @@
 export { apiClient, ApiError, type ApiFieldError } from './client';
 export { queryClient, queryKeys } from './queryClient';
+export { isSessionEnded, onSessionExpired, type SessionExpiryReason } from './sessionExpiry';
 export {
   clearTokens,
   getAccessToken,

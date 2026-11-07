@@ -8,6 +8,7 @@ import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { RequireAuth, RequireAdmin } from './guards';
 import { PageLoader } from '@/shared/ui';
 import { startPageViewTracking } from './providers/PageViewTracker';
+import { startSessionExpiryHandling } from './providers/SessionExpiryHandler';
 
 function withSuspense(Component: ComponentType) {
   return (
@@ -325,6 +326,9 @@ const router = createBrowserRouter(ROUTE_TABLE);
 // lại là cha của nó. Dùng `router.subscribe` thì không bị ràng buộc vị trí
 // render nào, và vẫn nhận đúng mẫu route (`/san-pham/:id`) từ `matches`.
 startPageViewTracking(router);
+
+// Hết phiên (401 không cứu được) → về trang đăng nhập, rồi quay lại trang cũ.
+startSessionExpiryHandling(router);
 
 export function AppRouter() {
   return <RouterProvider router={router} />;
