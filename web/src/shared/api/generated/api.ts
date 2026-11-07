@@ -805,6 +805,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orders/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orders/uploads": {
         parameters: {
             query?: never;
@@ -2121,6 +2137,17 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponseOrderStatsResponse: {
+            code?: string;
+            data?: components["schemas"]["OrderStatsResponse"];
+            errors?: components["schemas"]["OrderFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ApiResponsePageResponseLedgerResponse: {
             code?: string;
             data?: components["schemas"]["PageResponseLedgerResponse"];
@@ -2641,6 +2668,14 @@ export interface components {
             /** Format: int64 */
             unitPrice: number;
         };
+        DailyPoint: {
+            /** Format: date */
+            date?: string;
+            /** Format: int64 */
+            orderCount?: number;
+            /** Format: int64 */
+            revenue?: number;
+        };
         DeliveryAddressRequest: {
             addressDetail: string;
             provinceCode: string;
@@ -2787,6 +2822,7 @@ export interface components {
             taxCode?: string;
         };
         Item: {
+            imageUrl?: string;
             productId?: string;
             productName?: string;
             /** Format: int32 */
@@ -3012,6 +3048,19 @@ export interface components {
             /** Format: int64 */
             totalAmount?: number;
             trackingCode?: string;
+            vendorId?: string;
+            vendorName?: string;
+        };
+        OrderStatsResponse: {
+            byStatus?: components["schemas"]["StatusCount"][];
+            daily?: components["schemas"]["DailyPoint"][];
+            /** Format: date */
+            from?: string;
+            /** Format: date */
+            to?: string;
+            topProducts?: components["schemas"]["TopProduct"][];
+            topVendors?: components["schemas"]["TopVendor"][];
+            totals?: components["schemas"]["Totals"];
             vendorId?: string;
         };
         /**
@@ -3535,6 +3584,12 @@ export interface components {
         StartConversationRequest: {
             vendorId: string;
         };
+        StatusCount: {
+            /** Format: int64 */
+            orderCount?: number;
+            /** @enum {string} */
+            status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED";
+        };
         SubmitCardRequest: {
             appVersion?: string;
             dateOfExpiry?: string;
@@ -3607,6 +3662,32 @@ export interface components {
             refPriceTiers?: string;
             supplySource?: string;
             vendorId?: string;
+        };
+        TopProduct: {
+            productId?: string;
+            productName?: string;
+            /** Format: int64 */
+            quantity?: number;
+            /** Format: int64 */
+            revenue?: number;
+        };
+        TopVendor: {
+            /** Format: int64 */
+            orderCount?: number;
+            /** Format: int64 */
+            revenue?: number;
+            vendorId?: string;
+            vendorName?: string;
+        };
+        Totals: {
+            /** Format: int64 */
+            averageOrderValue?: number;
+            /** Format: int64 */
+            buyerCount?: number;
+            /** Format: int64 */
+            orderCount?: number;
+            /** Format: int64 */
+            revenue?: number;
         };
         /** @description Partial change of one value; a field left out stays as it is. The group and the code never change. */
         UpdateCakeAttributeRequest: {
@@ -5274,6 +5355,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseReviewResponse"];
+                };
+            };
+        };
+    };
+    stats: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                vendorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseOrderStatsResponse"];
                 };
             };
         };
