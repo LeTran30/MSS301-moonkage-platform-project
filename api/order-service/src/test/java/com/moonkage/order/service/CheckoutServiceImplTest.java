@@ -27,7 +27,9 @@ import com.moonkage.order.dto.request.CreateCheckoutRequest;
 import com.moonkage.order.entity.CartItem;
 import com.moonkage.order.entity.Checkout;
 import com.moonkage.order.entity.CheckoutGroup;
+import com.moonkage.order.entity.CheckoutLine;
 import com.moonkage.order.entity.Order;
+import com.moonkage.order.entity.OrderItem;
 import com.moonkage.order.enums.CheckoutStatus;
 import com.moonkage.order.exception.AppException;
 import com.moonkage.order.exception.ErrorCode;
@@ -63,6 +65,7 @@ class CheckoutServiceImplTest {
     private final CheckoutRepository checkoutRepository = mock(CheckoutRepository.class);
     private final CheckoutGroupRepository groupRepository = mock(CheckoutGroupRepository.class);
     private final CheckoutLineRepository lineRepository = mock(CheckoutLineRepository.class);
+    private final OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
     private final CartItemRepository cartItemRepository = mock(CartItemRepository.class);
     private final InboxService inboxService = mock(InboxService.class);
     private final CatalogClient catalogClient = mock(CatalogClient.class);
@@ -79,7 +82,7 @@ class CheckoutServiceImplTest {
                 groupRepository,
                 lineRepository,
                 cartItemRepository,
-                mock(OrderItemRepository.class),
+                orderItemRepository,
                 inboxService,
                 mock(OrderEventPublisher.class),
                 catalogClient,
@@ -173,24 +176,41 @@ class CheckoutServiceImplTest {
         when(checkoutRepository.findForUpdateById("c1")).thenReturn(Optional.of(checkout));
         when(inboxService.markProcessed(eq("evt-1"), anyString())).thenReturn(true);
         when(groupRepository.findByCheckoutId("c1")).thenReturn(List.of(group("v1", "o1"), group("v2", "o2")));
+        when(lineRepository.findByCheckoutIdOrderByLineNo("c1")).thenReturn(List.of(line("v1", "products/v1/p1.jpg")));
 
         service.onPaid("evt-1", "c1", "pay-1");
 
         assertEquals(CheckoutStatus.SUCCEEDED, checkout.getStatus());
+        // the order keeps the Shop's name and the cover image of the day, as the product name and price
+        ArgumentCaptor<OrderItem> items = ArgumentCaptor.forClass(OrderItem.class);
+        verify(orderItemRepository).save(items.capture());
+        assertEquals("products/v1/p1.jpg", items.getValue().getImageKey());
         ArgumentCaptor<Order> orders = ArgumentCaptor.forClass(Order.class);
         verify(entityManager, times(2)).persist(orders.capture());
         assertEquals(
                 List.of("o1", "o2"),
                 orders.getAllValues().stream().map(Order::getId).toList());
         assertEquals("c1", orders.getValue().getPaymentGroupId());
+        assertEquals("Shop v1", orders.getAllValues().getFirst().getVendorName());
         verify(cartItemRepository).deleteBought(eq(BUYER.accountId()), any());
     }
 
     private static ProductSnapshotResponse snapshot(boolean v2Delivers) {
         return new ProductSnapshotResponse(
                 List.of(
-                        new ProductPart("p1", "v1", "owner-1", "Bánh nướng", 100_000L, 10, null, "LOCAL", true),
-                        new ProductPart("p2", "v2", "owner-2", "Bánh dẻo", 250_000L, 10, null, "NATIONWIDE", true)),
+                        new ProductPart(
+                                "p1",
+                                "v1",
+                                "owner-1",
+                                "Bánh nướng",
+                                100_000L,
+                                10,
+                                null,
+                                "LOCAL",
+                                true,
+                                "products/v1/p1.jpg"),
+                        new ProductPart(
+                                "p2", "v2", "owner-2", "Bánh dẻo", 250_000L, 10, null, "NATIONWIDE", true, null)),
                 List.of(
                         new VendorPart("v1", "Tiệm A", true, false, 30_000L),
                         new VendorPart("v2", "Xưởng B", v2Delivers, true, v2Delivers ? 45_000L : null)));
@@ -222,10 +242,24 @@ class CheckoutServiceImplTest {
         CheckoutGroup group = new CheckoutGroup();
         group.setCheckoutId("c1");
         group.setVendorId(vendorId);
+        group.setVendorName("Shop " + vendorId);
         group.setOrderId(orderId);
         group.setItemsAmount(200_000L);
         group.setShippingFee(30_000L);
         return group;
+    }
+
+    private static CheckoutLine line(String vendorId, String imageKey) {
+        CheckoutLine line = new CheckoutLine();
+        line.setCheckoutId("c1");
+        line.setLineNo(1);
+        line.setVendorId(vendorId);
+        line.setProductId("p1");
+        line.setProductName("Bánh nướng");
+        line.setImageKey(imageKey);
+        line.setUnitPrice(100_000L);
+        line.setQuantity(2);
+        return line;
     }
 
     private static FeignException conflict() {

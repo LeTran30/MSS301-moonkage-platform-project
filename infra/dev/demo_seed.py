@@ -729,19 +729,28 @@ def quotation_sql() -> str:
 def order_sql(orders: list[Order]) -> str:
     out = [f"-- {len(orders)} buy-now orders of the last {HISTORY_DAYS} days: what the dashboards and order lists show"]
     checkouts, groups, lines, rows, items, reviews, disputes = [], [], [], [], [], [], []
+    progress = []
     for o in orders:
         a = o.address
         checkout = o.child("checkout")
         checkouts.append((checkout, o.buyer, a.recipient_name, "0" + a.phone9, a.province_code, a.delivery_detail,
                           o.total, o.child("payment"), "SUCCEEDED", Raw(ago(o.expires_at)),
                           Raw(ago(o.opened_at)), Raw(ago(o.created))))
-        groups.append((checkout, o.vendor.id, o.id, o.items, o.shipping, o.interprovince))
+        # like the app, the order keeps the Shop's name and each line its cover image of the day of the purchase
+        groups.append((checkout, o.vendor.id, o.vendor.name, o.id, o.items, o.shipping, o.interprovince))
         for n, line in enumerate(o.lines, start=1):
-            lines.append((checkout, n, o.vendor.id, line.product.id, line.product.name, line.product.price, line.qty))
-            items.append((o.child(f"item:{n}"), o.id, line.product.id, line.product.name, line.qty,
-                          line.product.price, line.subtotal))
+            lines.append((checkout, n, o.vendor.id, line.product.id, line.product.name, line.product.image_key,
+                          line.product.price, line.qty))
+            items.append((o.child(f"item:{n}"), o.id, line.product.id, line.product.name, line.product.image_key,
+                          line.qty, line.product.price, line.subtotal))
+        # the history the vendor's steps and the buyer's receipt leave; the app does not write one for PAID
+        step_times = {"CONFIRMED": o.confirmed_at, "SHIPPING": o.shipped_at, "DELIVERED": o.delivered_at,
+                      "COMPLETED": o.received_at}
+        for step, at in step_times.items():
+            if o.reached(step):
+                progress.append((o.child(f"progress:{step}"), o.id, step, Raw(ago(at))))
         rows.append((
-            o.id, o.buyer, checkout, "BUY_NOW", o.status, o.vendor.id, a.delivery_detail, a.province_code,
+            o.id, o.buyer, checkout, "BUY_NOW", o.status, o.vendor.id, o.vendor.name, a.delivery_detail, a.province_code,
             a.recipient_name, "0" + a.phone9, o.items, o.shipping, 0, o.total, False, o.interprovince, o.tracking,
             Raw(ago(o.delivered_at)) if o.reached("DELIVERED") else None,
             Raw(ago(o.received_at)) if o.reached("COMPLETED") else None,
@@ -761,17 +770,20 @@ def order_sql(orders: list[Order]) -> str:
     out.append(insert(
         "checkouts", "id, buyer_account_id, recipient_name, recipient_phone, province_code, address_detail, "
                      "total_amount, payment_id, status, expires_at, created_at, updated_at", checkouts))
-    out.append(insert("checkout_groups", "checkout_id, vendor_id, order_id, items_amount, shipping_fee, interprovince",
-                      groups))
-    out.append(insert("checkout_lines", "checkout_id, line_no, vendor_id, product_id, product_name, unit_price, "
-                                        "quantity", lines))
+    out.append(insert("checkout_groups", "checkout_id, vendor_id, vendor_name, order_id, items_amount, shipping_fee, "
+                                         "interprovince", groups))
+    out.append(insert("checkout_lines", "checkout_id, line_no, vendor_id, product_id, product_name, image_key, "
+                                        "unit_price, quantity", lines))
     out.append(insert(
-        "orders", "id, buyer_account_id, payment_group_id, kind, status, vendor_id, delivery_address_detail, "
+        "orders", "id, buyer_account_id, payment_group_id, kind, status, vendor_id, vendor_name, "
+                  "delivery_address_detail, "
                   "delivery_province_code, recipient_name, recipient_phone, items_amount, shipping_fee, "
                   "discount_amount, total_amount, has_custom, interprovince, tracking_code, delivered_at, "
                   "received_confirmed_at, complaint_deadline, payout_locked_at, version, created_at, updated_at",
         rows))
-    out.append(insert("order_items", "id, order_id, product_id, product_name, quantity, unit_price, subtotal", items))
+    out.append(insert("order_items", "id, order_id, product_id, product_name, image_key, quantity, unit_price, "
+                                     "subtotal", items))
+    out.append(insert("progress_updates", "id, order_id, milestone, created_at", progress))
     out.append(insert("reviews", "id, order_id, product_id, vendor_id, buyer_account_id, rating, content, created_at",
                       reviews))
     out.append(insert("disputes", "id, order_id, buyer_account_id, reason, description, status, decision, "

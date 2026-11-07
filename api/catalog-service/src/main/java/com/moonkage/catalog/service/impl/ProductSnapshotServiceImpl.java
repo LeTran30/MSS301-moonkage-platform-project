@@ -83,6 +83,12 @@ public class ProductSnapshotServiceImpl implements ProductSnapshotService {
                 listing.getStock(),
                 listing.getQuoteThreshold(),
                 listing.getDeliveryLabel(),
-                purchasable);
+                purchasable,
+                firstImageKey(listing.getImageKeys()));
+    }
+
+    /** The cover image, which the order keeps as it was on the day of the purchase. */
+    private static String firstImageKey(String[] imageKeys) {
+        return imageKeys == null || imageKeys.length == 0 ? null : imageKeys[0];
     }
 }

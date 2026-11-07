@@ -37,6 +37,9 @@ public class OrderItem {
     @Column(nullable = false)
     private String productName;
 
+    /** Cover image of the product on the day of the order (public bucket); null for a custom line. */
+    private String imageKey;
+
     @Column(nullable = false)
     private Integer quantity;
 
