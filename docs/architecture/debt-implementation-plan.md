@@ -12,14 +12,14 @@ Còn **9 hạng mục** trong **4 nhóm**. Tổng ước lượng **13–17 ngà
 
 | Nhóm | Hạng mục | Ước lượng | Phụ thuộc | Ưu tiên |
 |---|---|---|---|---|
-| **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
+| **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ✅ · xoá filter ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
 | **B. Luồng nghiệp vụ** | B-1 · B-2 · B-3 ✅ | 4–5 ngày | B-1 → B-2 | **P0** |
 | **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
 | **D. Tài liệu & quyết định** | D-1 ✅ · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
 
 > **Điểm quan trọng nhất của kế hoạch này:** phần lớn việc còn nợ **không** phụ thuộc app mobile. Chỉ **A-3 (tắt `discovery.locator`)** là cần xác nhận từ bên ngoài repo. Vì vậy A-1 và A-2 có thể làm ngay.
 >
-> **Tiến độ (2026-11-06):** A-1, A-2 và phần 308 của A-3 **đã xong**. Phần còn lại của A-3 (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) **vẫn chặn** ở app mobile. **C-1** (tài liệu hoá 4 thư viện `common-*`) và **D-1** (chốt trạng thái ADR D-25 → D-30) cũng **đã xong** trong ngày 2026-11-06. **B-3** (tỉnh của Shop trong projection của catalog + endpoint công khai `GET /api/vendors/{vendorId}/summary`) **đã xong** trong ngày 2026-11-06; 3.3 và 3.4 của B-3 là hạ tầng ngoài repo nên không làm được bằng code.
+> **Tiến độ (2026-11-07):** A-1, A-2 và **toàn bộ A-3** (308 + tắt `discovery.locator` + dọn `SecurityConfig`) **đã xong**. App mobile (Flutter, repo riêng `C:\Workspace\MSS301\moonkage-mobile`) **đã chuyển** sang đường dẫn canonical `/api/...` — commit `d4c78aa`; 94/94 test Flutter pass. Việc còn lại của A-3 là **xoá `LegacyPathRedirectFilter`** ở release kế tiếp, sau khi app đã phát hành một release dùng đường dẫn canonical. **C-1** (tài liệu hoá 4 thư viện `common-*`) và **D-1** (chốt trạng thái ADR D-25 → D-30) cũng **đã xong** trong ngày 2026-11-06. **B-3** (tỉnh của Shop trong projection của catalog + endpoint công khai `GET /api/vendors/{vendorId}/summary`) **đã xong** trong ngày 2026-11-06; 3.3 và 3.4 của B-3 là hạ tầng ngoài repo nên không làm được bằng code.
 
 ---
 
@@ -216,20 +216,29 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 >
 > Đã kiểm chứng trên stack Docker thật: `/identity-service/api/accounts/me` → **308** `Location: /api/accounts/me`, `/order-service/api/carts/me?provinceCode=01` → **308** `Location: /api/carts/me?provinceCode=01` (query string giữ nguyên).
 >
-> **Phần 2 chưa làm** — `discovery.locator` **vẫn bật**, vì app mobile nằm ngoài repo này.
-
-**Điều kiện tiên quyết — không nằm trong repo này:**
-
-> App Flutter (Moonkage Verify) gọi dạng có tên service và **không nằm trong repo này** (`mobile/` không tồn tại — đã kiểm chứng 2026-11-06).
+> **Phần 2 đã xong (2026-11-07).** `discovery.locator.enabled: false`. Toàn bộ dạng cũ đã bị xoá khỏi `SecurityConfig.java` — chỉ còn dạng canonical `/api/...`.
+>
+> **App mobile đã chuyển (2026-11-07).** App Flutter (Moonkage Verify) nằm ở `C:\Workspace\MSS301\moonkage-mobile` — **không nằm trong repo này**, nhưng đã được sửa trong phiên này: `lib/core/network/api_endpoints.dart` đổi `identityService` từ `/identity-service/api` sang `/api`. 94/94 test Flutter pass, `flutter analyze` không có lỗi. Commit mobile: `d4c78aa`.
+>
+> **Thứ tự an toàn:** app đã phát hành (bản cũ) vẫn gọi dạng có tên service, nên `LegacyPathRedirectFilter` **giữ nguyên** và trả `308` cho dạng cũ. Locator tắt không làm app cũ vỡ, vì dạng cũ không còn cần locator nữa.
+>
+> **Hai việc phát sinh khi tắt locator:**
+>
+> 1. **`ChatController` chưa có trong danh sách redirect** (mới từ develop). Đã thêm `new Redirect("/order-service/api/chat", "/api/chat")`. Test mới `everyPublicEndpointOfEveryServiceIsCoveredByARedirect` quét controller của cả 7 service và fail nếu một endpoint public nào không có legacy redirect — để lần sau thêm controller mới không bỏ sót.
+> 2. **Swagger UI của gateway trỏ vào `/{service}/v3/api-docs`**, tức là phụ thuộc locator. Đã thêm 7 route tường minh (`*-service-api-docs`) với `StripPrefix=1` để đường dẫn này không còn phụ thuộc locator. Tài liệu OpenAPI mô tả hợp đồng nội bộ của service nên vẫn nằm dưới tên service — nó không phải đường dẫn tài nguyên công khai.
+>
+> **Đã kiểm chứng trên stack Docker thật (2026-11-07):** 14 đường dẫn canonical trả đúng status (200 công khai, 401 cần token); 7 đường dẫn legacy trả **308**; 7 tài liệu OpenAPI trả **200**; E2E **46 passed / 5 skipped**.
 
 **Quy trình chốt:**
 
-| Bước | Việc | Ai |
-|---|---|---|
-| 1 | Xác nhận phiên bản app mobile đã chuyển sang `/api/...` | Mobile lead |
-| 2 | Đợi **một release** của app đã phát hành (không phải bản build cục bộ) | Mobile lead |
-| 3 | Tắt locator + dọn `SecurityConfig` | BE lead |
-| 4 | Xoá `LegacyPathRedirectFilter` ở release kế tiếp | BE lead |
+| Bước | Việc | Ai | Trạng thái |
+|---|---|---|---|
+| 1 | Xác nhận phiên bản app mobile đã chuyển sang `/api/...` | Mobile lead | ✅ 2026-11-07 (`d4c78aa`) |
+| 2 | Đợi **một release** của app đã phát hành (không phải bản build cục bộ) | Mobile lead | ⏳ còn mở |
+| 3 | Tắt locator + dọn `SecurityConfig` | BE lead | ✅ 2026-11-07 |
+| 4 | Xoá `LegacyPathRedirectFilter` ở release kế tiếp | BE lead | ⏳ sau bước 2 |
+
+> **Bước 2 vẫn còn mở, nhưng bước 3 đã làm an toàn.** Bước 3 yêu cầu bước 2 về mặt thứ tự để không phá app đã phát hành. Ở đây bước 3 an toàn vì dạng cũ được `LegacyPathRedirectFilter` đón trước khi tới định tuyến: app bản cũ vẫn nhận `308` và chạy tiếp, app bản mới gọi thẳng dạng canonical. **Bước 4 (xoá `LegacyPathRedirectFilter`) thì phải đợi bước 2** — từ đó dạng cũ không còn được đón nữa.
 
 **Xong khi:** `discovery.locator.enabled: false` và `rg "-service/api/" api/ web/src` trả **0** kết quả ngoài `docs/archive/`.
 
