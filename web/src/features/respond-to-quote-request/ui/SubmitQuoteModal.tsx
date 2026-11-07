@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { type QuoteRequest, type Quote } from '@/entities/request';
+import { type QuoteRequest, type Quote, requestCode } from '@/entities/request';
 import { formatCurrency } from '@/shared/utils';
 import { Button, Input, Modal, Select, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
+import { quoteLineDescription } from '../model/quoteLineDescription';
 import { useSubmitQuote } from '../model/useSubmitQuote';
 import styles from './SubmitQuoteModal.module.css';
 
@@ -63,7 +64,7 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
       const quote = await submitQuote(request!.id, {
         items: [
           {
-            description: `${quantity} hộp bánh quà doanh nghiệp theo yêu cầu #${request!.id}`,
+            description: quoteLineDescription(request!),
             quantity,
             unitPrice: price,
           },
@@ -78,23 +79,24 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
 
       onSubmit(quote);
       toast.success(
-        `Đã gửi báo giá ${formatCurrency(quote.unitPrice)}/hộp cho yêu cầu #${request!.id}!`,
+        `Đã gửi báo giá ${formatCurrency(quote.unitPrice)}/hộp cho yêu cầu #${requestCode(request!.id)}!`,
       );
       onClose();
     });
   }
 
   return (
-    <Modal open={isOpen} onClose={onClose} title={`Gửi báo giá cho yêu cầu #${request.id}`}>
+    <Modal open={isOpen} onClose={onClose} title={`Gửi báo giá cho yêu cầu #${requestCode(request.id)}`}>
       <div className={styles.body}>
         <div className={styles.summary}>
-          <strong>Doanh nghiệp:</strong> {request.buyerName} ({quantity} hộp)
+          <strong>Người đặt:</strong> {request.buyerName} ({quantity} hộp)
           <br />
           <span>
             Tổng ước tính: <strong>{formatCurrency(total)}</strong> — cọc {rate}% (
             {formatCurrency(Math.floor((total * rate) / 100))})
           </span>
         </div>
+        <div className={styles.row}>
         <Input
           label="Đơn giá đề xuất (VNĐ/hộp)"
           type="number"
@@ -109,6 +111,8 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
           onChange={(e) => setShippingFee(e.target.value)}
           required
         />
+        </div>
+        <div className={styles.row}>
         <Input
           label="Tỷ lệ đặt cọc sản xuất (%)"
           type="number"
@@ -123,6 +127,8 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
           onChange={(e) => setDeliveryDate(e.target.value)}
           required
         />
+        </div>
+        <div className={styles.row}>
         <Select
           label="Phương thức giao hàng"
           options={[
@@ -152,6 +158,7 @@ export function SubmitQuoteModal({ isOpen, request, onClose, onSubmit }: Props) 
           onChange={(e) => setValidDays(e.target.value)}
           required
         />
+        </div>
         <Input
           label="Ghi chú & Cam kết tiêu chuẩn bao bì"
           value={notes}

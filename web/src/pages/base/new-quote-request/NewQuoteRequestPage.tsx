@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { routes, PROVINCE_ITEMS, DEFAULT_PROVINCE_CODE } from '@/shared/config';
+import { routes, PROVINCE_ITEMS } from '@/shared/config';
 import { Button, ButtonLink, toast } from '@/shared/ui';
 import { useAction, validators } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
@@ -14,6 +14,7 @@ import {
   useCreateQuoteRequest,
 } from '@/features/request-quote';
 import styles from './NewQuoteRequestPage.module.css';
+import { useDeliveryProvinceCode } from '@/entities/region';
 
 /** Tên các trường có thể báo lỗi trong form yêu cầu báo giá. */
 type QuoteFormErrors = Partial<
@@ -44,8 +45,9 @@ export function NewQuoteRequestPage() {
   const [recipientName, setRecipientName] = useState(user.name);
   const [recipientPhone, setRecipientPhone] = useState(user.phone);
   const [deliveryAddress, setDeliveryAddress] = useState('');
-  // Tỉnh mặc định của sàn (`DEFAULT_PROVINCE_CODE`); người mua chọn tỉnh thật ở bước 1.
-  const [provinceCode, setProvinceCode] = useState(() => DEFAULT_PROVINCE_CODE);
+  // Bắt đầu từ tỉnh giao người mua đang chọn ở header; người mua đổi được ở bước địa chỉ.
+  const deliveryProvinceCode = useDeliveryProvinceCode();
+  const [provinceCode, setProvinceCode] = useState(() => deliveryProvinceCode);
   const [budget, setBudget] = useState('');
   const [customRequirements, setCustomRequirements] = useState('');
   const [customTypes, setCustomTypes] = useState<CustomType[]>([]);
@@ -142,7 +144,11 @@ export function NewQuoteRequestPage() {
         quantity: parseInt(quantity, 10),
         budget: budget ? parseInt(budget, 10) : undefined,
         customTypes: customTypes.length > 0 ? customTypes : undefined,
-        customSpec: [customRequirements, `Vỏ: ${crustPreference}`, `Nhân: ${fillingPreference}`]
+        customSpec: [
+          customRequirements,
+          crustPreference && `Vỏ: ${crustPreference}`,
+          fillingPreference && `Nhân: ${fillingPreference}`,
+        ]
           .filter(Boolean)
           .join(' | '),
         deliveryDeadline,

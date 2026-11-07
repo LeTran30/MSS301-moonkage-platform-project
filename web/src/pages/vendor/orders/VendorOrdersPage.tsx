@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { useAction } from '@/shared/lib';
 import { Tabs, toast, AsyncState, EmptyState } from '@/shared/ui';
-import { useOrderList, type Order } from '@/entities/order';
+import { canSendMaket, orderCode, useOrderList, type Order } from '@/entities/order';
 import { VendorOrderCard } from '@/entities/order';
 import { useMyVendorId } from '@/entities/vendor';
 import {
@@ -48,7 +48,6 @@ export function VendorOrdersPage() {
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [maketModalOpen, setMaketModalOpen] = useState(false);
   const [maketFile, setMaketFile] = useState<File | null>(null);
-  const [maketNote, setMaketNote] = useState('');
 
   const orders = asyncOrders.kind === 'loaded' ? asyncOrders.data : [];
 
@@ -59,7 +58,8 @@ export function VendorOrdersPage() {
     return true;
   });
 
-  const waitingMaket = orders.filter((o) => o.status === 'WAITING_MAKET').length;
+  // Đơn đã cọc có tùy chỉnh mà Shop chưa gửi maket nào (FR-39).
+  const waitingMaket = orders.filter((o) => canSendMaket(o) && o.status === 'DEPOSITED').length;
   const disputed = orders.filter((o) => o.hasDispute === true).length;
 
   const handleAttachInvoice = (order: Order) => {
@@ -86,8 +86,8 @@ export function VendorOrdersPage() {
       const link = await attachInvoice(selectedOrder.id, tempKey);
       toast.success(
         link?.downloadUrl
-          ? `Đã gắn hóa đơn VAT thành công cho đơn #${selectedOrder.id}`
-          : `Đã ghi nhận hóa đơn cho đơn #${selectedOrder.id}`,
+          ? `Đã gắn hóa đơn VAT thành công cho đơn #${orderCode(selectedOrder.id)}`
+          : `Đã ghi nhận hóa đơn cho đơn #${orderCode(selectedOrder.id)}`,
       );
       setInvoiceModalOpen(false);
       asyncOrders.reload();
@@ -97,7 +97,6 @@ export function VendorOrdersPage() {
   const handleUploadMaket = (order: Order) => {
     setSelectedOrder(order);
     setMaketFile(null);
-    setMaketNote('');
     setMaketModalOpen(true);
   };
 
@@ -198,10 +197,8 @@ export function VendorOrdersPage() {
       <UploadMaketModal
         open={maketModalOpen}
         maketFile={maketFile}
-        maketNote={maketNote}
         busy={busy}
         onMaketFileChange={setMaketFile}
-        onMaketNoteChange={setMaketNote}
         onClose={() => setMaketModalOpen(false)}
         onSubmit={handleSaveMaket}
       />

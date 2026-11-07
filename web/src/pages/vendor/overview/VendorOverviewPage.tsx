@@ -4,11 +4,26 @@ import { formatCurrency } from '@/shared/utils';
 import { Badge, Button, ButtonLink, Card, Icon, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
-import { useOrderList, type Order } from '@/entities/order';
-import { useRequests } from '@/entities/request';
+import {
+  canSendMaket,
+  nextOrderStatus,
+  orderCode,
+  orderStatusLabel,
+  useOrderList,
+  type Order,
+} from '@/entities/order';
+import { useVendorRequestList } from '@/entities/request';
 import { useMyVendorDetail, useMyVendorId } from '@/entities/vendor';
 import { usePayVendorFee } from '@/features/pay-vendor-fee';
 import styles from './VendorOverviewPage.module.css';
+
+/** How many orders the "giao gấp" block lists; the order page lists them all. */
+const URGENT_ORDER_LIMIT = 5;
+
+/** The Shop has a step to take on the order: move it on, or send a maket. */
+function needsShop(order: Order): boolean {
+  return !order.hasDispute && (nextOrderStatus(order) !== null || canSendMaket(order));
+}
 
 export function VendorOverviewPage() {
   const user = useCurrentUser();
@@ -25,7 +40,9 @@ export function VendorOverviewPage() {
   // FR-32: đơn của chính Shop — `GET /api/orders?vendorId=...`.
   const asyncOrders = useOrderList({ vendorId });
 
-  const requests = useRequests().filter((r) => r.targetVendorId === user.vendorId);
+  // FR-36: the requests sent to the Shop, with the Shop's own quotes.
+  const asyncRequests = useVendorRequestList(vendorId ?? null);
+  const requests = asyncRequests.kind === 'loaded' ? asyncRequests.data : [];
 
   const vendor = asyncProfile.kind === 'loaded' ? asyncProfile.data : null;
   const orders: Order[] = asyncOrders.kind === 'loaded' ? asyncOrders.data : [];
@@ -122,8 +139,14 @@ export function VendorOverviewPage() {
 
   // Khi đã mở bán: Khối "Việc cần làm" theo B1.0 Spec:
   // đơn mới, yêu cầu mới, maket bị yêu cầu sửa, đơn chưa có hóa đơn
-  const pendingOrders = orders.filter((o) => o.status === 'PAID' || o.status === 'WAITING_MAKET');
-  const pendingRequests = requests.filter((r) => r.status === 'OPEN');
+  const pendingOrders = orders.filter(needsShop);
+  // Yêu cầu còn mở mà Shop chưa có báo giá nào đang hiệu lực.
+  const pendingRequests = requests.filter(
+    (r) =>
+      r.status === 'OPEN' &&
+      !r.quotes.some((q) => q.status === 'SUBMITTED' || q.status === 'ACCEPTED'),
+  );
+  const urgentOrders = pendingOrders.slice(0, URGENT_ORDER_LIMIT);
 
   return (
     <div className={styles.container}>
@@ -182,7 +205,9 @@ export function VendorOverviewPage() {
         <Card padding="md" className={styles.statBox}>
           <Icon name="package" size={24} className={styles.statIcon} />
           <div>
-            <div className={styles.statNum}>{orders.length}</div>
+            <div className={styles.statNum}>
+              {asyncOrders.kind === 'loaded' ? orders.length : '—'}
+            </div>
             <div className={styles.statText}>Đơn hàng phụ trách</div>
           </div>
         </Card>
@@ -190,13 +215,15 @@ export function VendorOverviewPage() {
           <Icon name="file" size={24} className={styles.statIcon} />
           <div>
             <div className={styles.statNum}>{requests.length}</div>
-            <div className={styles.statText}>Yêu cầu sỉ &amp; in logo</div>
+            <div className={styles.statText}>Yêu cầu báo giá nhận được</div>
           </div>
         </Card>
         <Card padding="md" className={styles.statBox}>
           <Icon name="wallet" size={24} className={styles.statIcon} />
           <div>
-            <div className={styles.statNum}>{formatCurrency(revenue)}</div>
+            <div className={styles.statNum}>
+              {asyncOrders.kind === 'loaded' ? formatCurrency(revenue) : '—'}
+            </div>
             <div className={styles.statText}>Tổng doanh số dự kiến</div>
           </div>
         </Card>
@@ -212,10 +239,23 @@ export function VendorOverviewPage() {
         </div>
 
         <div className={styles.orderRows}>
-          {orders.map((o) => (
+          {asyncOrders.kind === 'error' ? (
+            <div role="alert">
+              <p className={styles.lead}>Không tải được đơn hàng: {asyncOrders.message}</p>
+              <Button variant="secondary" size="sm" onClick={asyncOrders.reload}>
+                Thử lại
+              </Button>
+            </div>
+          ) : (
+            asyncOrders.kind === 'loaded' &&
+            urgentOrders.length === 0 && (
+              <p className={styles.lead}>Không có đơn nào đang chờ Shop xử lý.</p>
+            )
+          )}
+          {urgentOrders.map((o) => (
             <div key={o.id} className={styles.orderRow}>
               <div className={styles.orderLeft}>
-                <strong>#{o.id}</strong>
+                <strong>#{orderCode(o.id)}</strong>
                 <Badge tone={o.type === 'BULK' ? 'gold' : 'neutral'} size="sm">
                   {o.type === 'BULK' ? 'Hợp đồng sỉ' : 'Mua lẻ'}
                 </Badge>
@@ -228,11 +268,11 @@ export function VendorOverviewPage() {
                 <strong>{formatCurrency(o.total)}</strong>
               </div>
               <div className={styles.orderRight}>
-                <Badge tone={o.status === 'DELIVERED' ? 'green' : 'amber'} size="sm">
-                  {o.status}
+                <Badge tone="amber" size="sm">
+                  {orderStatusLabel(o.status)}
                 </Badge>
                 <ButtonLink to={routes.vendor.order(o.id)} variant="secondary" size="sm">
-                  Chi tiết (/)
+                  Chi tiết
                 </ButtonLink>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { routes, PROVINCE_ITEMS, provinceCodeOf, provinceNameOf } from '@/shared/config';
+import { routes, PROVINCE_ITEMS, provinceNameOf } from '@/shared/config';
 import { Button, ButtonLink, Card, Icon, Input, Select, Textarea, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useVendor } from '@/entities/vendor';
@@ -8,6 +8,7 @@ import { useCurrentUser } from '@/entities/user';
 import { CUSTOM_TYPES, CUSTOM_TYPE_LABELS, type CustomType } from '@/entities/request';
 import { useCreateQuoteRequest } from '@/features/request-quote';
 import styles from './DirectQuoteRequestPage.module.css';
+import { useDeliveryProvinceCode } from '@/entities/region';
 
 export function DirectQuoteRequestPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +32,9 @@ export function DirectQuoteRequestPage() {
   const [recipientName, setRecipientName] = useState(user.name);
   const [recipientPhone, setRecipientPhone] = useState(user.phone);
   const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [provinceCode, setProvinceCode] = useState(() => provinceCodeOf('TP Hồ Chí Minh'));
+  // Bắt đầu từ tỉnh giao người mua đang chọn ở header; người mua đổi được ở bước địa chỉ.
+  const deliveryProvinceCode = useDeliveryProvinceCode();
+  const [provinceCode, setProvinceCode] = useState(() => deliveryProvinceCode);
   const [requirements, setRequirements] = useState('');
   const [customTypes, setCustomTypes] = useState<CustomType[]>([]);
 

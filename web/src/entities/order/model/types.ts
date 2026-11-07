@@ -71,6 +71,10 @@ export type Order = {
     email: string;
   };
   // Dành riêng cho Bulk (F2)
+  /** The custom order has custom work (BR-14): the buyer approves a maket before production. */
+  hasCustom?: boolean;
+  /** The accepted quote a custom order came from (F2); leads back to the buyer's request. */
+  quoteId?: string;
   customLogo?: string;
   customRequirements?: string;
   maketVersions?: MaketVersion[];

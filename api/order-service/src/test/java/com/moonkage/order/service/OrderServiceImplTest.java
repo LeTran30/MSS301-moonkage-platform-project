@@ -172,6 +172,20 @@ class OrderServiceImplTest {
     }
 
     @Test
+    void customWorkWaitsForTheBuyerOnlyThroughAnUploadedMockup() {
+        order.setKind(OrderKind.CUSTOM_ORDER);
+        order.setHasCustom(true);
+        order.setStatus(OrderStatus.DEPOSITED);
+
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(OWNER, ORDER_ID, step(OrderStatus.AWAITING_MOCKUP_APPROVAL, null)));
+
+        assertEquals(ErrorCode.MOCKUP_REQUIRED, error.getErrorCode());
+        assertEquals(OrderStatus.DEPOSITED, order.getStatus());
+    }
+
+    @Test
     void customWorkGoesToProductionOnlyAfterAnApprovedMockup() {
         order.setKind(OrderKind.CUSTOM_ORDER);
         order.setHasCustom(true);

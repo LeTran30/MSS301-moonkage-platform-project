@@ -133,41 +133,22 @@ export function HeaderUserMenu({ user, restoring = false }: HeaderUserMenuProps)
             </Link>
           </div>
 
-          <div className={styles.dropdownDivider} />
-
-          {/* Kênh người bán hoặc Bán hàng trên Moonkage */}
-          <div className={styles.dropdownSection}>
-            {user.vendorId ? (
-              <Link
-                role="menuitem"
-                to={routes.vendor.overview}
-                className={`${styles.dropdownItem} ${styles.vendorLink}`}
-                onClick={() => setOpen(false)}
-              >
-                <Icon name="store" size={16} /> Chuyển sang Kênh người bán
-              </Link>
-            ) : (
-              <Link
-                role="menuitem"
-                to={routes.base.sellIntro}
-                className={`${styles.dropdownItem} ${styles.vendorLink}`}
-                onClick={() => setOpen(false)}
-              >
-                <Icon name="store" size={16} /> Bán hàng trên Moonkage
-              </Link>
-            )}
-
-            {user.role === 'ADMIN' && (
-              <Link
-                role="menuitem"
-                to={routes.admin.overview}
-                className={`${styles.dropdownItem} ${styles.adminLink}`}
-                onClick={() => setOpen(false)}
-              >
-                <Icon name="shield" size={16} /> Khu Quản trị hệ thống
-              </Link>
-            )}
-          </div>
+          {/* Lối vào Kênh người bán nằm ở thanh trên cùng của header. */}
+          {user.role === 'ADMIN' && (
+            <>
+              <div className={styles.dropdownDivider} />
+              <div className={styles.dropdownSection}>
+                <Link
+                  role="menuitem"
+                  to={routes.admin.overview}
+                  className={`${styles.dropdownItem} ${styles.adminLink}`}
+                  onClick={() => setOpen(false)}
+                >
+                  <Icon name="shield" size={16} /> Khu Quản trị hệ thống
+                </Link>
+              </div>
+            </>
+          )}
 
           <div className={styles.dropdownDivider} />
 

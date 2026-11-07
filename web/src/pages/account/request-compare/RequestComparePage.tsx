@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, Card, Icon } from '@/shared/ui';
+import { formatCurrency, formatDate } from '@/shared/utils';
+import { Badge, Button, Card, Icon, toast } from '@/shared/ui';
 import { openPaymentPage, useAction } from '@/shared/lib';
-import { type Quote, useQuoteRequest } from '@/entities/request';
+import { type Quote, RequestSpecList, requestCode, useQuoteRequest } from '@/entities/request';
 import { useCurrentUser } from '@/entities/user';
 import { useAcceptQuote } from '@/features/accept-quote';
+import { InvoiceRequestForm } from '@/features/checkout';
 import styles from './RequestComparePage.module.css';
 
 export function RequestComparePage() {
@@ -15,6 +17,13 @@ export function RequestComparePage() {
   const navigate = useNavigate();
   const { busy, run, error } = useAction();
   const acceptQuote = useAcceptQuote();
+
+  // FR-24: hóa đơn GTGT của đơn đặt riêng được hỏi lúc chấp nhận báo giá, đơn sinh ra sẽ mang theo.
+  const [needInvoice, setNeedInvoice] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+  const [taxCode, setTaxCode] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyEmail, setCompanyEmail] = useState('');
 
   // FR-17: the buyer compares the quotes of one request. The backend decides
   // from the token which quotes the caller may see.
@@ -35,17 +44,37 @@ export function RequestComparePage() {
     );
   }
   if (!request) {
-    return <p>Không tìm thấy yêu cầu #{id}</p>;
+    return <p>Không tìm thấy yêu cầu này.</p>;
   }
 
   // Chấp nhận báo giá & Chuyển sang đặt cọc (M6.2.2, FR-19, Flow 2)
   function handleAcceptQuoteAndDeposit(quote: Quote) {
     if (!request) return;
+    if (
+      needInvoice &&
+      (!companyName.trim() || !taxCode.trim() || !companyAddress.trim() || !companyEmail.trim())
+    ) {
+      toast.error('Vui lòng điền đủ thông tin xuất hóa đơn GTGT.');
+      return;
+    }
     void run(async () => {
       // FR-19: `POST .../quotes/{quoteId}/acceptance` freezes the binding copy
       // and answers where to pay the deposit. The order exists only after the
       // deposit succeeds (BR-04), so no local order is created here.
-      const acceptance = await acceptQuote(request.id, quote.id);
+      const acceptance = await acceptQuote(
+        request.id,
+        quote.id,
+        needInvoice
+          ? {
+              invoiceInfo: {
+                name: companyName.trim(),
+                taxCode: taxCode.trim(),
+                address: companyAddress.trim(),
+                email: companyEmail.trim(),
+              },
+            }
+          : undefined,
+      );
 
       if (acceptance.paymentUrl) {
         openPaymentPage(acceptance.paymentUrl);
@@ -60,14 +89,20 @@ export function RequestComparePage() {
       <div className={styles.header}>
         <div className={styles.breadcrumb}>
           <Link to={routes.account.requests}>Yêu cầu &amp; báo giá</Link> /{' '}
-          <span>#{request.id}</span>
+          <span>#{requestCode(request.id)}</span>
         </div>
         <h2 className={styles.title}>So Sánh Báo Giá Cạnh Nhau</h2>
         <p className={styles.lead}>
           Yêu cầu: <strong>{request.quantity} hộp</strong> · Ngày giao:{' '}
-          <strong>{request.deliveryDeadline}</strong> · Khu vực:{' '}
+          <strong>{request.deliveryDeadline ? formatDate(request.deliveryDeadline) : '—'}</strong> ·
+          Khu vực:{' '}
           <strong>{request.deliveryProvince}</strong>
         </p>
+        {/* Thu gọn sẵn: so báo giá với yêu cầu mà thẻ báo giá không bị đẩy xuống. */}
+        <details className={styles.specDetails}>
+          <summary>Xem lại thông số bạn đã yêu cầu</summary>
+          <RequestSpecList request={request} withDelivery />
+        </details>
       </div>
 
       {request.quotes.length === 0 ? (
@@ -75,7 +110,24 @@ export function RequestComparePage() {
           <p>Chưa có xưởng nào gửi báo giá cho yêu cầu này.</p>
         </Card>
       ) : (
-        /* Bảng báo giá cạnh nhau (Side-by-side comparison per IA Note M6.2.1) */
+        <>
+        {request.status === 'OPEN' && (
+          <InvoiceRequestForm
+            orderCount={1}
+            description="Cần hóa đơn GTGT cho đơn đặt riêng? Điền một lần, xưởng được chọn sẽ xuất hóa đơn theo thông tin này."
+            needInvoice={needInvoice}
+            companyName={companyName}
+            taxCode={taxCode}
+            companyAddress={companyAddress}
+            companyEmail={companyEmail}
+            onNeedInvoiceChange={setNeedInvoice}
+            onCompanyNameChange={setCompanyName}
+            onTaxCodeChange={setTaxCode}
+            onCompanyAddressChange={setCompanyAddress}
+            onCompanyEmailChange={setCompanyEmail}
+          />
+        )}
+        {/* Bảng báo giá cạnh nhau (Side-by-side comparison per IA Note M6.2.1) */}
         <div className={styles.comparisonGrid}>
           {request.quotes.map((quote) => {
             const acceptable = quote.acceptable !== false;
@@ -84,14 +136,16 @@ export function RequestComparePage() {
                 <div className={styles.quoteCardHeader}>
                   <div>
                     <span className={styles.quoteId}>
-                      Báo giá #{quote.id}
+                      Báo giá #{requestCode(quote.id)}
                       {quote.revisionNo && quote.revisionNo > 1 ? ` · Bản ${quote.revisionNo}` : ''}
                     </span>
                     <h3 className={styles.vendorName}>{quote.vendorName}</h3>
                   </div>
-                  <div className={styles.ratingBadge}>
-                    <Icon name="star" size={14} /> {quote.vendorRating}
-                  </div>
+                  {quote.vendorRating > 0 && (
+                    <div className={styles.ratingBadge}>
+                      <Icon name="star" size={14} /> {quote.vendorRating.toFixed(1)}
+                    </div>
+                  )}
                 </div>
 
                 <div className={styles.priceHighlight}>
@@ -100,6 +154,14 @@ export function RequestComparePage() {
                 </div>
 
                 <div className={styles.specTable}>
+                  <div className={styles.specRow}>
+                    <span>Tiền hàng ({request.quantity} hộp):</span>
+                    <span>{formatCurrency(quote.unitPrice * request.quantity)}</span>
+                  </div>
+                  <div className={styles.specRow}>
+                    <span>Phí giao hàng:</span>
+                    <span>{quote.shippingFee > 0 ? formatCurrency(quote.shippingFee) : 'Miễn phí'}</span>
+                  </div>
                   <div className={styles.specRow}>
                     <span>Tổng tiền hợp đồng:</span>
                     <strong>{formatCurrency(quote.totalPrice)}</strong>
@@ -111,12 +173,14 @@ export function RequestComparePage() {
                     </span>
                   </div>
                   <div className={styles.specRow}>
-                    <span>Phần còn lại (trả khi nhận):</span>
+                    <span>Phần còn lại (trả sau khi giao):</span>
                     <span>{formatCurrency(quote.remainingAmount)}</span>
                   </div>
                   <div className={styles.specRow}>
                     <span>Ngày cam kết giao:</span>
-                    <strong>{quote.estimatedDeliveryDate}</strong>
+                    <strong>
+                      {quote.estimatedDeliveryDate ? formatDate(quote.estimatedDeliveryDate) : '—'}
+                    </strong>
                   </div>
                   <div className={styles.specRow}>
                     <span>Cách thức vận chuyển:</span>
@@ -124,7 +188,7 @@ export function RequestComparePage() {
                   </div>
                   <div className={styles.specRow}>
                     <span>Hiệu lực báo giá đến:</span>
-                    <span>{quote.validUntil}</span>
+                    <span>{quote.validUntil ? formatDate(quote.validUntil) : '—'}</span>
                   </div>
                 </div>
 
@@ -161,6 +225,7 @@ export function RequestComparePage() {
             );
           })}
         </div>
+        </>
       )}
 
       <p className={styles.lead}>

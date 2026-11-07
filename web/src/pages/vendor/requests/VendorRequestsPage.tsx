@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { Badge, Button, Card, Icon, Tabs, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { formatCurrency, formatDate } from '@/shared/utils';
-import { type Quote, type QuoteRequest, useVendorRequestList } from '@/entities/request';
+import {
+  CUSTOM_TYPE_LABELS,
+  REQUEST_STATUS_LABELS,
+  type Quote,
+  type QuoteRequest,
+  requestCode,
+  useVendorRequestList,
+} from '@/entities/request';
 import { useCurrentUser } from '@/entities/user';
 import { useOwnVendorId } from '@/entities/vendor';
 import { SubmitQuoteModal } from '@/features/respond-to-quote-request';
@@ -11,6 +18,11 @@ import { useDeclineInvitation } from '@/features/decline-invitation';
 import styles from './VendorRequestsPage.module.css';
 
 type RequestTab = 'OPEN' | 'DIRECT' | 'ALL';
+
+/** The Shop's quote that still stands on a request: sent and not withdrawn, accepted or closed. */
+function liveQuoteOf(req: QuoteRequest): Quote | undefined {
+  return req.quotes.find((q) => q.status === 'SUBMITTED' || q.status === 'ACCEPTED');
+}
 
 export function VendorRequestsPage() {
   const [activeTab, setActiveTab] = useState<RequestTab>('OPEN');
@@ -45,11 +57,11 @@ export function VendorRequestsPage() {
 
   /** BR-05: the only change to a sent quote is taking it back. */
   const handleWithdrawQuote = (req: QuoteRequest) => {
-    const quote = req.quotes[0];
+    const quote = liveQuoteOf(req);
     if (!quote) return;
     void run(async () => {
       await withdrawQuote(req.id, quote.id);
-      toast.success(`Đã rút báo giá #${quote.id} của yêu cầu #${req.id}.`);
+      toast.success(`Đã rút báo giá của yêu cầu #${requestCode(req.id)}.`);
       asyncRequests.reload();
     });
   };
@@ -62,7 +74,7 @@ export function VendorRequestsPage() {
         status: 'DECLINED',
         declineReason: 'Xưởng không đủ năng lực đáp ứng số lượng và thời hạn này.',
       });
-      toast.success(`Đã từ chối lời mời của yêu cầu #${req.id}.`);
+      toast.success(`Đã từ chối lời mời của yêu cầu #${requestCode(req.id)}.`);
       asyncRequests.reload();
     });
   };
@@ -115,13 +127,14 @@ export function VendorRequestsPage() {
         <div className={styles.list}>
           {filteredRequests.map((req) => {
             const quoteTotal = req.quotes.length || req.quoteCount || 0;
-            const hasQuoted = req.quotes.length > 0;
+            const hasQuoted = liveQuoteOf(req) !== undefined;
+            const isOpen = req.status === 'OPEN';
 
             return (
               <Card key={req.id} className={styles.reqCard}>
                 <div className={styles.cardHeader}>
                   <div className={styles.reqMeta}>
-                    <span className={styles.reqId}>#{req.id}</span>
+                    <span className={styles.reqId}>#{requestCode(req.id)}</span>
                     <Badge tone={req.type === 'DIRECT' ? 'gold' : 'neutral'}>
                       {req.type === 'DIRECT'
                         ? 'Chỉ định riêng cho xưởng'
@@ -131,10 +144,14 @@ export function VendorRequestsPage() {
                       Hạn nhận hàng: {formatDate(req.deliveryDeadline)}
                     </span>
                   </div>
-                  {hasQuoted && (
-                    <Badge tone="green">
-                      <Icon name="check" size={13} /> Xưởng đã gửi báo giá
-                    </Badge>
+                  {!isOpen ? (
+                    <Badge tone="neutral">{REQUEST_STATUS_LABELS[req.status]}</Badge>
+                  ) : (
+                    hasQuoted && (
+                      <Badge tone="green">
+                        <Icon name="check" size={13} /> Xưởng đã gửi báo giá
+                      </Badge>
+                    )
                   )}
                 </div>
 
@@ -159,9 +176,11 @@ export function VendorRequestsPage() {
                         </strong>
                       </div>
                       <div className={styles.specItem}>
-                        <span className={styles.specLabel}>Ưa thích vỏ/nhân:</span>
+                        <span className={styles.specLabel}>Tùy chỉnh kèm theo:</span>
                         <strong className={styles.specVal}>
-                          {req.crustPreference || 'Chưa nêu vỏ bánh'}
+                          {req.customTypes && req.customTypes.length > 0
+                            ? req.customTypes.map((t) => CUSTOM_TYPE_LABELS[t]).join(', ')
+                            : 'Không có'}
                         </strong>
                       </div>
                       <div className={styles.specItem}>
@@ -198,16 +217,19 @@ export function VendorRequestsPage() {
                       Đã có <strong>{quoteTotal} xưởng</strong> gửi báo giá
                     </div>
 
-                    <Button
-                      variant={hasQuoted ? 'secondary' : 'primary'}
-                      size="md"
-                      onClick={() => handleOpenQuoteModal(req)}
-                      iconLeft="pen"
-                    >
-                      {hasQuoted ? 'Cập nhật lại báo giá' : 'Soạn báo giá ngay'}
-                    </Button>
+                    {isOpen && (
+                      <Button
+                        variant={hasQuoted ? 'secondary' : 'primary'}
+                        size="md"
+                        onClick={() => handleOpenQuoteModal(req)}
+                        iconLeft="pen"
+                      >
+                        {hasQuoted ? 'Gửi bản báo giá mới' : 'Soạn báo giá ngay'}
+                      </Button>
+                    )}
 
                     {/* : rút báo giá đã gửi. : từ chối lời mời. */}
+                    {isOpen && (
                     <div className={styles.requestActions}>
                       {hasQuoted && (
                         <Button
@@ -219,15 +241,18 @@ export function VendorRequestsPage() {
                           Rút báo giá
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        loading={busy}
-                        onClick={() => handleDeclineInvitation(req)}
-                      >
-                        Từ chối lời mời
-                      </Button>
+                      {!hasQuoted && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          loading={busy}
+                          onClick={() => handleDeclineInvitation(req)}
+                        >
+                          Từ chối lời mời
+                        </Button>
+                      )}
                     </div>
+                    )}
                   </div>
                 </div>
               </Card>

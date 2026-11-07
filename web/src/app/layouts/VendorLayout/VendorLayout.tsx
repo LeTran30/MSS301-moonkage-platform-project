@@ -13,7 +13,7 @@ export function VendorLayout() {
 
   return (
     <div className={styles.layout} data-zone="vendor">
-      <Header />
+      <Header zone="vendor" />
       <div className={styles.body}>
         <VendorSidebar hasShop={hasShop} acceptsCustomOrders={acceptsCustomOrders} />
         <div className={styles.contentCol}>

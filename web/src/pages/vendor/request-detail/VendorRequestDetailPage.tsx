@@ -2,11 +2,11 @@ import styles from './VendorRequestDetailPage.module.css';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { formatCurrency } from '@/shared/utils';
+import { formatCurrency, formatDate } from '@/shared/utils';
 import { Badge, Breadcrumbs, Button, ButtonLink, Card, Input, Select, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useQuoteRequest } from '@/entities/request';
-import { useSubmitQuote } from '@/features/respond-to-quote-request';
+import { CUSTOM_TYPE_LABELS, requestCode, useQuoteRequest } from '@/entities/request';
+import { quoteLineDescription, useSubmitQuote } from '@/features/respond-to-quote-request';
 
 export function VendorRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -76,7 +76,7 @@ export function VendorRequestDetailPage() {
       await submitQuote(req!.id, {
         items: [
           {
-            description: `${quantity} hộp quà doanh nghiệp theo yêu cầu #${req!.id}`,
+            description: quoteLineDescription(req!),
             quantity,
             unitPrice: price,
           },
@@ -88,7 +88,7 @@ export function VendorRequestDetailPage() {
         validDays: Math.min(14, Math.max(1, Number(validDays) || 7)),
         notes: note,
       });
-      toast.success(`Đã gửi báo giá ${formatCurrency(price)}/hộp cho yêu cầu #${req!.id}!`);
+      toast.success(`Đã gửi báo giá ${formatCurrency(price)}/hộp cho yêu cầu #${requestCode(req!.id)}!`);
       asyncRequest.reload();
     });
   }
@@ -99,14 +99,14 @@ export function VendorRequestDetailPage() {
         items={[
           { label: 'Kênh Xưởng', to: routes.vendor.overview },
           { label: 'Yêu cầu báo giá sỉ (RFQ)', to: routes.vendor.requests },
-          { label: `Yêu cầu #${req.id}` },
+          { label: `Yêu cầu #${requestCode(req.id)}` },
         ]}
       />
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Chi Tiết RFQ #{req.id}</h1>
-          <p className={styles.subtitle}>Doanh nghiệp: {req.buyerName}</p>
+          <h1 className={styles.title}>Chi Tiết RFQ #{requestCode(req.id)}</h1>
+          <p className={styles.subtitle}>Người đặt: {req.buyerName}</p>
         </div>
         <Badge tone="gold" size="md">
           {req.quantity} hộp bánh Trung Thu
@@ -123,7 +123,15 @@ export function VendorRequestDetailPage() {
             </div>
             <div className={styles.specRow}>
               <span>Thời hạn nhận bánh:</span>
-              <strong>{req.deliveryDeadline}</strong>
+              <strong>{req.deliveryDeadline ? formatDate(req.deliveryDeadline) : '—'}</strong>
+            </div>
+            <div className={styles.specRow}>
+              <span>Tùy chỉnh kèm theo:</span>
+              <span>
+                {req.customTypes && req.customTypes.length > 0
+                  ? req.customTypes.map((t) => CUSTOM_TYPE_LABELS[t]).join(', ')
+                  : 'Không có'}
+              </span>
             </div>
             <div className={styles.specRow}>
               <span>Ngân sách mục tiêu:</span>

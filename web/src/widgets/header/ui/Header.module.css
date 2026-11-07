@@ -23,31 +23,25 @@
   justify-content: space-between;
   gap: var(--space-4);
 }
-.actorIndicator {
+.sellerEntry {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
+  min-height: 20px;
 }
-.sparkleIcon {
-  color: var(--color-gold-text);
-  display: flex;
+.sellerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-gold-hover);
+  font-weight: var(--weight-semibold);
+}
+.sellerLink:hover {
+  text-decoration: underline;
 }
 .topLinks {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-}
-.switchActorBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-primary);
-  font-weight: var(--weight-semibold);
-  transition: opacity var(--duration-fast);
-}
-.switchActorBtn:hover {
-  text-decoration: underline;
 }
 .divider {
   color: var(--color-border-strong);
@@ -60,6 +54,11 @@
 }
 .sitemapLink:hover {
   color: var(--color-text);
+}
+
+/* Kênh người bán không có ô tìm kiếm và menu mua: nhóm nút dồn về bên phải. */
+.actionGroupEnd {
+  margin-left: auto;
 }
 
 /* Main row */
@@ -410,10 +409,6 @@
   background: var(--color-border);
   margin: var(--space-2) 0;
 }
-.vendorLink {
-  color: var(--color-gold-hover);
-  font-weight: var(--weight-semibold);
-}
 .adminLink {
   color: var(--color-info);
   font-weight: var(--weight-semibold);
@@ -707,7 +702,8 @@
 
 /* Tablet nhỏ: ẩn thanh thông tin phụ, thu gọn logo. */
 @media (max-width: 768px) {
-  .topBar {
+  /* Lối vào người bán vẫn hiện (menu di động không có); chỉ ẩn lối tắt. */
+  .topLinks {
     display: none;
   }
   .mainRow {

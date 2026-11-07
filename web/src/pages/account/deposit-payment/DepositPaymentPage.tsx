@@ -2,10 +2,10 @@ import styles from './DepositPaymentPage.module.css';
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { formatCurrency } from '@/shared/utils';
+import { formatCurrency, formatDate } from '@/shared/utils';
 import { Badge, Breadcrumbs, Button, ButtonLink, Card, Icon, Radio, toast } from '@/shared/ui';
 import { openPaymentPage, useAction } from '@/shared/lib';
-import { useQuoteRequest } from '@/entities/request';
+import { requestCode, useQuoteRequest } from '@/entities/request';
 import { useAcceptQuote } from '@/features/accept-quote';
 
 export function DepositPaymentPage() {
@@ -72,7 +72,7 @@ export function DepositPaymentPage() {
           { label: 'Tài khoản', to: routes.account.overview },
           { label: 'Yêu cầu báo giá sỉ', to: routes.account.requests },
           {
-            label: req.customRequirements || req.id,
+            label: req.customRequirements || `Yêu cầu #${requestCode(req.id)}`,
             to: routes.account.request(req.id),
           },
           { label: 'Ký quỹ đặt cọc Escrow' },
@@ -81,7 +81,7 @@ export function DepositPaymentPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Ký Quỹ Đặt Cọc Đơn Sỉ ({req.id})</h1>
+          <h1 className={styles.title}>Ký Quỹ Đặt Cọc Đơn Sỉ (#{requestCode(req.id)})</h1>
           <p className={styles.subtitle}>
             Bảo lãnh thanh toán qua Moonkage Escrow — Xưởng chỉ nhận tiền khi giao bánh đạt chuẩn
           </p>
@@ -107,7 +107,9 @@ export function DepositPaymentPage() {
             </div>
             <div className={styles.specRow}>
               <span>Thời hạn cần giao:</span>
-              <span className={styles.strong}>{req.deliveryDeadline}</span>
+              <span className={styles.strong}>
+                {req.deliveryDeadline ? formatDate(req.deliveryDeadline) : '—'}
+              </span>
             </div>
             <div className={styles.specRow}>
               <span>Tổng giá trị hợp đồng:</span>

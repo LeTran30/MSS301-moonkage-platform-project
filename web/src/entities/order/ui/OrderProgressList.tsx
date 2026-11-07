@@ -1,7 +1,7 @@
 import { formatDateTime } from '@/shared/utils';
 import { Card, Icon } from '@/shared/ui';
 import type { Order } from '../model/types';
-import { orderStatusLabel } from '../model/orderStatus';
+import { orderStatusLabel, orderStatusSteps } from '../model/orderStatus';
 import type { ProgressUpdate } from '../api/orderDto';
 import styles from './OrderProgressList.module.css';
 
@@ -28,6 +28,11 @@ export function OrderProgressList({ order, progressUpdates }: OrderProgressListP
   const steps = progressUpdates.some((m) => m.milestone === firstStep.milestone)
     ? progressUpdates
     : [firstStep, ...progressUpdates];
+  // The steps still ahead, so the buyer sees what comes next and not only what is done. An order without custom
+  // work skips the maket step; a cancelled order has none ahead.
+  const plan = orderStatusSteps(order.type).filter((s) => s !== 'WAITING_MAKET' || order.hasCustom);
+  const currentIndex = plan.indexOf(order.status);
+  const upcoming = currentIndex >= 0 ? plan.slice(currentIndex + 1) : [];
 
   return (
     <Card padding="md" className={styles.card}>
@@ -64,6 +69,14 @@ export function OrderProgressList({ order, progressUpdates }: OrderProgressListP
                   <strong>{orderStatusLabel(m.milestone)}</strong>
                   {m.note && <span>{m.note}</span>}
                   {m.createdAt && <span>{formatDateTime(m.createdAt)}</span>}
+                </div>
+              </div>
+            ))}
+            {upcoming.map((status, idx) => (
+              <div key={status} className={styles.milestoneItem}>
+                <div className={styles.milestoneDot}>{steps.length + idx + 1}</div>
+                <div className={`${styles.milestoneContent} ${styles.pending}`}>
+                  <strong>{orderStatusLabel(status)}</strong>
                 </div>
               </div>
             ))}

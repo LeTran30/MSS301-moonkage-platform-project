@@ -59,6 +59,17 @@ export function toNationalPhone(phone: string | null | undefined): string {
   return SUBSCRIBER_DIGITS.test(value) ? NATIONAL_PREFIX + value : value;
 }
 
+/** How many characters of a UUID a person reads on screen. */
+const SHORT_CODE_LENGTH = 8;
+
+/**
+ * The last characters of a UUID, upper case, e.g. `DB865C6E`; the full ID stays in the URL. The end, not the
+ * start: the seed IDs share their first characters and differ in the last ones.
+ */
+export function shortCode(id: string): string {
+  return id.replaceAll('-', '').slice(-SHORT_CODE_LENGTH).toUpperCase();
+}
+
 export function addDays(iso: string, days: number): string {
   const d = new Date(iso);
   d.setDate(d.getDate() + days);

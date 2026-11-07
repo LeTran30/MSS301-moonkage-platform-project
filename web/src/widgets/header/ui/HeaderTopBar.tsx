@@ -1,50 +1,39 @@
 import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { Badge, Icon } from '@/shared/ui';
+import { Icon } from '@/shared/ui';
 import type { User } from '@/entities/user';
+import type { HeaderZone } from '../model/headerZone';
 import styles from './Header.module.css';
 
 interface HeaderTopBarProps {
   user: User;
-  /** Đang khôi phục phiên: chưa biết người dùng là ai. */
+  /** Đang khôi phục phiên: chưa biết người dùng có Shop hay không. */
   restoring?: boolean;
+  zone: HeaderZone;
 }
 
-/** Thanh trên cùng: thông tin tài khoản đang đăng nhập + lối tắt (Ctrl+K, chính sách). */
-export function HeaderTopBar({ user, restoring = false }: HeaderTopBarProps) {
-  const guest = user.role === 'GUEST';
-  // A member who owns a Shop both buys and sells; on screen they are first the Shop's owner.
-  const roleLabel =
-    user.role === 'ADMIN'
-      ? 'Quản trị'
-      : user.role === 'VENDOR' || user.vendorId
-        ? 'Chủ Shop'
-        : 'Người mua';
-
+/**
+ * Thanh trên cùng: lối sang kênh còn lại và các lối tắt (Ctrl+K, chính sách sàn).
+ *
+ * Ở kênh mua sắm: Kênh người bán khi đã có Shop, mở Shop khi chưa có. Ở Kênh người bán: về kênh mua sắm.
+ */
+export function HeaderTopBar({ user, restoring = false, zone }: HeaderTopBarProps) {
   return (
     <div className={styles.topBar}>
       <div className={styles.topInner}>
-        <div className={styles.actorIndicator}>
-          <span className={styles.sparkleIcon}>
-            <Icon name="sparkle" size={13} />
-          </span>
-          {restoring ? (
-            <span>Đang khôi phục phiên đăng nhập…</span>
-          ) : guest ? (
-            <span>Chưa đăng nhập</span>
+        <div className={styles.sellerEntry}>
+          {zone === 'vendor' ? (
+            <Link to={routes.base.home} className={styles.sellerLink}>
+              <Icon name="arrowLeft" size={14} /> Về kênh mua sắm
+            </Link>
+          ) : restoring ? null : user.vendorId ? (
+            <Link to={routes.vendor.overview} className={styles.sellerLink}>
+              <Icon name="store" size={14} /> Kênh người bán của Shop bạn
+            </Link>
           ) : (
-            <span>
-              Đang đăng nhập: <strong>{user.name}</strong> ({roleLabel})
-            </span>
-          )}
-          {restoring || guest ? null : user.nfcStatus === 'VERIFIED' ? (
-            <Badge tone="green" size="sm">
-              <Icon name="shield" size={11} /> Đã xác minh NFC
-            </Badge>
-          ) : (
-            <Badge tone="amber" size="sm">
-              Chưa NFC
-            </Badge>
+            <Link to={routes.base.sellIntro} className={styles.sellerLink}>
+              <Icon name="store" size={14} /> Đăng ký bán hàng trên Moonkage
+            </Link>
           )}
         </div>
 

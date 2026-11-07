@@ -185,7 +185,7 @@ export function OrdersListPage() {
                   </span>
                   <span>
                     Trạng thái:{' '}
-                    <em>{order.remainingPaid ? 'Đã thanh toán' : 'Thanh toán khi nhận bánh'}</em>
+                    <em>{order.remainingPaid ? 'Đã thanh toán' : 'Trả sau khi Shop giao bánh'}</em>
                   </span>
                 </div>
               </div>

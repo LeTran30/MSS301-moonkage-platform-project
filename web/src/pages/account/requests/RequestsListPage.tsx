@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatDate } from '@/shared/utils';
 import { Badge, Button, ButtonLink, Card, Icon } from '@/shared/ui';
-import { REQUEST_STATUS_LABELS, useQuoteRequestList } from '@/entities/request';
+import { REQUEST_STATUS_LABELS, requestCode, useQuoteRequestList } from '@/entities/request';
 import styles from './RequestsListPage.module.css';
 
 export function RequestsListPage() {
@@ -55,7 +55,7 @@ export function RequestsListPage() {
                 <div className={styles.reqHeader}>
                   <div className={styles.idWrap}>
                     <Icon name="file" size={18} />
-                    <strong>#{req.id}</strong>
+                    <strong>#{requestCode(req.id)}</strong>
                     <Badge tone={req.type === 'OPEN' ? 'gold' : 'neutral'} size="sm">
                       {req.type === 'OPEN' ? 'Gửi nhiều nơi' : 'Gửi riêng'}
                     </Badge>
@@ -73,7 +73,7 @@ export function RequestsListPage() {
                   </div>
                   <div>
                     <span className={styles.label}>Hạn giao:</span>
-                    <span>{req.deliveryDeadline}</span>
+                    <span>{req.deliveryDeadline ? formatDate(req.deliveryDeadline) : '—'}</span>
                   </div>
                   <div>
                     <span className={styles.label}>Khu vực:</span>

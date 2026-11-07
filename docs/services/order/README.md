@@ -64,7 +64,7 @@ Cột **Ai** dùng mã vai: **M** = `MEMBER` (người mua), **S** = người b�
 | `GET /api/orders` | M, S, A | Đơn của mình; `vendorId=` đơn của Shop; `disputeStatus=OPEN` đơn đang khiếu nại (admin); `paymentGroupId=`, `kind=`, `status=`, `missingInvoice=` |
 | `GET /api/orders/stats` | S, A | Báo cáo cho dashboard: `from`, `to` (ngày ISO, tính cả hai đầu; mặc định 30 ngày đến hôm nay), `vendorId=` báo cáo của một Shop (chủ Shop hoặc admin); không có `vendorId` là toàn sàn (chỉ admin). Xem [Báo cáo đơn hàng](#báo-cáo-đơn-hàng) |
 | `GET /api/orders/{orderId}` | M, S, A | Chi tiết đơn |
-| `PATCH /api/orders/{orderId}` | S | Chuyển trạng thái đúng bước kế tiếp, `{status, trackingCode?, note?}`; ghi thêm một dòng tiến độ |
+| `PATCH /api/orders/{orderId}` | S | Chuyển trạng thái đúng bước kế tiếp, `{status, trackingCode?, note?}`; ghi thêm một dòng tiến độ. Không chuyển sang `AWAITING_MOCKUP_APPROVAL` được (409 `ORDER_010`): gửi maket qua `POST .../mockups` mới chuyển đơn sang bước đó |
 | `PATCH /api/orders/{orderId}` | M | `{receivedConfirmed: true}` — xác nhận đã nhận |
 | `GET /api/orders/{orderId}/progress-updates` | M, S, A | Lịch sử tiến độ (chỉ đọc) |
 | `POST /api/orders/{orderId}/payments` | M | 201 — trả phần còn lại của đơn đặt hàng → `{paymentId, paymentUrl}` |

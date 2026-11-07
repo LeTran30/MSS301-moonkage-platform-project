@@ -3,7 +3,7 @@ import { Badge, Button, Card } from '@/shared/ui';
 import type { Order } from '../model/types';
 import { orderStatusLabel } from '../model/orderStatus';
 import { orderCode } from '../model/orderCode';
-import { nextOrderStatus } from '../api/orderMappers';
+import { canSendMaket, nextOrderStatus } from '../api/orderMappers';
 import styles from './VendorOrderCard.module.css';
 
 interface VendorOrderCardProps {
@@ -23,7 +23,7 @@ export function VendorOrderCard({
   onAttachInvoice,
   onOpen,
 }: VendorOrderCardProps) {
-  const needsVendor = nextOrderStatus(order.status) !== null;
+  const needsVendor = nextOrderStatus(order) !== null || canSendMaket(order);
   return (
     <Card className={styles.orderCard}>
       <div className={styles.cardTop}>
@@ -84,6 +84,12 @@ export function VendorOrderCard({
           {order.type === 'BULK' && (
             <span>
               Cọc đã nhận: <strong>{formatCurrency(order.depositAmount || 0)}</strong>
+              {!order.remainingPaid && (
+                <>
+                  {' '}
+                  · Còn lại: <strong>{formatCurrency(order.remainingAmount || 0)}</strong>
+                </>
+              )}
             </span>
           )}
         </div>
@@ -97,9 +103,9 @@ export function VendorOrderCard({
           >
             {needsVendor ? 'Xử lý đơn' : 'Xem đơn'}
           </Button>
-          {order.type === 'BULK' && (
+          {canSendMaket(order) && (
             <Button variant="secondary" size="sm" onClick={() => onUploadMaket(order)}>
-              Tải lên Maket
+              {order.status === 'DEPOSITED' ? 'Gửi maket cho khách' : 'Gửi bản maket mới'}
             </Button>
           )}
 

@@ -18,6 +18,15 @@ vi.mock('@/features/request-quote', async (importOriginal) => {
   };
 });
 
+// Danh mục vỏ & nhân đọc từ máy chủ; form chỉ cần một danh mục rỗng để render.
+vi.mock('@/entities/product', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/entities/product')>();
+  return {
+    ...actual,
+    useTaxonomyCatalog: () => ({ kind: 'loaded' }),
+  };
+});
+
 vi.mock('@/entities/user', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/entities/user')>();
   return {

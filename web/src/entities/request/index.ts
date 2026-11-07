@@ -14,6 +14,8 @@ export type {
   RequestStatus,
   RequestType,
 } from './model/requestStore';
+export { requestCode } from './model/requestCode';
+export { RequestSpecList } from './ui/RequestSpecList';
 export { mapQuoteDto, mapQuoteRequestDto, toBackendDepositRate } from './api/quoteMappers';
 export { quoteApi, useRequest, useRequests } from './api/quoteApi';
 export type {

@@ -6,7 +6,10 @@
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - var(--header-h));
+  /* Cao đúng bằng khung nhìn và không bị flex kéo dài theo trang, nên sticky giữ sidebar đứng yên khi cuộn. */
+  align-self: flex-start;
+  height: calc(100vh - var(--header-h));
+  overflow-y: auto;
   position: sticky;
   top: var(--header-h);
 }

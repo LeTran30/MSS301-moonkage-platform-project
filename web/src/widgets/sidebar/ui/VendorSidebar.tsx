@@ -113,7 +113,7 @@ export function VendorSidebarContent({
 
       <div className={styles.footerLink}>
         <Link to={routes.base.home} className={styles.backHomeBtn} onClick={onNavigate}>
-          <Icon name="arrowLeft" size={16} /> Về trang mua hàng
+          <Icon name="arrowLeft" size={16} /> Về kênh mua sắm
         </Link>
       </div>
     </>

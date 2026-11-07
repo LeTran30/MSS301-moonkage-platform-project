@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatDateTime } from '@/shared/utils';
 import {
@@ -14,9 +14,7 @@ import {
 } from '@/shared/ui';
 import { openPaymentPage, useAction } from '@/shared/lib';
 import {
-  approveMaket,
   orderCode,
-  requestMaketRevision,
   useOrderDetail,
   useOrderMockups,
   useOrderProgress,
@@ -45,7 +43,11 @@ export function OrderDetailPage() {
   // FR-11: `GET /api/orders/{orderId}` — chi tiết đơn đọc thẳng từ máy chủ.
   const asyncOrder = useOrderDetail(orderId);
   const order = asyncOrder.kind === 'loaded' ? asyncOrder.data : null;
-  const [activeTab, setActiveTab] = useState<DetailTab>('progress');
+  // `?tab=maket` opens the page where the buyer has a maket to approve (link from "Việc cần bạn xử lý").
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<DetailTab>(() =>
+    searchParams.get('tab') === 'maket' ? 'maket' : 'progress',
+  );
   const { busy, run, error } = useAction();
   const confirmDelivery = useConfirmDelivery();
   const payRemainder = usePayRemainder();
@@ -53,6 +55,8 @@ export function OrderDetailPage() {
   const getInvoiceLink = useGetInvoiceLink();
 
   const isBulk = order?.type === 'BULK';
+  // FR-22, M6.1.2: phần còn lại chỉ trả được sau khi Shop báo đã giao.
+  const canPayRemainder = isBulk && order?.status === 'DELIVERED';
 
   // FR-21: `GET /api/orders/{orderId}/progress-updates` — lịch sách tiến độ.
   const asyncProgress = useOrderProgress(orderId);
@@ -69,16 +73,6 @@ export function OrderDetailPage() {
     maketVersions.length > 0
       ? maketVersions.reduce((a, b) => (b.version > a.version ? b : a))
       : undefined;
-
-  useEffect(() => {
-    if (!orderId || !isBulk) return;
-    if (asyncMockups.kind !== 'loaded') return;
-    const versions = asyncMockups.data;
-    if (versions.length === 0) return;
-    // Ưu tiên bản mới nhất (versionNo cao nhất).
-    const latest = versions.reduce((a, b) => (b.version > a.version ? b : a));
-    if (latest.status === 'APPROVED') approveMaket(orderId, latest.version);
-  }, [orderId, isBulk, asyncMockups]);
 
   if (asyncOrder.kind === 'loading') {
     return <PageLoader />;
@@ -115,22 +109,15 @@ export function OrderDetailPage() {
     void run(async () => {
       // Backend FR-20: PATCH /api/orders/{orderId}/mockups/{versionNo}
       await reviewMockup(order.id, currentMaket.version, 'APPROVED');
-      approveMaket(order.id, currentMaket.version);
       toast.success('Bạn đã duyệt maket thành công! Xưởng sẽ tiến hành đưa vào sản xuất.');
     });
   }
 
-  function handleRequestRevision() {
+  function handleRequestRevision(feedback: string) {
     if (!order || !currentMaket) return;
-    const feedback = prompt(
-      'Nhập nội dung bạn muốn xưởng điều chỉnh (Ví dụ: Đổi màu quai túi, to logo):',
-    );
-    if (!feedback || !feedback.trim()) return;
-
     void run(async () => {
       // Backend FR-20: `CHANGES_REQUESTED` bắt buộc có `reviewNote`.
       await reviewMockup(order.id, currentMaket.version, 'CHANGES_REQUESTED', feedback);
-      requestMaketRevision(order.id, currentMaket.version, feedback);
       toast.info('Đã gửi yêu cầu chỉnh sửa tới xưởng bánh!');
     });
   }
@@ -198,9 +185,16 @@ export function OrderDetailPage() {
           </ButtonLink>
           {order.status === 'DELIVERED' && (
             <>
-              <Button variant="primary" size="sm" loading={busy} onClick={handleConfirmReceived}>
-                Đã nhận hàng
-              </Button>
+              {/* Đơn đặt riêng: trả phần còn lại là bước nhận hàng, đơn tự hoàn tất (FR-22). */}
+              {canPayRemainder ? (
+                <Button variant="primary" size="sm" loading={busy} onClick={handlePayRemainder}>
+                  Thanh toán phần còn lại
+                </Button>
+              ) : (
+                <Button variant="primary" size="sm" loading={busy} onClick={handleConfirmReceived}>
+                  Đã nhận hàng
+                </Button>
+              )}
               <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
                 Báo vấn đề với đơn
               </ButtonLink>
@@ -244,7 +238,7 @@ export function OrderDetailPage() {
             order={order}
             isBulk={isBulk}
             busy={busy}
-            onPayRemainder={handlePayRemainder}
+            onPayRemainder={canPayRemainder ? handlePayRemainder : undefined}
           />
           {error && (
             <p className={styles.pageError} role="alert">
