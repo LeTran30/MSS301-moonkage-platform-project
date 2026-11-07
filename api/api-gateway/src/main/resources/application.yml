@@ -14,6 +14,29 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+  # BE-11: OpenTelemetry tracing. The gateway is the first hop of every trace: it opens the span of the incoming
+  # request and puts the trace context in the header of the request it forwards, so the trace continues in the
+  # service that answers. The spans go to the OTel Collector over OTLP; the Collector forwards them to Jaeger.
+  tracing:
+    # on by default; the switch exists so a deployment without a collector can turn it off
+    enabled: ${TRACING_ENABLED:true}
+    # how many of the traces are recorded. 1.0 records every trace (dev); a real deployment samples less.
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    # the trace context travels in the W3C header, the same one the HTTP calls and the AMQP messages use
+    propagation:
+      produce: [W3C]
+      consume: [W3C]
+  otlp:
+    tracing:
+      # the collector receives the spans over HTTP/protobuf
+      endpoint: ${OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
+      transport: http
+  opentelemetry:
+    # the resource attributes the collector groups the traces by
+    resource-attributes:
+      service.namespace: moonkage
+      service.group: moonkage-platform
 
 spring:
   application:
