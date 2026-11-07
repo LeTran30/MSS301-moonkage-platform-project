@@ -8,8 +8,9 @@ export type {
   ProductionProgressMilestone,
   RetailOrderStatus,
 } from './model/types';
-export { approveMaket, orderStore, requestMaketRevision } from './model/orderStore';
+export { orderStore } from './model/orderStore';
 export {
+  canSendMaket,
   mapOrderDtoToEntity,
   mapOrderKind,
   mapOrderStatus,
@@ -50,6 +51,7 @@ export {
   useOrderMockups,
   useOrderProgress,
   useOrderReviews,
+  usePendingMaketOrderIds,
 } from './model/useOrderQueries';
 export {
   OrderInvoiceInfo,

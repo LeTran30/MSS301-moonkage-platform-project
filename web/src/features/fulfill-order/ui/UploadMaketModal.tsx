@@ -1,13 +1,11 @@
-import { Button, Icon, Modal, Textarea } from '@/shared/ui';
+import { Button, Icon, Modal } from '@/shared/ui';
 import styles from './fulfillOrderUi.module.css';
 
 interface UploadMaketModalProps {
   open: boolean;
   maketFile: File | null;
-  maketNote: string;
   busy: boolean;
   onMaketFileChange: (file: File | null) => void;
-  onMaketNoteChange: (value: string) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
@@ -16,10 +14,8 @@ interface UploadMaketModalProps {
 export function UploadMaketModal({
   open,
   maketFile,
-  maketNote,
   busy,
   onMaketFileChange,
-  onMaketNoteChange,
   onClose,
   onSubmit,
 }: UploadMaketModalProps) {
@@ -59,15 +55,9 @@ export function UploadMaketModal({
             />
           </label>
         </div>
-        <div className={styles.formGroup}>
-          <Textarea
-            label="Ghi chú cho khách hàng"
-            rows={3}
-            value={maketNote}
-            onChange={(e) => onMaketNoteChange(e.target.value)}
-            placeholder="Nêu rõ chất liệu giấy, quy cách ép nhũ, lưu ý khi duyệt..."
-          />
-        </div>
+        <p className={styles.modalSub}>
+          Cần giải thích thêm cho khách? Nhắn qua mục tin nhắn của đơn.
+        </p>
       </div>
     </Modal>
   );

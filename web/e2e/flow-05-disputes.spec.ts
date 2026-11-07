@@ -3,7 +3,7 @@ import {
   gotoRoute,
   waitForAppReady,
   login,
-  apiGet,
+  apiGetIfExists,
   unwrapData,
   firstOrderId,
   trackConsoleErrors,
@@ -59,7 +59,8 @@ test.describe('FLOW 5 — Khiếu nại & Phân xử tranh chấp', () => {
     await gotoRoute(page, `/tai-khoan/don-hang/${orderId}/khieu-nai`);
     await waitForAppReady(page);
 
-    const dispute = await apiGet<unknown>(
+    // 404 nghĩa là đơn chưa có khiếu nại.
+    const dispute = await apiGetIfExists<unknown>(
       page,
       gatewayUrl(`/api/orders/${orderId}/dispute`),
     );

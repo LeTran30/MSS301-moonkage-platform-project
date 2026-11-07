@@ -8,7 +8,7 @@ interface OrderPaymentSummaryProps {
   /** Đơn số lượng lớn thì có tiền cọc và phần còn lại (FR-22). */
   isBulk: boolean;
   busy: boolean;
-  /** Mở trang thanh toán phần còn lại; bỏ trống khi không cần. */
+  /** Mở trang thanh toán phần còn lại; chỉ truyền khi đơn đã giao (FR-22). */
   onPayRemainder?: () => void;
 }
 
@@ -19,6 +19,8 @@ export function OrderPaymentSummary({
   busy,
   onPayRemainder,
 }: OrderPaymentSummaryProps) {
+  // Đơn đặt riêng chỉ hoàn tất khi phần còn lại đã về (FR-22).
+  const remainderPaid = order.status === 'COMPLETED';
   return (
     <Card padding="md" className={styles.card}>
       <h3 className={styles.cardTitle}>Sổ tiền giao dịch</h3>
@@ -44,10 +46,13 @@ export function OrderPaymentSummary({
               </strong>
             </div>
             <div className={styles.moneyRow}>
-              <span>Phần còn lại thanh toán khi nhận bánh:</span>
-              <strong>{formatCurrency(order.remainingAmount || 0)}</strong>
+              <span>Phần còn lại (trả sau khi Shop giao bánh):</span>
+              <strong className={remainderPaid ? styles.greenText : undefined}>
+                {formatCurrency(order.remainingAmount || 0)}
+                {remainderPaid ? ' (Đã thanh toán)' : ''}
+              </strong>
             </div>
-            {!order.remainingPaid && onPayRemainder && (
+            {!remainderPaid && onPayRemainder && (
               <div className={styles.payRemainderRow}>
                 <Button
                   variant="primary"

@@ -62,6 +62,8 @@ public enum ErrorCode {
     FILE_INVALID("ORDER_008", HttpStatus.BAD_REQUEST, "error.order.file_invalid"),
     /** GET /api/orders/stats: {@code from} after {@code to}, or longer than order.stats-max-days. */
     STATS_RANGE_INVALID("ORDER_009", HttpStatus.BAD_REQUEST, "error.order.stats_range_invalid"),
+    /** FR-39: an order waits for the buyer's review only once the Shop sent a mockup, so sending it is the step. */
+    MOCKUP_REQUIRED("ORDER_010", HttpStatus.CONFLICT, "error.order.mockup_required"),
 
     // Disputes (FR-12, FR-49, BR-18, P-02)
     DISPUTE_NOT_FOUND("DISPUTE_001", HttpStatus.NOT_FOUND, "error.dispute.not_found"),

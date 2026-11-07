@@ -4,6 +4,8 @@ import styles from './checkoutUi.module.css';
 interface InvoiceRequestFormProps {
   /** Số kiện hàng trong lượt thanh toán (thông tin áp dụng cho tất cả). */
   orderCount: number;
+  /** Câu giải thích thay cho câu mặc định về lượt thanh toán, ví dụ khi đặt cọc đơn đặt riêng. */
+  description?: string;
   needInvoice: boolean;
   companyName: string;
   taxCode: string;
@@ -23,6 +25,7 @@ interface InvoiceRequestFormProps {
  */
 export function InvoiceRequestForm({
   orderCount,
+  description,
   needInvoice,
   companyName,
   taxCode,
@@ -43,8 +46,8 @@ export function InvoiceRequestForm({
             <h3>Xuất hóa đơn GTGT điện tử (Doanh nghiệp)</h3>
           </div>
           <p className={styles.invoiceToggleDesc}>
-            Thông tin xuất hóa đơn sẽ được áp dụng tự động cho toàn bộ {orderCount} đơn hàng trong
-            lần thanh toán này.
+            {description ??
+              `Thông tin xuất hóa đơn sẽ được áp dụng tự động cho toàn bộ ${orderCount} đơn hàng trong lần thanh toán này.`}
           </p>
         </div>
         <Checkbox

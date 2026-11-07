@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { RequireAuth } from '../RequireAuth';
 import { RequireAdmin } from '../RequireAdmin';
+import { RequireShop } from '../RequireShop';
 import { GUEST_USER, markAnonymous, markAuthenticated, markRestoring, userStore, type User } from '@/entities/user';
 import { clearTokens, storeTokens } from '@/shared/api/tokenVault';
 
@@ -32,6 +33,7 @@ function renderWithRouter(ui: ReactNode, initialPath = '/tai-khoan') {
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route path="/dang-nhap" element={<a href="/dang-nhap">Về trang đăng nhập</a>} />
+        <Route path="/ban-hang/gioi-thieu" element={<p>TRANG_MO_SHOP</p>} />
         <Route path="*" element={ui} />
       </Routes>
     </MemoryRouter>,
@@ -156,6 +158,45 @@ describe('RequireAdmin — hồi quy phiên làm việc', () => {
       <RequireAdmin>
         <Protected />
       </RequireAdmin>,
+    );
+
+    expect(screen.getByText('NOI_DUNG_BAO_VE')).toBeInTheDocument();
+  });
+});
+
+describe('RequireShop', () => {
+  beforeEach(() => {
+    clearTokens();
+    markAnonymous();
+    userStore.set(GUEST_USER);
+  });
+
+  it('đưa người mua chưa có Shop sang trang mở Shop', () => {
+    storeTokens('token-hop-le');
+    userStore.set(BUYER);
+    markAuthenticated();
+
+    renderWithRouter(
+      <RequireShop>
+        <Protected />
+      </RequireShop>,
+      '/kenh-ban',
+    );
+
+    expect(screen.getByText('TRANG_MO_SHOP')).toBeInTheDocument();
+    expect(screen.queryByText('NOI_DUNG_BAO_VE')).not.toBeInTheDocument();
+  });
+
+  it('cho chủ Shop vào kênh người bán', () => {
+    storeTokens('token-hop-le');
+    userStore.set({ ...BUYER, vendorId: 'vendor-1', hasShop: true });
+    markAuthenticated();
+
+    renderWithRouter(
+      <RequireShop>
+        <Protected />
+      </RequireShop>,
+      '/kenh-ban',
     );
 
     expect(screen.getByText('NOI_DUNG_BAO_VE')).toBeInTheDocument();

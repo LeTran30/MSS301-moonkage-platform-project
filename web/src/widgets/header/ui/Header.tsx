@@ -17,9 +17,17 @@ import { HeaderTopBar } from './HeaderTopBar';
 import { HeaderUserMenu } from './HeaderUserMenu';
 import { HeaderMobileNav } from './HeaderMobileNav';
 import { LocationPickerModal } from './LocationPickerModal';
+import type { HeaderZone } from '../model/headerZone';
+import { useHeaderHeightVar } from '../model/useHeaderHeightVar';
 import styles from './Header.module.css';
 
-export function Header() {
+type HeaderProps = {
+  zone?: HeaderZone;
+};
+
+export function Header({ zone = 'shop' }: HeaderProps) {
+  const inVendor = zone === 'vendor';
+  const headerRef = useHeaderHeightVar<HTMLElement>();
   const user = useCurrentUser();
   // Có token nhưng chưa nạp xong hồ sơ: chưa biết là ai, không hiện "Khách"
   const restoring = useIsRestoringSession();
@@ -30,36 +38,35 @@ export function Header() {
   const provinceName = useDeliveryProvinceName();
 
   return (
-    <header className={styles.header}>
-      {/*
-        Thanh trên cùng là dấu hiệu của bản dựng: nó lặp lại tên/role/NFC đã
-        hiện ở menu tài khoản và nhắc phím tắt Ctrl+K. Ở production không cần,
-        nên bản build production không render thanh này.
-      */}
-      {!import.meta.env.PROD && <HeaderTopBar user={user} restoring={restoring} />}
+    <header ref={headerRef} className={styles.header}>
+      {/* Thanh trên cùng: lối sang kênh còn lại và lối tắt. */}
+      <HeaderTopBar user={user} restoring={restoring} zone={zone} />
 
       {/* Main Header Row */}
       <div className={styles.mainRow}>
         <div className={styles.mainInner}>
           {/* Logo Moonkage */}
-          <Link to={routes.base.home} className={styles.logo}>
+          <Link to={inVendor ? routes.vendor.overview : routes.base.home} className={styles.logo}>
             <span className={styles.logoEmblem}>
               <Icon name="lantern" size={26} />
             </span>
             <div className={styles.logoText}>
               <span className={styles.brandName}>Moonkage</span>
-              <span className={styles.brandTagline}>Sàn Bánh Trung Thu</span>
+              <span className={styles.brandTagline}>{inVendor ? 'Kênh người bán' : 'Sàn Bánh Trung Thu'}</span>
             </div>
           </Link>
 
-          <HeaderSearch />
+          {!inVendor && (
+            <>
+              <HeaderSearch />
+              <HeaderNav
+                selectedProvince={provinceName}
+                onOpenLocation={() => setLocationModalOpen(true)}
+              />
+            </>
+          )}
 
-          <HeaderNav
-            selectedProvince={provinceName}
-            onOpenLocation={() => setLocationModalOpen(true)}
-          />
-
-          <div className={styles.actionGroup}>
+          <div className={`${styles.actionGroup} ${inVendor ? styles.actionGroupEnd : ''}`}>
             <HeaderNotifications />
 
             {/* Theme Toggle (Trăng Rằm / Đêm Hội) */}
@@ -84,15 +91,17 @@ export function Header() {
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
             </button>
 
-            <CartBadge />
+            {!inVendor && <CartBadge />}
 
             <HeaderUserMenu user={user} restoring={restoring} />
           </div>
 
-          <HeaderMobileNav
-            selectedProvince={provinceName}
-            onOpenLocation={() => setLocationModalOpen(true)}
-          />
+          {!inVendor && (
+            <HeaderMobileNav
+              selectedProvince={provinceName}
+              onOpenLocation={() => setLocationModalOpen(true)}
+            />
+          )}
         </div>
       </div>
 

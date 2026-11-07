@@ -99,6 +99,21 @@ export async function apiGet<T = unknown>(page: Page, path: string): Promise<T> 
 }
 
 /**
+ * Như `apiGet`, nhưng trả về `null` khi tài nguyên không tồn tại (404).
+ *
+ * Dùng cho dữ liệu có thể chưa có, ví dụ khiếu nại của một đơn: test bỏ qua
+ * nhánh đó thay vì hỏng.
+ */
+export async function apiGetIfExists<T = unknown>(page: Page, path: string): Promise<T | null> {
+  try {
+    return await apiGet<T>(page, path);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(' -> 404:')) return null;
+    throw error;
+  }
+}
+
+/**
  * Đường dẫn tuyệt đối tới một endpoint của gateway.
  *
  * `VITE_API_BASE_URL` được nhúng lúc build nên test đọc được đúng gateway mà

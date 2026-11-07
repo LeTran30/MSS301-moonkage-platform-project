@@ -120,6 +120,7 @@
   /* Kích thước */
   --container: 1240px;
   --container-narrow: 860px;
+  /* Giá trị khởi đầu; Header đo chiều cao thật và ghi đè (useHeaderHeightVar). */
   --header-h: 72px;
   --sidebar-w: 248px;
   --control-h: 42px;

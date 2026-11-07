@@ -59,6 +59,25 @@
   font-weight: 600;
   font-size: var(--text-sm);
 }
+.maketRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.maketThumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+.maketMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
 .productMeta {
   font-size: var(--text-xs);
   color: var(--color-text-muted);

@@ -24,12 +24,17 @@ export const quoteApi = {
    *
    * `GET /api/quote-requests?vendorId=...` answers the requests sent to the
    * caller's shop; without `vendorId` the backend answers the caller's own
-   * requests as a buyer (AC-16.3).
+   * requests as a buyer (AC-16.3). Each request carries the Shop's own quotes
+   * (the backend answers a vendor only its quotes), so the screen knows
+   * whether the Shop already answered and which quote it may withdraw.
    */
   async getRequestsByVendor(vendorId: string): Promise<QuoteRequest[]> {
     const params = new URLSearchParams({ vendorId });
     const res = await apiClient.get<unknown>(`${GATEWAY.QUOTATION.REQUESTS}?${params.toString()}`);
-    return unwrapList<QuoteRequestDto>(res).map(mapQuoteRequestDto);
+    const requests = unwrapList<QuoteRequestDto>(res).map(mapQuoteRequestDto);
+    return Promise.all(
+      requests.map(async (request) => ({ ...request, quotes: await quoteApi.getQuotes(request.id) })),
+    );
   },
 
   async getRequestById(id: string): Promise<QuoteRequest | null> {

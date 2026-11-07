@@ -32,6 +32,8 @@ export const routes = {
     overview: '/tai-khoan', // M6.0
     orders: '/tai-khoan/don-hang', // M6.1
     order: (id: string) => `/tai-khoan/don-hang/${id}`, // M6.1.1, M6.1.2
+    // The same page opened on the maket tab, where the buyer approves the latest version (FR-20).
+    orderMaket: (id: string) => `/tai-khoan/don-hang/${id}?tab=maket`,
     orderDispute: (id: string) => `/tai-khoan/don-hang/${id}/khieu-nai`, // M6.1.3
     requests: '/tai-khoan/yeu-cau', // M6.2
     request: (id: string) => `/tai-khoan/yeu-cau/${id}`, // M6.2.1

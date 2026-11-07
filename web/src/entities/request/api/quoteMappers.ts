@@ -1,3 +1,4 @@
+import { provinceNameOf } from '@/shared/config';
 import type { Quote, QuoteRequest } from '../model/requestStore';
 import type { QuoteDto, QuoteRequestDto } from './quoteDto';
 
@@ -23,7 +24,7 @@ export function mapQuoteRequestDto(dto: QuoteRequestDto): QuoteRequest {
     quantity: dto.quantity ?? 0,
     deliveryDeadline: dto.deliveryDeadline ?? '',
     deliveryAddress: dto.delivery?.addressDetail ?? '',
-    deliveryProvince: provinceCode,
+    deliveryProvince: provinceNameOf(provinceCode) || provinceCode,
     budgetPerBox: dto.budget ?? dto.suggestedUnitPrice ?? undefined,
     customRequirements: dto.customSpec,
     customTypes: dto.customTypes ?? [],

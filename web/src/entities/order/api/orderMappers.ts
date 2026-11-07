@@ -47,7 +47,9 @@ export function toBackendOrderStatus(status: UiOrderStatus): BackendOrderStatus 
  * The backend moves an order one step forward and refuses a jump with 409
  * `INVALID_STATE_TRANSITION`, so the UI offers exactly the next step.
  */
-export function nextOrderStatus(status: UiOrderStatus): UiOrderStatus | null {
+export function nextOrderStatus(order: Pick<Order, 'status' | 'hasCustom'>): UiOrderStatus | null {
+  // BR-15: a custom order without custom work has no maket to approve.
+  if (order.status === 'DEPOSITED' && !order.hasCustom) return 'IN_PRODUCTION';
   const flow: Record<string, UiOrderStatus> = {
     PAID: 'CONFIRMED',
     CONFIRMED: 'SHIPPING',
@@ -57,7 +59,21 @@ export function nextOrderStatus(status: UiOrderStatus): UiOrderStatus | null {
     READY_TO_SHIP: 'DELIVERED',
     SHIPPING: 'DELIVERED',
   };
-  return flow[status] ?? null;
+  return flow[order.status] ?? null;
+}
+
+/**
+ * The Shop may send a maket version (FR-39): a custom order with custom work, before production.
+ *
+ * Sending the first version is what moves a DEPOSITED order to WAITING_MAKET; a later version answers the
+ * buyer's request for changes.
+ */
+export function canSendMaket(order: Pick<Order, 'type' | 'status' | 'hasCustom'>): boolean {
+  return (
+    order.type === 'BULK' &&
+    order.hasCustom === true &&
+    (order.status === 'DEPOSITED' || order.status === 'WAITING_MAKET')
+  );
 }
 
 export function mapOrderDtoToEntity(dto: OrderDto): Order {
@@ -78,13 +94,16 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
     total,
     depositAmount: dto.depositAmount ?? undefined,
     remainingAmount: dto.remainingAmount ?? undefined,
-    remainingPaid: dto.remainingAmount === null || dto.remainingAmount === undefined ? true : false,
+    // Đơn đặt riêng chỉ hoàn tất khi phần còn lại đã về (FR-22); đơn mua ngay trả đủ từ đầu.
+    remainingPaid: dto.kind !== 'CUSTOM_ORDER' || dto.status === 'COMPLETED',
     status: mapOrderStatus(dto.status),
     deliveredAt: dto.deliveredAt,
     disputeDeadline: dto.complaintDeadline,
     hasDispute: false,
     trackingCode: dto.trackingCode,
     interprovince: dto.interprovince === true,
+    hasCustom: dto.hasCustom === true,
+    quoteId: dto.quoteId ?? undefined,
     shippingAddress: {
       receiver: dto.recipientName ?? '',
       phone: dto.recipientPhone ?? '',
@@ -107,7 +126,8 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
 /** Map a backend progress update to the UI entity. */
 export function mapProgressUpdateDto(dto: ProgressUpdateDto): ProgressUpdate {
   return {
-    milestone: dto.milestone as Order['status'],
+    // Lịch sử ghi enum của backend (AWAITING_MOCKUP_APPROVAL…); đổi về trạng thái UI để hiện đúng nhãn.
+    milestone: STATUS_MAP[dto.milestone] ?? (dto.milestone as Order['status']),
     note: dto.note ?? undefined,
     photoKeys: dto.photoKeys ?? [],
     createdAt: dto.createdAt ?? new Date().toISOString(),

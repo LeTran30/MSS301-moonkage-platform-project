@@ -262,6 +262,11 @@ public class OrderServiceImpl implements OrderService {
         if (request.status() != nextStatus(order)) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
+        // FR-39: uploading the mockup is what moves the order to the buyer's review; a bare status change would
+        // leave the buyer nothing to review.
+        if (request.status() == OrderStatus.AWAITING_MOCKUP_APPROVAL) {
+            throw new AppException(ErrorCode.MOCKUP_REQUIRED);
+        }
         if (request.status() == OrderStatus.SHIPPING) {
             if (order.isInterprovince() && !StringUtils.hasText(request.trackingCode())) {
                 throw new AppException(ErrorCode.TRACKING_CODE_REQUIRED);

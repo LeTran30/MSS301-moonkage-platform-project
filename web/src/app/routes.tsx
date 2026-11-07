@@ -5,7 +5,7 @@ import { AccountLayout } from './layouts/AccountLayout/AccountLayout';
 import { VendorLayout } from './layouts/VendorLayout/VendorLayout';
 import { AdminLayout } from './layouts/AdminLayout/AdminLayout';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
-import { RequireAuth, RequireAdmin } from './guards';
+import { RequireAuth, RequireAdmin, RequireShop } from './guards';
 import { PageLoader } from '@/shared/ui';
 import { startPageViewTracking } from './providers/PageViewTracker';
 import { startSessionExpiryHandling } from './providers/SessionExpiryHandler';
@@ -231,7 +231,9 @@ const ROUTE_TABLE = [
     path: '/kenh-ban',
     element: (
       <RequireAuth>
-        <VendorLayout />
+        <RequireShop>
+          <VendorLayout />
+        </RequireShop>
       </RequireAuth>
     ),
     errorElement: <RouteErrorBoundary />,
