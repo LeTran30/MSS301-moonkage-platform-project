@@ -1,6 +1,7 @@
 package com.moonkage.order.config;
 
 import java.time.Duration;
+import java.time.ZoneId;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -24,4 +25,16 @@ public class OrderProperties {
 
     /** D-13, Q-10 (demo value): interprovince buy-now and every custom order. */
     private Duration complaintWindowOther = Duration.ofDays(7);
+
+    /** GET /api/orders/stats: the zone a day of the report is cut in. */
+    private ZoneId statsZone = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    /** GET /api/orders/stats without {@code from}: this many days up to and including {@code to}. */
+    private int statsDefaultDays = 30;
+
+    /** GET /api/orders/stats: the longest range one request may ask for, in days. */
+    private int statsMaxDays = 366;
+
+    /** GET /api/orders/stats: how many products and vendors the top lists hold. */
+    private int statsTopSize = 5;
 }

@@ -22,9 +22,9 @@ done
 mc anonymous set download "$ALIAS/$MINIO_PUBLIC_BUCKET"
 
 # ── seed images ──
-# The dev seed of vendor-service writes product 000300000001 and points its cover image at
-# this file. Without the file here the catalogue card would show an empty placeholder, so the
-# seed would be half there. `mc cp` overwrites, so re-running is safe.
+# The dev seeds of vendor-service (product_images) and catalog-service (image_keys) point the seed
+# products at these files; infra/dev/demo_seed.py puts them here. Without the files the catalogue
+# cards would show an empty placeholder. `mc cp` overwrites, so re-running is safe.
 # The layout mirrors the bucket: /seed/products/<vendorId>/<file>.
 for image in /seed/products/*/*; do
     [ -f "$image" ] || continue

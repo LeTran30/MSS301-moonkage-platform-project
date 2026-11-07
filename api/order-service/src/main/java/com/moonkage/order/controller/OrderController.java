@@ -4,6 +4,7 @@ import com.moonkage.api.ApiResponse;
 import com.moonkage.api.PageResponse;
 import com.moonkage.order.dto.request.UpdateOrderRequest;
 import com.moonkage.order.dto.response.OrderResponse;
+import com.moonkage.order.dto.response.OrderStatsResponse;
 import com.moonkage.order.dto.response.PaymentLinkResponse;
 import com.moonkage.order.dto.response.ProgressUpdateResponse;
 import com.moonkage.order.enums.DisputeStatus;
@@ -12,9 +13,12 @@ import com.moonkage.order.enums.OrderStatus;
 import com.moonkage.order.security.CurrentUser;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.OrderService;
+import com.moonkage.order.service.OrderStatsService;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderStatsService orderStatsService;
 
     /**
      * Member: own purchases, grouped by {@code paymentGroupId} (FR-10, BR-29). {@code vendorId}: the orders of the
@@ -60,6 +65,20 @@ public class OrderController {
                 disputeStatus == DisputeStatus.OPEN,
                 page,
                 size));
+    }
+
+    /**
+     * Dashboard report of the orders created from {@code from} to {@code to} (ISO dates, both included; default the
+     * last order.stats-default-days days). {@code vendorId}: one Shop, for its owner or an admin; without it the
+     * whole marketplace, for an admin only.
+     */
+    @GetMapping("/stats")
+    public ApiResponse<OrderStatsResponse> stats(
+            @CurrentUser CurrentUserInfo caller,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String vendorId) {
+        return ApiResponse.ok(orderStatsService.stats(caller, from, to, vendorId));
     }
 
     @GetMapping("/{orderId}")

@@ -62,6 +62,7 @@ Cột **Ai** dùng mã vai: **M** = `MEMBER` (người mua), **S** = người b�
 | `POST /api/checkouts` | M | 201 — tạo checkout: giữ hàng, tạo lệnh thanh toán, trả `{checkoutId, paymentId, paymentUrl, totalAmount, expiresAt}` |
 | `GET /api/checkouts/{checkoutId}` | M | Trạng thái checkout và id các đơn đã tạo |
 | `GET /api/orders` | M, S, A | Đơn của mình; `vendorId=` đơn của Shop; `disputeStatus=OPEN` đơn đang khiếu nại (admin); `paymentGroupId=`, `kind=`, `status=`, `missingInvoice=` |
+| `GET /api/orders/stats` | S, A | Báo cáo cho dashboard: `from`, `to` (ngày ISO, tính cả hai đầu; mặc định 30 ngày đến hôm nay), `vendorId=` báo cáo của một Shop (chủ Shop hoặc admin); không có `vendorId` là toàn sàn (chỉ admin). Xem [Báo cáo đơn hàng](#báo-cáo-đơn-hàng) |
 | `GET /api/orders/{orderId}` | M, S, A | Chi tiết đơn |
 | `PATCH /api/orders/{orderId}` | S | Chuyển trạng thái đúng bước kế tiếp, `{status, trackingCode?, note?}`; ghi thêm một dòng tiến độ |
 | `PATCH /api/orders/{orderId}` | M | `{receivedConfirmed: true}` — xác nhận đã nhận |
@@ -85,6 +86,25 @@ Cột **Ai** dùng mã vai: **M** = `MEMBER` (người mua), **S** = người b�
 | Method, đường dẫn | Ai gọi | Việc |
 |---|---|---|
 | `POST /internal/orders/{orderId}/payout-lock` | payment | Khoá dòng đơn để chuyển tiền (P-02); 200 khi được phép, 409 `DISPUTE_006` khi chưa |
+
+### Báo cáo đơn hàng
+
+`GET /api/orders/stats` (`OrderStatsService`, các câu truy vấn ở `OrderStatsRepository`) trả về:
+
+| Phần | Nghĩa | Truy vấn |
+|---|---|---|
+| `totals` | số đơn, doanh thu, số người mua khác nhau, giá trị trung bình một đơn | `count(*)`, `sum(total_amount)`, `count(distinct buyer_account_id)` trên `orders` |
+| `daily` | mỗi ngày trong khoảng một dòng, ngày không có đơn là 0 (run chart) | gom theo `created_at at time zone order.stats-zone`, phần ngày trống do service bù |
+| `byStatus` | số đơn theo trạng thái **hiện tại** (pie chart) | gom theo `status` |
+| `topProducts` | 5 sản phẩm mang về nhiều tiền nhất (bar chart) | `sum(subtotal)` của `order_items`, chưa gồm phí ship |
+| `topVendors` | 5 Shop mang về nhiều tiền nhất, chỉ ở báo cáo toàn sàn | `sum(total_amount)` gom theo `vendor_id`; tên Shop hỏi vendor-service |
+
+Quy ước, để số trên biểu đồ giải thích được:
+
+- **Một đơn được tính vào ngày nó được tạo.** Đơn chỉ được tạo khi tiền đã vào: đơn mua ngay lúc VNPay báo thanh toán thành công, đơn đặt hàng lúc trả cọc. Vì vậy không có đơn "chưa thanh toán" trong báo cáo.
+- **Doanh thu là số tiền người mua đã trả** (`total_amount`, gồm phí ship). Tiền hoàn sau khiếu nại nằm ở payment-service và không bị trừ ở đây.
+- Ngày được cắt theo giờ Việt Nam (`order.stats-zone`). Ví dụ đơn lúc 23:30 ngày 1 vẫn thuộc ngày 1, dù theo UTC là 16:30.
+- Khoảng dài nhất là `order.stats-max-days` (366) ngày. Ngoài khoảng đó, hoặc `from` sau `to`, API trả 400 `ORDER_009`.
 
 ## Dữ liệu
 

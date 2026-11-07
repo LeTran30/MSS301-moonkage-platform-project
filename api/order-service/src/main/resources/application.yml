@@ -94,6 +94,11 @@ order:
   # D-13, Q-10 (demo values): complaint window after delivery
   complaint-window-local: 3d
   complaint-window-other: 7d
+  # GET /api/orders/stats: days are cut in this zone; default and longest range, size of the top lists
+  stats-zone: Asia/Ho_Chi_Minh
+  stats-default-days: 30
+  stats-max-days: 366
+  stats-top-size: 5
 
 storage:
   internal-url: "${MINIO_INTERNAL_URL:http://localhost:${MINIO_API_PORT}}"
