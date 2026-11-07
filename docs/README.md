@@ -25,6 +25,7 @@
 | Kiểm tra chất lượng code (lint, test, coverage) | [conventions/code-quality-rules.md](conventions/code-quality-rules.md) |
 | Mở branch, commit, PR, review | [../.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) |
 | Hiểu một service: luồng, API, class nặng | [services/](services/) |
+| Biết cần làm gì để tối ưu điểm theo bảng chấm đồ án | [architecture/grading-readiness-plan-2026-11-07.md](architecture/grading-readiness-plan-2026-11-07.md) |
 | Gọi thử API | Swagger `http://localhost:8080/swagger-ui.html` · Postman [api/mk-auth.json](api/mk-auth.json) |
 
 ### Theo vai trò
@@ -67,6 +68,7 @@ docs/
 │   ├── codebase-conformance-review.md  Rà soát code thực tế so với chuẩn; backlog P0/P1/P2
 │   ├── api-db-alignment-plan.md   Kế hoạch đưa code về khớp phác thảo API–DB
 │   ├── debt-implementation-plan.md Kế hoạch thực hiện các việc còn nợ sau 2026-11-06
+│   ├── grading-readiness-plan-2026-11-07.md Kế hoạch tối ưu điểm theo bảng chấm đồ án
 │   ├── be-improve-progress-2026-11-04.md  Tiến độ cải thiện backend
 │   ├── user-flow-readiness.md     Mức độ sẵn sàng của từng luồng người dùng
 │   └── api-db/                    Phác thảo API + database theo từng service

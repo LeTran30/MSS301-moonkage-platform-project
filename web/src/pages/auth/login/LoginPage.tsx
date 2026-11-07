@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { Button, Input } from '@/shared/ui';
 import { validators, useAction } from '@/shared/lib';
 import { useLogin } from '@/features/login';
 import { AuthShell, authShellStyles } from '@/widgets/auth-shell';
+import { returnPathAfterLogin } from './returnPathAfterLogin';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   // Backend `LoginRequest.username` nhận email **hoặc** số điện thoại
   // (M5.4 của đặc tả nội dung), nên nhãn cũng phải nói đúng điều đó.
   const [identifier, setIdentifier] = useState('');
@@ -35,7 +37,7 @@ export function LoginPage() {
       }
       setErrors({});
       await login(identifier.trim(), password);
-      navigate(routes.account.overview);
+      navigate(returnPathAfterLogin(location.state), { replace: true });
     });
   };
 
