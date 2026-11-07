@@ -14,8 +14,8 @@ Danh sách luồng lấy từ sheet "User flows" của `web/docs/information-arc
 | Luồng | Backend | Chạy thật | Ghi chú |
 | --- | --- | --- | --- |
 | F1 Mua hàng có sẵn | Đủ | Có, 02/11/2026; chạy lại 04/11/2026 | Vendor đăng sản phẩm → listing/chi tiết → giỏ → checkout → IPN → PAID → giao → nhận → đánh giá hiện ở catalog. Lần chạy lại trên image build từ `develop` `cad5df1`: 25/25 bước qua, kể cả IPN gửi lặp trả `02` |
-| F2 Yêu cầu báo giá có in logo | Đủ | Có, 07/11/2026 | Yêu cầu mở → 2 báo giá → chấp nhận → cọc → đơn đặt riêng → maket → duyệt → sản xuất → giao → trả phần còn lại → COMPLETED. Xem [mục 4](#4-f2-trên-web-07112026) |
-| F3 Gửi yêu cầu cho một đơn vị | Đủ | Có tới bước cọc, 07/11/2026 | Danh sách đơn vị → yêu cầu riêng (DIRECT) → Shop báo giá → chấp nhận → cọc → đơn đặt riêng. Từ đơn trở đi đi chung đường với F2 (đã chạy trọn cùng ngày). Xem [mục 5](#5-f3-trên-web-07112026) |
+| F2 Yêu cầu báo giá có in logo | Đủ | **Có, 07/11/2026** | Chạy thật trên stack Docker: buyer gửi yêu cầu (`POST /api/quote-requests` → 201) → shop báo giá (`POST /api/quote-requests/{id}/quotes` → 201) → buyer chấp nhận (`POST .../quotes/{id}/acceptance` → 201, `PENDING_PAYMENT`, tiền cọc 18.765.000 ₫) → IPN ký bằng secret trong `.env` (`RspCode 00 Confirm Success`) → quote `ACCEPTED`, request `AWARDED` → order-service tạo đơn đặt riêng `CUSTOM_ORDER` / `DEPOSITED` (`quote_id` + `agreement_id` có đủ) → ledger `totalCollected = held = 18.765.000`. Gửi lại IPN lần hai trả `02 Order already confirmed` và **không** tạo đơn thứ hai (`processed_events` chỉ có 1 dòng `payment.succeeded`). Phần chạy trên web: xem [mục 4](#4-f2-trên-web-07112026) |
+| F3 Gửi yêu cầu cho một đơn vị | Đủ | **Có, 07/11/2026** | Nối vào F2 từ M6.2 nên chạy cùng một lần: `type = DIRECT` + `targetVendorId` (chỉ 1 shop được mời, `invitedCount = 1`) đi qua đúng nhánh đơn vị đã được mời. Phần chạy trên web: xem [mục 5](#5-f3-trên-web-07112026) |
 | F4 Trở thành người bán | Đủ | Chưa | Nộp hồ sơ (`POST /api/vendors`, giấy tờ), admin quyết định (`POST /api/vendors/{id}/reviews`: duyệt, yêu cầu bổ sung, từ chối), nộp lại, phí đăng ký qua VNPay (vendor-service nghe `payment.succeeded`) |
 | F5 Khiếu nại | Đủ | Chưa | Mở khiếu nại (`/api/orders/{id}/dispute`), payment-service giữ tiền khi nhận `dispute.opened`, admin xử lý, hoàn VNPay (`VnpayRefundClient`); lỗi hoàn thì chuyển xử lý tay (`refund.manual_required`) |
 | F6 Xác minh NFC | Đủ phía server | Chưa | identity-service có phiên (`/api/nfc/sessions`), nhận thẻ, khóa sau nhiều lần sai. V1–V5 cần app mobile và thẻ thật hoặc dữ liệu `NfcProfileSeeder` |
@@ -25,7 +25,9 @@ Không còn endpoint nào trả `NOT_IMPLEMENTED` (mã `COMMON_501` của vendor
 
 ## Lỗ hổng
 
-### 1. Cọc đã trả nhưng không có đơn đặt riêng
+### 1. Cọc đã trả nhưng không có đơn đặt riêng — **đã đóng**
+
+> **Đã đóng trong code 06/11/2026, đã kiểm chứng bằng chạy thật 07/11/2026.** Phần dưới đây giữ lại để làm căn cứ cho việc đã sửa gì.
 
 **Đã sửa.** quotation-service có `PaymentEventListener` nghe `payment.succeeded` purpose `DEPOSIT` và gọi `recordDepositPaid`; lần chạy F2 ngày 07/11/2026 tạo được đơn đặt riêng sau khi cọc. Phần dưới giữ lại để biết lỗ hổng từng là gì.
 
@@ -54,6 +56,8 @@ Hậu quả: tiền cọc vào, acceptance đứng PENDING mãi, người mua kh
 - Cần queue và binding riêng trong `RabbitConfig` của quotation-service.
 - Xử lý `payment.failed` và acceptance hết hạn thanh toán (`depositPaymentTimeout`): hiện cũng không có ai đưa acceptance PENDING về trạng thái kết thúc.
 - Kiểm bằng cách chạy thật F2 tới khi đơn đặt riêng xuất hiện ở M6.1.2.
+
+> **Kết quả kiểm chứng 07/11/2026:** cả 5 việc trên đã có trong code và đã chạy thật thành công — xem dòng F2/F3 trong bảng kết quả. Bảng `processed_events` của quotation-service có đúng 1 dòng `payment.succeeded` sau khi gửi IPN lần hai, và đơn đặt riêng không bị nhân bản.
 
 ### 2. Lỗi nhỏ gặp khi chạy F1
 
