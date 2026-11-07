@@ -28,7 +28,7 @@ function CatalogBootstrap() {
   const provinceCode = useDeliveryProvinceCode();
   useProductCatalog(provinceCode);
   useTaxonomyCatalog();
-  useVendorCatalog();
+  useVendorCatalog(provinceCode);
   return null;
 }
 

@@ -148,10 +148,6 @@
 .customCta {
   margin-top: var(--space-6);
 }
-.notFound {
-  padding: var(--space-16);
-  text-align: center;
-}
 
 /* --- Responsive (audit §3.6) --- */
 @media (max-width: 1024px) {

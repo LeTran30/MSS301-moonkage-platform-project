@@ -2,18 +2,32 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency, formatDate } from '@/shared/utils';
-import { Badge, Button, Card, Icon, toast } from '@/shared/ui';
+import { Badge, Button, ButtonLink, Card, Icon, toast } from '@/shared/ui';
 import { openPaymentPage, useAction } from '@/shared/lib';
-import { type Quote, RequestSpecList, requestCode, useQuoteRequest } from '@/entities/request';
-import { useCurrentUser } from '@/entities/user';
+import {
+  type Quote,
+  type QuoteStatus,
+  RequestSpecList,
+  requestCode,
+  useQuoteRequest,
+  useRequestInvitations,
+} from '@/entities/request';
+import { useOrderList } from '@/entities/order';
 import { useAcceptQuote } from '@/features/accept-quote';
 import { InvoiceRequestForm } from '@/features/checkout';
 import styles from './RequestComparePage.module.css';
 
+/** Why a quote can no longer be accepted, in the buyer's words. */
+const CLOSED_QUOTE_TEXT: Partial<Record<QuoteStatus, string>> = {
+  WITHDRAWN: 'Đơn vị đã rút báo giá này',
+  EXPIRED: 'Báo giá đã hết hiệu lực',
+  CLOSED: 'Yêu cầu đã chốt với báo giá khác',
+  REJECTED: 'Báo giá không được chọn',
+};
+
 export function RequestComparePage() {
   const { id } = useParams<{ id: string }>();
   const requestId = id || '';
-  const user = useCurrentUser();
   const navigate = useNavigate();
   const { busy, run, error } = useAction();
   const acceptQuote = useAcceptQuote();
@@ -29,6 +43,19 @@ export function RequestComparePage() {
   // from the token which quotes the caller may see.
   const asyncRequest = useQuoteRequest(requestId);
   const request = asyncRequest.kind === 'loaded' ? asyncRequest.data : null;
+  // FR-15: a direct request goes to one Shop. Its invitation names the Shop and says whether it declined (AC-36.3).
+  const isDirect = request?.type === 'DIRECT';
+  const asyncInvitations = useRequestInvitations(isDirect ? (request?.id ?? null) : null);
+  const targetInvitation =
+    asyncInvitations.kind === 'loaded'
+      ? asyncInvitations.data.find((i) => i.vendorId === request?.targetVendorId)
+      : undefined;
+  const targetName = targetInvitation?.vendorName;
+  const declined = targetInvitation?.status === 'DECLINED';
+  // The order an accepted quote became, once its deposit is paid (BR-04): the order keeps the quote's id.
+  const asyncOrders = useOrderList();
+  const orderOfQuote = (quoteId: string) =>
+    asyncOrders.kind === 'loaded' ? asyncOrders.data.find((o) => o.quoteId === quoteId) : undefined;
 
   if (asyncRequest.kind === 'loading') {
     return <p role="status">Đang tải bảng báo giá…</p>;
@@ -91,7 +118,9 @@ export function RequestComparePage() {
           <Link to={routes.account.requests}>Yêu cầu &amp; báo giá</Link> /{' '}
           <span>#{requestCode(request.id)}</span>
         </div>
-        <h2 className={styles.title}>So Sánh Báo Giá Cạnh Nhau</h2>
+        <h2 className={styles.title}>
+          {isDirect ? `Yêu cầu riêng gửi ${targetName ?? 'một đơn vị'}` : 'So Sánh Báo Giá Cạnh Nhau'}
+        </h2>
         <p className={styles.lead}>
           Yêu cầu: <strong>{request.quantity} hộp</strong> · Ngày giao:{' '}
           <strong>{request.deliveryDeadline ? formatDate(request.deliveryDeadline) : '—'}</strong> ·
@@ -105,9 +134,28 @@ export function RequestComparePage() {
         </details>
       </div>
 
-      {request.quotes.length === 0 ? (
+      {request.quotes.length === 0 && declined ? (
+        <Card padding="lg" className={styles.declinedCard}>
+          <p>
+            <strong>{targetName ?? 'Đơn vị'} đã từ chối yêu cầu này.</strong>
+            {targetInvitation?.declineReason ? ` Lý do: ${targetInvitation.declineReason}` : ''}
+          </p>
+          <div className={styles.declinedActions}>
+            <ButtonLink to={routes.base.vendors} variant="primary">
+              Gửi cho đơn vị khác
+            </ButtonLink>
+            <ButtonLink to={routes.base.quoteRequestNew} variant="secondary">
+              Tạo yêu cầu gửi nhiều xưởng
+            </ButtonLink>
+          </div>
+        </Card>
+      ) : request.quotes.length === 0 ? (
         <Card padding="lg">
-          <p>Chưa có xưởng nào gửi báo giá cho yêu cầu này.</p>
+          <p>
+            {isDirect
+              ? `Đang chờ ${targetName ?? 'đơn vị'} gửi báo giá.`
+              : 'Chưa có xưởng nào gửi báo giá cho yêu cầu này.'}
+          </p>
         </Card>
       ) : (
         <>
@@ -199,7 +247,12 @@ export function RequestComparePage() {
                 )}
 
                 <div className={styles.quoteActions}>
-                  {acceptable ? (
+                  {quote.status === 'ACCEPTED' ? (
+                    <AcceptedQuoteActions
+                      orderId={orderOfQuote(quote.id)?.id}
+                      depositTo={routes.account.requestDeposit(request.id)}
+                    />
+                  ) : acceptable ? (
                     <Button
                       variant="primary"
                       size="lg"
@@ -212,7 +265,7 @@ export function RequestComparePage() {
                     </Button>
                   ) : (
                     <Badge tone="neutral" size="sm">
-                      Báo giá không còn hiệu lực
+                      {CLOSED_QUOTE_TEXT[quote.status] ?? 'Báo giá không còn nhận chấp nhận'}
                     </Badge>
                   )}
                   {error && (
@@ -227,10 +280,26 @@ export function RequestComparePage() {
         </div>
         </>
       )}
-
-      <p className={styles.lead}>
-        Người mua: <strong>{request.buyerName || user.name}</strong>
-      </p>
     </div>
+  );
+}
+
+/** The buyer took this quote: open the order it became, or finish the deposit that creates it (BR-04). */
+function AcceptedQuoteActions({ orderId, depositTo }: { orderId?: string; depositTo: string }) {
+  return (
+    <>
+      <Badge tone="green" size="sm">
+        <Icon name="check" size={13} /> Bạn đã chấp nhận báo giá này
+      </Badge>
+      {orderId ? (
+        <ButtonLink to={routes.account.order(orderId)} variant="primary" block iconRight="arrowRight">
+          Xem đơn hàng
+        </ButtonLink>
+      ) : (
+        <ButtonLink to={depositTo} variant="primary" block iconRight="arrowRight">
+          Hoàn tất đặt cọc
+        </ButtonLink>
+      )}
+    </>
   );
 }

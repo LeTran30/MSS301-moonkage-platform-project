@@ -22,14 +22,14 @@ const SRC = resolve(process.cwd(), 'src');
 /**
  * Mã đặc tả cần bắt.
  *
- * - `FR-xx` / `BR-xx` / `NFR-xx` / `UC-xx` / `AC-xx` : yêu cầu chức năng,
+ * - `FR-xx` / `BR-xx` / `NFR-xx` / `UC-xx` / `AC-xx` / `US-xx` : yêu cầu chức năng, user story,
  *   nghiệp vụ, phi chức năng, ca kiểm thử, tiêu chí chấp nhận.
  * - `M1.0` / `B1.0` / `Q1.0` : mã trang theo bảng nhãn IA.
  * - `FLOW 1` / `Flow 3` : mã luồng nghiệp vụ.
  * - `Zone M` / `Zone Q` : tên khu vực trong tài liệu kiến trúc.
  */
 const SPEC_ID_PATTERNS = [
-  { label: 'yêu cầu chức năng', regex: /\b(?:FR|BR|NFR|UC|AC)-\d+(?:\.\d+)*\b/gi },
+  { label: 'yêu cầu chức năng', regex: /\b(?:FR|BR|NFR|UC|AC|US)-\d+(?:\.\d+)*\b/gi },
   { label: 'mã trang IA', regex: /\b[MBQ]\d+\.\d+(?:\.\d+)?\b/g },
   { label: 'mã luồng', regex: /\b(?:FLOW|Flow|flow)\s*\d+\b/g },
   { label: 'mã khu vực', regex: /\bZone\s+[MBQ]\b/g },

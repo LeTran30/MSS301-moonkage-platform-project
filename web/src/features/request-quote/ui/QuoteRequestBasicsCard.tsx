@@ -8,6 +8,10 @@ interface QuoteRequestBasicsCardProps {
   onDeliveryDeadlineChange: (value: string) => void;
   budget: string;
   onBudgetChange: (value: string) => void;
+  /** The least the request may ask for: the platform's for an open request, the Shop's for a direct one. */
+  minQuantity: number;
+  /** What the quantity field says about that minimum. */
+  quantityHint: string;
   /** Lỗi theo tên trường, do form cha sở hữu (FR-16). */
   errors?: Partial<Record<'quantity' | 'deliveryDeadline', string>>;
 }
@@ -20,6 +24,8 @@ export function QuoteRequestBasicsCard({
   onDeliveryDeadlineChange,
   budget,
   onBudgetChange,
+  minQuantity,
+  quantityHint,
   errors,
 }: QuoteRequestBasicsCardProps) {
   return (
@@ -30,12 +36,12 @@ export function QuoteRequestBasicsCard({
         <Input
           label="Số lượng hộp cần đặt"
           type="number"
-          min="20"
+          min={minQuantity}
           value={quantity}
           onChange={(e) => onQuantityChange(e.target.value)}
           required
           error={errors?.quantity}
-          hint={errors?.quantity ? undefined : 'Tối thiểu từ 20 hộp để các xưởng nhận báo giá sỉ'}
+          hint={errors?.quantity ? undefined : quantityHint}
         />
         <Input
           label="Hạn giao hàng mong muốn"

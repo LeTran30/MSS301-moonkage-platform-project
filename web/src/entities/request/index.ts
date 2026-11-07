@@ -3,8 +3,10 @@ export {
   CUSTOM_TYPE_LABELS,
   QUOTE_STATUS_LABELS,
   REQUEST_STATUS_LABELS,
+  SPEC_PART_SEPARATOR,
   getRequests,
   requestStore,
+  toCustomTypes,
 } from './model/requestStore';
 export type {
   CustomType,

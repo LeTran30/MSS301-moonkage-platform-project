@@ -7,6 +7,11 @@ interface QuoteRequestPackagingCardProps {
   onToggleCustomType: (type: CustomType) => void;
   customRequirements: string;
   onCustomRequirementsChange: (value: string) => void;
+  /**
+   * The custom work the buyer may pick. A direct request offers only what the Shop makes (AC-15.4); an open request
+   * offers all of it.
+   */
+  availableTypes?: readonly CustomType[];
 }
 
 /**
@@ -17,6 +22,7 @@ export function QuoteRequestPackagingCard({
   onToggleCustomType,
   customRequirements,
   onCustomRequirementsChange,
+  availableTypes = CUSTOM_TYPES,
 }: QuoteRequestPackagingCardProps) {
   return (
     <Card padding="lg" className={styles.card}>
@@ -42,8 +48,11 @@ export function QuoteRequestPackagingCard({
 
       <fieldset className={styles.fieldset}>
         <legend className={styles.label}>Loại tùy chỉnh cần làm</legend>
+        {availableTypes.length === 0 && (
+          <p className={styles.hintLine}>Đơn vị này chưa nhận làm bao bì hay in ấn riêng.</p>
+        )}
         <div className={styles.chipRow}>
-          {CUSTOM_TYPES.map((type) => {
+          {availableTypes.map((type) => {
             const active = customTypes.includes(type);
             return (
               <button

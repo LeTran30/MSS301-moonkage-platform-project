@@ -48,6 +48,7 @@ export {
   useOrderProfile,
   useOwnVendorId,
   useRegistrationFeeConfig,
+  useSupplier,
   useVendorDetail,
   useVendorSearch,
 } from './model/useVendorQueries';

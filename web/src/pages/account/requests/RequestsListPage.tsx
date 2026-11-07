@@ -2,13 +2,35 @@ import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatDate } from '@/shared/utils';
 import { Badge, Button, ButtonLink, Card, Icon } from '@/shared/ui';
-import { REQUEST_STATUS_LABELS, requestCode, useQuoteRequestList } from '@/entities/request';
+import {
+  REQUEST_STATUS_LABELS,
+  requestCode,
+  useQuoteRequestList,
+  type QuoteRequest,
+} from '@/entities/request';
+import { useVendors } from '@/entities/vendor';
 import styles from './RequestsListPage.module.css';
+
+/** What the request's button leads to: nothing to compare yet, one quote, or several (FR-17). */
+function openLabel(quoteTotal: number): string {
+  if (quoteTotal === 0) return 'Xem yêu cầu';
+  if (quoteTotal === 1) return 'Xem báo giá';
+  return `So sánh ${quoteTotal} báo giá`;
+}
+
+/** How many quotes came in; a direct request has one Shop to wait for (FR-15). */
+function quoteCountText(request: QuoteRequest, quoteTotal: number): string {
+  if (request.type === 'DIRECT') return quoteTotal > 0 ? 'Đơn vị đã báo giá' : 'Chờ đơn vị báo giá';
+  return quoteTotal > 0 ? `${quoteTotal} xưởng đã báo giá` : 'Chưa có báo giá';
+}
 
 export function RequestsListPage() {
   // FR-16 / FR-15: the requests of the caller; the backend decides the role.
   const asyncRequests = useQuoteRequestList();
   const requests = asyncRequests.kind === 'loaded' ? asyncRequests.data : [];
+  // Tên đơn vị nhận yêu cầu riêng, lấy từ danh mục đơn vị đã tải (yêu cầu chỉ mang mã đơn vị).
+  const vendors = useVendors();
+  const vendorName = (vendorId?: string) => vendors.find((v) => v.id === vendorId)?.name;
 
   if (asyncRequests.kind === 'loading') {
     return <p role="status">Đang tải yêu cầu báo giá…</p>;
@@ -81,20 +103,31 @@ export function RequestsListPage() {
                   </div>
                   <div>
                     <span className={styles.label}>Báo giá nhận được:</span>
-                    <strong className={styles.highlightCount}>{quoteTotal} xưởng đã báo giá</strong>
+                    <strong className={quoteTotal > 0 ? styles.highlightCount : undefined}>
+                      {quoteCountText(req, quoteTotal)}
+                    </strong>
                   </div>
                 </div>
 
                 {req.customRequirements && (
                   <p className={styles.reqText}>
-                    <strong>Yêu cầu riêng:</strong> {req.customRequirements}
+                    <strong>Ghi chú:</strong> {req.customRequirements}
                   </p>
                 )}
 
                 <div className={styles.cardFooter}>
                   <div className={styles.vendorStats}>
-                    <Icon name="users" size={14} /> {req.invitedVendorsCount} xưởng được mời tham
-                    gia
+                    {req.type === 'DIRECT' ? (
+                      <>
+                        <Icon name="store" size={14} /> Gửi riêng cho{' '}
+                        {vendorName(req.targetVendorId) ?? 'một đơn vị'}
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="users" size={14} /> {req.invitedVendorsCount} xưởng được mời tham
+                        gia
+                      </>
+                    )}
                   </div>
                   <ButtonLink
                     to={routes.account.request(req.id)}
@@ -102,7 +135,7 @@ export function RequestsListPage() {
                     size="sm"
                     iconRight="chevronRight"
                   >
-                    So sánh {quoteTotal} bảng báo giá
+                    {openLabel(quoteTotal)}
                   </ButtonLink>
                 </div>
               </Card>

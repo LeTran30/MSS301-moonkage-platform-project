@@ -1,42 +1,99 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { routes, PROVINCE_ITEMS, provinceNameOf } from '@/shared/config';
-import { Button, ButtonLink, Card, Icon, Input, Select, Textarea, toast } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
-import { useVendor } from '@/entities/vendor';
+import { routes, PROVINCE_ITEMS } from '@/shared/config';
+import { AsyncState, Button, ButtonLink, Card, EmptyState, Icon, toast } from '@/shared/ui';
+import { focusFirstInvalidField, useAction } from '@/shared/lib';
+import { useSupplier, type Vendor } from '@/entities/vendor';
 import { useCurrentUser } from '@/entities/user';
-import { CUSTOM_TYPES, CUSTOM_TYPE_LABELS, type CustomType } from '@/entities/request';
-import { useCreateQuoteRequest } from '@/features/request-quote';
-import styles from './DirectQuoteRequestPage.module.css';
+import { toCustomTypes, type CustomType } from '@/entities/request';
 import { useDeliveryProvinceCode } from '@/entities/region';
+import {
+  NfcVerifyNotice,
+  QuoteRequestBasicsCard,
+  QuoteRequestDeliveryCard,
+  QuoteRequestFlavorCard,
+  QuoteRequestPackagingCard,
+  joinCustomSpec,
+  useCreateQuoteRequest,
+  validateQuoteForm,
+  type QuoteFormErrors,
+} from '@/features/request-quote';
+import styles from './DirectQuoteRequestPage.module.css';
 
+/** A Shop that has not set a minimum takes any quantity. */
+const NO_VENDOR_MINIMUM = 1;
+
+/**
+ * M3.4: a quote request sent to one Shop only (FR-15, `type = DIRECT`).
+ *
+ * It is the open request form of M3.1 with the Shop fixed, so the buyer fills the same cards and sees the same
+ * errors. Two rules come from the Shop instead of the platform: its minimum quantity (AC-15.2) and the custom work it
+ * makes (AC-15.4). The server checks both again.
+ */
 export function DirectQuoteRequestPage() {
   const { id } = useParams<{ id: string }>();
-  const vendor = useVendor(id || '');
+  const asyncVendor = useSupplier(id || null);
+
+  return (
+    <div className={styles.container}>
+      <AsyncState
+        state={asyncVendor}
+        onRetry={asyncVendor.reload}
+        loadingMessage="Đang tải thông tin đơn vị..."
+      >
+        {(vendor) =>
+          vendor ? (
+            <DirectQuoteRequestForm vendor={vendor} />
+          ) : (
+            <EmptyState
+              title="Đơn vị này không nhận đặt hàng"
+              description="Đơn vị không tồn tại hoặc đang tạm ngừng nhận đặt hàng số lượng lớn."
+              action={
+                <ButtonLink to={routes.base.vendors} variant="primary">
+                  Về danh sách đơn vị
+                </ButtonLink>
+              }
+            />
+          )
+        }
+      </AsyncState>
+    </div>
+  );
+}
+
+function DirectQuoteRequestForm({ vendor }: { vendor: Vendor }) {
   const user = useCurrentUser();
   const navigate = useNavigate();
   const { busy, run, error } = useAction();
   const createQuoteRequest = useCreateQuoteRequest();
 
-  // Người mua đã xác minh NFC. Chủ của người bán không thấy lối vào.
-  const isOwner = Boolean(user.vendorId && user.vendorId === vendor?.id);
+  // Người bán không gửi yêu cầu cho chính Shop của mình (BR-22).
+  const isOwner = Boolean(user.vendorId && user.vendorId === vendor.id);
   const isNfcVerified = user.nfcStatus === 'VERIFIED';
 
-  /*
-   * Yêu cầu báo giá phải do người mua tự điền. Trước đây form điền sẵn 80 hộp,
-   * hạn giao 05/11/2026, địa chỉ "88 Đường Nguyễn Đình Chiểu" và yêu cầu dán
-   * sticker — người mua có thể gửi yêu cầu mà không hề nhập gì.
-   */
+  const minQuantity = vendor.bulkMinQuantity ?? NO_VENDOR_MINIMUM;
+  const quantityHint = vendor.bulkMinQuantity
+    ? `Tối thiểu từ ${vendor.bulkMinQuantity} hộp theo quy định của đơn vị`
+    : 'Đơn vị chưa khai báo số lượng tối thiểu';
+  const availableTypes = useMemo(
+    () => toCustomTypes(vendor.supportedCustomOptions),
+    [vendor.supportedCustomOptions],
+  );
+
   const [quantity, setQuantity] = useState('');
   const [deliveryDeadline, setDeliveryDeadline] = useState('');
+  const [budget, setBudget] = useState('');
   const [recipientName, setRecipientName] = useState(user.name);
   const [recipientPhone, setRecipientPhone] = useState(user.phone);
   const [deliveryAddress, setDeliveryAddress] = useState('');
   // Bắt đầu từ tỉnh giao người mua đang chọn ở header; người mua đổi được ở bước địa chỉ.
   const deliveryProvinceCode = useDeliveryProvinceCode();
   const [provinceCode, setProvinceCode] = useState(() => deliveryProvinceCode);
-  const [requirements, setRequirements] = useState('');
+  const [customRequirements, setCustomRequirements] = useState('');
   const [customTypes, setCustomTypes] = useState<CustomType[]>([]);
+  const [crustPreference, setCrustPreference] = useState('');
+  const [fillingPreference, setFillingPreference] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<QuoteFormErrors>({});
 
   const provinceOptions = useMemo(
     () => PROVINCE_ITEMS.map((p) => ({ value: p.code, label: p.name })),
@@ -49,37 +106,44 @@ export function DirectQuoteRequestPage() {
     );
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function clearError(field: keyof QuoteFormErrors) {
+    setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!vendor) return;
-    if (!isNfcVerified) {
-      toast.warning('Vui lòng hoàn thành bước xác minh NFC trước khi gửi yêu cầu báo giá.');
-      navigate(routes.account.verify, { state: { returnUrl: routes.base.vendorRequest(vendor.id) } });
+
+    // Báo thiếu thông tin trước, rồi mới đưa sang xác minh NFC: người mua không mất những gì đã điền.
+    const validation = validateQuoteForm(
+      { quantity, deliveryDeadline, recipientName, recipientPhone, deliveryAddress },
+      minQuantity,
+      `Đơn vị này nhận đặt từ ${minQuantity} hộp trở lên`,
+    );
+    setFieldErrors(validation);
+    if (Object.keys(validation).length > 0) {
+      focusFirstInvalidField(e.currentTarget);
       return;
     }
 
-    const qty = parseInt(quantity, 10);
-    if (!qty || qty <= 0) {
-      toast.error('Vui lòng nhập số lượng hộp cần đặt.');
-      return;
-    }
-    if (!deliveryDeadline) {
-      toast.error('Vui lòng chọn hạn giao hàng mong muốn.');
-      return;
-    }
-    if (!deliveryAddress.trim()) {
-      toast.error('Vui lòng nhập địa chỉ giao hàng.');
+    if (!isNfcVerified) {
+      toast.warning(
+        'Bạn cần xác minh danh tính bằng CCCD gắn chip (NFC) trước khi gửi yêu cầu báo giá.',
+      );
+      navigate(routes.account.verify, {
+        state: { returnUrl: routes.base.vendorRequest(vendor.id) },
+      });
       return;
     }
 
     run(async () => {
-      // `POST /api/quote-requests` với `type = DIRECT` và xưởng được chọn.
+      // `POST /api/quote-requests` với `type = DIRECT` và đơn vị được chọn.
       const created = await createQuoteRequest({
         type: 'DIRECT',
         targetVendorId: vendor.id,
-        quantity: qty,
+        quantity: parseInt(quantity, 10),
+        budget: budget ? parseInt(budget, 10) : undefined,
         customTypes: customTypes.length > 0 ? customTypes : undefined,
-        customSpec: requirements,
+        customSpec: joinCustomSpec(customRequirements, crustPreference, fillingPreference),
         deliveryDeadline,
         delivery: {
           recipientName,
@@ -95,145 +159,111 @@ export function DirectQuoteRequestPage() {
 
   if (isOwner) {
     return (
-      <div className={styles.container}>
-        <Card padding="lg" tone="gold" className={styles.ownerCard}>
-          <Icon name="alert" size={32} />
-          <h2>Bạn là chủ của đơn vị này</h2>
-          <p>Hệ thống không cho phép người bán tự gửi yêu cầu báo giá cho chính mình.</p>
-          <ButtonLink to={routes.vendor.overview} variant="primary">
-            Về Kênh người bán
-          </ButtonLink>
-        </Card>
-      </div>
+      <Card padding="lg" tone="gold" className={styles.ownerCard}>
+        <Icon name="alert" size={32} />
+        <h2>Bạn là chủ của đơn vị này</h2>
+        <p>Hệ thống không cho phép người bán tự gửi yêu cầu báo giá cho chính mình.</p>
+        <ButtonLink to={routes.vendor.overview} variant="primary">
+          Về Kênh người bán
+        </ButtonLink>
+      </Card>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <>
       <div className={styles.header}>
         <div className={styles.eyebrow}>GỬI YÊU CẦU TRỰC TIẾP</div>
-        <h1 className={styles.title}>Gửi Yêu Cầu Đặt Hàng Riêng Cho {vendor?.name}</h1>
+        <h1 className={styles.title}>Gửi yêu cầu đặt hàng riêng cho {vendor.name}</h1>
         <p className={styles.lead}>
-          Yêu cầu này chỉ gửi độc quyền tới đơn vị này. Xưởng sẽ phản hồi bảng báo giá và liên hệ với bạn trong vòng 24h.
+          Chỉ đơn vị này nhận được yêu cầu. Đơn vị gửi lại báo giá, bạn xem và chấp nhận trong mục Yêu cầu báo
+          giá của tài khoản.
+          {vendor.bulkLeadTimeDays
+            ? ` Thời gian chuẩn bị của đơn vị: ${vendor.bulkLeadTimeDays} ngày.`
+            : ''}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <Card padding="lg" className={styles.card}>
-          <div className={styles.grid2}>
-            <Input
-              label="Số lượng hộp cần đặt"
-              type="number"
-              min={vendor?.bulkMinQuantity || 1}
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              required
-              placeholder="Ví dụ: 200"
-              hint={
-                vendor?.bulkMinQuantity
-                  ? `Tối thiểu từ ${vendor.bulkMinQuantity} hộp theo quy định của xưởng`
-                  : 'Xưởng chưa khai báo số lượng tối thiểu · nhập số lượng bạn cần đặt.'
-              }
-            />
-            <Input
-              label="Ngày cần nhận bánh"
-              type="date"
-              value={deliveryDeadline}
-              onChange={(e) => setDeliveryDeadline(e.target.value)}
-              required
-            />
-          </div>
+      {!isNfcVerified && <NfcVerifyNotice />}
 
-          <div className={styles.grid2}>
-            <Input
-              label="Người nhận"
-              value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
-              required
-              placeholder="Ví dụ: Nguyễn Thị Mai"
-            />
-            <Input
-              label="Số điện thoại người nhận"
-              value={recipientPhone}
-              onChange={(e) => setRecipientPhone(e.target.value)}
-              required
-              placeholder="0912 345 678"
-              hint="10 số, bắt đầu bằng 0"
-            />
-          </div>
+      {/* `noValidate`: lỗi hiện ngay dưới ô nhập, thay cho bong bóng của trình duyệt. */}
+      <form onSubmit={handleSubmit} className={styles.form} noValidate>
+        <QuoteRequestBasicsCard
+          quantity={quantity}
+          onQuantityChange={(value) => {
+            setQuantity(value);
+            clearError('quantity');
+          }}
+          deliveryDeadline={deliveryDeadline}
+          onDeliveryDeadlineChange={(value) => {
+            setDeliveryDeadline(value);
+            clearError('deliveryDeadline');
+          }}
+          budget={budget}
+          onBudgetChange={setBudget}
+          minQuantity={minQuantity}
+          quantityHint={quantityHint}
+          errors={fieldErrors}
+        />
 
-          <div className={styles.grid2}>
-            <Input
-              label="Địa chỉ giao hàng"
-              value={deliveryAddress}
-              onChange={(e) => setDeliveryAddress(e.target.value)}
-              required
-              placeholder="Ví dụ: 88 Đường Nguyễn Đình Chiểu, Quận 1"
-            />
-            <Select
-              label="Tỉnh / Thành phố"
-              options={provinceOptions}
-              value={provinceCode}
-              onChange={(v) => setProvinceCode(v)}
-              required
-            />
-          </div>
-          <p className={styles.hintLine}>
-            Khu vực giao: <strong>{provinceNameOf(provinceCode) || 'Hà Nội'}</strong> — phí liên tỉnh tính theo tỉnh này.
+        <QuoteRequestDeliveryCard
+          recipientName={recipientName}
+          onRecipientNameChange={(value) => {
+            setRecipientName(value);
+            clearError('recipientName');
+          }}
+          recipientPhone={recipientPhone}
+          onRecipientPhoneChange={(value) => {
+            setRecipientPhone(value);
+            clearError('recipientPhone');
+          }}
+          deliveryAddress={deliveryAddress}
+          onDeliveryAddressChange={(value) => {
+            setDeliveryAddress(value);
+            clearError('deliveryAddress');
+          }}
+          provinceCode={provinceCode}
+          onProvinceCodeChange={setProvinceCode}
+          provinceOptions={provinceOptions}
+          errors={fieldErrors}
+        />
+
+        <QuoteRequestPackagingCard
+          customTypes={customTypes}
+          onToggleCustomType={toggleCustomType}
+          customRequirements={customRequirements}
+          onCustomRequirementsChange={setCustomRequirements}
+          availableTypes={availableTypes}
+        />
+
+        <QuoteRequestFlavorCard
+          crustPreference={crustPreference}
+          onCrustPreferenceChange={setCrustPreference}
+          fillingPreference={fillingPreference}
+          onFillingPreferenceChange={setFillingPreference}
+        />
+
+        {error && (
+          <p className={styles.errorText} role="alert">
+            {error}
           </p>
+        )}
 
-          <fieldset className={styles.fieldset}>
-            <legend className={styles.label}>Loại tùy chỉnh cần làm</legend>
-            <div className={styles.chipRow}>
-              {CUSTOM_TYPES.map((type) => {
-                const active = customTypes.includes(type);
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    className={`${styles.chip} ${active ? styles.chipActive : ''}`}
-                    aria-pressed={active}
-                    onClick={() => toggleCustomType(type)}
-                  >
-                    {CUSTOM_TYPE_LABELS[type]}
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <Textarea
-            id="direct-requirements"
-            label="Chi tiết yêu cầu về bánh, in ấn logo và đóng gói"
-            rows={4}
-            value={requirements}
-            onChange={(e) => setRequirements(e.target.value)}
-            placeholder="Ví dụ: 200 hộp bánh nướng thập cẩm và hạt sen, có in logo thương hiệu quà tặng lên hộp."
-            required
-          />
-
-          {error && (
-            <p className={styles.errorText} role="alert">
-              {error}
-            </p>
-          )}
-
-          <div className={styles.actions}>
-            <ButtonLink to={routes.base.vendor(vendor?.id || id || '')} variant="secondary">
-              Quay lại hồ sơ xưởng
-            </ButtonLink>
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              iconRight={busy ? undefined : 'arrowRight'}
-              disabled={busy}
-            >
-              {busy ? 'Đang gửi yêu cầu báo giá...' : 'Gửi yêu cầu báo giá cho xưởng'}
-            </Button>
-          </div>
-        </Card>
+        <div className={styles.actions}>
+          <ButtonLink to={routes.base.vendor(vendor.id)} variant="secondary">
+            Quay lại hồ sơ đơn vị
+          </ButtonLink>
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            iconRight={busy ? undefined : 'arrowRight'}
+            disabled={busy}
+          >
+            {busy ? 'Đang gửi yêu cầu báo giá...' : 'Gửi yêu cầu báo giá cho đơn vị'}
+          </Button>
+        </div>
       </form>
-    </div>
+    </>
   );
 }

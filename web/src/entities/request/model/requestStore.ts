@@ -21,6 +21,19 @@ export type RequestType = 'OPEN' | 'DIRECT';
  */
 export type CustomType = 'BAG' | 'CARD' | 'STICKER' | 'TEMPLATE_BOX';
 
+/**
+ * What joins the parts of `customSpec`: the buyer's free text, "Vỏ: …" and "Nhân: …".
+ *
+ * The request form joins them with it and the spec list splits on it, so both sides read the same parts.
+ */
+export const SPEC_PART_SEPARATOR = ' | ';
+
+/** The custom types among codes the backend sent, in the order of `CUSTOM_TYPES`; unknown codes are dropped. */
+export function toCustomTypes(codes: readonly string[] | undefined): CustomType[] {
+  const known = new Set(codes ?? []);
+  return CUSTOM_TYPES.filter((type) => known.has(type));
+}
+
 /** Vietnamese labels of the request status (shown in the buyer and vendor UI). */
 export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
   OPEN: 'Đang mở',

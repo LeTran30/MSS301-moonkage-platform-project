@@ -17,8 +17,9 @@ export const queryKeys = {
     taxonomy: () => ['product', 'taxonomy'] as const,
   },
   vendor: {
-    catalog: () => ['vendor', 'catalog'] as const,
+    catalog: (provinceCode: string) => ['vendor', 'catalog', provinceCode] as const,
     detail: (vendorId: string | null) => ['vendor', 'detail', vendorId ?? ''] as const,
+    supplier: (vendorId: string | null) => ['vendor', 'supplier', vendorId ?? ''] as const,
     myId: () => ['vendor', 'my-id'] as const,
     orderProfile: (vendorId: string) => ['vendor', 'order-profile', vendorId] as const,
     deliveryAreas: (vendorId: string) => ['vendor', 'delivery-areas', vendorId] as const,

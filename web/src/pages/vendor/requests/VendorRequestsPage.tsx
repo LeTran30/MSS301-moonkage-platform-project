@@ -14,7 +14,7 @@ import { useCurrentUser } from '@/entities/user';
 import { useOwnVendorId } from '@/entities/vendor';
 import { SubmitQuoteModal } from '@/features/respond-to-quote-request';
 import { useWithdrawQuote } from '@/features/withdraw-quote';
-import { useDeclineInvitation } from '@/features/decline-invitation';
+import { DeclineInvitationModal, useDeclineInvitation } from '@/features/decline-invitation';
 import styles from './VendorRequestsPage.module.css';
 
 type RequestTab = 'OPEN' | 'DIRECT' | 'ALL';
@@ -24,10 +24,18 @@ function liveQuoteOf(req: QuoteRequest): Quote | undefined {
   return req.quotes.find((q) => q.status === 'SUBMITTED' || q.status === 'ACCEPTED');
 }
 
+/** Requests still taking quotes first, then the newest. */
+function byOpenThenNewest(a: QuoteRequest, b: QuoteRequest): number {
+  const open = Number(b.status === 'OPEN') - Number(a.status === 'OPEN');
+  return open !== 0 ? open : b.createdAt.localeCompare(a.createdAt);
+}
+
 export function VendorRequestsPage() {
-  const [activeTab, setActiveTab] = useState<RequestTab>('OPEN');
+  // "Tất cả" trước: một yêu cầu chỉ định riêng mới không bị giấu sau tab yêu cầu mở.
+  const [activeTab, setActiveTab] = useState<RequestTab>('ALL');
   const [selectedReq, setSelectedReq] = useState<QuoteRequest | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [declining, setDeclining] = useState<QuoteRequest | null>(null);
 
   // FR-36: the requests sent to the caller's vendor. The backend filters them
   // by the vendor of the token.
@@ -40,11 +48,18 @@ export function VendorRequestsPage() {
   const withdrawQuote = useWithdrawQuote();
   const declineInvitation = useDeclineInvitation();
 
-  const filteredRequests = requests.filter((req) => {
-    if (activeTab === 'OPEN') return req.type === 'OPEN';
-    if (activeTab === 'DIRECT') return req.type === 'DIRECT';
-    return true;
-  });
+  const filteredRequests = requests
+    .filter((req) => {
+      if (activeTab === 'OPEN') return req.type === 'OPEN';
+      if (activeTab === 'DIRECT') return req.type === 'DIRECT';
+      return true;
+    })
+    .sort(byOpenThenNewest);
+  // Chỉ yêu cầu còn nhận báo giá mới là cơ hội; yêu cầu đã chốt hay hết hạn thì không.
+  const openRequests = requests.filter((req) => req.status === 'OPEN');
+  const openCount = (type?: QuoteRequest['type']) =>
+    openRequests.filter((req) => !type || req.type === type).length;
+  const tabLabel = (label: string, count: number) => (count > 0 ? `${label} (${count})` : label);
 
   const handleOpenQuoteModal = (req: QuoteRequest) => {
     setSelectedReq(req);
@@ -66,15 +81,13 @@ export function VendorRequestsPage() {
     });
   };
 
-  /** AC-36.3: the only answer a vendor may give an invitation is declining it. */
-  const handleDeclineInvitation = (req: QuoteRequest) => {
+  /** AC-36.3: the only answer a vendor may give an invitation is declining it, with the reason it chose. */
+  const handleDeclineInvitation = (req: QuoteRequest, declineReason: string) => {
     if (!vendorId) return;
     void run(async () => {
-      await declineInvitation(req.id, vendorId, {
-        status: 'DECLINED',
-        declineReason: 'Xưởng không đủ năng lực đáp ứng số lượng và thời hạn này.',
-      });
-      toast.success(`Đã từ chối lời mời của yêu cầu #${requestCode(req.id)}.`);
+      await declineInvitation(req.id, vendorId, { status: 'DECLINED', declineReason });
+      toast.success(`Đã từ chối yêu cầu #${requestCode(req.id)}.`);
+      setDeclining(null);
       asyncRequests.reload();
     });
   };
@@ -106,16 +119,16 @@ export function VendorRequestsPage() {
         <div className={styles.badgeHint}>
           <Icon name="sparkle" size={16} /> Cơ hội doanh số:{' '}
           <strong>
-            {requests.reduce((sum, r) => sum + r.quantity, 0).toLocaleString()} hộp bánh
+            {openRequests.reduce((sum, r) => sum + r.quantity, 0).toLocaleString()} hộp bánh
           </strong>
         </div>
       </div>
 
       <Tabs<RequestTab>
         items={[
-          { id: 'OPEN', label: 'Yêu cầu mở toàn sàn' },
-          { id: 'DIRECT', label: 'Yêu cầu chỉ định riêng' },
-          { id: 'ALL', label: 'Tất cả yêu cầu' },
+          { id: 'ALL', label: tabLabel('Tất cả yêu cầu', openCount()) },
+          { id: 'OPEN', label: tabLabel('Yêu cầu mở toàn sàn', openCount('OPEN')) },
+          { id: 'DIRECT', label: tabLabel('Yêu cầu chỉ định riêng', openCount('DIRECT')) },
         ]}
         activeId={activeTab}
         onChange={setActiveTab}
@@ -137,7 +150,7 @@ export function VendorRequestsPage() {
                     <span className={styles.reqId}>#{requestCode(req.id)}</span>
                     <Badge tone={req.type === 'DIRECT' ? 'gold' : 'neutral'}>
                       {req.type === 'DIRECT'
-                        ? 'Chỉ định riêng cho xưởng'
+                        ? 'Chỉ định riêng cho Shop bạn'
                         : 'Đăng công khai toàn sàn'}
                     </Badge>
                     <span className={styles.reqDate}>
@@ -214,7 +227,13 @@ export function VendorRequestsPage() {
                     </div>
 
                     <div className={styles.responsesCount}>
-                      Đã có <strong>{quoteTotal} xưởng</strong> gửi báo giá
+                      {req.type === 'DIRECT' ? (
+                        'Khách chỉ gửi yêu cầu này cho Shop bạn'
+                      ) : (
+                        <>
+                          Đã có <strong>{quoteTotal} xưởng</strong> gửi báo giá
+                        </>
+                      )}
                     </div>
 
                     {isOpen && (
@@ -246,9 +265,9 @@ export function VendorRequestsPage() {
                           variant="ghost"
                           size="sm"
                           loading={busy}
-                          onClick={() => handleDeclineInvitation(req)}
+                          onClick={() => setDeclining(req)}
                         >
-                          Từ chối lời mời
+                          Từ chối yêu cầu
                         </Button>
                       )}
                     </div>
@@ -259,6 +278,16 @@ export function VendorRequestsPage() {
             );
           })}
         </div>
+      )}
+
+      {declining && (
+        <DeclineInvitationModal
+          open
+          requestCode={requestCode(declining.id)}
+          busy={busy}
+          onClose={() => setDeclining(null)}
+          onDecline={(reason) => handleDeclineInvitation(declining, reason)}
+        />
       )}
 
       {/* Modal Soạn báo giá qua Feature */}
