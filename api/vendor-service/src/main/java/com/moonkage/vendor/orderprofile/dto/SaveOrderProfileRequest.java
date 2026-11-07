@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor.dto.request;
+package com.moonkage.vendor.orderprofile.dto;
 
 import com.moonkage.vendor.vendor.CustomType;
 import com.moonkage.vendor.vendor.VendorConstant;

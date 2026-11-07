@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor.vo;
+package com.moonkage.vendor.vendor.elements;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

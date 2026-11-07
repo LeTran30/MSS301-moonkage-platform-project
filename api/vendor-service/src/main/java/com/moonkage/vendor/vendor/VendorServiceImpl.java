@@ -18,7 +18,7 @@ import com.moonkage.vendor.vendor.dto.response.VendorDocumentLinkResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
-import com.moonkage.vendor.vendor.vo.DeliveryFee;
+import com.moonkage.vendor.vendor.elements.DeliveryFee;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,7 +49,7 @@ class VendorServiceImpl implements VendorService {
 
     private final VendorRepository vendorRepository;
     private final VendorFinder vendorFinder;
-    private final DeliveryAreaRepository deliveryAreaRepository;
+    private final DeliveryAreaReader deliveryAreaReader;
     private final VendorSnapshotPublisher snapshotPublisher;
     private final VendorOwnerCheckRepository ownerCheckRepository;
     private final VendorReviewRepository reviewRepository;
@@ -248,10 +248,7 @@ class VendorServiceImpl implements VendorService {
                         .findFirstByVendorIdOrderBySubmissionNoDesc(vendor.getId())
                         .orElse(null)
                 : null;
-        List<String> deliveryAreas = deliveryAreaRepository.findByVendorId(vendor.getId()).stream()
-                .map(area -> area.getProvinceCode().value())
-                .sorted()
-                .toList();
+        List<String> deliveryAreas = deliveryAreaReader.provinceCodesOf(vendor.getId());
         return VendorMapper.toDetailResponse(vendor, deliveryAreas, documents, ownerCheck);
     }
 

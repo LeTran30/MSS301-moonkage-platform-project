@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor.vo;
+package com.moonkage.vendor.vendor.elements;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

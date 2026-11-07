@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.deliveryarea;
 
 import com.moonkage.vendor.common.vo.ProvinceCode;
 import jakarta.persistence.Column;

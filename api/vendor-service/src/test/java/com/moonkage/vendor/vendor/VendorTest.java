@@ -9,8 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.ProvinceCode;
-import com.moonkage.vendor.vendor.vo.RepresentativeName;
-import com.moonkage.vendor.vendor.vo.TaxCode;
+import com.moonkage.vendor.vendor.elements.RepresentativeName;
+import com.moonkage.vendor.vendor.elements.TaxCode;
 import org.junit.jupiter.api.Test;
 
 /** The vendor's status moves only along VendorStatus.canTransitionTo (FR-27, FR-45). */

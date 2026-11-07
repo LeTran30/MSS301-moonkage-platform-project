@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.orderprofile;
 
 import com.moonkage.vendor.cakeattribute.CakeAttributeGroup;
 import com.moonkage.vendor.cakeattribute.CakeAttributeRef;
@@ -6,6 +6,8 @@ import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.PriceTiers;
 import com.moonkage.vendor.common.vo.Quantity;
+import com.moonkage.vendor.vendor.CustomType;
+import com.moonkage.vendor.vendor.SupplySource;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor.dto.request;
+package com.moonkage.vendor.deliveryarea.dto;
 
 import jakarta.validation.constraints.NotNull;
 import java.util.List;

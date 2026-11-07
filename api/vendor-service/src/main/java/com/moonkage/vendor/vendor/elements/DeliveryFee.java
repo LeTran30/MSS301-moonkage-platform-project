@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor.vo;
+package com.moonkage.vendor.vendor.elements;
 
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
