@@ -55,6 +55,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      # `openapi-typescript` needs TypeScript 5 (it uses the `ts.factory` JS
+      # API), while the web app itself is on TypeScript 7 — so the generator
+      # lives in its own package (`web/codegen/`) with its own lockfile.
+      - name: Install API type generator
+        run: npm ci --prefix codegen
+
       - name: Lint (oxlint)
         run: npm run lint -- --deny-warnings
 
@@ -67,6 +73,12 @@ jobs:
       # no @media at all will break the moment the viewport gets narrow.
       - name: Responsive CSS check
         run: node scripts/check-responsive.mjs
+
+      # Every design token (color, radius, spacing, breakpoint) must be used
+      # through `var(--…)` — a raw hex or a raw px in a @media condition is a
+      # value that silently drifts from the design system.
+      - name: Design token check
+        run: node scripts/check-design-tokens.mjs
 
       # Spec IDs (FR-06, M6.1.3, FLOW 5…) must never reach the rendered UI:
       # they are internal requirement codes, meaningless to end users.
@@ -175,6 +187,16 @@ jobs:
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
+
+      # The generated TypeScript types are the machine-checked copy of the API
+      # contract. If the backend changed an endpoint and nobody regenerated
+      # them, the committed types are stale — that is exactly the drift this
+      # gate is meant to catch, so regenerate and fail on any diff.
+      - name: API types up to date
+        run: |
+          npm run generate:api-types
+          git diff --exit-code -- src/shared/api/generated/ \
+            || (echo "::error::Type API đã lệch — chạy 'npm run generate:api-types' rồi commit." && exit 1)
 
       - name: E2E tests (Playwright)
         run: npm run e2e
