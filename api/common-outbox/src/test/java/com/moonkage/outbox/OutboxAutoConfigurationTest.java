@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.moonkage.observability.OutboxMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.tracing.Tracer;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,7 @@ class OutboxAutoConfigurationTest {
                 mock(OutboxEventSource.class),
                 mock(RabbitTemplate.class),
                 new OutboxMetrics(new SimpleMeterRegistry()),
+                new OutboxTraceContext(Tracer.NOOP),
                 properties);
 
         assertThat(relay).isNotNull();

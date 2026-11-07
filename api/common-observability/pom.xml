@@ -36,6 +36,17 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- BE-11 — the OpenTelemetry bridge: turns a Micrometer span into an OTel span and
+             exports it over OTLP. The versions come from the Spring Boot BOM (micrometer-tracing-bom
+             and opentelemetry-bom), so they always match the actuator version in use. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
