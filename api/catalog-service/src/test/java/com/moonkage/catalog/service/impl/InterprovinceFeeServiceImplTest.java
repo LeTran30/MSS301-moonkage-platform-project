@@ -17,6 +17,7 @@ import com.moonkage.catalog.exception.CatalogErrorCode;
 import com.moonkage.catalog.exception.CatalogException;
 import com.moonkage.catalog.repository.InterprovinceFeeRepository;
 import com.moonkage.catalog.repository.OutboxEventRepository;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -50,7 +51,8 @@ class InterprovinceFeeServiceImplTest {
                 feeRepository,
                 outboxRepository,
                 new ObjectMapper().findAndRegisterModules(),
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                OutboxTraceContext.noop());
     }
 
     @Test
@@ -126,7 +128,7 @@ class InterprovinceFeeServiceImplTest {
         ObjectMapper mapper = org.mockito.Mockito.mock(ObjectMapper.class);
         when(mapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("test") {});
         service = new InterprovinceFeeServiceImpl(
-                feeRepository, outboxRepository, mapper, Clock.fixed(NOW, ZoneOffset.UTC));
+                feeRepository, outboxRepository, mapper, Clock.fixed(NOW, ZoneOffset.UTC), OutboxTraceContext.noop());
         when(feeRepository.lockProvinces()).thenReturn(PROVINCES);
         when(feeRepository.findFees()).thenReturn(List.of());
         assertThatThrownBy(() -> service.replace("admin", "ADMIN", request(1L, 2L)))

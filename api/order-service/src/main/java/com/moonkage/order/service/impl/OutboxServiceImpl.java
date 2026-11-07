@@ -7,6 +7,7 @@ import com.moonkage.order.entity.OutboxEvent;
 import com.moonkage.order.enums.AggregateType;
 import com.moonkage.order.repository.OutboxEventRepository;
 import com.moonkage.order.service.OutboxService;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class OutboxServiceImpl implements OutboxService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final OutboxTraceContext traceContext;
 
     @Value("${spring.application.name}")
     private String sourceService;
@@ -35,7 +37,7 @@ public class OutboxServiceImpl implements OutboxService {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Event " + eventId + " cannot be serialized", e);
         }
-        outboxEventRepository.save(OutboxEvent.of(eventId, routingKey, payload));
+        outboxEventRepository.save(OutboxEvent.of(eventId, routingKey, payload, traceContext.currentTraceParent()));
     }
 
     @Override

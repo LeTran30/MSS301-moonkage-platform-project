@@ -27,3 +27,10 @@ spring:
 # no broker in tests: the relay would only log failures
 outbox:
   relay-interval: 1h
+
+# BE-11: no collector in the tests, so the spans are not exported anywhere
+management:
+  otlp:
+    tracing:
+      export:
+        enabled: false

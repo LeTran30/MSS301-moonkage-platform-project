@@ -23,7 +23,11 @@ class JpaOutboxEventSource implements OutboxEventSource {
     public List<OutboxEventRow> findUnpublished(Pageable page) {
         return outboxEventRepository.findByPublishedAtIsNullOrderByCreatedAtAsc(page).stream()
                 .map(event -> new OutboxEventRow(
-                        event.getId(), event.getRoutingKey(), event.getPayload(), event.getAttempts()))
+                        event.getId(),
+                        event.getRoutingKey(),
+                        event.getPayload(),
+                        event.getAttempts(),
+                        event.getTraceParent()))
                 .toList();
     }
 

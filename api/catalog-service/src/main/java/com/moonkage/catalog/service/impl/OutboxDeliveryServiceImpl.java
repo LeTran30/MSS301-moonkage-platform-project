@@ -5,6 +5,7 @@ import com.moonkage.catalog.config.RabbitConfig;
 import com.moonkage.catalog.entity.OutboxEvent;
 import com.moonkage.catalog.repository.OutboxEventRepository;
 import com.moonkage.catalog.service.OutboxDeliveryService;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class OutboxDeliveryServiceImpl implements OutboxDeliveryService {
     private final RabbitTemplate rabbitTemplate;
     private final CatalogOutboxProperties properties;
     private final Clock clock;
+    private final OutboxTraceContext traceContext;
 
     @Override
     @Transactional
@@ -53,31 +55,45 @@ public class OutboxDeliveryServiceImpl implements OutboxDeliveryService {
         return outboxRepository.countUnpublished();
     }
 
+    /**
+     * Publishes one event, inside the trace of the request that wrote it (BE-11).
+     *
+     * <p>The relay runs in its own thread, long after the request is gone, so the trace of that request travels with
+     * the row and is put back in scope here. The {@code traceparent} that goes on the wire lets the consumer
+     * continue the same trace.
+     */
     private boolean send(OutboxEvent event) {
-        MessageProperties messageProperties = new MessageProperties();
-        messageProperties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
-        messageProperties.setContentEncoding(StandardCharsets.UTF_8.name());
-        messageProperties.setMessageId(event.id());
-        messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
-        Message message = new Message(event.payload().getBytes(StandardCharsets.UTF_8), messageProperties);
-        CorrelationData correlation = new CorrelationData(event.id());
-        try {
-            rabbitTemplate.send(RabbitConfig.EVENTS_EXCHANGE, event.routingKey(), message, correlation);
-            CorrelationData.Confirm confirm =
-                    correlation.getFuture().get(properties.getConfirmTimeout().toMillis(), TimeUnit.MILLISECONDS);
-            // Rabbit can ACK an unroutable message. Returns are populated before the confirm future completes.
-            if (confirm.isAck() && correlation.getReturned() == null) {
-                return true;
+        try (var scope = traceContext.restore(event.traceParent())) {
+            MessageProperties messageProperties = new MessageProperties();
+            messageProperties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+            messageProperties.setContentEncoding(StandardCharsets.UTF_8.name());
+            messageProperties.setMessageId(event.id());
+            messageProperties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+            String traceParent = traceContext.currentTraceParent();
+            if (traceParent != null) {
+                messageProperties.setHeader(OutboxTraceContext.TRACEPARENT, traceParent);
             }
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-        } catch (AmqpException | ExecutionException | TimeoutException exception) {
-            log.warn(
-                    "Outbox event {} ({}) remains pending: {}",
-                    event.id(),
-                    event.routingKey(),
-                    exception.getClass().getSimpleName());
+            Message message = new Message(event.payload().getBytes(StandardCharsets.UTF_8), messageProperties);
+            CorrelationData correlation = new CorrelationData(event.id());
+            try {
+                rabbitTemplate.send(RabbitConfig.EVENTS_EXCHANGE, event.routingKey(), message, correlation);
+                CorrelationData.Confirm confirm = correlation
+                        .getFuture()
+                        .get(properties.getConfirmTimeout().toMillis(), TimeUnit.MILLISECONDS);
+                // Rabbit can ACK an unroutable message. Returns are populated before the confirm future completes.
+                if (confirm.isAck() && correlation.getReturned() == null) {
+                    return true;
+                }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            } catch (AmqpException | ExecutionException | TimeoutException exception) {
+                log.warn(
+                        "Outbox event {} ({}) remains pending: {}",
+                        event.id(),
+                        event.routingKey(),
+                        exception.getClass().getSimpleName());
+            }
+            return false;
         }
-        return false;
     }
 }
