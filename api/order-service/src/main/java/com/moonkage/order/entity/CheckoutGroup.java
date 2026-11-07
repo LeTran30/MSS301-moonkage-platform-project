@@ -31,6 +31,8 @@ public class CheckoutGroup {
     @Column(name = "vendor_id", length = 36)
     private String vendorId;
 
+    private String vendorName;
+
     @Column(nullable = false, unique = true, length = 36)
     private String orderId;
 

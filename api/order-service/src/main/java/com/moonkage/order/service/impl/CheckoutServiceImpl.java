@@ -240,6 +240,7 @@ public class CheckoutServiceImpl implements CheckoutService {
             order.setStatus(OrderStatus.PAID);
             order.setBuyerAccountId(checkout.getBuyerAccountId());
             order.setVendorId(group.getVendorId());
+            order.setVendorName(group.getVendorName());
             order.setPaymentGroupId(checkout.getId());
             order.setItemsAmount(group.getItemsAmount());
             order.setShippingFee(group.getShippingFee());
@@ -347,6 +348,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         CheckoutGroup group = new CheckoutGroup();
         group.setCheckoutId(checkoutId);
         group.setVendorId(vendor.vendorId());
+        group.setVendorName(vendor.vendorName());
         group.setOrderId(UUID.randomUUID().toString());
         group.setItemsAmount(0L);
         group.setShippingFee(vendor.shippingFee());
@@ -362,6 +364,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         line.setVendorId(item.vendorId());
         line.setProductId(item.productId());
         line.setProductName(product.name());
+        line.setImageKey(product.imageKey());
         line.setUnitPrice(item.unitPrice());
         line.setQuantity(item.qty());
         return line;
@@ -372,6 +375,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         item.setOrder(order);
         item.setProductId(line.getProductId());
         item.setProductName(line.getProductName());
+        item.setImageKey(line.getImageKey());
         item.setUnitPrice(line.getUnitPrice());
         item.setQuantity(line.getQuantity());
         item.setSubtotal(line.getUnitPrice() * line.getQuantity());

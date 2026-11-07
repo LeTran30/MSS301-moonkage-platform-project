@@ -161,7 +161,7 @@ Chống xử lý lặp bằng bảng `processed_events` (`InboxService.markProce
 
 | Service | Gọi qua | Mục đích |
 |---|---|---|
-| catalog | Feign `CatalogClient` → `POST /internal/products/snapshot` | Tính phí giao của đơn mua ngay (D-14) |
+| catalog | Feign `CatalogClient` → `POST /internal/products/snapshot` | Tính phí giao của đơn mua ngay (D-14). Snapshot này còn trả tên Shop và ảnh bìa sản phẩm. Đơn lưu lại cả hai (`orders.vendor_name`, `order_items.image_key`), giống như đã lưu tên và giá sản phẩm, để trang đơn hiện đúng như lúc mua dù sau đó danh mục có đổi. API trả hai trường này là `vendorName` và `items[].imageUrl` (link ảnh trong bucket public); đơn tạo trước khi có hai cột này thì cả hai là `null` |
 | vendor | Feign `VendorClient` → `POST /internal/stock/reservations`, `POST /internal/stock/reservations/{checkoutId}/commit`, `DELETE /internal/stock/reservations/{checkoutId}`, `GET /internal/vendors/by-owner/{accountId}` | Giữ hàng, chốt hàng, trả hàng; tra xem tài khoản này sở hữu vendor nào (chủ người bán không phải vai, D-19) |
 | payment | Feign `PaymentClient` → `POST /internal/payments` (header `Idempotency-Key`), `POST /internal/refunds` | Tạo thanh toán checkout / phần còn lại, yêu cầu hoàn tiền `LATE_PAYMENT` |
 

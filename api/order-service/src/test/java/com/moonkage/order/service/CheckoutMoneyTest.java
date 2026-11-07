@@ -465,9 +465,10 @@ class CheckoutMoneyTest {
         return new ProductSnapshotResponse(
                 List.of(
                         new ProductPart(
-                                "p1", "v1", ownerAccountId, "Bánh nướng", 100_000L, 10, null, "LOCAL", p1OnSale),
-                        new ProductPart("p2", "v2", "owner-2", "Bánh dẻo", 250_000L, 10, null, "NATIONWIDE", true),
-                        new ProductPart("p3", "v1", "owner-2", "Bánh bò", 50_000L, 10, null, "LOCAL", true)),
+                                "p1", "v1", ownerAccountId, "Bánh nướng", 100_000L, 10, null, "LOCAL", p1OnSale, null),
+                        new ProductPart(
+                                "p2", "v2", "owner-2", "Bánh dẻo", 250_000L, 10, null, "NATIONWIDE", true, null),
+                        new ProductPart("p3", "v1", "owner-2", "Bánh bò", 50_000L, 10, null, "LOCAL", true, null)),
                 List.of(
                         new VendorPart("v1", "Tiệm A", true, false, 30_000L),
                         new VendorPart("v2", "Xưởng B", v2Delivers, true, v2Delivers ? 45_000L : null)));

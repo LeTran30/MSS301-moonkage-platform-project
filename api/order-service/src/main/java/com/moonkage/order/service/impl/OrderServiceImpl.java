@@ -5,6 +5,7 @@ import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
 import com.moonkage.order.client.dto.CreatePaymentRequest;
 import com.moonkage.order.client.dto.CreatePaymentResponse;
+import com.moonkage.order.client.dto.VendorView;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
 import com.moonkage.order.dto.event.QuoteAcceptedEvent;
@@ -40,12 +41,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -189,6 +192,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.DEPOSITED);
         order.setBuyerAccountId(event.buyerAccountId());
         order.setVendorId(event.vendorId());
+        order.setVendorName(vendorNameOf(event.vendorId()));
         order.setQuoteId(event.quoteId());
         order.setAgreementId(event.acceptanceId());
         order.setAgreementHash(event.contentHash());
@@ -349,6 +353,16 @@ public class OrderServiceImpl implements OrderService {
         return info;
     }
 
+    /** The Shop's name to keep on a custom order; null when vendor-service cannot answer, the order is made anyway. */
+    private String vendorNameOf(String vendorId) {
+        try {
+            return vendorDirectory.find(vendorId).map(VendorView::businessName).orElse(null);
+        } catch (FeignException e) {
+            log.warn("Name of vendor {} unknown for its custom order: {}", vendorId, e.getMessage());
+            return null;
+        }
+    }
+
     /** A custom line has no catalog product; it is kept under the quote's id. */
     private static OrderItem toItem(Order order, String quoteId, QuoteAcceptedEvent.LinePart line) {
         OrderItem item = new OrderItem();
@@ -361,7 +375,7 @@ public class OrderServiceImpl implements OrderService {
         return item;
     }
 
-    private static OrderResponse toResponse(Order order, List<OrderItem> items) {
+    private OrderResponse toResponse(Order order, List<OrderItem> items) {
         InvoiceInfo invoice = order.getInvoiceInfo();
         return new OrderResponse(
                 order.getId(),
@@ -369,6 +383,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getStatus(),
                 order.getBuyerAccountId(),
                 order.getVendorId(),
+                order.getVendorName(),
                 order.getPaymentGroupId(),
                 order.getQuoteId(),
                 order.getItemsAmount(),
@@ -402,6 +417,7 @@ public class OrderServiceImpl implements OrderService {
                         .map(i -> new OrderResponse.Item(
                                 i.getProductId(),
                                 i.getProductName(),
+                                fileService.publicUrl(i.getImageKey()),
                                 i.getUnitPrice(),
                                 i.getQuantity(),
                                 i.getSubtotal()))

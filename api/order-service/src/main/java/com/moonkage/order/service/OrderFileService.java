@@ -40,4 +40,9 @@ public class OrderFileService {
     public String downloadUrl(String objectKey) {
         return objectKey == null ? null : objectStorage.createPresignedDownloadUrl(objectKey);
     }
+
+    /** The permanent link of a product image in the public bucket, which every visitor may read. */
+    public String publicUrl(String objectKey) {
+        return objectKey == null ? null : objectStorage.toPublicUrl(objectKey);
+    }
 }

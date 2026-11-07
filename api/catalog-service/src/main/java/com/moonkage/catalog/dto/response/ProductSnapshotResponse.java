@@ -24,7 +24,8 @@ public record ProductSnapshotResponse(List<ProductPart> products, List<VendorPar
             int stock,
             Integer quoteThreshold,
             DeliveryLabel deliveryLabel,
-            boolean purchasable) {}
+            boolean purchasable,
+            String imageKey) {}
 
     /**
      * One delivery fee per vendor for the requested products (BR-29, BR-30).
