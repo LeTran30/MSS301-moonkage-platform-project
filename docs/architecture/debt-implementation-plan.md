@@ -121,7 +121,7 @@ Thêm vào `api/api-gateway/src/main/resources/application.yml`, theo đúng map
     - Path=/api/payments,/api/payments/**,/api/ledgers,/api/ledgers/**,/api/refunds,/api/refunds/**
 ```
 
-Mỗi route khai báo **cả** dạng gốc (`/api/x`) **và** dạng con (`/api/x/**`) vì `Path` của gateway là so khớp chính xác: `Path=/api/orders/**` **không** khớp `/api/orders` (không có dấu gạch chéo sau). Bản kế hoạch gốc chỉ viết dạng `/**` nên **không** phục vụ endpoint gốc — ví dụ `GET /api/orders` (danh sách đơn của tôi) và `GET /api/payments` sẽ trả 404 nếu chỉ khai báo `/api/orders/**`.
+Mỗi route khai báo **cả** dạng gốc (`/api/x`) **và** dạng con (`/api/x/**`). Trên thực tế `Path=/api/orders/**` của Spring Cloud Gateway **có** khớp cả `/api/orders` (dạng `/**` bao gồm luôn gốc trần), nên việc khai báo thêm dạng gốc là để **đọc dễ** và để khớp với văn bản hợp đồng ở mục D-30 — **không** phải vì `/**` không khớp gốc. Bản kế hoạch gốc đã sai khi cho rằng chỉ khai báo `/api/orders/**` sẽ khiến `GET /api/orders` trả 404: đã kiểm chứng lại trên stack Docker thật (2026-11-07) và trong `GatewayRouteCoverageTest` (`wildcardAlsoMatchesTheBareRoot`).
 
 **Không có aggregate root nào bị hai service phục vụ cùng lúc** (D-30 mục 4): `/api/products`, `/api/interprovince-fees` (catalog), `/api/vendors`, `/api/registration-fee-config`, `/api/cake-attributes` (vendor), `/api/notifications` (orchestrator), `/api/auth`, `/api/accounts`, `/api/addresses`, `/api/nfc` (identity), `/api/quote-requests`, `/api/suppliers` (quotation), `/api/carts`, `/api/checkouts`, `/api/orders` (order), `/api/payments`, `/api/ledgers`, `/api/refunds` (payment) — mỗi gốc thuộc đúng một service. `/api/refunds/**` và `/api/ledgers/**` **không** bị route nào cũ phủ, nên phải khai báo mới.
 
@@ -140,6 +140,10 @@ Mỗi route khai báo **cả** dạng gốc (`/api/x`) **và** dạng con (`/api
 > `SecurityConfig.java` chỉ thêm **một** matcher mới: `"/identity-service/api/auth/**", "/api/auth/**"` — vì đây là `permitAll()` duy nhất trong số các matcher đã có mà dạng chuẩn còn thiếu. Các matcher còn lại (`/api/suppliers/**`, `/api/payments/vnpay/*`) đã có cả hai dạng từ trước.
 >
 > **`/order-service/api/reviews/**` là matcher chết:** không controller nào phục vụ `/api/reviews/**` (`ReviewController` nằm dưới `/api/orders/{orderId}/reviews`). Nó **không** được xoá trong đợt này vì thuộc A-3 (dọn dạng cũ), nhưng cũng **không** được thêm dạng chuẩn — thêm `/api/reviews/**` sẽ mở một đường dẫn không có route.
+>
+> **Bổ sung 2026-11-07 — `GatewayRouteCoverageTest` khoá hành vi phủ route.** Test mới ở `api/api-gateway/src/test/java/com/moonkage/gateway/config/GatewayRouteCoverageTest.java` đọc `application.yml` thật của gateway **và** controller thật của cả 7 service, rồi fail nếu một endpoint public không có route nào phủ, hoặc nếu route trỏ sang sai service. Test này bắt được lỗi `vendor-service` chỉ khai báo dạng `/**` mà không khai báo dạng gốc — đã sửa bằng cách khai báo cả hai dạng cho `/api/vendors`, `/api/registration-fee-config`, `/api/cake-attributes`.
+>
+> Test cũng **ghi lại** semantics thật của gateway: `Path=/api/x/**` **có** khớp cả `/api/x` (dạng `/**` bao gồm gốc trần). Đoạn mô tả ở trên của mục A-1 trước đây nói ngược lại là **sai**, và đã được sửa.
 
 ---
 
