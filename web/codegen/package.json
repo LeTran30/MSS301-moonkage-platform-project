@@ -1,0 +1,11 @@
+{
+  "name": "moonkage-web-codegen",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Công cụ sinh type API cho web. Tách riêng vì `openapi-typescript` cần TypeScript 5 (JS API `ts.factory`), còn web dùng TypeScript 7.",
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}
