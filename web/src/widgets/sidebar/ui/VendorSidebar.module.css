@@ -98,7 +98,7 @@
  * Ở màn hình hẹp (≤lg), sidebar cột cố định bị ẩn và thay bằng drawer
  * trượt (`SidebarDrawer`) — audit §3.3.
  */
-@media (max-width: 1024px) {
+@media (max-width: var(--breakpoint-lg)) {
   .sidebar {
     display: none;
   }

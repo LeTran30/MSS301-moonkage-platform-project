@@ -188,7 +188,7 @@
 }
 
 /* --- Responsive (audit §3.6) --- */
-@media (max-width: 1024px) {
+@media (max-width: var(--breakpoint-lg)) {
   .layout {
     grid-template-columns: 1fr;
     gap: var(--space-5);
@@ -199,7 +199,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   .container {
     padding: var(--space-5) var(--space-3) var(--space-10);
   }
