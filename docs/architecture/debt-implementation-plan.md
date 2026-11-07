@@ -13,7 +13,7 @@ Còn **9 hạng mục** trong **4 nhóm**. Tổng ước lượng **13–17 ngà
 | Nhóm | Hạng mục | Ước lượng | Phụ thuộc | Ưu tiên |
 |---|---|---|---|---|
 | **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ✅ · xoá filter ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
-| **B. Luồng nghiệp vụ** | B-1 · B-2 · B-3 ✅ | 4–5 ngày | B-1 → B-2 | **P0** |
+| **B. Luồng nghiệp vụ** | B-1 ✅ · B-2 · B-3 ✅ | 4–5 ngày | B-1 → B-2 | **P0** |
 | **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
 | **D. Tài liệu & quyết định** | D-1 ✅ · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
 
@@ -248,7 +248,7 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 ### B-1 — Chạy thật F2 và F3 (báo giá có in logo)
 
-**Chủ sở hữu:** BE lead · **Ước lượng:** 2–3 ngày · **Việc đã được khép lại trong code, cần kiểm chứng**
+**Chủ sở hữu:** BE lead · **Ước lượng:** 2–3 ngày · **Đã xong (kiểm chứng 2026-11-07)**
 
 `user-flow-readiness.md` ghi F2/F3 "Đứt ở bước đặt cọc". **Đã kiểm chứng 2026-11-06:** `api/quotation-service/.../messaging/PaymentEventListener.java` **đã có** listener `payment.succeeded` gọi `recordDepositPaid`, có `ProcessedEvent` (bảng `processed_events`) chống xử lý lặp, và `recordDepositFailed` cho `payment.failed`. Có `QuotationProperties.depositPaymentTimeout` + trạng thái `EXPIRED`.
 
@@ -263,6 +263,23 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 | 5 | Cập nhật bảng kết quả trong `user-flow-readiness.md` | — |
 
 **Xong khi:** cột "Chạy thật" của F2 và F3 ghi "Có" kèm ngày, và đơn đặt riêng xuất hiện ở M6.1.2.
+
+> **Đã chạy thật 2026-11-07 — 5/5 bước đều qua.** Chạy bằng tài khoản seed (`member1@mk.com` mua, `member4@mk.com` là chủ shop `000200000001`, `admin@mk.com`), IPN được ký bằng `VNPAY_HASH_SECRET` trong `.env` theo đúng cách `VnpaySigner` ký (HMAC-SHA512, trường sort theo tên, giá trị rỗng thì bỏ, URL-encode kiểu `java.net.URLEncoder`).
+>
+> | Bước | Kết quả |
+> |---|---|
+> | 1 | Stack Docker chạy, đăng nhập thật qua `POST /api/auth/login` → token 200 |
+> | 2 | `POST /api/quote-requests` → **201** (`invitedCount 1`) → `POST .../quotes` → **201** (tổng 62.550.000, cọc 30% = 18.765.000) → `POST .../acceptance` → **201** `PENDING_PAYMENT` → IPN → **`RspCode 00 Confirm Success`** → quote `ACCEPTED`, request `AWARDED` |
+> | 3 | `outbox_events` của quotation-service có `quote.accepted` với `published_at` đầy đủ; order-service tạo đơn `CUSTOM_ORDER` / `DEPOSITED`, `quote_id` + `agreement_id` có đủ, cọc 18.765.000 / còn lại 43.785.000; ledger `totalCollected = held = 18.765.000` |
+> | 4 | Gửi lại **cùng** IPN → **`RspCode 02 Order already confirmed`**, số đơn không đổi (1 → 1), `processed_events` chỉ có 1 dòng `payment.succeeded` |
+> | 5 | Bảng kết quả trong `user-flow-readiness.md` đã cập nhật: F2 và F3 ghi "Có, 07/11/2026" |
+>
+> **Hai điều kiện ràng buộc phát hiện khi chạy thật** (đã ghi vào tài liệu để người sau không mất thời gian tìm lại):
+>
+> - `type` của yêu cầu báo giá là `DIRECT` hoặc `OPEN`, **không phải** `CUSTOM`. Trường `customTypes` mới là danh sách loại phụ kiện (`BAG` / `CARD` / `STICKER` / `TEMPLATE_BOX`).
+> - `validDays` của báo giá **tối đa 14** (validation trả `400` kèm tên trường khi vượt).
+>
+> **Không còn là nợ:** F2/F3 đã chạy thật. Việc còn mở của nhóm B là B-2 (F4/F5/F7).
 
 ---
 
