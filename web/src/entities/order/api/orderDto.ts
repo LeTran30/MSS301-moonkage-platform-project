@@ -46,6 +46,8 @@ export interface OrderDto {
   items?: Array<{
     productId: string;
     productName: string;
+    /** Cover image of the product on the day of the order; null for a custom line or an older order. */
+    imageUrl?: string | null;
     unitPrice: number;
     quantity: number;
     subtotal: number;
@@ -130,7 +132,8 @@ export interface ProgressUpdateDto {
 
 /** One step of the order's history. */
 export type ProgressUpdate = {
-  milestone: string;
+  /** The status the order reached at this step (OrderStatus on the backend). */
+  milestone: Order['status'];
   note?: string;
   photoKeys: string[];
   createdAt: string;

@@ -7,6 +7,7 @@ import { Badge, Button, ButtonLink, Card, Breadcrumbs, Icon, Input, toast } from
 import { useAction } from '@/shared/lib';
 import {
   nextOrderStatus,
+  orderCode,
   orderStatusLabel,
   orderStatusSteps,
   toBackendOrderStatus,
@@ -84,13 +85,13 @@ export function VendorOrderDetailPage() {
         items={[
           { label: 'Kênh Xưởng', to: routes.vendor.overview },
           { label: 'Quản lý đơn hàng', to: routes.vendor.orders },
-          { label: `Đơn hàng #${order.id}` },
+          { label: `Đơn hàng #${orderCode(order.id)}` },
         ]}
       />
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Xử Lý Đơn Hàng #{order.id}</h1>
+          <h1 className={styles.title}>Xử Lý Đơn Hàng #{orderCode(order.id)}</h1>
           <p className={styles.subtitle}>
             Ngày đặt: {formatDate(order.createdAt)} · Người nhận: {order.shippingAddress.receiver} (
             {order.shippingAddress.phone})
@@ -137,6 +138,12 @@ export function VendorOrderDetailPage() {
                 <strong className={styles.summaryRight}>{order.trackingCode}</strong>
               </div>
             )}
+            <div className={styles.summaryRow}>
+              <span>Phí giao hàng:</span>
+              <strong className={styles.summaryRight}>
+                {order.shippingFee > 0 ? formatCurrency(order.shippingFee) : 'Miễn phí'}
+              </strong>
+            </div>
             <div className={styles.totalRow}>
               <span>Tổng giá trị đơn:</span>
               <span className={styles.totalStrong}>{formatCurrency(order.total)}</span>

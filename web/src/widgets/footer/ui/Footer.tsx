@@ -3,6 +3,9 @@ import { routes } from '@/shared/config';
 import { Icon } from '@/shared/ui';
 import styles from './Footer.module.css';
 
+/** The year of the copyright line, read once when the app loads. */
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 export function Footer() {
   return (
     <footer className={styles.footer}>
@@ -89,9 +92,11 @@ export function Footer() {
         </div>
 
         <div className={styles.bottomBar}>
-          <div>© 2026 Moonkage Platform. Xây dựng chuẩn theo Kiến Trúc Thông Tin v1.7.</div>
+          <div>
+            © {COPYRIGHT_YEAR} Moonkage. Sàn bánh trung thu mua lẻ và đặt số lượng lớn.
+          </div>
           <div className={styles.metaFlags}>
-            <span>Mã nguồn: React 19 + TypeScript + CSS Modules (FSD Architecture)</span>
+            <span>Thanh toán an toàn qua VNPay</span>
           </div>
         </div>
       </div>

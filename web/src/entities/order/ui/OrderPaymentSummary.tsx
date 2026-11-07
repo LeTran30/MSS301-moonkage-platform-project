@@ -24,6 +24,14 @@ export function OrderPaymentSummary({
       <h3 className={styles.cardTitle}>Sổ tiền giao dịch</h3>
       <div className={styles.moneyList}>
         <div className={styles.moneyRow}>
+          <span>Tiền hàng:</span>
+          <span>{formatCurrency(order.subtotal)}</span>
+        </div>
+        <div className={styles.moneyRow}>
+          <span>Phí giao hàng:</span>
+          <span>{order.shippingFee > 0 ? formatCurrency(order.shippingFee) : 'Miễn phí'}</span>
+        </div>
+        <div className={styles.moneyRow}>
           <span>Tổng giá trị đơn hàng:</span>
           <strong>{formatCurrency(order.total)}</strong>
         </div>

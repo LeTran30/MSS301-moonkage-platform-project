@@ -15,7 +15,7 @@ import {
   toast,
 } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useOrderDetail } from '@/entities/order';
+import { orderCode, useOrderDetail } from '@/entities/order';
 import {
   disputeStore,
   useDisputes,
@@ -121,7 +121,7 @@ export function OrderDisputePage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.eyebrow}>KHIẾU NẠI ĐƠN HÀNG</div>
-        <h2 className={styles.title}>Báo Vấn Đề Với Đơn #{order.id}</h2>
+        <h2 className={styles.title}>Báo Vấn Đề Với Đơn #{orderCode(order.id)}</h2>
         <p className={styles.lead}>
           Hạn khiếu nại còn lại:{' '}
           <strong>{order.disputeDeadline ? '3 ngày nội thành' : 'Hợp lệ'}</strong>. Tiền sẽ được giữ
