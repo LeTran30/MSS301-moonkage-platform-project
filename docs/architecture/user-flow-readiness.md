@@ -16,18 +16,18 @@ Danh sách luồng lấy từ sheet "User flows" của `web/docs/information-arc
 | F1 Mua hàng có sẵn | Đủ | Có, 02/11/2026; chạy lại 04/11/2026 | Vendor đăng sản phẩm → listing/chi tiết → giỏ → checkout → IPN → PAID → giao → nhận → đánh giá hiện ở catalog. Lần chạy lại trên image build từ `develop` `cad5df1`: 25/25 bước qua, kể cả IPN gửi lặp trả `02` |
 | F2 Yêu cầu báo giá có in logo | Đủ | **Có, 07/11/2026** | Chạy thật trên stack Docker: buyer gửi yêu cầu (`POST /api/quote-requests` → 201) → shop báo giá (`POST /api/quote-requests/{id}/quotes` → 201) → buyer chấp nhận (`POST .../quotes/{id}/acceptance` → 201, `PENDING_PAYMENT`, tiền cọc 18.765.000 ₫) → IPN ký bằng secret trong `.env` (`RspCode 00 Confirm Success`) → quote `ACCEPTED`, request `AWARDED` → order-service tạo đơn đặt riêng `CUSTOM_ORDER` / `DEPOSITED` (`quote_id` + `agreement_id` có đủ) → ledger `totalCollected = held = 18.765.000`. Gửi lại IPN lần hai trả `02 Order already confirmed` và **không** tạo đơn thứ hai (`processed_events` chỉ có 1 dòng `payment.succeeded`). Phần chạy trên web: xem [mục 4](#4-f2-trên-web-07112026) |
 | F3 Gửi yêu cầu cho một đơn vị | Đủ | **Có, 07/11/2026** | Nối vào F2 từ M6.2 nên chạy cùng một lần: `type = DIRECT` + `targetVendorId` (chỉ 1 shop được mời, `invitedCount = 1`) đi qua đúng nhánh đơn vị đã được mời. Phần chạy trên web: xem [mục 5](#5-f3-trên-web-07112026) |
-| F4 Trở thành người bán | Đủ | Chưa | Nộp hồ sơ (`POST /api/vendors`, giấy tờ), admin quyết định (`POST /api/vendors/{id}/reviews`: duyệt, yêu cầu bổ sung, từ chối), nộp lại, phí đăng ký qua VNPay (vendor-service nghe `payment.succeeded`) |
-| F5 Khiếu nại | Đủ | Chưa | Mở khiếu nại (`/api/orders/{id}/dispute`), payment-service giữ tiền khi nhận `dispute.opened`, admin xử lý, hoàn VNPay (`VnpayRefundClient`); lỗi hoàn thì chuyển xử lý tay (`refund.manual_required`) |
+| F4 Trở thành người bán | Đủ | **Có, 07/11/2026** | Chạy thật trên stack Docker: nộp hồ sơ (`POST /api/vendors` → 201) sau khi tải giấy tờ qua link presigned của MinIO → admin yêu cầu bổ sung (`POST /api/vendors/{id}/reviews` → `NEEDS_INFO`) → chủ Shop nộp lại (`PUT /api/vendors/{id}` → `PENDING`) → admin duyệt (`APPROVE` → `APPROVED`) → phí đăng ký (`POST /api/vendors/{id}/registration-fee-payments` → link VNPay 200.000 ₫) → IPN ký bằng secret trong `.env` (`RspCode 00 Confirm Success`) → `registrationFeePaidAt` có giá trị và **`canOperate` chuyển `false` → `true`**. Nộp lại hồ sơ khi đã `APPROVED` không còn bị chặn bởi `NEEDS_INFO` |
+| F5 Khiếu nại | Đủ | **Có, 07/11/2026** | Chạy thật trên đơn đặt riêng của F2: đưa đơn tới `DELIVERED` (maket `APPROVED` → `IN_PRODUCTION` → `READY_TO_SHIP` → `DELIVERED`, `complaintDeadline` = +7 ngày) → buyer mở khiếu nại kèm ảnh (`POST /api/orders/{id}/dispute` → 201 `OPEN`) → **`dispute.opened` làm `expectedPayoutDate` bằng `null` và `disputeOpen = true`, tiền vẫn `held`** → shop gửi bằng chứng của mình (`POST .../dispute/evidences` → 201, 2 bằng chứng) → shop không tự quyết được (`403`) → admin quyết `FULL_REFUND`: refund 62.550.000 ₫ **vượt số tiền nền tảng đang giữ** (tiền cọc 18.765.000 ₫) nên bị chặn bởi Q-01 → `MANUAL_REQUIRED` → admin xử lý tay (`PATCH /api/refunds/{id}`) → `SUCCEEDED`. Lần khiếu nại thứ hai với `PARTIAL_REFUND` đúng bằng số đang giữ: VNPay sandbox trả `99 Unexpected error` → `MANUAL_REQUIRED` → admin xử lý tay → **ledger `held` 18.765.000 → 0, `refunded` = 18.765.000, có dòng `REFUND` trong `ledger_entries`**. Cả 2 lần đều không giải ngân cho shop |
 | F6 Xác minh NFC | Đủ phía server | Chưa | identity-service có phiên (`/api/nfc/sessions`), nhận thẻ, khóa sau nhiều lần sai. V1–V5 cần app mobile và thẻ thật hoặc dữ liệu `NfcProfileSeeder` |
-| F7 Quản lý sản phẩm | Đủ | Một phần | Đăng sản phẩm đã chạy trong F1. Sửa, ẩn/hiện, admin gỡ (`ProductServiceImpl` của vendor-service) chưa chạy thật |
+| F7 Quản lý sản phẩm | Đủ | **Có, 07/11/2026** | Chạy thật trên shop seed: tạo sản phẩm (`POST /api/vendors/{id}/products` → 201, ảnh qua presigned URL của MinIO) → sửa (`PUT .../products/{id}` → version tăng, giá và tồn kho mới) → ẩn (`PATCH` `HIDDEN`) → hiện lại (`ON_SALE`) → admin gỡ (`REMOVED` + `removedReason`) → **chủ Shop sửa sản phẩm đã gỡ bị chặn `409 VENDOR_026`** → tài khoản khác chạm vào sản phẩm của shop bị `403 COMMON_403` |
 
 Không còn endpoint nào trả `NOT_IMPLEMENTED` (mã `COMMON_501` của vendor-service không còn được dùng).
 
 ## Lỗ hổng
 
-### 1. Cọc đã trả nhưng không có đơn đặt riêng — **đã đóng**
+### 1. Cọc đã trả nhưng không có đơn đặt riêng
 
-> **Đã đóng trong code 06/11/2026, đã kiểm chứng bằng chạy thật 07/11/2026.** Phần dưới đây giữ lại để làm căn cứ cho việc đã sửa gì.
+**Đã sửa.** quotation-service có `PaymentEventListener` nghe `payment.succeeded` purpose `DEPOSIT` và gọi `recordDepositPaid`; lần chạy F2 ngày 07/11/2026 tạo được đơn đặt riêng sau khi cọc. Phần dưới giữ lại để biết lỗ hổng từng là gì.
 
 **Đã sửa.** quotation-service có `PaymentEventListener` nghe `payment.succeeded` purpose `DEPOSIT` và gọi `recordDepositPaid`; lần chạy F2 ngày 07/11/2026 tạo được đơn đặt riêng sau khi cọc. Phần dưới giữ lại để biết lỗ hổng từng là gì.
 
@@ -56,8 +56,6 @@ Hậu quả: tiền cọc vào, acceptance đứng PENDING mãi, người mua kh
 - Cần queue và binding riêng trong `RabbitConfig` của quotation-service.
 - Xử lý `payment.failed` và acceptance hết hạn thanh toán (`depositPaymentTimeout`): hiện cũng không có ai đưa acceptance PENDING về trạng thái kết thúc.
 - Kiểm bằng cách chạy thật F2 tới khi đơn đặt riêng xuất hiện ở M6.1.2.
-
-> **Kết quả kiểm chứng 07/11/2026:** cả 5 việc trên đã có trong code và đã chạy thật thành công — xem dòng F2/F3 trong bảng kết quả. Bảng `processed_events` của quotation-service có đúng 1 dòng `payment.succeeded` sau khi gửi IPN lần hai, và đơn đặt riêng không bị nhân bản.
 
 ### 2. Lỗi nhỏ gặp khi chạy F1
 
@@ -168,5 +166,6 @@ Còn mở:
 ## Việc tiếp theo
 
 1. Phát thông báo trong ứng dụng cho báo giá, cọc, maket và đơn; trả thử phần còn lại bằng thẻ test VNPay.
-2. Chạy thật F4, F5, F7 qua gateway như F1; F6 khi có app mobile.
+2. ~~Chạy thật F4, F5, F7 qua gateway như F1~~ — xong 07/11/2026; F6 khi có app mobile và thẻ thật.
 3. Cập nhật bảng kết quả sau mỗi lần chạy.
+4. Chạy thật F6 (NFC) trên app mobile: `moonkage-mobile` đã trỏ sang đường dẫn chuẩn `/api/...`, còn cần thẻ NFC thật hoặc dữ liệu `NfcProfileSeeder`.

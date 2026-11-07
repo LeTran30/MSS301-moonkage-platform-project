@@ -14,7 +14,7 @@ Còn **9 hạng mục** trong **4 nhóm**. Tổng ước lượng **13–17 ngà
 |---|---|---|---|---|
 | **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ✅ · xoá filter ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
 | **B. Luồng nghiệp vụ** | B-1 ✅ · B-2 · B-3 ✅ | 4–5 ngày | B-1 → B-2 | **P0** |
-| **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
+| **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 ✅ · C-3 | 3–4 ngày | độc lập | **P1** |
 | **D. Tài liệu & quyết định** | D-1 ✅ · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
 
 > **Điểm quan trọng nhất của kế hoạch này:** phần lớn việc còn nợ **không** phụ thuộc app mobile. Chỉ **A-3 (tắt `discovery.locator`)** là cần xác nhận từ bên ngoài repo. Vì vậy A-1 và A-2 có thể làm ngay.
@@ -295,6 +295,14 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 **Xong khi:** cột "Chạy thật" của F4, F5, F7 ghi "Có".
 
+> **Đã xong (07/11/2026).** Cả 3 luồng đã chạy thật trên stack Docker qua gateway, bằng tài khoản seed và IPN ký bằng secret trong `.env`. Bằng chứng từng bước nằm ở dòng F4/F5/F7 của [user-flow-readiness.md](user-flow-readiness.md).
+>
+> - F4: hồ sơ → `NEEDS_INFO` → nộp lại → `APPROVE` → phí đăng ký 200.000 ₫ qua IPN → `canOperate` = `true`.
+> - F5: đơn của F2 đi tới `DELIVERED` → mở khiếu nại kèm ảnh → `dispute.opened` xoá `expectedPayoutDate` và giữ tiền → bằng chứng của cả hai bên → admin quyết → refund. `FULL_REFUND` (62.550.000 ₫) vượt số đang giữ (tiền cọc 18.765.000 ₫) nên Q-01 chuyển `MANUAL_REQUIRED`; `PARTIAL_REFUND` đúng bằng số đang giữ thì VNPay sandbox trả `99` và cũng phải xử lý tay. Xử lý tay xong: ledger `held` 18.765.000 → 0, `refunded` = 18.765.000, có dòng `REFUND`.
+> - F7: tạo → sửa (version tăng) → ẩn → hiện → admin gỡ → chủ Shop sửa sản phẩm đã gỡ bị `409 VENDOR_026` → tài khoản khác bị `403`.
+>
+> Hạn chế còn lại (không sửa được trong repo): sandbox VNPay không hoàn tiền thật, nên nhánh hoàn tự động chỉ chứng minh được tới bước gọi cổng.
+
 ---
 
 ### B-3 — Còn lại trong `user-flow-readiness.md`
@@ -339,7 +347,7 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 ### C-2 — OpenTelemetry tracing (BE-11)
 
-**Chủ sở hữu:** BE lead · **Ước lượng:** 1–2 ngày + hạ tầng collector · **Phụ thuộc hạ tầng ngoài repo**
+**Chủ sở hữu:** BE lead · **Ước lượng:** 1–2 ngày + hạ tầng collector · **Đã xong (kiểm chứng 2026-11-07)**
 
 BE-11b (metric Prometheus) đã xong: `common-observability` có `MetricNames`, `OutboxMetrics`, `MoneyMetrics`, `PiiMasker`; 8 service có `/actuator/prometheus`.
 
@@ -351,6 +359,49 @@ Phần còn lại là **tracing** (span giữa các service qua RabbitMQ). Cần
 4. `PiiMasker` phải áp cho attribute của span (trace là nơi PII dễ lọt).
 
 **Xong khi:** một trace xuyên `web → gateway → order → payment` hiển thị trong collector, và không span nào chứa PII thô.
+
+> **Đã xong (2026-11-07).** Toàn bộ 4 việc trên đã làm, và phần hạ tầng **đã có trong repo** (trước đây là nợ vì "collector ngoài repo").
+>
+> **Kiểm chứng trên stack Docker thật:**
+>
+> | Bước | Kết quả |
+> |---|---|
+> | Collector + Jaeger | `docker compose up -d otel-collector jaeger` → Collector báo `Everything is ready`, Jaeger báo `Query server started` ở 16686. |
+> | Span tới Jaeger | `GET http://localhost:16686/api/traces?service=api-gateway` trả về trace của gateway. |
+> | **Trace xuyên 2 service** | Trace `ddfd1a9380adabde4bc601599e769fa7` có span của **cả `api-gateway` và `catalog-service`**: `http get` (server, gateway) → `secured request` → `HTTP GET` (client, lệnh gọi ra) → `http get /api/products` (server, catalog-service, cha = client span của gateway). Đúng mục tiêu "một trace xuyên `web → gateway → service`". |
+> | **Không span nào chứa PII thô** | `GET /api/products?email=lien@example.com&phone=0912345678&marker=probe` → span lưu `http.uri = http://localhost:8080/api/products?email=l***n@example.com&phone=091****678&marker=probe`. E-mail và số điện thoại đều bị che; path và tham số không mang PII thì sống nguyên. |
+>
+> **Một lỗi PII đã tìm ra khi kiểm chứng và đã sửa:** tag `http.uri` (tên đầy đủ, không phải `uri`) chưa nằm trong danh sách khoá URL, nên nó rơi xuống lưới an toàn "trông như e-mail" — và bộ dò trông như e-mail từng nuốt mất phần `?email=...` của URL, **để lộ số điện thoại nguyên văn**. Đã sửa: `http.uri` (và `http.request.uri`, `http.target`) vào danh sách khoá URL, thêm nhận diện theo hậu tố (`.uri`, `.url`), và bộ dò "trông như e-mail" giờ kiểm tra cả phần trước `@` lẫn tên miền (chỉ chữ, số, `.`, `-`) nên một URL không còn bị nhận nhầm là e-mail.
+>
+> **Thư viện dùng chung — `common-observability`:**
+>
+> - Thêm `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp` vào `pom.xml`. Phiên bản lấy từ BOM của Spring Boot nên luôn khớp với actuator đang dùng.
+> - Thêm `PiiMaskingObservationFilter` — một `ObservationFilter`, không phải `ObservationHandler`, vì Micrometer chạy filter **trước** handler và handler của tracing chính là thứ chép key value lên span. Dữ liệu bị che trước khi bất kỳ ai kịp đọc, không phụ thuộc thứ tự đăng ký.
+> - Che theo **tên** key value: `email`/`mail` → che e-mail, `phone`/`mobile` → che số điện thoại, `password`/`token`/`authorization` → `[secret]`, `id_number` → `[redacted]`, `uri`/`url`/`http.url` → che từng tham số của query string (giữ nguyên path). Hai lưới an toàn: giá trị **hoàn toàn** là e-mail hoặc **hoàn toàn** là số điện thoại thì bị che bất kể tên key là gì.
+> - Đăng ký qua `PiiMaskingAutoConfiguration` (`@AutoConfiguration(before = ObservationAutoConfiguration.class)`) — nó phải có mặt trước khi Boot gom các bean `ObservationFilter` vào registry.
+>
+> **Trace qua hàng đợi (outbox):**
+>
+> - Cột `trace_parent` trên bảng `outbox_events` của 6 service (migration `V2026_11_07_1000__outbox_trace_parent.sql`).
+> - `OutboxTraceContext` trong `common-outbox`: `currentTraceParent()` ghi header W3C, `restore()` khôi phục nó. Header hỏng thì trả `Scope.NOOP` — sự kiện vẫn phát, chỉ mất chỗ trong trace.
+> - `OutboxRelay` khôi phục trace quanh `rabbitTemplate.invoke(...)`, nên span của lúc phát là **con** của trace đã sinh ra sự kiện.
+> - Quan sát RabbitMQ: `spring.rabbitmq.template.observation-enabled: true` + `spring.rabbitmq.listener.simple.observation-enabled: true`. Handler của Spring Boot tự chèn header `traceparent` vào message AMQP, nên consumer tiếp tục đúng trace.
+>
+> **Cấu hình 8 service** (`management.tracing`, `management.otlp.tracing`, `management.opentelemetry.resource-attributes`) với biến môi trường `TRACING_ENABLED`, `TRACING_SAMPLING_PROBABILITY`, `OTLP_TRACING_ENDPOINT`. Profile test (`application-it.yml`) tắt export (`management.otlp.tracing.export.enabled: false`) vì không có Collector trong test.
+>
+> **Hạ tầng (đã có trong repo):**
+>
+> - `infra/otel/otel-collector-config.yaml` — Collector nhận OTLP/HTTP ở 4318 và OTLP/gRPC ở 4317, đóng gói theo lô rồi chuyển tiếp cho Jaeger.
+> - `docker-compose.yml` thêm 2 service: `otel-collector` (`otel/opentelemetry-collector-contrib`) và `jaeger` (`jaegertracing/all-in-one`). Cả 8 service nhận `OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces`.
+> - `.env.example` thêm nhóm khoá tracing.
+> - Đã kiểm chứng bằng `docker compose up -d otel-collector jaeger`: Collector báo `Everything is ready`, Jaeger báo `Query server started` ở 16686.
+>
+> **Test:**
+>
+> - `PiiMaskingObservationFilterTest` — che e-mail, số điện thoại, secret, số định danh, query string; và giữ nguyên độ lớn thẻ.
+> - `OutboxTraceContextTest` — dựng tracer OTel thật (`OtelTracer` + `SdkTracerProvider`), kiểm tra header sinh ra đúng định dạng W3C, khôi phục lại được, header hỏng bị bỏ qua, và scope được đóng đúng.
+>
+> **Còn lại (không sửa được bằng code trong repo):** môi trường thật cần một Collector bên ngoài (Tempo hay Jaeger đứng riêng) và cần đặt `TRACING_SAMPLING_PROBABILITY` thấp hơn `1.0` — trong dev thì `1.0` để thấy mọi trace.
 
 ---
 
@@ -406,7 +457,7 @@ Cả 6 ADR trong [api-db/decisions.md](api-db/decisions.md) đều ghi **"Đề 
 
 ### D-2 — Dọn đường dẫn cũ còn sót trong CSS và copy
 
-**Chủ sở hữu:** FE lead · **Ước lượng:** 0,5 ngày**
+**Chủ sở hữu:** FE lead · **Ước lượng:** 0,5 ngày
 
 | # | Việc | Vị trí | Ghi chú |
 |---|---|---|---|
@@ -415,6 +466,17 @@ Cả 6 ADR trong [api-db/decisions.md](api-db/decisions.md) đều ghi **"Đề 
 | 2.3 | `AdminInterprovinceFeePage` dùng `max-height: 480px` + `overflow-y: auto` → cuộn ngang + cuộn dọc lồng nhau trên mobile | `web/src/pages/admin/` | Sửa riêng file này |
 | 2.4 | `Checkbox`/`Radio` dùng `<input>` native + `accent-color` ⇒ hình dạng do trình duyệt vẽ | `web/src/shared/ui/Checkbox`, `Radio` | Quyết định: giữ native (giữ bàn phím + autofill) hoặc tự dựng |
 | 2.5 | 89/132 CSS module không có `@media` | `web/src/` | **Đã kiểm chứng là bố cục một cột** — không phải nợ. Gate `check-responsive.mjs` chặn tái phát |
+
+> **Đã xong (2026-11-07).** Cả 5 mục đã xử lý:
+>
+> - **2.1 — chuẩn hoá breakpoint.** 30 file `.module.css` chuyển sang `var(--breakpoint-*)`; thêm token `--breakpoint-xs: 400px` cho màn hình rất hẹp (header chỉ còn icon nút) vì 400px không có token tương ứng. Ánh xạ: `400→xs`, `480/500/560→sm`, `640/720/760/768/860/900→md`, `960/1024→lg`.
+>   Vì sao dùng `var()` được: CSS **không** cho `var()` trong điều kiện media query — trình duyệt bỏ qua rule một cách âm thầm. Vite plugin `vite/breakpointTokens.ts` đã có sẵn, thay `var(--breakpoint-*)` bằng px **lúc build**, đọc từ `tokens.css` nên token vẫn là nguồn sự thật duy nhất. Đã kiểm chứng bằng browser: 1100px → nav ngang hiện; 1000px → nav ẩn, nút menu hiện; 700px → tagline ẩn; 480px → ô tìm kiếm xuống hàng riêng (`order: 10`, `flex-basis: 100%`); 400px → nút icon 34px, gap 4px. Build xanh, CSS build ra `@media (width<=768px)`.
+> - **2.2 — gate `check-design-tokens.mjs`.** Chặn 4 loại: màu hex ngoài `tokens.css`/`tokens-dark.css`, bo góc px ngoài thang `--radius-*`, `@media` dùng px thay vì `var(--breakpoint-*)`, khoảng cách px trong `shared/ui` (allowlist có lý do cho 3 lề vi mô). Nối vào `npm run check` + script `lint:design-tokens`. Chạy lần đầu bắt 41 vi phạm breakpoint ở 30 file; sau khi chuẩn hoá: **0 vi phạm** trong 141 file CSS.
+> - **2.3 — bảng phí liên tỉnh.** Tách `max-height` + `overflow-y` sang `@media (min-width: var(--breakpoint-md))`; trên điện thoại chỉ còn cuộn ngang ⇒ không còn cuộn 2 chiều lồng nhau.
+> - **2.4 — quyết định của đợt audit §17.3 giữ nguyên: giữ `<input>` native** + `accent-color: var(--color-primary)` (giữ hành vi bàn phím Space/←→, trạng thái "chỉ chọn một" của radio, autofill). Không sửa gì thêm.
+> - **2.5 — không phải nợ**, gate `check-responsive.mjs` đã chặn tái phát.
+>
+> Kết quả gate: `npm run check` xanh — 89 test file / 370 test, build OK, bundle 1042,2 kB / 1100 kB.
 
 ### D-3 — Nợ hạ tầng đã biết (không sửa được trong repo)
 
@@ -481,5 +543,5 @@ node docs/scripts/check-class-docs.mjs    # tài liệu class khớp mã nguồn
 | App mobile chưa chuyển sang `/api/...` | A-3 bị chặn | A-1/A-2 làm trước — không phụ thuộc app; đàm phán release với mobile lead từ sớm |
 | Sửa 20+ file CSS breakpoint hàng loạt | Đổi hành vi hiển thị ngoài phạm vi kế hoạch | Làm từng nhóm, kiểm bằng browser ở 375/768/1024px |
 | Sinh type TS từ OpenAPI | Có thể tạo diff lớn, xung đột với type thủ công đang dùng | Làm **sau** A-2; PR riêng; có thể chọn dùng song song trước khi xoá thủ công |
-| OTel tracing | Không có collector ở môi trường dev | C-2 chỉ làm khi hạ tầng có sẵn; metric đã đủ cho vận hành |
+| OTel tracing | Collector trong dev có sẵn (`docker compose up -d otel-collector jaeger`); môi trường thật cần Collector bên ngoài | C-2 đã xong; `TRACING_SAMPLING_PROBABILITY` đặt thấp hơn `1.0` khi lên thật |
 | Cổng chất lượng mới chặn nhầm | Dừng PR không liên quan | Mỗi gate có allowlist kèm lý do; sửa gate = thêm lý do, không xoá |
