@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.orderprofile;
 
 import com.moonkage.vendor.cakeattribute.CakeAttributeCodes;
 import com.moonkage.vendor.cakeattribute.CakeAttributeGroup;
@@ -9,9 +9,12 @@ import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.PriceTier;
 import com.moonkage.vendor.common.vo.PriceTiers;
 import com.moonkage.vendor.common.vo.Quantity;
+import com.moonkage.vendor.orderprofile.dto.OrderProfileResponse;
+import com.moonkage.vendor.orderprofile.dto.SaveOrderProfileRequest;
 import com.moonkage.vendor.security.CurrentUserInfo;
-import com.moonkage.vendor.vendor.dto.request.SaveOrderProfileRequest;
-import com.moonkage.vendor.vendor.dto.response.OrderProfileResponse;
+import com.moonkage.vendor.vendor.EditableVendor;
+import com.moonkage.vendor.vendor.SupplySource;
+import com.moonkage.vendor.vendor.VendorSettingsAccess;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,15 +27,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 class OrderProfileServiceImpl implements OrderProfileService {
 
-    private final VendorFinder vendorFinder;
+    private final VendorSettingsAccess vendorAccess;
     private final OrderProfileRepository orderProfileRepository;
     private final CakeAttributeService cakeAttributeService;
-    private final VendorSnapshotPublisher snapshotPublisher;
 
     @Override
     @Transactional(readOnly = true)
     public OrderProfileResponse getOrderProfile(CurrentUserInfo caller, String vendorId) {
-        vendorFinder.getVisibleTo(caller, vendorId);
+        vendorAccess.checkVisibleTo(caller, vendorId);
         return orderProfileRepository
                 .findByVendorId(vendorId)
                 .map(this::toResponse)
@@ -43,22 +45,21 @@ class OrderProfileServiceImpl implements OrderProfileService {
     @Transactional
     public OrderProfileResponse saveOrderProfile(
             CurrentUserInfo caller, String vendorId, SaveOrderProfileRequest request) {
-        Vendor vendor = vendorFinder.getForOwnerChange(caller, vendorId);
-        vendor.checkSellingSettingsEditable();
-        if (!vendor.isAcceptsOrders()) {
+        EditableVendor vendor = vendorAccess.lockForOwnerChange(caller, vendorId);
+        if (!vendor.acceptsOrders()) {
             throw new AppException(ErrorCode.VENDOR_NOT_ACCEPTING_ORDERS);
         }
         Optional<OrderProfile> existing = orderProfileRepository.findByVendorId(vendorId);
         Set<String> linkedIds =
                 existing.map(OrderProfile::getCakeAttributeIds).map(Set::copyOf).orElse(Set.of());
-        OrderTerms terms = toTerms(request, vendor.getSupplySource(), linkedIds);
+        OrderTerms terms = toTerms(request, vendor.supplySource(), linkedIds);
 
         OrderProfile profile = existing.map(current -> {
                     current.replace(terms);
                     return current;
                 })
                 .orElseGet(() -> orderProfileRepository.save(OrderProfile.of(vendorId, terms)));
-        snapshotPublisher.announceUpdated(vendor, caller.accountId());
+        vendorAccess.announceChanged(vendorId, caller.accountId());
         return toResponse(profile);
     }
 

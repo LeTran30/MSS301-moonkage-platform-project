@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.orderprofile;
 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

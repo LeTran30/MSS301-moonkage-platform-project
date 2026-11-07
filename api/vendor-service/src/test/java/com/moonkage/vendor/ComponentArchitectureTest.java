@@ -20,9 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
  * (NO_PACKAGE_CYCLES).
  *
  * <pre>
- * controller ──▶ product ──▶ vendor ──▶ cakeattribute, registrationfee
- *                                                    │
- *                                                    └──▶ security, client, inbox, outbox   (all ──▶ common)
+ * controller ──▶ product ─────────────┐
+ *            ──▶ deliveryarea ────────┼──▶ vendor ──▶ cakeattribute, registrationfee
+ *            ──▶ orderprofile ────────┘                       │
+ *                                                              └──▶ security, client, inbox, outbox   (all ──▶ common)
+ *
+ * deliveryarea and orderprofile implement vendor's DeliveryAreaReader and OrderProfileReader, so vendor reads them
+ * for its snapshot without depending on them.
  * </pre>
  */
 @AnalyzeClasses(

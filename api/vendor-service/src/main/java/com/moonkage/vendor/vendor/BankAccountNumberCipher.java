@@ -1,6 +1,6 @@
 package com.moonkage.vendor.vendor;
 
-import com.moonkage.vendor.vendor.vo.BankAccountNumber;
+import com.moonkage.vendor.vendor.elements.BankAccountNumber;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;

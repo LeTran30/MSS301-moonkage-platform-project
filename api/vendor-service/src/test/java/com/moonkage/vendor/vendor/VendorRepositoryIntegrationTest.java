@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.moonkage.vendor.common.vo.ProvinceCode;
-import com.moonkage.vendor.vendor.vo.RepresentativeName;
-import com.moonkage.vendor.vendor.vo.TaxCode;
+import com.moonkage.vendor.vendor.elements.RepresentativeName;
+import com.moonkage.vendor.vendor.elements.TaxCode;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;

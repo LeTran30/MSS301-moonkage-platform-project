@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.orderprofile;
 
 import com.moonkage.vendor.common.vo.Price;
 import com.moonkage.vendor.common.vo.PriceTier;

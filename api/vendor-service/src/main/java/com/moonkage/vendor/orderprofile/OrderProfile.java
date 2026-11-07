@@ -1,8 +1,9 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.orderprofile;
 
 import com.moonkage.vendor.common.vo.PriceTier;
 import com.moonkage.vendor.common.vo.PriceTiers;
 import com.moonkage.vendor.common.vo.Quantity;
+import com.moonkage.vendor.vendor.CustomType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

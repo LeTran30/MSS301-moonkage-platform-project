@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.deliveryarea;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

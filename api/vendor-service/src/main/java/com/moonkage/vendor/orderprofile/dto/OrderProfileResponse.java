@@ -1,4 +1,4 @@
-package com.moonkage.vendor.vendor.dto.response;
+package com.moonkage.vendor.orderprofile.dto;
 
 import com.moonkage.vendor.vendor.CustomType;
 import java.time.Instant;

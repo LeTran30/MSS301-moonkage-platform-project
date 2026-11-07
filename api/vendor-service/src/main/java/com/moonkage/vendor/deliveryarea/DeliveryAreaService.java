@@ -1,7 +1,7 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.deliveryarea;
 
+import com.moonkage.vendor.deliveryarea.dto.SaveDeliveryAreasRequest;
 import com.moonkage.vendor.security.CurrentUserInfo;
-import com.moonkage.vendor.vendor.dto.request.SaveDeliveryAreasRequest;
 import java.util.List;
 
 /** Provinces a vendor delivers to at its own flat fee (FR-28), part of the Vendor aggregate. */

@@ -6,9 +6,9 @@ import com.moonkage.vendor.vendor.dto.response.VendorDetailResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorDocumentResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorResponse;
 import com.moonkage.vendor.vendor.dto.response.VendorReviewResponse;
-import com.moonkage.vendor.vendor.vo.DeliveryFee;
-import com.moonkage.vendor.vendor.vo.RepresentativeName;
-import com.moonkage.vendor.vendor.vo.TaxCode;
+import com.moonkage.vendor.vendor.elements.DeliveryFee;
+import com.moonkage.vendor.vendor.elements.RepresentativeName;
+import com.moonkage.vendor.vendor.elements.TaxCode;
 import java.util.List;
 import java.util.function.Function;
 

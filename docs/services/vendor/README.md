@@ -38,13 +38,17 @@ Mỗi package cấp một dưới `com.moonkage.vendor` là một component: bê
 |---|---|---|---|
 | `web` | — | Controller | mọi service public |
 | `product` | `products` và bảng con, `stock_reservations` | `ProductService`, `StockService`, DTO, `ProductStatus`, `ReservationStatus`, `DeliveryLabel` | `vendor`, `cakeattribute`, `outbox` |
-| `vendor` | `vendors` và bảng con, vùng giao, hồ sơ nhận đặt hàng | `VendorService`, `DeliveryAreaService`, `OrderProfileService`, `VendorView`, DTO, `vo` | `cakeattribute`, `registrationfee`, `client`, `inbox`, `outbox` |
+| `deliveryarea` | `vendor_delivery_areas` | `DeliveryAreaService`, DTO | `vendor` |
+| `orderprofile` | `order_profiles` và bảng con (`ref_price_tiers`, loại tùy biến, thuộc tính bánh) | `OrderProfileService`, DTO | `vendor`, `cakeattribute` |
+| `vendor` | `vendors` và bảng con (giấy tờ, lần duyệt, kiểm chủ sở hữu) | `VendorService`, `VendorView`, DTO, `elements`; cho hai component trên: `VendorSettingsAccess`, `EditableVendor`, `DeliveryAreaReader`, `OrderProfileReader` | `cakeattribute`, `registrationfee`, `client`, `inbox`, `outbox` |
 | `cakeattribute` | `cake_attributes` | `CakeAttributeService`, `CakeAttributeRef`, `CakeAttributeCodes` | — |
 | `registrationfee` | `registration_fee_configs` | `RegistrationFeeService` | `outbox` |
 | `client` | — | Feign tới identity, payment | — |
 | `inbox`, `outbox` | `processed_events`, `outbox_events` | `InboxService`, `OutboxService`, `EventEnvelope` | — |
 | `security` | — | `@CurrentUser`, `CurrentUserInfo`, `Role` | — |
 | `common` | — | `AppException`, `ErrorCode`, `ApiResponse`, VO dùng chung (`Price`, `Quantity`, `PriceTiers`) | — |
+
+Vùng giao và hồ sơ nhận đặt nằm ở package riêng nhưng vẫn thuộc aggregate Vendor. Mỗi lần sửa, chúng gọi `VendorSettingsAccess`: khoá dòng `vendors`, tăng version, rồi phát một `vendor.updated`. Nhờ vậy hai thay đổi của cùng một vendor không bao giờ phát lệch thứ tự. Ngược lại, `vendor` đọc dữ liệu của hai component này qua hai interface do nó khai báo (`DeliveryAreaReader`, `OrderProfileReader`), còn hai component kia cài đặt chúng. Nhờ vậy `vendor` không phụ thuộc ngược lên hai component đó.
 
 `ComponentArchitectureTest` kiểm các luật trên; `ArchitectureTest.NO_PACKAGE_CYCLES` kiểm không có vòng phụ thuộc.
 

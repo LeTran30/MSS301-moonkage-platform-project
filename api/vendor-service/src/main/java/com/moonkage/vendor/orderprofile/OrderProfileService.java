@@ -1,8 +1,8 @@
-package com.moonkage.vendor.vendor;
+package com.moonkage.vendor.orderprofile;
 
+import com.moonkage.vendor.orderprofile.dto.OrderProfileResponse;
+import com.moonkage.vendor.orderprofile.dto.SaveOrderProfileRequest;
 import com.moonkage.vendor.security.CurrentUserInfo;
-import com.moonkage.vendor.vendor.dto.request.SaveOrderProfileRequest;
-import com.moonkage.vendor.vendor.dto.response.OrderProfileResponse;
 
 /** A vendor's "accepting orders" profile (FR-35), part of the Vendor aggregate. */
 public interface OrderProfileService {
