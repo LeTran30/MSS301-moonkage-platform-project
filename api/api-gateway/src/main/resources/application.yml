@@ -22,15 +22,14 @@ spring:
     gateway:
       discovery:
         locator:
-          # D-30 (interim state, deliberate): the locator is still on because the mobile app - which lives outside
-          # this repository - still calls /<service>/api/... for every service, migrated or not. Turning the locator off
-          # now would break that app, so it stays on until the mobile team has shipped a release that uses
-          # /api/<resource>/... for all of them.
+          # D-30 (closed 2026-11-07): the locator is off. Every service is routed by the aggregate root it owns
+          # (/api/<resource>/...), the mobile app calls the canonical paths, and LegacyPathRedirectFilter answers 308
+          # for the old form so a client that has not moved over yet still lands on the canonical path.
           #
-          # LegacyPathRedirectFilter answers 308 for the legacy form of every service that has a canonical route, so
-          # their old path leads to the canonical one. The locator is the fallback for the paths that have no
-          # canonical route yet (/api/audit-logs, /internal/**) and for the clients that have not moved over.
-          enabled: true
+          # The OpenAPI document of each service stays reachable under the name of the service, but through an
+          # explicit route (see the *-api-docs routes below) - not through the locator. The document describes the
+          # internal contract of the service, so it is not a public resource path.
+          enabled: false
           lower-case-service-id: true
       server:
         webflux:
@@ -98,6 +97,53 @@ spring:
               uri: lb://payment-service
               predicates:
                 - Path=/api/payments,/api/payments/**,/api/ledgers,/api/ledgers/**,/api/refunds,/api/refunds/**
+            # The OpenAPI document of each service, reached under the name of the service.
+            # The Swagger UI of the gateway points at these paths, so they have to keep working after the discovery
+            # locator is turned off (D-30). StripPrefix drops the name of the service, so the service receives the
+            # path it publishes. The document describes the internal contract of the service, so it stays under the
+            # name of the service on purpose - it is not a public resource path.
+            - id: identity-service-api-docs
+              uri: lb://identity-service
+              predicates:
+                - Path=/identity-service/v3/api-docs,/identity-service/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: catalog-service-api-docs
+              uri: lb://catalog-service
+              predicates:
+                - Path=/catalog-service/v3/api-docs,/catalog-service/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: quotation-service-api-docs
+              uri: lb://quotation-service
+              predicates:
+                - Path=/quotation-service/v3/api-docs,/quotation-service/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: order-service-api-docs
+              uri: lb://order-service
+              predicates:
+                - Path=/order-service/v3/api-docs,/order-service/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: vendor-service-api-docs
+              uri: lb://vendor-service
+              predicates:
+                - Path=/vendor-service/v3/api-docs,/vendor-service/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: payment-service-api-docs
+              uri: lb://payment-service
+              predicates:
+                - Path=/payment-service/v3/api-docs,/payment-service/v3/api-docs/**
+              filters:
+                - StripPrefix=1
+            - id: orchestrator-service-api-docs
+              uri: lb://orchestrator-service
+              predicates:
+                - Path=/orchestrator-service/v3/api-docs,/orchestrator-service/v3/api-docs/**
+              filters:
+                - StripPrefix=1
           # Gateway 4.1+ adds X-Forwarded-* (Host, Port, Proto, Prefix) only for clients matching this regex.
           # Without them every service builds its URLs (e.g. the Swagger "servers" URL) from its container IP,
           # which the browser cannot reach. Default: loopback and private networks (Docker bridge, LAN).
