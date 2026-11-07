@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.moonkage.catalog.config.CatalogOutboxProperties;
 import com.moonkage.catalog.entity.OutboxEvent;
 import com.moonkage.catalog.repository.OutboxEventRepository;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -49,7 +50,7 @@ class OutboxBrokerIntegrationTest {
             var event = event("interprovince_fee.changed");
             var repository = repository(event);
             var service = new OutboxDeliveryServiceImpl(
-                    repository, template, new CatalogOutboxProperties(), Clock.systemUTC());
+                    repository, template, new CatalogOutboxProperties(), Clock.systemUTC(), OutboxTraceContext.noop());
             assertThat(service.deliverNext()).isTrue();
             verify(repository).markPublished(org.mockito.ArgumentMatchers.eq(event.id()), any(Instant.class));
             var received = template.receive(queue.getName(), 2000);
@@ -65,7 +66,7 @@ class OutboxBrokerIntegrationTest {
             var event = event("unbound." + UUID.randomUUID());
             var repository = repository(event);
             var service = new OutboxDeliveryServiceImpl(
-                    repository, template, new CatalogOutboxProperties(), Clock.systemUTC());
+                    repository, template, new CatalogOutboxProperties(), Clock.systemUTC(), OutboxTraceContext.noop());
             assertThat(service.deliverNext()).isFalse();
             verify(repository).recordFailure(org.mockito.ArgumentMatchers.eq(event.id()), any(Instant.class));
             verify(repository, never()).markPublished(any(), any());
@@ -73,7 +74,7 @@ class OutboxBrokerIntegrationTest {
     }
 
     private static OutboxEvent event(String routingKey) {
-        return new OutboxEvent(UUID.randomUUID().toString(), routingKey, "{}", 0, Instant.now());
+        return new OutboxEvent(UUID.randomUUID().toString(), routingKey, "{}", 0, Instant.now(), null);
     }
 
     private static OutboxEventRepository repository(OutboxEvent event) {

@@ -13,3 +13,10 @@ eureka:
 spring:
   jpa:
     show-sql: false
+
+# BE-11: no collector in the tests, so the spans are not exported anywhere
+management:
+  otlp:
+    tracing:
+      export:
+        enabled: false

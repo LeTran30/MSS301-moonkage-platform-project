@@ -2,6 +2,7 @@ package com.moonkage.identity.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.moonkage.outbox.OutboxTraceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -13,6 +14,7 @@ class OutboxServiceImpl implements OutboxService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final OutboxTraceContext traceContext;
 
     /** MANDATORY: an event written outside the business transaction would defeat the outbox. */
     @Override
@@ -28,6 +30,7 @@ class OutboxServiceImpl implements OutboxService {
                 .id(eventId)
                 .routingKey(routingKey)
                 .payload(payload)
+                .traceParent(traceContext.currentTraceParent())
                 .build());
     }
 }
