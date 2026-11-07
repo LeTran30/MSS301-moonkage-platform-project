@@ -136,12 +136,14 @@
   color: var(--color-text);
 }
 .chipActive {
-  background: var(--color-gold-text);
+  /* Nền nhạt, chữ đậm: đọc được ở cả giao diện sáng lẫn tối (chữ trắng trên vàng sáng thì không). */
+  background: var(--color-gold-soft);
   border-color: var(--color-gold-text);
-  color: var(--color-white);
+  color: var(--color-gold-text);
+  font-weight: var(--weight-semibold);
 }
 .chipActive:hover {
-  color: var(--color-white);
+  color: var(--color-gold-text);
 }
 .hintLine {
   font-size: var(--text-xs);

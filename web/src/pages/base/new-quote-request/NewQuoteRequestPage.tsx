@@ -2,27 +2,26 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { routes, PROVINCE_ITEMS } from '@/shared/config';
 import { Button, ButtonLink, toast } from '@/shared/ui';
-import { useAction, validators } from '@/shared/lib';
+import { focusFirstInvalidField, useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
 import type { CustomType } from '@/entities/request';
 import {
   NfcVerifyNotice,
+  OPEN_REQUEST_MIN_QUANTITY,
   QuoteRequestBasicsCard,
   QuoteRequestDeliveryCard,
   QuoteRequestFlavorCard,
   QuoteRequestPackagingCard,
+  joinCustomSpec,
   useCreateQuoteRequest,
+  validateQuoteForm,
+  type QuoteFormErrors,
 } from '@/features/request-quote';
 import styles from './NewQuoteRequestPage.module.css';
 import { useDeliveryProvinceCode } from '@/entities/region';
 
-/** Tên các trường có thể báo lỗi trong form yêu cầu báo giá. */
-type QuoteFormErrors = Partial<
-  Record<
-    'quantity' | 'deliveryDeadline' | 'recipientName' | 'recipientPhone' | 'deliveryAddress',
-    string
-  >
->;
+const OPEN_MIN_HINT = `Tối thiểu từ ${OPEN_REQUEST_MIN_QUANTITY} hộp để các xưởng nhận báo giá sỉ`;
+const BELOW_OPEN_MIN = `Số lượng tối thiểu từ ${OPEN_REQUEST_MIN_QUANTITY} hộp để các xưởng nhận báo giá sỉ`;
 
 export function NewQuoteRequestPage() {
   const user = useCurrentUser();
@@ -73,44 +72,7 @@ export function NewQuoteRequestPage() {
     setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
   }
 
-  /**
-   * Kiểm tra dữ liệu form phía client trước khi gọi API (FR-16).
-   *
-   * Trước đây form gửi thẳng lên API: một yêu cầu thiếu số lượng hoặc thiếu
-   * địa chỉ vẫn tạo ra một yêu cầu rác ở phía server. Giờ form chặn ở client
-   * và báo lỗi ngay cạnh ô nhập.
-   */
-  function validate(): QuoteFormErrors {
-    const next: QuoteFormErrors = {};
-
-    const quantityNum = parseInt(quantity, 10);
-    if (!quantity.trim() || Number.isNaN(quantityNum)) {
-      next.quantity = 'Số lượng hộp cần đặt không được để trống';
-    } else if (quantityNum < 20) {
-      next.quantity = 'Số lượng tối thiểu từ 20 hộp để các xưởng nhận báo giá sỉ';
-    }
-
-    if (!deliveryDeadline.trim()) {
-      next.deliveryDeadline = 'Hạn giao hàng mong muốn không được để trống';
-    }
-
-    if (!recipientName.trim()) {
-      next.recipientName = 'Người nhận không được để trống';
-    }
-
-    const phoneErr = validators.phoneVN(recipientPhone);
-    if (phoneErr) {
-      next.recipientPhone = phoneErr;
-    }
-
-    if (!deliveryAddress.trim()) {
-      next.deliveryAddress = 'Địa chỉ nhận hàng chi tiết không được để trống';
-    }
-
-    return next;
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     /*
@@ -120,9 +82,14 @@ export function NewQuoteRequestPage() {
      * xác minh mà không ai báo họ thiếu gì — và mất toàn bộ những gì đã điền.
      * Báo lỗi thiếu thông tin trước là hành trình tự nhiên hơn.
      */
-    const validation = validate();
+    const validation = validateQuoteForm(
+      { quantity, deliveryDeadline, recipientName, recipientPhone, deliveryAddress },
+      OPEN_REQUEST_MIN_QUANTITY,
+      BELOW_OPEN_MIN,
+    );
     setFieldErrors(validation);
     if (Object.keys(validation).length > 0) {
+      focusFirstInvalidField(e.currentTarget);
       return;
     }
 
@@ -144,13 +111,7 @@ export function NewQuoteRequestPage() {
         quantity: parseInt(quantity, 10),
         budget: budget ? parseInt(budget, 10) : undefined,
         customTypes: customTypes.length > 0 ? customTypes : undefined,
-        customSpec: [
-          customRequirements,
-          crustPreference && `Vỏ: ${crustPreference}`,
-          fillingPreference && `Nhân: ${fillingPreference}`,
-        ]
-          .filter(Boolean)
-          .join(' | '),
+        customSpec: joinCustomSpec(customRequirements, crustPreference, fillingPreference),
         deliveryDeadline,
         delivery: {
           recipientName,
@@ -194,6 +155,8 @@ export function NewQuoteRequestPage() {
           }}
           budget={budget}
           onBudgetChange={setBudget}
+          minQuantity={OPEN_REQUEST_MIN_QUANTITY}
+          quantityHint={OPEN_MIN_HINT}
           errors={fieldErrors}
         />
 

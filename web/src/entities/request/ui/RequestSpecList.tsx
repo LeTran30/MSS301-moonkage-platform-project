@@ -1,9 +1,6 @@
 import { formatCurrency, formatDate } from '@/shared/utils';
-import { CUSTOM_TYPE_LABELS, type QuoteRequest } from '../model/requestStore';
+import { CUSTOM_TYPE_LABELS, SPEC_PART_SEPARATOR, type QuoteRequest } from '../model/requestStore';
 import styles from './RequestSpecList.module.css';
-
-/** The parts the request form joins into `customSpec` (free text, "Vỏ: …", "Nhân: …"). */
-const SPEC_PART_SEPARATOR = ' | ';
 
 type Props = {
   request: QuoteRequest;

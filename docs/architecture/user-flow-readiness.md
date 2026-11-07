@@ -15,7 +15,7 @@ Danh sách luồng lấy từ sheet "User flows" của `web/docs/information-arc
 | --- | --- | --- | --- |
 | F1 Mua hàng có sẵn | Đủ | Có, 02/11/2026; chạy lại 04/11/2026 | Vendor đăng sản phẩm → listing/chi tiết → giỏ → checkout → IPN → PAID → giao → nhận → đánh giá hiện ở catalog. Lần chạy lại trên image build từ `develop` `cad5df1`: 25/25 bước qua, kể cả IPN gửi lặp trả `02` |
 | F2 Yêu cầu báo giá có in logo | Đủ | Có, 07/11/2026 | Yêu cầu mở → 2 báo giá → chấp nhận → cọc → đơn đặt riêng → maket → duyệt → sản xuất → giao → trả phần còn lại → COMPLETED. Xem [mục 4](#4-f2-trên-web-07112026) |
-| F3 Gửi yêu cầu cho một đơn vị | Đủ | Chưa | Khác F2 ở bước gửi yêu cầu (DIRECT); từ M6.2 trở đi đi chung đường với F2 |
+| F3 Gửi yêu cầu cho một đơn vị | Đủ | Có tới bước cọc, 07/11/2026 | Danh sách đơn vị → yêu cầu riêng (DIRECT) → Shop báo giá → chấp nhận → cọc → đơn đặt riêng. Từ đơn trở đi đi chung đường với F2 (đã chạy trọn cùng ngày). Xem [mục 5](#5-f3-trên-web-07112026) |
 | F4 Trở thành người bán | Đủ | Chưa | Nộp hồ sơ (`POST /api/vendors`, giấy tờ), admin quyết định (`POST /api/vendors/{id}/reviews`: duyệt, yêu cầu bổ sung, từ chối), nộp lại, phí đăng ký qua VNPay (vendor-service nghe `payment.succeeded`) |
 | F5 Khiếu nại | Đủ | Chưa | Mở khiếu nại (`/api/orders/{id}/dispute`), payment-service giữ tiền khi nhận `dispute.opened`, admin xử lý, hoàn VNPay (`VnpayRefundClient`); lỗi hoàn thì chuyển xử lý tay (`refund.manual_required`) |
 | F6 Xác minh NFC | Đủ phía server | Chưa | identity-service có phiên (`/api/nfc/sessions`), nhận thẻ, khóa sau nhiều lần sai. V1–V5 cần app mobile và thẻ thật hoặc dữ liệu `NfcProfileSeeder` |
@@ -130,8 +130,39 @@ Chạy lại sau bản sửa (đơn `#475F5BE4`, yêu cầu `#712FF77F`): cả l
 | Kênh người bán dùng header của người mua (tìm bánh, menu mua, tỉnh giao, giỏ hàng) | Header riêng: logo "Kênh người bán", lối "Về kênh mua sắm"; lối vào Kênh người bán chỉ hiện ở kênh mua sắm |
 | "Việc cần bạn xử lý": maket chờ duyệt dẫn về danh sách đơn | Một đơn thì mở thẳng tab maket của đơn đó (`?tab=maket`) |
 
+### 5. F3 trên web (07/11/2026)
+
+Người mua member1 gửi yêu cầu riêng `#473671EB` (120 hộp, túi giấy và thiệp) cho Trăng Vàng (member4). Shop báo giá 175.000đ/hộp, cọc 30%. Người mua chấp nhận và cọc 6.300.000đ (return đã ký giả lập), rồi đơn `#0C0EF411` được tạo ở trạng thái "Đã đặt cọc". Các bước sau đó giống F2 nên không chạy lại.
+
+| Lỗi trên web | Đã sửa |
+| --- | --- |
+| Danh sách đơn vị và trang chủ không có Shop nào: danh mục đơn vị gọi API không kèm tỉnh, nên rơi về mã mặc định `01` trong khi Shop demo giao ở `79` | Danh mục đơn vị lấy theo tỉnh "Giao tới" ở header, như danh mục sản phẩm; tỉnh không có Shop thì danh sách rỗng, không giữ Shop của tỉnh trước |
+| Thẻ đơn vị: nhãn góc và nút "Gửi yêu cầu riêng" bị cắt chữ | Nhãn được xuống dòng; hai nút xếp chồng khi thẻ hẹp |
+| Form yêu cầu riêng khác form F2: bong bóng kiểm tra của trình duyệt, lỗi bằng toast, thiếu ngân sách, vỏ, nhân; cho chọn cả loại tùy chỉnh Shop không làm (server trả `CUSTOM_NOT_SUPPORTED`); hứa "phản hồi trong 24h"; tỉnh dự phòng cứng "Hà Nội"; tiêu đề "Cho undefined" khi Shop chưa tải | Trang dựng lại từ đúng các thẻ của F2, chung luật kiểm tra (`validateQuoteForm`). Mức tối thiểu và loại tùy chỉnh lấy từ Shop. Shop đọc riêng qua `GET /api/suppliers/{id}`, có trạng thái đang tải và không nhận đặt hàng |
+| Bấm gửi khi form còn lỗi thì không thấy gì: lỗi nằm phía trên nút | Cả form F2 và F3 cuộn tới và đặt con trỏ vào ô lỗi đầu tiên |
+| Ô tùy chỉnh đã chọn: chữ trắng trên vàng sáng, không đọc được ở giao diện tối | Nền `gold-soft`, chữ `gold-text`; sửa luôn chip phân loại sản phẩm và chip tỉnh giao của Shop |
+| Trang yêu cầu riêng của người mua ghi "So sánh báo giá", "Chưa có xưởng nào…"; danh sách ghi "1 xưởng được mời", "So sánh 0 bảng báo giá", số 0 tô đỏ | Ghi "Yêu cầu riêng gửi <Shop>", "Đang chờ <Shop> gửi báo giá"; nút theo số báo giá (xem yêu cầu, xem báo giá, so sánh N báo giá) |
+| Kênh người bán mở tab "Yêu cầu mở toàn sàn", nên yêu cầu riêng mới bị giấu; "Cơ hội doanh số" cộng cả yêu cầu đã chốt; yêu cầu riêng ghi "Đã có 0 xưởng gửi báo giá" | Mở tab "Tất cả", mỗi tab đếm số yêu cầu đang mở, yêu cầu còn mở xếp trước; cơ hội chỉ tính yêu cầu còn mở; yêu cầu riêng ghi "Khách chỉ gửi yêu cầu này cho Shop bạn" |
+
+Lần rà thứ hai (cùng ngày) sửa thêm:
+
+| Lỗi trên web | Đã sửa |
+| --- | --- |
+| Hồ sơ đơn vị: banner trống cao khoảng 330px; "MST:" trống; vùng giao "79"; quy cách "BAG CARD STICKER"; tiêu đề lộ "(US-35)"; mục "Bậc giá tham khảo" rỗng; mở link trực tiếp thì chớp "Không tìm thấy" | Không có ảnh thì bỏ banner; dòng pháp lý chỉ hiện khi có dữ liệu; tên tỉnh và nhãn tùy chỉnh tiếng Việt; bậc giá trống thì nói rõ là chưa công bố; Shop đọc qua `useSupplier` có trạng thái đang tải. `check-no-spec-ids` bắt thêm mã `US-xx` |
+| Báo giá đã chấp nhận và đã cọc lại ghi "Báo giá không còn hiệu lực", không có lối sang đơn | "Bạn đã chấp nhận báo giá này" kèm "Xem đơn hàng" (tìm đơn theo `quoteId`), hoặc "Hoàn tất đặt cọc" khi chưa có đơn; báo giá rút, hết hạn, không được chọn có câu riêng |
+| "Từ chối lời mời" gửi lý do viết sẵn thay Shop | Hộp thoại cho Shop chọn lý do hoặc tự ghi; không ghi thì không gửi |
+| Shop từ chối yêu cầu riêng nhưng người mua vẫn thấy "Đang chờ … gửi báo giá" | Trang yêu cầu đọc lời mời, hiện "… đã từ chối" kèm lý do, và hai lối: gửi cho đơn vị khác, tạo yêu cầu gửi nhiều xưởng |
+
+Còn mở:
+
+- Danh sách yêu cầu của người mua vẫn ghi "Chờ đơn vị báo giá" cho yêu cầu riêng đã bị từ chối, vì `QuoteRequestResponse` không có trạng thái lời mời. Cần thêm trường ở quotation-service.
+- Chưa xem được giao diện ở màn hình điện thoại trên Chrome, vì cửa sổ không thu nhỏ được; mới rà các media query trong code.
+- **Không có thông báo trong ứng dụng.** Không service nào publish lên `orchestrator.inapp.#`, nên trung tâm thông báo luôn trống, kể cả với các sự kiện của F2. Cần phát sự kiện từ quotation-service và order-service.
+- Trang `/thong-bao` mở được khi chưa đăng nhập và báo "Không có thông báo nào".
+- Backend không kiểm tra Shop có giao tới tỉnh của yêu cầu DIRECT hay không, trong khi yêu cầu mở có lọc theo tỉnh.
+
 ## Việc tiếp theo
 
-1. Chạy thật F3; trả thử phần còn lại bằng thẻ test VNPay.
+1. Phát thông báo trong ứng dụng cho báo giá, cọc, maket và đơn; trả thử phần còn lại bằng thẻ test VNPay.
 2. Chạy thật F4, F5, F7 qua gateway như F1; F6 khi có app mobile.
 3. Cập nhật bảng kết quả sau mỗi lần chạy.

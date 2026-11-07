@@ -64,9 +64,10 @@
   color: var(--color-white);
 }
 .taxonomyChipGold {
-  border: 1px solid var(--color-gold);
-  background: var(--color-gold-text);
-  color: var(--color-white);
+  /* Nền nhạt, chữ đậm: đọc được ở cả giao diện sáng lẫn tối. */
+  border: 1px solid var(--color-gold-text);
+  background: var(--color-gold-soft);
+  color: var(--color-gold-text);
 }
 
 .input {

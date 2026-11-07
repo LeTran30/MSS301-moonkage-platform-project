@@ -56,12 +56,14 @@
   color: var(--color-text);
 }
 .provinceChipActive {
-  background: var(--color-gold-text);
+  /* Nền nhạt, chữ đậm: đọc được ở cả giao diện sáng lẫn tối. */
+  background: var(--color-gold-soft);
   border-color: var(--color-gold-text);
-  color: var(--color-white);
+  color: var(--color-gold-text);
+  font-weight: var(--weight-semibold);
 }
 .provinceChipActive:hover {
-  color: var(--color-white);
+  color: var(--color-gold-text);
 }
 .fieldLabel {
   display: block;
