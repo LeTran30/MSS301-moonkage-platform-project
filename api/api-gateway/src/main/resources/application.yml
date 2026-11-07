@@ -51,7 +51,7 @@ spring:
             - id: vendor-service
               uri: lb://vendor-service
               predicates:
-                - Path=/api/vendors/**,/api/registration-fee-config/**,/api/cake-attributes/**
+                - Path=/api/vendors,/api/vendors/**,/api/registration-fee-config,/api/registration-fee-config/**,/api/cake-attributes,/api/cake-attributes/**
             # orchestrator-service by aggregate root (BE-04b): the notification inbox (NFR-10).
             - id: orchestrator-notifications
               uri: lb://orchestrator-service
