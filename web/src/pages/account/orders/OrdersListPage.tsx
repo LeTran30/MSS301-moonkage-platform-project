@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { routes } from '@/shared/config';
 import { formatCurrency, formatDate } from '@/shared/utils';
-import { Badge, ButtonLink, Card, Icon, Tabs } from '@/shared/ui';
-import { orderStatusLabel, useOrders } from '@/entities/order';
+import { Badge, ButtonLink, Card, Icon, ProductImage, Tabs } from '@/shared/ui';
+import { orderCode, orderStatusLabel, useOrders } from '@/entities/order';
 import styles from './OrdersListPage.module.css';
 
 export function OrdersListPage() {
@@ -43,7 +43,7 @@ export function OrdersListPage() {
               <div className={styles.orderHeader}>
                 <div className={styles.idGroup}>
                   <Icon name="package" size={18} />
-                  <strong>#{order.id}</strong>
+                  <strong>#{orderCode(order.id)}</strong>
                   <span className={styles.orderDate}>
                     · Ngày đặt: {formatDate(order.createdAt)}
                   </span>
@@ -63,20 +63,16 @@ export function OrdersListPage() {
                 </div>
               </div>
 
-              <div className={styles.shopRow}>
-                <Icon name="store" size={14} /> Tiệm bánh: <strong>{order.vendorName}</strong>
-              </div>
+              {order.vendorName && (
+                <div className={styles.shopRow}>
+                  <Icon name="store" size={14} /> Tiệm bánh: <strong>{order.vendorName}</strong>
+                </div>
+              )}
 
               <div className={styles.itemsList}>
                 {order.items.map((it, idx) => (
                   <div key={idx} className={styles.itemRow}>
-                    <img
-                      src={it.image}
-                      alt={it.name}
-                      className={styles.itemImg}
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    <ProductImage src={it.image} alt={it.name} className={styles.itemImg} />
                     <div className={styles.itemInfo}>
                       <span className={styles.itemName}>{it.name}</span>
                       <span className={styles.itemQty}>
@@ -125,7 +121,7 @@ export function OrdersListPage() {
               <div className={styles.orderHeader}>
                 <div className={styles.idGroup}>
                   <Icon name="factory" size={18} />
-                  <strong>#{order.id}</strong>
+                  <strong>#{orderCode(order.id)}</strong>
                   <Badge tone="gold" size="sm">
                     HỢP ĐỒNG IN LOGO
                   </Badge>
@@ -147,25 +143,21 @@ export function OrdersListPage() {
                       ? 'CẦN DUYỆT MAKET'
                       : order.status === 'IN_PRODUCTION'
                         ? 'Đang sản xuất'
-                        : order.status}
+                        : orderStatusLabel(order.status)}
                   </Badge>
                 </div>
               </div>
 
-              <div className={styles.shopRow}>
-                <Icon name="store" size={14} /> Xưởng thực hiện: <strong>{order.vendorName}</strong>
-              </div>
+              {order.vendorName && (
+                <div className={styles.shopRow}>
+                  <Icon name="store" size={14} /> Xưởng thực hiện: <strong>{order.vendorName}</strong>
+                </div>
+              )}
 
               <div className={styles.itemsList}>
                 {order.items.map((it, idx) => (
                   <div key={idx} className={styles.itemRow}>
-                    <img
-                      src={it.image}
-                      alt={it.name}
-                      className={styles.itemImg}
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    <ProductImage src={it.image} alt={it.name} className={styles.itemImg} />
                     <div className={styles.itemInfo}>
                       <span className={styles.itemName}>{it.name}</span>
                       <span className={styles.itemQty}>

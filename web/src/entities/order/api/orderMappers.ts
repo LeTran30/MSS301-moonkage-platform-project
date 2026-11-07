@@ -96,9 +96,8 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
       name: item.productName,
       quantity: item.quantity,
       price: item.unitPrice,
-      // Máy chủ không trả ảnh theo dòng đơn; ảnh thuộc về sản phẩm trong danh mục.
-      // `image` để trống ⇒ UI hiện ảnh đại diện trung tính, không dùng ảnh mẫu.
-      image: '',
+      // Ảnh bìa đơn giữ lại lúc mua; trống ⇒ UI hiện ô đại diện trung tính, không dùng ảnh mẫu.
+      image: item.imageUrl ?? '',
     })),
     hasInvoice: Boolean(dto.invoiceInfo),
     invoiceCompanyInfo: dto.invoiceInfo,
@@ -108,7 +107,7 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
 /** Map a backend progress update to the UI entity. */
 export function mapProgressUpdateDto(dto: ProgressUpdateDto): ProgressUpdate {
   return {
-    milestone: dto.milestone,
+    milestone: dto.milestone as Order['status'],
     note: dto.note ?? undefined,
     photoKeys: dto.photoKeys ?? [],
     createdAt: dto.createdAt ?? new Date().toISOString(),

@@ -15,6 +15,7 @@ import {
 import { openPaymentPage, useAction } from '@/shared/lib';
 import {
   approveMaket,
+  orderCode,
   requestMaketRevision,
   useOrderDetail,
   useOrderMockups,
@@ -23,6 +24,7 @@ import {
   type ProductReview,
 } from '@/entities/order';
 import {
+  OrderDeliveryInfo,
   OrderInvoiceInfo,
   OrderItemsList,
   OrderPaymentSummary,
@@ -173,11 +175,11 @@ export function OrderDetailPage() {
             items={[
               { label: 'Tài khoản', path: routes.account.overview },
               { label: 'Đơn hàng của tôi', path: routes.account.orders },
-              { label: `#${order.id}` },
+              { label: `#${orderCode(order.id)}` },
             ]}
           />
           <h2 className={styles.title}>
-            Chi tiết đơn hàng #{order.id} {isBulk && <Badge tone="gold">Đơn Số Lượng Lớn</Badge>}
+            Chi tiết đơn hàng #{orderCode(order.id)} {isBulk && <Badge tone="gold">Đơn Số Lượng Lớn</Badge>}
           </h2>
           <div className={styles.meta}>
             Xưởng/Tiệm: <strong>{order.vendorName}</strong> · Đặt ngày{' '}
@@ -217,6 +219,7 @@ export function OrderDetailPage() {
         <div className={styles.tabSection}>
           <OrderProgressList order={order} progressUpdates={progressUpdates} />
           <OrderItemsList order={order} />
+          <OrderDeliveryInfo order={order} />
         </div>
       )}
 

@@ -1,4 +1,5 @@
 export { orderStatusLabel, orderStatusSteps } from './model/orderStatus';
+export { orderCode } from './model/orderCode';
 export type {
   BulkOrderStatus,
   MaketVersion,
@@ -52,6 +53,7 @@ export {
 } from './model/useOrderQueries';
 export {
   OrderInvoiceInfo,
+  OrderDeliveryInfo,
   OrderItemsList,
   OrderPaymentSummary,
   OrderProgressList,

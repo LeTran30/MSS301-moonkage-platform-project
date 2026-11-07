@@ -9,7 +9,7 @@ import {
   useDeliveryProvinceName,
 } from '@/entities/region';
 import { useTheme } from '@/shared/lib/theme';
-import { useCurrentUser } from '@/entities/user';
+import { useCurrentUser, useIsRestoringSession } from '@/entities/user';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNotifications } from './HeaderNotifications';
 import { HeaderSearch } from './HeaderSearch';
@@ -21,6 +21,8 @@ import styles from './Header.module.css';
 
 export function Header() {
   const user = useCurrentUser();
+  // Có token nhưng chưa nạp xong hồ sơ: chưa biết là ai, không hiện "Khách"
+  const restoring = useIsRestoringSession();
   const [theme, toggleTheme] = useTheme();
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   // The catalog, the cart and checkout read the same store (FR-06, BR-30).
@@ -34,7 +36,7 @@ export function Header() {
         hiện ở menu tài khoản và nhắc phím tắt Ctrl+K. Ở production không cần,
         nên bản build production không render thanh này.
       */}
-      {!import.meta.env.PROD && <HeaderTopBar user={user} />}
+      {!import.meta.env.PROD && <HeaderTopBar user={user} restoring={restoring} />}
 
       {/* Main Header Row */}
       <div className={styles.mainRow}>
@@ -84,7 +86,7 @@ export function Header() {
 
             <CartBadge />
 
-            <HeaderUserMenu user={user} />
+            <HeaderUserMenu user={user} restoring={restoring} />
           </div>
 
           <HeaderMobileNav

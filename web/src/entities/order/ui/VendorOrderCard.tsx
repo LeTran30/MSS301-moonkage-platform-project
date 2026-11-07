@@ -2,6 +2,8 @@ import { formatCurrency, formatDate } from '@/shared/utils';
 import { Badge, Button, Card } from '@/shared/ui';
 import type { Order } from '../model/types';
 import { orderStatusLabel } from '../model/orderStatus';
+import { orderCode } from '../model/orderCode';
+import { nextOrderStatus } from '../api/orderMappers';
 import styles from './VendorOrderCard.module.css';
 
 interface VendorOrderCardProps {
@@ -21,11 +23,12 @@ export function VendorOrderCard({
   onAttachInvoice,
   onOpen,
 }: VendorOrderCardProps) {
+  const needsVendor = nextOrderStatus(order.status) !== null;
   return (
     <Card className={styles.orderCard}>
       <div className={styles.cardTop}>
         <div className={styles.orderMeta}>
-          <span className={styles.orderId}>#{order.id}</span>
+          <span className={styles.orderId}>#{orderCode(order.id)}</span>
           <span className={styles.orderDate}>{formatDate(order.createdAt)}</span>
           <Badge tone={order.type === 'BULK' ? 'gold' : 'neutral'}>
             {order.type === 'BULK' ? 'Đơn đặt hàng sản xuất' : 'Đơn bán lẻ shop'}
@@ -86,8 +89,13 @@ export function VendorOrderCard({
         </div>
 
         <div className={styles.btnGroup}>
-          <Button variant="primary" size="sm" onClick={() => onOpen(order)}>
-            Xử lý đơn
+          {/* Đơn còn bước để Shop làm thì mời xử lý; đã giao xong thì chỉ còn xem lại */}
+          <Button
+            variant={needsVendor ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => onOpen(order)}
+          >
+            {needsVendor ? 'Xử lý đơn' : 'Xem đơn'}
           </Button>
           {order.type === 'BULK' && (
             <Button variant="secondary" size="sm" onClick={() => onUploadMaket(order)}>

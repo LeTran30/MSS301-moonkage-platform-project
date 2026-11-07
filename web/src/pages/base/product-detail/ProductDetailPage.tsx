@@ -3,10 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
 import { useDeliveryProvinceCode } from '@/entities/region';
-import { AsyncState, Badge, Button, ButtonLink, Card, Icon, Breadcrumbs } from '@/shared/ui';
+import { AsyncState, Badge, Button, ButtonLink, Card, Icon, Breadcrumbs, toast } from '@/shared/ui';
 import { type Product, useProductDetail, useProductReviews, useTaxonomy } from '@/entities/product';
 import { ProductReviewList } from '@/entities/product';
-import { AddToCartButton } from '@/features/add-to-cart';
+import { AddToCartButton, useCartSync } from '@/features/add-to-cart';
 import { useCurrentUser } from '@/entities/user';
 import styles from './ProductDetailPage.module.css';
 
@@ -19,9 +19,20 @@ export function ProductDetailPage() {
   const navigate = useNavigate();
   const { crusts: crustTypes } = useTaxonomy();
   const [quantity, setQuantity] = useState(1);
+  const [buying, setBuying] = useState(false);
+  const { addLine } = useCartSync();
 
-  function handleBuyNow() {
-    navigate(routes.base.cart);
+  // Mua ngay = thêm vào giỏ rồi sang giỏ để thanh toán; chỉ chuyển trang khi đã thêm được
+  async function handleBuyNow(product: Product) {
+    setBuying(true);
+    try {
+      await addLine(product.id, quantity);
+      navigate(routes.base.cart);
+    } catch {
+      toast.error('Không thêm vào giỏ hàng được. Vui lòng thử lại.');
+    } finally {
+      setBuying(false);
+    }
   }
 
   return (
@@ -194,7 +205,14 @@ export function ProductDetailPage() {
                           size="lg"
                           variant="secondary"
                         />
-                        <Button variant="primary" size="lg" onClick={handleBuyNow} block>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          loading={buying}
+                          disabled={buying || product.stock === 0}
+                          onClick={() => void handleBuyNow(product)}
+                          block
+                        >
                           Mua ngay
                         </Button>
                       </div>

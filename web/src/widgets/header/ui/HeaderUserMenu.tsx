@@ -7,6 +7,8 @@ import styles from './Header.module.css';
 
 interface HeaderUserMenuProps {
   user: User;
+  /** Đang khôi phục phiên: chưa biết người dùng là ai. */
+  restoring?: boolean;
 }
 
 /**
@@ -16,7 +18,7 @@ interface HeaderUserMenuProps {
  * chuyển vào menu để người dùng bàn phím điều hướng được bằng mũi tên; Esc
  * đóng menu và trả tiêu điểm về nút đã mở nó.
  */
-export function HeaderUserMenu({ user }: HeaderUserMenuProps) {
+export function HeaderUserMenu({ user, restoring = false }: HeaderUserMenuProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -67,7 +69,9 @@ export function HeaderUserMenu({ user }: HeaderUserMenuProps) {
         <div className={styles.userAvatar}>
           <Icon name="user" size={18} />
         </div>
-        <span className={styles.userName}>{user.name}</span>
+        <span className={styles.userName} aria-busy={restoring}>
+          {restoring ? 'Đang tải…' : user.name}
+        </span>
         <Icon name="chevronDown" size={14} />
       </button>
 

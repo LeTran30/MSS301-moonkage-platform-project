@@ -18,6 +18,9 @@
   padding: var(--space-8);
   max-width: 1200px;
   min-width: 0;
+  /* on a wide screen the column is centred, not stuck to the sidebar with the right side empty */
+  width: 100%;
+  margin-inline: auto;
 }
 
 /* Thanh công cụ chỉ hiện trên màn hình hẹp (audit §3.3). */
