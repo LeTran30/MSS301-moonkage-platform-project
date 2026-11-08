@@ -73,7 +73,7 @@
   outline-offset: 1px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   .statGrid {
     grid-template-columns: 1fr;
   }

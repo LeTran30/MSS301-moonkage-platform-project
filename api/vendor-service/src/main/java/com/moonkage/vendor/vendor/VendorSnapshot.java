@@ -8,6 +8,8 @@ import java.util.Set;
  * {@code data} of the envelope sent on vendor.updated and vendor.locked, whose {@code sourceVersion} is the vendor's
  * version. A full snapshot, not a change: a field that is null is null now.
  *
+ * @param businessName the shop's display name
+ * @param provinceCode the head-office province of the shop; null when the copy was written before the field existed
  * @param statusReason why the vendor is NEEDS_INFO, REJECTED or LOCKED (AC-27.2, AC-46.2)
  * @param canOperate approved and registration fee paid (BR-20, BR-31); computed here, not by the copies
  * @param localDeliveryFee null when the vendor never set one, which is not a free delivery
@@ -18,6 +20,7 @@ public record VendorSnapshot(
         String vendorId,
         String ownerAccountId,
         String businessName,
+        String provinceCode,
         VendorStatus status,
         String statusReason,
         boolean canOperate,

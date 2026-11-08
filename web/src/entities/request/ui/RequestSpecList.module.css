@@ -23,7 +23,7 @@
   display: block;
 }
 
-@media (max-width: 480px) {
+@media (max-width: var(--breakpoint-sm)) {
   .row {
     grid-template-columns: 1fr;
     gap: 2px;

@@ -133,12 +133,28 @@ Lệnh trên thực hiện tuần tự:
 6. **`vite build`**: Đóng gói bundle tối ưu (Code splitting theo Route, FSD slice).
    Sau đó `check-bundle-size.mjs` chặn hồi quy ngân sách (tổng ≤ 1.100 kB).
 
-Ngoài ra còn **47 test E2E** (Playwright) phủ đủ **7/7 Flow** nghiệp vụ, chạy trên bản build thật (`vite preview`) với API Gateway thật:
+Ngoài ra còn **105 test E2E** (Playwright) phủ đủ **8/8 Flow** nghiệp vụ, chạy trên bản build thật (`vite preview`) với API Gateway thật:
 
 ```bash
-npm run e2e          # 47 test Playwright trên Chromium
+npm run e2e          # 105 test Playwright trên Chromium
 npm run check:all    # check + e2e
 ```
+
+Bộ E2E hiện chia như sau:
+
+| File | Flow | Nội dung |
+| --- | --- | --- |
+| `e2e/flow-01-browse-catalog.spec.ts` | F1 | Duyệt danh mục, giỏ hàng, checkout, thanh toán VNPay, vòng đời đơn, đánh giá |
+| `e2e/flow-02-quote-request.spec.ts` | F2 | Yêu cầu báo giá mở, báo giá, chấp nhận, đặt cọc, đơn đặt riêng, sổ tiền |
+| `e2e/flow-03-direct-request.spec.ts` | F3 | Yêu cầu báo giá riêng (mời đúng một Shop) |
+| `e2e/flow-04-register-vendor.spec.ts` | F4 | Đăng ký Shop, định danh NFC, giấy tờ, duyệt hồ sơ, phí mở bán |
+| `e2e/flow-05-disputes.spec.ts` | F5 | Khiếu nại, phân xử, hoàn tiền một phần, sổ tiền |
+| `e2e/flow-06-nfc-verify.spec.ts` | F6 | Xác minh NFC bằng JWE thật, từ chối thẻ, khoá xác minh |
+| `e2e/flow-07-vendor-products.spec.ts` | F7 | Quản lý sản phẩm, ảnh, vỏ/nhân, khoá lạc quan, ẩn/gỡ |
+| `e2e/flow-08-chat.spec.ts` | F8 | Nhắn shop, dấu đã đọc, tệp đính kèm, chặn người ngoài |
+
+Phần trợ giúp dùng chung nằm ở `e2e/helpers.ts`, `e2e/payment.ts`, `e2e/vnpay.ts`,
+`e2e/nfc.ts`, `e2e/storage.ts`, `e2e/accounts.ts` và `e2e/env.ts`.
 
 Và hai kiểm tra cấu trúc chạy tay:
 ```bash

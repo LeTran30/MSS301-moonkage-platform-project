@@ -38,6 +38,9 @@ export const GATEWAY = {
   VENDOR: {
     BASE: '/api/vendors',                                // VendorController: @GetMapping("/api/vendors")
     BY_ID: (id: string) => `/api/vendors/${id}`,
+    // VendorController: @GetMapping("/api/vendors/{vendorId}/summary") — tóm tắt công khai
+    // của một tiệm bánh (B-3.2): mở cho khách, chỉ có id, tên, tỉnh và các cờ bán hàng.
+    SUMMARY: (id: string) => `/api/vendors/${id}/summary`,
     REGISTER: '/api/vendors',                            // VendorController: @PostMapping("/api/vendors")
     SUPPLIERS: '/api/suppliers',       // SupplierController
     SUPPLIER_BY_ID: (id: string) => `/api/suppliers/${id}`,

@@ -2,7 +2,9 @@ package com.moonkage.outbox;
 
 import com.moonkage.observability.ObservabilityAutoConfiguration;
 import com.moonkage.observability.OutboxMetrics;
+import io.micrometer.tracing.Tracer;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -25,6 +27,18 @@ import org.springframework.context.annotation.Bean;
 public class OutboxAutoConfiguration {
 
     /**
+     * The trace context of the outbox rows (BE-11).
+     *
+     * <p>A service whose tracing is turned off has no {@link Tracer} bean; it gets the no-op one, and every event
+     * simply starts a trace of its own.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public OutboxTraceContext outboxTraceContext(ObjectProvider<Tracer> tracer) {
+        return new OutboxTraceContext(tracer.getIfAvailable(() -> Tracer.NOOP));
+    }
+
+    /**
      * The relay, but only when the service has an outbox table to read.
      *
      * <p>It has to come after the metrics auto-configuration of common-observability (its package name starts with
@@ -39,11 +53,13 @@ public class OutboxAutoConfiguration {
             OutboxEventSource eventSource,
             RabbitTemplate rabbitTemplate,
             OutboxMetrics outboxMetrics,
+            OutboxTraceContext traceContext,
             OutboxProperties properties) {
         return new OutboxRelay(
                 eventSource,
                 rabbitTemplate,
                 outboxMetrics,
+                traceContext,
                 properties.getExchange(),
                 properties.getBatchSize(),
                 properties.getConfirmTimeout());

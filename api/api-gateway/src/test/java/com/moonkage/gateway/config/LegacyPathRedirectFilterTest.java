@@ -2,7 +2,11 @@ package com.moonkage.gateway.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.Ordered;
@@ -118,6 +122,8 @@ class LegacyPathRedirectFilterTest {
             {"/order-service/api/checkouts", "/api/checkouts"},
             {"/order-service/api/orders", "/api/orders"},
             {"/order-service/api/orders/ord-1/dispute", "/api/orders/ord-1/dispute"},
+            {"/order-service/api/chat/conversations", "/api/chat/conversations"},
+            {"/order-service/api/chat/conversations/conv-1/messages", "/api/chat/conversations/conv-1/messages"},
             {"/payment-service/api/payments", "/api/payments"},
             {"/payment-service/api/ledgers", "/api/ledgers"},
             {"/payment-service/api/refunds", "/api/refunds"}
@@ -178,6 +184,83 @@ class LegacyPathRedirectFilterTest {
         } catch (java.io.IOException e) {
             throw new AssertionError("the gateway configuration could not be read", e);
         }
+    }
+
+    /**
+     * D-30 (closed 2026-11-07): the discovery locator is off, so the redirect list is the only thing that keeps a
+     * client that still uses the path with the service name working. Every public endpoint of every service has to
+     * be covered by a redirect, otherwise an app that has not moved over yet gets a 404 where it used to get an
+     * answer.
+     */
+    @Test
+    void everyPublicEndpointOfEveryServiceIsCoveredByARedirect() throws java.io.IOException {
+        Path apiRoot = Path.of("..").toAbsolutePath().normalize();
+        List<String> missing = new ArrayList<>();
+
+        for (String service : List.of(
+                "identity-service",
+                "catalog-service",
+                "quotation-service",
+                "order-service",
+                "vendor-service",
+                "payment-service",
+                "orchestrator-service")) {
+            Path controllerRoot = apiRoot.resolve(service).resolve("src/main/java");
+            if (!Files.isDirectory(controllerRoot)) {
+                continue;
+            }
+            try (Stream<Path> files = Files.walk(controllerRoot)) {
+                for (Path file : files.filter(p -> p.toString().endsWith("Controller.java"))
+                        .toList()) {
+                    for (String path : publicPathsOf(file)) {
+                        String legacy = "/" + service + path;
+                        boolean covered =
+                                LegacyPathRedirectFilter.REDIRECTS.stream().anyMatch(r -> r.matches(legacy));
+                        if (!covered) {
+                            missing.add(service + " " + path + " (legacy form " + legacy + ")");
+                        }
+                    }
+                }
+            }
+        }
+
+        assertThat(missing)
+                .as("every public endpoint needs a legacy redirect, the locator is off")
+                .isEmpty();
+    }
+
+    /** The public paths of one controller file: the class prefix joined with the path of each method mapping. */
+    private static List<String> publicPathsOf(Path file) throws java.io.IOException {
+        String source = Files.readString(file, java.nio.charset.StandardCharsets.UTF_8);
+        if (!source.contains("@RestController")) {
+            return List.of();
+        }
+        List<String> lines = Files.readAllLines(file, java.nio.charset.StandardCharsets.UTF_8);
+        String classPrefix = null;
+        for (String line : lines) {
+            var matcher = java.util.regex.Pattern.compile("@RequestMapping\\(\\s*(?:value\\s*=\\s*)?\"([^\"]+)\"")
+                    .matcher(line);
+            if (matcher.find()) {
+                classPrefix = matcher.group(1);
+                break;
+            }
+        }
+        List<String> paths = new ArrayList<>();
+        for (String line : lines) {
+            var matcher = java.util.regex.Pattern.compile(
+                            "@(Get|Post|Put|Patch|Delete)Mapping(?:\\(\\s*(?:value\\s*=\\s*)?\"([^\"]*)\")?")
+                    .matcher(line);
+            if (!matcher.find()) {
+                continue;
+            }
+            String sub = matcher.group(2) == null ? "" : matcher.group(2);
+            String path = (classPrefix == null ? "" : classPrefix) + sub;
+            if (path.startsWith("/internal")) {
+                continue;
+            }
+            paths.add(path.isEmpty() ? "/" : path);
+        }
+        return paths;
     }
 
     /**

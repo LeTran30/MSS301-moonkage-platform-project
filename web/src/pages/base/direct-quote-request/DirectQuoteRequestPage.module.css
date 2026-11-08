@@ -42,7 +42,7 @@
 }
 
 /* Màn hình hẹp: hai nút xếp dọc để nhãn không bị cắt. */
-@media (max-width: 560px) {
+@media (max-width: var(--breakpoint-sm)) {
   .actions {
     flex-direction: column-reverse;
     align-items: stretch;

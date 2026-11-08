@@ -101,12 +101,12 @@ docs/
 │   ├── order/README.md            Tổng quan order-service
 │   ├── payment/README.md          Tổng quan payment-service
 │   ├── orchestrator/README.md     Tổng quan orchestrator-service
-│   ├── common-storage/README.md   Tổng quan thư viện lưu trữ đối tượng
+│   ├── common-storage/README.md    Tổng quan thư viện lưu trữ đối tượng
 │   ├── common-storage/classes/    Tài liệu thư viện lưu trữ đối tượng
 │   ├── common-api/README.md       Tổng quan thư viện hợp đồng HTTP
 │   ├── common-outbox/README.md    Tổng quan thư viện relay outbox
 │   ├── common-reference/README.md Tổng quan thư viện danh mục tham chiếu
-│   └── common-observability/README.md  Tổng quan thư viện metric dùng chung
+│   └── common-observability/README.md Tổng quan thư viện metric dùng chung
 ├── scripts/                   ← SCRIPT kiểm tài liệu (chạy tay và trong CI)
 │   └── check-class-docs.mjs    Tài liệu class còn khớp với mã nguồn không
 ├── api/                           ← BỘ REQUEST MẪU (Postman)

@@ -91,7 +91,7 @@
   gap: var(--space-6);
 }
 
-@media (max-width: 860px) {
+@media (max-width: var(--breakpoint-md)) {
   .reqBody {
     grid-template-columns: 1fr;
   }

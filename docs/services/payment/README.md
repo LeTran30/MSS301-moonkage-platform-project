@@ -131,6 +131,8 @@ Không gọi identity, catalog, quotation hay orchestrator. VNPay được gọi
 | `PaymentExpiryJob` | `payment.expiry-sweep-interval` (60s) | Đánh `FAILED` các giao dịch `PENDING` quá hạn → phát `payment.failed` (P-01) |
 | `RefundJob` | `payment.refund-interval` (30s) | Gửi các hoàn tiền `PENDING` tới VNPay; bị từ chối thì thành `MANUAL_REQUIRED` |
 
+Mọi tác vụ định kỳ của service chạy trên `spring.task.scheduling.pool.size` thread (mặc định của Spring Boot là **một**). Ở payment-service khai báo `size: 2` — xem `api/payment-service/src/main/resources/application.yml`. Lý do: `RefundJob` gọi ra VNPay (một hệ thống bên ngoài), còn relay outbox phát sự kiện của đơn; nếu chung một thread thì một lần gọi chậm làm sự kiện của đơn ngừng đi.
+
 ## Cấu hình và chạy local
 
 Cổng `8087`, database `payment_db` (`PAYMENT_DB_HOST` / `PAYMENT_DB_PORT`, mặc định `localhost:5446`). Biến lấy từ `.env` ở thư mục gốc repo.
@@ -145,6 +147,7 @@ Cổng `8087`, database `payment_db` (`PAYMENT_DB_HOST` / `PAYMENT_DB_PORT`, m�
 | `VNPAY_RETURN_URL` | Mặc định `http://localhost:5173/thanh-toan/ket-qua` (trang kết quả của web) |
 | `VNPAY_CONFIRM_ON_RETURN` | Mặc định `false`. Đặt `true` khi chạy local: VNPay không gọi được IPN về `localhost`, nên `GET /api/payments/vnpay/return` (trang kết quả chuyển tiếp query đã được VNPay ký) được ghi nhận như một IPN. Chữ ký vẫn bị kiểm, và ghi nhận lặp lại không đổi gì. Ở nơi VNPay gọi được IPN thì để `false`: khi đó chỉ IPN mới đánh dấu đã trả tiền (BR-25) |
 | `VNPAY_API_URL` | Endpoint `merchant_webapi` dùng cho hoàn tiền (AC-49.3) |
+| `VNPAY_REFUND_TIMEOUT` | Bao lâu thì bỏ một lần gọi hoàn tiền (mặc định `10s`). Lần gọi nằm trong tác vụ định kỳ nên **phải** có thời hạn: không có thời hạn thì một sandbox chậm giữ thread của scheduler, và relay outbox đi cùng thread đó cũng ngừng |
 | `vnpay.default-lifetime` | `15m` — hạn thanh toán mặc định |
 | `payment.expiry-sweep-interval` | `60s` |
 | `payment.refund-interval` | `30s` |

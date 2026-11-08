@@ -24,6 +24,8 @@ public class VendorSnapshotReader {
                 reader.requireAggregateId(envelope, "vendorId"),
                 reader.requireText(data, "ownerAccountId"),
                 reader.requireText(data, "businessName"),
+                // The province of the shop is optional (B-3.1): a copy written before the field existed has none.
+                reader.optionalText(data, "provinceCode"),
                 reader.requireText(data, "status"),
                 reader.requireBoolean(data, "canOperate"),
                 reader.requireBoolean(data, "sellsShop"),

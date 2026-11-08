@@ -34,6 +34,10 @@ public class OutboxEvent {
     @Column(nullable = false, columnDefinition = "TEXT", updatable = false)
     private String payload;
 
+    /** BE-11: the W3C traceparent of the request that wrote the event; null when it was written outside a request. */
+    @Column(name = "trace_parent", length = 55, updatable = false)
+    private String traceParent;
+
     /** Null until the broker confirmed it. */
     private Instant publishedAt;
 
@@ -48,11 +52,12 @@ public class OutboxEvent {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    public static OutboxEvent of(String id, String routingKey, String payload) {
+    public static OutboxEvent of(String id, String routingKey, String payload, String traceParent) {
         OutboxEvent event = new OutboxEvent();
         event.id = id;
         event.routingKey = routingKey;
         event.payload = payload;
+        event.traceParent = traceParent;
         return event;
     }
 

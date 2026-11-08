@@ -38,6 +38,10 @@ class OutboxEvent extends BaseEntity {
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT", updatable = false)
     private String payload;
 
+    /** BE-11: the W3C traceparent of the request that wrote the event; null when it was written outside a request. */
+    @Column(name = "trace_parent", length = 55, updatable = false)
+    private String traceParent;
+
     /** Null until the broker confirmed it. */
     @Column(name = "published_at")
     private Instant publishedAt;

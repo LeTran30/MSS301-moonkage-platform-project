@@ -4,7 +4,7 @@
   gap: var(--space-4);
   align-items: start;
 }
-@media (max-width: 760px) {
+@media (max-width: var(--breakpoint-md)) {
   .layout {
     grid-template-columns: 1fr;
   }

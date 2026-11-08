@@ -1,0 +1,43 @@
+# OpenTelemetry Collector (BE-11): the single door for the spans of the whole platform.
+#
+# Every service (the gateway and the 7 microservices) sends its spans over OTLP/HTTP to
+# http://otel-collector:4318/v1/traces. The Collector batches them and forwards them to Jaeger,
+# which keeps them and lets you read the whole trace of a request in the Jaeger UI.
+#
+# The PII masking happens before the spans leave the service (PiiMaskingObservationFilter in
+# common-observability), so the Collector never sees an email address or a phone number.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  # protect the Collector itself: if it runs out of memory it drops spans instead of dying
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+  # a span is normally finished long before the Collector sees it; the batch waits a little so
+  # the services send as few requests as possible
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/jaeger]
+  telemetry:
+    logs:
+      level: info

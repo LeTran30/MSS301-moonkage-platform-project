@@ -14,8 +14,8 @@ catalog là **phía đọc** của sản phẩm (CQRS): không nhận lệnh ghi
 | --- | --- | --- | --- |
 | `product_views` **Mới** (thay `products`) | `product_id`, `vendor_id`, `name`, `description`, `crust_codes` (text[]), `filling_codes` (text[]), `brand`, `origin`, `pieces_per_box`, `list_price`, `stock`, `expiry_date`, `delivery_label`, `quote_threshold`, `status`, `image_keys` (text[]), `price_tiers` (jsonb), `rating_avg`, `rating_count`, `source_version` | Chỉ trường sản phẩm, không chép trường vendor (P-05); chỉ ghi khi `source_version` mới hơn; index tìm kiếm trên `name`, `brand`; GIN trên `crust_codes`, `filling_codes` (L-19) | FR-05 → FR-07, BR-21 |
 | `product_reviews` **Mới** (bản sao) | `review_id`, `product_id`, `vendor_id`, `rating`, `content`, `created_at` | Từ `review.created`; tính `rating_avg` | AC-11.3, AC-06.3 |
-| `vendor_snapshots` **Mới** (kỹ thuật) | `vendor_id`, `owner_account_id`, `business_name`, `status`, `can_operate`, `sells_shop`, `delivery_areas`, `local_delivery_fee`, `source_version` | Từ `vendor.updated`, chỉ ghi khi `source_version` mới hơn; nơi duy nhất giữ trường vendor; GIN trên `delivery_areas` | BR-20, BR-30, BR-31 |
-| `product_listings` **Mới** (view) | `product_views` JOIN `vendor_snapshots`: thêm `vendor_name`, `owner_account_id`, `delivery_areas`, `local_delivery_fee`, `can_operate`, `sells_shop` | API công khai đọc view này (entity `@Immutable`); khóa Shop chỉ sửa một dòng | P-05 |
+| `vendor_snapshots` **Mới** (kỹ thuật) | `vendor_id`, `owner_account_id`, `business_name`, `province_code` (tỉnh trụ sở của Shop, B-3.1), `status`, `can_operate`, `sells_shop`, `delivery_areas`, `local_delivery_fee`, `source_version` | Từ `vendor.updated`, chỉ ghi khi `source_version` mới hơn; nơi duy nhất giữ trường vendor; `province_code` cho phép null (bản chụp ghi trước khi có trường này); GIN trên `delivery_areas` | BR-20, BR-30, BR-31, B-3.1 |
+| `product_listings` **Mới** (view) | `product_views` JOIN `vendor_snapshots`: thêm `vendor_name`, `owner_account_id`, `province_code`, `delivery_areas`, `local_delivery_fee`, `can_operate`, `sells_shop` | API công khai đọc view này (entity `@Immutable`); khóa Shop chỉ sửa một dòng | P-05, B-3.1 |
 | `provinces` **Mới** | `code`, `name` | 34 đơn vị theo Quyết định 19/2025/QĐ-TTg; nạp bằng `db/migration/R__provinces.sql`, khớp enum `Province` của `api/common-reference` (có test) | A-18, P-07 |
 | `interprovince_fees` **Mới** | `province_code` (FK → `provinces`), `fee`, `effective_from`, `updated_by` | Một mức hiện hành mỗi tỉnh; lưu bảng phải đủ mọi dòng của `provinces` | FR-52, A-18 |
 | `processed_events`, `outbox_events` **Mới** |  | Bỏ sự kiện trùng; phát `interprovince_fee.changed` | NFR-05 |
@@ -34,6 +34,8 @@ Bản đọc có thể trễ vài giây so với vendor. Tồn kho hiển thị 
 | `GET /api/products/{productId}/reviews` | K, M | Đánh giá của sản phẩm | AC-11.3 |
 
 `/api/products` chỉ có `GET`. Mọi lệnh ghi sản phẩm đi qua `/api/vendors/{vendorId}/products` (mục 4).
+
+Mỗi sản phẩm trong listing mang `provinceCode` của Shop (tỉnh trụ sở), lấy từ `vendor_snapshots` qua view `product_listings`; trường này cho phép null (B-3.1).
 
 **Root InterprovinceFeeTable** (`/api/interprovince-fees`)
 

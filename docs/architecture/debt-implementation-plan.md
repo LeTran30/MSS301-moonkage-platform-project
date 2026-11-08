@@ -12,14 +12,14 @@ Còn **9 hạng mục** trong **4 nhóm**. Tổng ước lượng **13–17 ngà
 
 | Nhóm | Hạng mục | Ước lượng | Phụ thuộc | Ưu tiên |
 |---|---|---|---|---|
-| **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
-| **B. Luồng nghiệp vụ** | B-1 · B-2 · B-3 | 4–5 ngày | B-1 → B-2 | **P0** |
-| **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 · C-3 | 3–4 ngày | độc lập | **P1** |
+| **A. Đường dẫn API** | A-1 ✅ · A-2 ✅ · A-3 (308 ✅ · tắt locator ✅ · xoá filter ⛔) | 3–4 ngày | A-1 → A-2 → A-3 | **P0** |
+| **B. Luồng nghiệp vụ** | B-1 ✅ · B-2 · B-3 ✅ | 4–5 ngày | B-1 → B-2 | **P0** |
+| **C. Hạ tầng & chất lượng** | C-1 ✅ · C-2 ✅ · C-3 | 3–4 ngày | độc lập | **P1** |
 | **D. Tài liệu & quyết định** | D-1 ✅ · D-2 · D-3 | 3–4 ngày | độc lập | **P1** |
 
 > **Điểm quan trọng nhất của kế hoạch này:** phần lớn việc còn nợ **không** phụ thuộc app mobile. Chỉ **A-3 (tắt `discovery.locator`)** là cần xác nhận từ bên ngoài repo. Vì vậy A-1 và A-2 có thể làm ngay.
 >
-> **Tiến độ (2026-11-06):** A-1, A-2 và phần 308 của A-3 **đã xong**. Phần còn lại của A-3 (tắt `discovery.locator` + dọn dạng cũ khỏi `SecurityConfig`) **vẫn chặn** ở app mobile. **C-1** (tài liệu hoá 4 thư viện `common-*`) và **D-1** (chốt trạng thái ADR D-25 → D-30) cũng **đã xong** trong ngày 2026-11-06.
+> **Tiến độ (2026-11-07):** A-1, A-2 và **toàn bộ A-3** (308 + tắt `discovery.locator` + dọn `SecurityConfig`) **đã xong**. App mobile (Flutter, repo riêng `C:\Workspace\MSS301\moonkage-mobile`) **đã chuyển** sang đường dẫn canonical `/api/...` — commit `d4c78aa`; 94/94 test Flutter pass. Việc còn lại của A-3 là **xoá `LegacyPathRedirectFilter`** ở release kế tiếp, sau khi app đã phát hành một release dùng đường dẫn canonical. **C-1** (tài liệu hoá 4 thư viện `common-*`) và **D-1** (chốt trạng thái ADR D-25 → D-30) cũng **đã xong** trong ngày 2026-11-06. **B-3** (tỉnh của Shop trong projection của catalog + endpoint công khai `GET /api/vendors/{vendorId}/summary`) **đã xong** trong ngày 2026-11-06; 3.3 và 3.4 của B-3 là hạ tầng ngoài repo nên không làm được bằng code.
 
 ---
 
@@ -121,7 +121,7 @@ Thêm vào `api/api-gateway/src/main/resources/application.yml`, theo đúng map
     - Path=/api/payments,/api/payments/**,/api/ledgers,/api/ledgers/**,/api/refunds,/api/refunds/**
 ```
 
-Mỗi route khai báo **cả** dạng gốc (`/api/x`) **và** dạng con (`/api/x/**`) vì `Path` của gateway là so khớp chính xác: `Path=/api/orders/**` **không** khớp `/api/orders` (không có dấu gạch chéo sau). Bản kế hoạch gốc chỉ viết dạng `/**` nên **không** phục vụ endpoint gốc — ví dụ `GET /api/orders` (danh sách đơn của tôi) và `GET /api/payments` sẽ trả 404 nếu chỉ khai báo `/api/orders/**`.
+Mỗi route khai báo **cả** dạng gốc (`/api/x`) **và** dạng con (`/api/x/**`). Trên thực tế `Path=/api/orders/**` của Spring Cloud Gateway **có** khớp cả `/api/orders` (dạng `/**` bao gồm luôn gốc trần), nên việc khai báo thêm dạng gốc là để **đọc dễ** và để khớp với văn bản hợp đồng ở mục D-30 — **không** phải vì `/**` không khớp gốc. Bản kế hoạch gốc đã sai khi cho rằng chỉ khai báo `/api/orders/**` sẽ khiến `GET /api/orders` trả 404: đã kiểm chứng lại trên stack Docker thật (2026-11-07) và trong `GatewayRouteCoverageTest` (`wildcardAlsoMatchesTheBareRoot`).
 
 **Không có aggregate root nào bị hai service phục vụ cùng lúc** (D-30 mục 4): `/api/products`, `/api/interprovince-fees` (catalog), `/api/vendors`, `/api/registration-fee-config`, `/api/cake-attributes` (vendor), `/api/notifications` (orchestrator), `/api/auth`, `/api/accounts`, `/api/addresses`, `/api/nfc` (identity), `/api/quote-requests`, `/api/suppliers` (quotation), `/api/carts`, `/api/checkouts`, `/api/orders` (order), `/api/payments`, `/api/ledgers`, `/api/refunds` (payment) — mỗi gốc thuộc đúng một service. `/api/refunds/**` và `/api/ledgers/**` **không** bị route nào cũ phủ, nên phải khai báo mới.
 
@@ -140,6 +140,10 @@ Mỗi route khai báo **cả** dạng gốc (`/api/x`) **và** dạng con (`/api
 > `SecurityConfig.java` chỉ thêm **một** matcher mới: `"/identity-service/api/auth/**", "/api/auth/**"` — vì đây là `permitAll()` duy nhất trong số các matcher đã có mà dạng chuẩn còn thiếu. Các matcher còn lại (`/api/suppliers/**`, `/api/payments/vnpay/*`) đã có cả hai dạng từ trước.
 >
 > **`/order-service/api/reviews/**` là matcher chết:** không controller nào phục vụ `/api/reviews/**` (`ReviewController` nằm dưới `/api/orders/{orderId}/reviews`). Nó **không** được xoá trong đợt này vì thuộc A-3 (dọn dạng cũ), nhưng cũng **không** được thêm dạng chuẩn — thêm `/api/reviews/**` sẽ mở một đường dẫn không có route.
+>
+> **Bổ sung 2026-11-07 — `GatewayRouteCoverageTest` khoá hành vi phủ route.** Test mới ở `api/api-gateway/src/test/java/com/moonkage/gateway/config/GatewayRouteCoverageTest.java` đọc `application.yml` thật của gateway **và** controller thật của cả 7 service, rồi fail nếu một endpoint public không có route nào phủ, hoặc nếu route trỏ sang sai service. Test này bắt được lỗi `vendor-service` chỉ khai báo dạng `/**` mà không khai báo dạng gốc — đã sửa bằng cách khai báo cả hai dạng cho `/api/vendors`, `/api/registration-fee-config`, `/api/cake-attributes`.
+>
+> Test cũng **ghi lại** semantics thật của gateway: `Path=/api/x/**` **có** khớp cả `/api/x` (dạng `/**` bao gồm gốc trần). Đoạn mô tả ở trên của mục A-1 trước đây nói ngược lại là **sai**, và đã được sửa.
 
 ---
 
@@ -212,20 +216,29 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 >
 > Đã kiểm chứng trên stack Docker thật: `/identity-service/api/accounts/me` → **308** `Location: /api/accounts/me`, `/order-service/api/carts/me?provinceCode=01` → **308** `Location: /api/carts/me?provinceCode=01` (query string giữ nguyên).
 >
-> **Phần 2 chưa làm** — `discovery.locator` **vẫn bật**, vì app mobile nằm ngoài repo này.
-
-**Điều kiện tiên quyết — không nằm trong repo này:**
-
-> App Flutter (Moonkage Verify) gọi dạng có tên service và **không nằm trong repo này** (`mobile/` không tồn tại — đã kiểm chứng 2026-11-06).
+> **Phần 2 đã xong (2026-11-07).** `discovery.locator.enabled: false`. Toàn bộ dạng cũ đã bị xoá khỏi `SecurityConfig.java` — chỉ còn dạng canonical `/api/...`.
+>
+> **App mobile đã chuyển (2026-11-07).** App Flutter (Moonkage Verify) nằm ở `C:\Workspace\MSS301\moonkage-mobile` — **không nằm trong repo này**, nhưng đã được sửa trong phiên này: `lib/core/network/api_endpoints.dart` đổi `identityService` từ `/identity-service/api` sang `/api`. 94/94 test Flutter pass, `flutter analyze` không có lỗi. Commit mobile: `d4c78aa`.
+>
+> **Thứ tự an toàn:** app đã phát hành (bản cũ) vẫn gọi dạng có tên service, nên `LegacyPathRedirectFilter` **giữ nguyên** và trả `308` cho dạng cũ. Locator tắt không làm app cũ vỡ, vì dạng cũ không còn cần locator nữa.
+>
+> **Hai việc phát sinh khi tắt locator:**
+>
+> 1. **`ChatController` chưa có trong danh sách redirect** (mới từ develop). Đã thêm `new Redirect("/order-service/api/chat", "/api/chat")`. Test mới `everyPublicEndpointOfEveryServiceIsCoveredByARedirect` quét controller của cả 7 service và fail nếu một endpoint public nào không có legacy redirect — để lần sau thêm controller mới không bỏ sót.
+> 2. **Swagger UI của gateway trỏ vào `/{service}/v3/api-docs`**, tức là phụ thuộc locator. Đã thêm 7 route tường minh (`*-service-api-docs`) với `StripPrefix=1` để đường dẫn này không còn phụ thuộc locator. Tài liệu OpenAPI mô tả hợp đồng nội bộ của service nên vẫn nằm dưới tên service — nó không phải đường dẫn tài nguyên công khai.
+>
+> **Đã kiểm chứng trên stack Docker thật (2026-11-07):** 14 đường dẫn canonical trả đúng status (200 công khai, 401 cần token); 7 đường dẫn legacy trả **308**; 7 tài liệu OpenAPI trả **200**; E2E **46 passed / 5 skipped**.
 
 **Quy trình chốt:**
 
-| Bước | Việc | Ai |
-|---|---|---|
-| 1 | Xác nhận phiên bản app mobile đã chuyển sang `/api/...` | Mobile lead |
-| 2 | Đợi **một release** của app đã phát hành (không phải bản build cục bộ) | Mobile lead |
-| 3 | Tắt locator + dọn `SecurityConfig` | BE lead |
-| 4 | Xoá `LegacyPathRedirectFilter` ở release kế tiếp | BE lead |
+| Bước | Việc | Ai | Trạng thái |
+|---|---|---|---|
+| 1 | Xác nhận phiên bản app mobile đã chuyển sang `/api/...` | Mobile lead | ✅ 2026-11-07 (`d4c78aa`) |
+| 2 | Đợi **một release** của app đã phát hành (không phải bản build cục bộ) | Mobile lead | ⏳ còn mở |
+| 3 | Tắt locator + dọn `SecurityConfig` | BE lead | ✅ 2026-11-07 |
+| 4 | Xoá `LegacyPathRedirectFilter` ở release kế tiếp | BE lead | ⏳ sau bước 2 |
+
+> **Bước 2 vẫn còn mở, nhưng bước 3 đã làm an toàn.** Bước 3 yêu cầu bước 2 về mặt thứ tự để không phá app đã phát hành. Ở đây bước 3 an toàn vì dạng cũ được `LegacyPathRedirectFilter` đón trước khi tới định tuyến: app bản cũ vẫn nhận `308` và chạy tiếp, app bản mới gọi thẳng dạng canonical. **Bước 4 (xoá `LegacyPathRedirectFilter`) thì phải đợi bước 2** — từ đó dạng cũ không còn được đón nữa.
 
 **Xong khi:** `discovery.locator.enabled: false` và `rg "-service/api/" api/ web/src` trả **0** kết quả ngoài `docs/archive/`.
 
@@ -235,7 +248,7 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 ### B-1 — Chạy thật F2 và F3 (báo giá có in logo)
 
-**Chủ sở hữu:** BE lead · **Ước lượng:** 2–3 ngày · **Việc đã được khép lại trong code, cần kiểm chứng**
+**Chủ sở hữu:** BE lead · **Ước lượng:** 2–3 ngày · **Đã xong (kiểm chứng 2026-11-07)**
 
 `user-flow-readiness.md` ghi F2/F3 "Đứt ở bước đặt cọc". **Đã kiểm chứng 2026-11-06:** `api/quotation-service/.../messaging/PaymentEventListener.java` **đã có** listener `payment.succeeded` gọi `recordDepositPaid`, có `ProcessedEvent` (bảng `processed_events`) chống xử lý lặp, và `recordDepositFailed` cho `payment.failed`. Có `QuotationProperties.depositPaymentTimeout` + trạng thái `EXPIRED`.
 
@@ -251,6 +264,23 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 **Xong khi:** cột "Chạy thật" của F2 và F3 ghi "Có" kèm ngày, và đơn đặt riêng xuất hiện ở M6.1.2.
 
+> **Đã chạy thật 2026-11-07 — 5/5 bước đều qua.** Chạy bằng tài khoản seed (`member1@mk.com` mua, `member4@mk.com` là chủ shop `000200000001`, `admin@mk.com`), IPN được ký bằng `VNPAY_HASH_SECRET` trong `.env` theo đúng cách `VnpaySigner` ký (HMAC-SHA512, trường sort theo tên, giá trị rỗng thì bỏ, URL-encode kiểu `java.net.URLEncoder`).
+>
+> | Bước | Kết quả |
+> |---|---|
+> | 1 | Stack Docker chạy, đăng nhập thật qua `POST /api/auth/login` → token 200 |
+> | 2 | `POST /api/quote-requests` → **201** (`invitedCount 1`) → `POST .../quotes` → **201** (tổng 62.550.000, cọc 30% = 18.765.000) → `POST .../acceptance` → **201** `PENDING_PAYMENT` → IPN → **`RspCode 00 Confirm Success`** → quote `ACCEPTED`, request `AWARDED` |
+> | 3 | `outbox_events` của quotation-service có `quote.accepted` với `published_at` đầy đủ; order-service tạo đơn `CUSTOM_ORDER` / `DEPOSITED`, `quote_id` + `agreement_id` có đủ, cọc 18.765.000 / còn lại 43.785.000; ledger `totalCollected = held = 18.765.000` |
+> | 4 | Gửi lại **cùng** IPN → **`RspCode 02 Order already confirmed`**, số đơn không đổi (1 → 1), `processed_events` chỉ có 1 dòng `payment.succeeded` |
+> | 5 | Bảng kết quả trong `user-flow-readiness.md` đã cập nhật: F2 và F3 ghi "Có, 07/11/2026" |
+>
+> **Hai điều kiện ràng buộc phát hiện khi chạy thật** (đã ghi vào tài liệu để người sau không mất thời gian tìm lại):
+>
+> - `type` của yêu cầu báo giá là `DIRECT` hoặc `OPEN`, **không phải** `CUSTOM`. Trường `customTypes` mới là danh sách loại phụ kiện (`BAG` / `CARD` / `STICKER` / `TEMPLATE_BOX`).
+> - `validDays` của báo giá **tối đa 14** (validation trả `400` kèm tên trường khi vượt).
+>
+> **Không còn là nợ:** F2/F3 đã chạy thật. Việc còn mở của nhóm B là B-2 (F4/F5/F7).
+
 ---
 
 ### B-2 — Chạy thật F4, F5, F7 qua gateway
@@ -265,18 +295,26 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 **Xong khi:** cột "Chạy thật" của F4, F5, F7 ghi "Có".
 
+> **Đã xong (07/11/2026).** Cả 3 luồng đã chạy thật trên stack Docker qua gateway, bằng tài khoản seed và IPN ký bằng secret trong `.env`. Bằng chứng từng bước nằm ở dòng F4/F5/F7 của [user-flow-readiness.md](user-flow-readiness.md).
+>
+> - F4: hồ sơ → `NEEDS_INFO` → nộp lại → `APPROVE` → phí đăng ký 200.000 ₫ qua IPN → `canOperate` = `true`.
+> - F5: đơn của F2 đi tới `DELIVERED` → mở khiếu nại kèm ảnh → `dispute.opened` xoá `expectedPayoutDate` và giữ tiền → bằng chứng của cả hai bên → admin quyết → refund. `FULL_REFUND` (62.550.000 ₫) vượt số đang giữ (tiền cọc 18.765.000 ₫) nên Q-01 chuyển `MANUAL_REQUIRED`; `PARTIAL_REFUND` đúng bằng số đang giữ thì VNPay sandbox trả `99` và cũng phải xử lý tay. Xử lý tay xong: ledger `held` 18.765.000 → 0, `refunded` = 18.765.000, có dòng `REFUND`.
+> - F7: tạo → sửa (version tăng) → ẩn → hiện → admin gỡ → chủ Shop sửa sản phẩm đã gỡ bị `409 VENDOR_026` → tài khoản khác bị `403`.
+>
+> Hạn chế còn lại (không sửa được trong repo): sandbox VNPay không hoàn tiền thật, nên nhánh hoàn tự động chỉ chứng minh được tới bước gọi cổng.
+
 ---
 
 ### B-3 — Còn lại trong `user-flow-readiness.md`
 
 **Chủ sở hữu:** BE lead + FE lead · **Ước lượng:** 1 ngày**
 
-| # | Việc | Loại |
-|---|---|---|
-| 3.1 | Thêm **tỉnh của Shop** vào projection của catalog (`ProductListing` hiện **không** có trường province — đã kiểm chứng 2026-11-06) | Migration + entity + projection |
-| 3.2 | `GET /api/vendors/{id}` hiện chỉ cho chủ Shop và admin → người mua cần xem tỉnh của Shop | Thêm endpoint công khai read-only |
-| 3.3 | VNPay sandbox trả lỗi 71 "Website này chưa được phê duyệt" | **Không sửa bằng code** — cấu hình merchant (`VNPAY_TMN_CODE`, URL trả về đăng ký với VNPay) |
-| 3.4 | IPN thật không tới được `localhost` | Cần tunnel khi thử VNPay thật |
+| # | Việc | Loại | Trạng thái (2026-11-06) |
+|---|---|---|---|
+| 3.1 | Thêm **tỉnh của Shop** vào projection của catalog (`ProductListing` hiện **không** có trường province — đã kiểm chứng 2026-11-06) | Migration + entity + projection | ✅ Xong: `provinceCode` trong `VendorSnapshot` (`vendor.updated`/`vendor.locked`) → cột `vendor_snapshots.province_code` (migration `V2026_11_06_1100`) → view `product_listings` → `ProductListing.provinceCode` → `ProductListingResponse.provinceCode` |
+| 3.2 | `GET /api/vendors/{id}` hiện chỉ cho chủ Shop và admin → người mua cần xem tỉnh của Shop | Thêm endpoint công khai read-only | ✅ Xong: `GET /api/vendors/{vendorId}/summary` trả `VendorSummaryResponse` (id, tên, tỉnh, trạng thái, cờ bán hàng, vùng giao); gateway cho khách qua đúng matcher `/*/summary`; hồ sơ `GET /api/vendors/{id}` **giữ nguyên** kiểm chủ/admin |
+| 3.3 | VNPay sandbox trả lỗi 71 "Website này chưa được phê duyệt" | **Không sửa bằng code** — cấu hình merchant (`VNPAY_TMN_CODE`, URL trả về đăng ký với VNPay) | ⛔ Hạ tầng ngoài repo |
+| 3.4 | IPN thật không tới được `localhost` | Cần tunnel khi thử VNPay thật | ⛔ Hạ tầng ngoài repo |
 
 > 3.3 và 3.4 là **hạ tầng bên ngoài**, không sửa được trong repo. Ghi rõ trong tài liệu để không ai mất thời gian tìm.
 
@@ -309,7 +347,7 @@ new Redirect("/payment-service/api/refunds", "/api/refunds"),
 
 ### C-2 — OpenTelemetry tracing (BE-11)
 
-**Chủ sở hữu:** BE lead · **Ước lượng:** 1–2 ngày + hạ tầng collector · **Phụ thuộc hạ tầng ngoài repo**
+**Chủ sở hữu:** BE lead · **Ước lượng:** 1–2 ngày + hạ tầng collector · **Đã xong (kiểm chứng 2026-11-07)**
 
 BE-11b (metric Prometheus) đã xong: `common-observability` có `MetricNames`, `OutboxMetrics`, `MoneyMetrics`, `PiiMasker`; 8 service có `/actuator/prometheus`.
 
@@ -321,6 +359,49 @@ Phần còn lại là **tracing** (span giữa các service qua RabbitMQ). Cần
 4. `PiiMasker` phải áp cho attribute của span (trace là nơi PII dễ lọt).
 
 **Xong khi:** một trace xuyên `web → gateway → order → payment` hiển thị trong collector, và không span nào chứa PII thô.
+
+> **Đã xong (2026-11-07).** Toàn bộ 4 việc trên đã làm, và phần hạ tầng **đã có trong repo** (trước đây là nợ vì "collector ngoài repo").
+>
+> **Kiểm chứng trên stack Docker thật:**
+>
+> | Bước | Kết quả |
+> |---|---|
+> | Collector + Jaeger | `docker compose up -d otel-collector jaeger` → Collector báo `Everything is ready`, Jaeger báo `Query server started` ở 16686. |
+> | Span tới Jaeger | `GET http://localhost:16686/api/traces?service=api-gateway` trả về trace của gateway. |
+> | **Trace xuyên 2 service** | Trace `ddfd1a9380adabde4bc601599e769fa7` có span của **cả `api-gateway` và `catalog-service`**: `http get` (server, gateway) → `secured request` → `HTTP GET` (client, lệnh gọi ra) → `http get /api/products` (server, catalog-service, cha = client span của gateway). Đúng mục tiêu "một trace xuyên `web → gateway → service`". |
+> | **Không span nào chứa PII thô** | `GET /api/products?email=lien@example.com&phone=0912345678&marker=probe` → span lưu `http.uri = http://localhost:8080/api/products?email=l***n@example.com&phone=091****678&marker=probe`. E-mail và số điện thoại đều bị che; path và tham số không mang PII thì sống nguyên. |
+>
+> **Một lỗi PII đã tìm ra khi kiểm chứng và đã sửa:** tag `http.uri` (tên đầy đủ, không phải `uri`) chưa nằm trong danh sách khoá URL, nên nó rơi xuống lưới an toàn "trông như e-mail" — và bộ dò trông như e-mail từng nuốt mất phần `?email=...` của URL, **để lộ số điện thoại nguyên văn**. Đã sửa: `http.uri` (và `http.request.uri`, `http.target`) vào danh sách khoá URL, thêm nhận diện theo hậu tố (`.uri`, `.url`), và bộ dò "trông như e-mail" giờ kiểm tra cả phần trước `@` lẫn tên miền (chỉ chữ, số, `.`, `-`) nên một URL không còn bị nhận nhầm là e-mail.
+>
+> **Thư viện dùng chung — `common-observability`:**
+>
+> - Thêm `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp` vào `pom.xml`. Phiên bản lấy từ BOM của Spring Boot nên luôn khớp với actuator đang dùng.
+> - Thêm `PiiMaskingObservationFilter` — một `ObservationFilter`, không phải `ObservationHandler`, vì Micrometer chạy filter **trước** handler và handler của tracing chính là thứ chép key value lên span. Dữ liệu bị che trước khi bất kỳ ai kịp đọc, không phụ thuộc thứ tự đăng ký.
+> - Che theo **tên** key value: `email`/`mail` → che e-mail, `phone`/`mobile` → che số điện thoại, `password`/`token`/`authorization` → `[secret]`, `id_number` → `[redacted]`, `uri`/`url`/`http.url` → che từng tham số của query string (giữ nguyên path). Hai lưới an toàn: giá trị **hoàn toàn** là e-mail hoặc **hoàn toàn** là số điện thoại thì bị che bất kể tên key là gì.
+> - Đăng ký qua `PiiMaskingAutoConfiguration` (`@AutoConfiguration(before = ObservationAutoConfiguration.class)`) — nó phải có mặt trước khi Boot gom các bean `ObservationFilter` vào registry.
+>
+> **Trace qua hàng đợi (outbox):**
+>
+> - Cột `trace_parent` trên bảng `outbox_events` của 6 service (migration `V2026_11_07_1000__outbox_trace_parent.sql`).
+> - `OutboxTraceContext` trong `common-outbox`: `currentTraceParent()` ghi header W3C, `restore()` khôi phục nó. Header hỏng thì trả `Scope.NOOP` — sự kiện vẫn phát, chỉ mất chỗ trong trace.
+> - `OutboxRelay` khôi phục trace quanh `rabbitTemplate.invoke(...)`, nên span của lúc phát là **con** của trace đã sinh ra sự kiện.
+> - Quan sát RabbitMQ: `spring.rabbitmq.template.observation-enabled: true` + `spring.rabbitmq.listener.simple.observation-enabled: true`. Handler của Spring Boot tự chèn header `traceparent` vào message AMQP, nên consumer tiếp tục đúng trace.
+>
+> **Cấu hình 8 service** (`management.tracing`, `management.otlp.tracing`, `management.opentelemetry.resource-attributes`) với biến môi trường `TRACING_ENABLED`, `TRACING_SAMPLING_PROBABILITY`, `OTLP_TRACING_ENDPOINT`. Profile test (`application-it.yml`) tắt export (`management.otlp.tracing.export.enabled: false`) vì không có Collector trong test.
+>
+> **Hạ tầng (đã có trong repo):**
+>
+> - `infra/otel/otel-collector-config.yaml` — Collector nhận OTLP/HTTP ở 4318 và OTLP/gRPC ở 4317, đóng gói theo lô rồi chuyển tiếp cho Jaeger.
+> - `docker-compose.yml` thêm 2 service: `otel-collector` (`otel/opentelemetry-collector-contrib`) và `jaeger` (`jaegertracing/all-in-one`). Cả 8 service nhận `OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces`.
+> - `.env.example` thêm nhóm khoá tracing.
+> - Đã kiểm chứng bằng `docker compose up -d otel-collector jaeger`: Collector báo `Everything is ready`, Jaeger báo `Query server started` ở 16686.
+>
+> **Test:**
+>
+> - `PiiMaskingObservationFilterTest` — che e-mail, số điện thoại, secret, số định danh, query string; và giữ nguyên độ lớn thẻ.
+> - `OutboxTraceContextTest` — dựng tracer OTel thật (`OtelTracer` + `SdkTracerProvider`), kiểm tra header sinh ra đúng định dạng W3C, khôi phục lại được, header hỏng bị bỏ qua, và scope được đóng đúng.
+>
+> **Còn lại (không sửa được bằng code trong repo):** môi trường thật cần một Collector bên ngoài (Tempo hay Jaeger đứng riêng) và cần đặt `TRACING_SAMPLING_PROBABILITY` thấp hơn `1.0` — trong dev thì `1.0` để thấy mọi trace.
 
 ---
 
@@ -376,7 +457,7 @@ Cả 6 ADR trong [api-db/decisions.md](api-db/decisions.md) đều ghi **"Đề 
 
 ### D-2 — Dọn đường dẫn cũ còn sót trong CSS và copy
 
-**Chủ sở hữu:** FE lead · **Ước lượng:** 0,5 ngày**
+**Chủ sở hữu:** FE lead · **Ước lượng:** 0,5 ngày
 
 | # | Việc | Vị trí | Ghi chú |
 |---|---|---|---|
@@ -385,6 +466,17 @@ Cả 6 ADR trong [api-db/decisions.md](api-db/decisions.md) đều ghi **"Đề 
 | 2.3 | `AdminInterprovinceFeePage` dùng `max-height: 480px` + `overflow-y: auto` → cuộn ngang + cuộn dọc lồng nhau trên mobile | `web/src/pages/admin/` | Sửa riêng file này |
 | 2.4 | `Checkbox`/`Radio` dùng `<input>` native + `accent-color` ⇒ hình dạng do trình duyệt vẽ | `web/src/shared/ui/Checkbox`, `Radio` | Quyết định: giữ native (giữ bàn phím + autofill) hoặc tự dựng |
 | 2.5 | 89/132 CSS module không có `@media` | `web/src/` | **Đã kiểm chứng là bố cục một cột** — không phải nợ. Gate `check-responsive.mjs` chặn tái phát |
+
+> **Đã xong (2026-11-07).** Cả 5 mục đã xử lý:
+>
+> - **2.1 — chuẩn hoá breakpoint.** 30 file `.module.css` chuyển sang `var(--breakpoint-*)`; thêm token `--breakpoint-xs: 400px` cho màn hình rất hẹp (header chỉ còn icon nút) vì 400px không có token tương ứng. Ánh xạ: `400→xs`, `480/500/560→sm`, `640/720/760/768/860/900→md`, `960/1024→lg`.
+>   Vì sao dùng `var()` được: CSS **không** cho `var()` trong điều kiện media query — trình duyệt bỏ qua rule một cách âm thầm. Vite plugin `vite/breakpointTokens.ts` đã có sẵn, thay `var(--breakpoint-*)` bằng px **lúc build**, đọc từ `tokens.css` nên token vẫn là nguồn sự thật duy nhất. Đã kiểm chứng bằng browser: 1100px → nav ngang hiện; 1000px → nav ẩn, nút menu hiện; 700px → tagline ẩn; 480px → ô tìm kiếm xuống hàng riêng (`order: 10`, `flex-basis: 100%`); 400px → nút icon 34px, gap 4px. Build xanh, CSS build ra `@media (width<=768px)`.
+> - **2.2 — gate `check-design-tokens.mjs`.** Chặn 4 loại: màu hex ngoài `tokens.css`/`tokens-dark.css`, bo góc px ngoài thang `--radius-*`, `@media` dùng px thay vì `var(--breakpoint-*)`, khoảng cách px trong `shared/ui` (allowlist có lý do cho 3 lề vi mô). Nối vào `npm run check` + script `lint:design-tokens`. Chạy lần đầu bắt 41 vi phạm breakpoint ở 30 file; sau khi chuẩn hoá: **0 vi phạm** trong 141 file CSS.
+> - **2.3 — bảng phí liên tỉnh.** Tách `max-height` + `overflow-y` sang `@media (min-width: var(--breakpoint-md))`; trên điện thoại chỉ còn cuộn ngang ⇒ không còn cuộn 2 chiều lồng nhau.
+> - **2.4 — quyết định của đợt audit §17.3 giữ nguyên: giữ `<input>` native** + `accent-color: var(--color-primary)` (giữ hành vi bàn phím Space/←→, trạng thái "chỉ chọn một" của radio, autofill). Không sửa gì thêm.
+> - **2.5 — không phải nợ**, gate `check-responsive.mjs` đã chặn tái phát.
+>
+> Kết quả gate: `npm run check` xanh — 89 test file / 370 test, build OK, bundle 1042,2 kB / 1100 kB.
 
 ### D-3 — Nợ hạ tầng đã biết (không sửa được trong repo)
 
@@ -451,5 +543,5 @@ node docs/scripts/check-class-docs.mjs    # tài liệu class khớp mã nguồn
 | App mobile chưa chuyển sang `/api/...` | A-3 bị chặn | A-1/A-2 làm trước — không phụ thuộc app; đàm phán release với mobile lead từ sớm |
 | Sửa 20+ file CSS breakpoint hàng loạt | Đổi hành vi hiển thị ngoài phạm vi kế hoạch | Làm từng nhóm, kiểm bằng browser ở 375/768/1024px |
 | Sinh type TS từ OpenAPI | Có thể tạo diff lớn, xung đột với type thủ công đang dùng | Làm **sau** A-2; PR riêng; có thể chọn dùng song song trước khi xoá thủ công |
-| OTel tracing | Không có collector ở môi trường dev | C-2 chỉ làm khi hạ tầng có sẵn; metric đã đủ cho vận hành |
+| OTel tracing | Collector trong dev có sẵn (`docker compose up -d otel-collector jaeger`); môi trường thật cần Collector bên ngoài | C-2 đã xong; `TRACING_SAMPLING_PROBABILITY` đặt thấp hơn `1.0` khi lên thật |
 | Cổng chất lượng mới chặn nhầm | Dừng PR không liên quan | Mỗi gate có allowlist kèm lý do; sửa gate = thêm lý do, không xoá |

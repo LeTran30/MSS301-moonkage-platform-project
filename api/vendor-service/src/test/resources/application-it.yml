@@ -40,3 +40,10 @@ outbox:
 vendor:
   stock:
     sweep-interval: 1h
+
+# BE-11: no collector in the tests, so the spans are not exported anywhere
+management:
+  otlp:
+    tracing:
+      export:
+        enabled: false

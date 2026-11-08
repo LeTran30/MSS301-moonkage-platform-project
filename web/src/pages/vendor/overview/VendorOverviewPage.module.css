@@ -168,7 +168,7 @@
 }
 
 /* --- Responsive (audit §3.6) --- */
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   .header {
     flex-direction: column;
     gap: var(--space-3);

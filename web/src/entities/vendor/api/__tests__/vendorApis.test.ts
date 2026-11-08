@@ -42,6 +42,28 @@ describe('Vendor Entity - vendorCatalogApi (FR-14, FR-27, FR-35)', () => {
     expect(get).toHaveBeenCalledWith('/api/vendors?ownerAccountId=me');
     expect(id).toBe('ven-9');
   });
+
+  it('getVendorSummary đọc tóm tắt công khai của tiệm bánh (B-3.2)', async () => {
+    const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
+      envelope({
+        id: 'ven-1',
+        businessName: 'Tiệm Bánh',
+        provinceCode: '79',
+        status: 'APPROVED',
+        canOperate: true,
+        sellsShop: true,
+        acceptsOrders: false,
+        deliveryAreas: ['01', '79'],
+      }) as never,
+    );
+
+    const summary = await vendorCatalogApi.getVendorSummary('ven-1');
+
+    expect(get).toHaveBeenCalledWith('/api/vendors/ven-1/summary');
+    expect(summary?.provinceCode).toBe('79');
+    expect(summary?.businessName).toBe('Tiệm Bánh');
+    expect(summary?.deliveryAreas).toEqual(['01', '79']);
+  });
 });
 
 describe('Vendor Entity - vendorAdminApi (FR-45, FR-46)', () => {

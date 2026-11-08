@@ -13,6 +13,7 @@ public record ProductListingResponse(
         String id,
         String vendorId,
         String vendorName,
+        String provinceCode,
         String name,
         String description,
         List<String> crustCodes,

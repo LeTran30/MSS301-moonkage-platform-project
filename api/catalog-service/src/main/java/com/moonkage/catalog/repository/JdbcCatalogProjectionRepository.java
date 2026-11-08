@@ -95,11 +95,12 @@ public class JdbcCatalogProjectionRepository implements CatalogProjectionReposit
     public ProjectionOutcome applyVendor(VendorProjectionRow row) {
         int changed = namedJdbc.update(
                 """
-                INSERT INTO vendor_snapshots(vendor_id, owner_account_id, business_name, status, can_operate,
-                    sells_shop, accepts_orders, delivery_areas, local_delivery_fee, source_version)
-                VALUES (:id, :owner, :name, :status, :operate, :shop, :orders, :areas, :fee, :version)
+                INSERT INTO vendor_snapshots(vendor_id, owner_account_id, business_name, province_code, status,
+                    can_operate, sells_shop, accepts_orders, delivery_areas, local_delivery_fee, source_version)
+                VALUES (:id, :owner, :name, :province, :status, :operate, :shop, :orders, :areas, :fee, :version)
                 ON CONFLICT (vendor_id) DO UPDATE SET owner_account_id=EXCLUDED.owner_account_id,
-                    business_name=EXCLUDED.business_name, status=EXCLUDED.status, can_operate=EXCLUDED.can_operate,
+                    business_name=EXCLUDED.business_name, province_code=EXCLUDED.province_code,
+                    status=EXCLUDED.status, can_operate=EXCLUDED.can_operate,
                     sells_shop=EXCLUDED.sells_shop, accepts_orders=EXCLUDED.accepts_orders,
                     delivery_areas=EXCLUDED.delivery_areas,
                     local_delivery_fee=EXCLUDED.local_delivery_fee,
@@ -110,6 +111,7 @@ public class JdbcCatalogProjectionRepository implements CatalogProjectionReposit
                         .addValue("id", row.vendorId())
                         .addValue("owner", row.ownerAccountId())
                         .addValue("name", row.businessName())
+                        .addValue("province", row.provinceCode())
                         .addValue("status", row.status())
                         .addValue("operate", row.canOperate())
                         .addValue("shop", row.sellsShop())

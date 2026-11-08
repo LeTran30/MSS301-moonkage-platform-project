@@ -11,6 +11,7 @@ import com.moonkage.catalog.entity.Province;
 import com.moonkage.catalog.repository.InterprovinceFeeRepository;
 import com.moonkage.catalog.repository.OutboxEventRepository;
 import com.moonkage.catalog.service.impl.InterprovinceFeeServiceImpl;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Clock;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +33,8 @@ class InterprovinceFeeControllerTest {
                 repository,
                 org.mockito.Mockito.mock(OutboxEventRepository.class),
                 new ObjectMapper().findAndRegisterModules(),
-                Clock.systemUTC());
+                Clock.systemUTC(),
+                OutboxTraceContext.noop());
         mvc = MockMvcBuilders.standaloneSetup(new InterprovinceFeeController(service))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

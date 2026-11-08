@@ -712,7 +712,9 @@ moonkage/
 │   │   └── common-storage/      # Thư viện presigned upload/xem file MinIO (không phải service)
 │   │                            # (mỗi service: db/migration = schema Flyway, db/seed = dữ liệu mẫu dev)
 │   ├── infra/
-│   │   └── minio/init.sh        # bucket, lifecycle, user MinIO cho từng service (container minio-init)
+│   │   ├── minio/init.sh        # bucket, lifecycle, user MinIO cho từng service (container minio-init)
+│   │   └── otel/                # cấu hình OTel Collector (container otel-collector, BE-11)
+│   │       └── otel-collector-config.yaml
 │   ├── web/                     # React web frontend
 │   ├── docs/                    # Toàn bộ tài liệu, mục lục ở docs/README.md
 │   ├── docker-compose.yml       # Điều phối container (services, databases, rabbitmq, minio)

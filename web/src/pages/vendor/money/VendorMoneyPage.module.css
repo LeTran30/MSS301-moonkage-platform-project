@@ -41,7 +41,7 @@
   gap: var(--space-4);
 }
 
-@media (max-width: 860px) {
+@media (max-width: var(--breakpoint-md)) {
   .statsGrid {
     grid-template-columns: 1fr;
   }

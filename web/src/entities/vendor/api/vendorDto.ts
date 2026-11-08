@@ -160,6 +160,27 @@ export interface VendorResponseDto {
 }
 
 /**
+ * Wire shape of `com.moonkage.vendor.vendor.dto.response.VendorSummaryResponse`
+ * (B-3.2): the public summary of one Shop, open to guests.
+ *
+ * Only the fields a buyer may read are here — no tax code, no address, no
+ * representative, no bank account, no document and no admin note (NFR-03).
+ */
+export interface VendorSummaryDto {
+  id: string;
+  businessName?: string;
+  /** The head-office province of the Shop; two digits, absent when it has none yet. */
+  provinceCode?: string;
+  /** `VendorStatus`: PENDING, NEEDS_INFO, APPROVED, REJECTED, LOCKED. */
+  status?: 'PENDING' | 'NEEDS_INFO' | 'APPROVED' | 'REJECTED' | 'LOCKED';
+  canOperate?: boolean;
+  sellsShop?: boolean;
+  acceptsOrders?: boolean;
+  /** Province codes the Shop delivers to (FR-28). */
+  deliveryAreas?: string[];
+}
+
+/**
  * Wire shape of `com.moonkage.vendor.vendor.dto.response.VendorReviewResponse`
  * (FR-45): one admin decision on a pending profile.
  */

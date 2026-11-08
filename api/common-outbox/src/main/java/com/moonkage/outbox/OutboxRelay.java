@@ -34,6 +34,7 @@ public class OutboxRelay {
     private final OutboxEventSource eventSource;
     private final RabbitTemplate rabbitTemplate;
     private final OutboxMetrics outboxMetrics;
+    private final OutboxTraceContext traceContext;
     private final String eventsExchange;
     private final int batchSize;
     private final Duration confirmTimeout;
@@ -42,12 +43,14 @@ public class OutboxRelay {
             OutboxEventSource eventSource,
             RabbitTemplate rabbitTemplate,
             OutboxMetrics outboxMetrics,
+            OutboxTraceContext traceContext,
             String eventsExchange,
             int batchSize,
             Duration confirmTimeout) {
         this.eventSource = eventSource;
         this.rabbitTemplate = rabbitTemplate;
         this.outboxMetrics = outboxMetrics;
+        this.traceContext = traceContext;
         this.eventsExchange = eventsExchange;
         this.batchSize = batchSize;
         this.confirmTimeout = confirmTimeout;
@@ -81,17 +84,32 @@ public class OutboxRelay {
         outboxMetrics.setUnpublished(eventSource.countUnpublished());
     }
 
+    /**
+     * Publishes one event, inside the trace of the request that wrote it (BE-11).
+     *
+     * <p>The relay runs in its own thread, seconds or minutes after the request is gone, so the trace of that request
+     * has to travel with the row. It is put back in scope here: the span that the publish creates becomes a child of
+     * the span of the request, and the {@code traceparent} that goes on the wire lets the consumer continue the same
+     * trace.
+     */
     private void send(OutboxEventRow event) {
-        MessageProperties props = new MessageProperties();
-        props.setContentType(MessageProperties.CONTENT_TYPE_JSON);
-        props.setContentEncoding(StandardCharsets.UTF_8.name());
-        props.setMessageId(event.id());
-        Message message = new Message(event.payload().getBytes(StandardCharsets.UTF_8), props);
-        rabbitTemplate.invoke(ops -> {
-            ops.send(eventsExchange, event.routingKey(), message);
-            // needs spring.rabbitmq.publisher-confirm-type: simple
-            ops.waitForConfirmsOrDie(confirmTimeout.toMillis());
-            return null;
-        });
+        try (var scope = traceContext.restore(event.traceParent())) {
+            MessageProperties props = new MessageProperties();
+            props.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+            props.setContentEncoding(StandardCharsets.UTF_8.name());
+            props.setMessageId(event.id());
+            // the header of the stored trace, so the consumer picks the trace up even if the span below is not sampled
+            String traceParent = traceContext.currentTraceParent();
+            if (traceParent != null) {
+                props.setHeader(OutboxTraceContext.TRACEPARENT, traceParent);
+            }
+            Message message = new Message(event.payload().getBytes(StandardCharsets.UTF_8), props);
+            rabbitTemplate.invoke(ops -> {
+                ops.send(eventsExchange, event.routingKey(), message);
+                // needs spring.rabbitmq.publisher-confirm-type: simple
+                ops.waitForConfirmsOrDie(confirmTimeout.toMillis());
+                return null;
+            });
+        }
     }
 }

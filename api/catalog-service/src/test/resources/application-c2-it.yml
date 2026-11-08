@@ -27,3 +27,10 @@ catalog:
     capture-enabled: true
     # tests drive the replay themselves; the scheduled projector would race their assertions
     apply-enabled: false
+
+# BE-11: no collector in the tests, so the spans are not exported anywhere
+management:
+  otlp:
+    tracing:
+      export:
+        enabled: false

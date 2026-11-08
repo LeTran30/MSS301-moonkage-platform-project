@@ -232,7 +232,7 @@
   margin-top: var(--space-3);
 }
 
-@media (max-width: 960px) {
+@media (max-width: var(--breakpoint-lg)) {
   .heroContainer {
     grid-template-columns: 1fr;
   }

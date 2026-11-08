@@ -132,7 +132,9 @@
   --control-h-lg: 50px;
 
   /* Breakpoint chuẩn — dùng cho media query trong toàn bộ dự án.
-     Giá trị tính bằng px để khớp với `min-width` trong `@media`. */
+     Giá trị tính bằng px để khớp với `min-width` trong `@media`.
+     `xs` thêm cho màn hình rất hẹp (header chỉ còn icon nút). */
+  --breakpoint-xs: 400px;
   --breakpoint-sm: 480px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
