@@ -158,12 +158,17 @@ async function orderOfNewPurchase(page: Page, stopAt: 'DELIVERED' | 'PAID'): Pro
   await payAndWait(page, payment);
 
   // Đợi đơn xuất hiện (được tạo sau khi có `payment.succeeded`).
+  //
+  // Chuỗi này đi qua message bus: payment-service ghi sự kiện vào outbox → relay
+  // phát ra RabbitMQ → order-service nhận và tạo đơn. Trên máy CI (2 vCPU, cả
+  // stack đang chạy) mỗi nhịp đó có thể mất vài giây, nên ngân sách chờ phải
+  // rộng — 25s là quá chặt và làm test đỏ một cách ngẫu nhiên.
   await waitFor(
     async () => {
       const order = await orderOfCheckout(page, checkout.checkoutId);
       return order?.status === 'PAID';
     },
-    { timeout: 25_000 },
+    { timeout: 45_000 },
   );
 
   const order = await orderOfCheckout(page, checkout.checkoutId);
@@ -379,6 +384,19 @@ test.describe('FLOW 5 — Khiếu nại & phân xử tranh chấp', () => {
     expect(resolved.decisionReason).toContain('E2E');
 
     // Sổ tiền phản ánh quyết định: không còn khiếu nại mở.
+    //
+    // Phải **chờ**: `dispute.resolved` đi qua outbox + RabbitMQ tới payment-service,
+    // và chỉ khi sự kiện đó tới nơi thì sổ tiền mới bỏ trạng thái khiếu nại mở.
+    // Đọc thẳng ngay sau lệnh phân xử là đọc trước khi sự kiện tới — một cuộc đua
+    // thật, và đôi khi thua (nhất là trên máy CI chậm).
+    await waitFor(
+      async () => {
+        const current = await ledgerOf(page, order.id);
+        return current.disputeOpen === false;
+      },
+      { timeout: 30_000 },
+    );
+
     const ledger = await ledgerOf(page, order.id);
     expect(ledger.disputeOpen).toBe(false);
   });
@@ -386,7 +404,7 @@ test.describe('FLOW 5 — Khiếu nại & phân xử tranh chấp', () => {
   test('admin hoàn tiền một phần thì sổ tiền ghi nhận khoản hoàn', async ({ page }) => {
     // Luồng này đi qua checkout → VNPay → IPN → tạo đơn → khiếu nại → phân xử →
     // sự kiện RabbitMQ → sổ tiền: vượt mặc định 30s.
-    test.setTimeout(120_000);
+    test.setTimeout(180_000);
     await loginAs(page, SEED_ACCOUNTS.buyer);
     const order = await deliveredOrderOfNewPurchase(page);
 
@@ -427,13 +445,19 @@ test.describe('FLOW 5 — Khiếu nại & phân xử tranh chấp', () => {
 
     // VNPay sandbox từ chối hoàn tiền (mã 99) ⇒ hồ sơ chờ admin xử lý tay
     // (AC-49.3). Admin đánh dấu đã hoàn bằng tay ⇒ sổ tiền mới dịch.
+    //
+    // Ngân sách chờ ở đây phải tính cả nhịp quét của payment-service
+    // (`payment.refund-interval`, 30s): hồ sơ `PENDING` **không** được gửi ngay
+    // lúc tạo, mà đợi lần quét kế tiếp rồi mới gọi VNPay (có thời hạn 10s).
+    // Nên trạng thái chỉ rời `PENDING` sau khoảng 30s + thời gian gọi — và trên
+    // máy CI bị tải nặng còn lâu hơn. 60s là quá chặt, và đó là lý do CI đỏ.
     await waitFor(
       async () => {
         const current = await refundsOf(page, order.id);
         const found = current.find((item) => item.refundId === refund?.refundId);
         return found?.status === 'MANUAL_REQUIRED' || found?.status === 'SUCCEEDED';
       },
-      { timeout: 60_000 },
+      { timeout: 90_000 },
     );
 
     const pending = await refundsOf(page, order.id);

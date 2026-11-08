@@ -616,12 +616,19 @@ test.describe('FLOW 7 — Quản lý sản phẩm người bán', () => {
     });
 
     // Danh mục đọc từ `catalog-service`, cập nhật qua sự kiện RabbitMQ ⇒ chờ.
+    //
+    // Vì sao lọc theo `q`: mỗi lần chạy E2E lại thêm vài sản phẩm mới của Shop
+    // này, nên danh sách của Shop dài hơn một trang ⇒ sản phẩm vừa tạo có thể
+    // nằm ngoài trang đầu. Tìm theo tên (tên có timestamp nên là duy nhất) thì
+    // không phụ thuộc vị trí.
     await loginAs(page, SEED_ACCOUNTS.buyer);
     await waitFor(
       async () => {
         const payload = await apiGet<unknown>(
           page,
-          gatewayUrl(`/api/products?provinceCode=79&vendorId=${vendorId}&size=50`),
+          gatewayUrl(
+            `/api/products?provinceCode=79&vendorId=${vendorId}&q=${encodeURIComponent(name)}`,
+          ),
         );
         const data = unwrapData<{ content?: Array<{ id?: string; name?: string }> }>(payload);
         return (data?.content ?? []).some((item) => item.id === created.id) ? true : null;

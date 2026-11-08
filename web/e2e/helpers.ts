@@ -92,10 +92,52 @@ export const SEED_VENDORS = {
   choLon: { id: '00000000-0000-4000-8000-000200000003', name: /Chợ Lớn/ },
 } as const;
 
-/** Điều hướng tới một route của ứng dụng và chờ trang render xong. */
+/**
+ * Lỗi mạng tạm thời — thử lại là hết, không phải lỗi của ứng dụng.
+ *
+ * `ERR_NO_BUFFER_SPACE` xảy ra khi máy hết cổng tạm (ephemeral port): một lần
+ * chạy E2E mở rất nhiều kết nối tới dev server, và Windows đôi lúc không cấp
+ * được cổng ⇒ `page.goto` hỏng. Nếu không thử lại, một lỗi của máy làm đỏ
+ * cả bộ test.
+ */
+const TRANSIENT_NETWORK_ERRORS = [
+  'ERR_NO_BUFFER_SPACE',
+  'ERR_CONNECTION_RESET',
+  'ERR_CONNECTION_CLOSED',
+  'ERR_CONNECTION_ABORTED',
+  'ERR_NETWORK_CHANGED',
+  'ERR_EMPTY_RESPONSE',
+  'ERR_SOCKET_CONNECTION_NOT_ESTABLISHED',
+];
+
+/**
+ * Điều hướng tới một route của ứng dụng và chờ trang render xong.
+ *
+ * Lỗi mạng tạm thời được thử lại (xem `TRANSIENT_NETWORK_ERRORS`); lỗi khác
+ * thì ném ra ngay để test báo đúng nguyên nhân.
+ */
 export async function gotoRoute(page: Page, path: string): Promise<void> {
-  await page.goto(path);
+  await gotoWithRetry(page, path);
   await expect(page.locator('#root')).toBeVisible();
+}
+
+async function gotoWithRetry(page: Page, path: string): Promise<void> {
+  const deadline = Date.now() + 20_000;
+  let lastError: unknown = null;
+
+  while (Date.now() < deadline) {
+    try {
+      await page.goto(path);
+      return;
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      if (!TRANSIENT_NETWORK_ERRORS.some((code) => message.includes(code))) throw error;
+      await page.waitForTimeout(1_000);
+    }
+  }
+
+  throw lastError;
 }
 
 /**
