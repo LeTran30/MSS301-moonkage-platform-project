@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createAddress, deleteAddress, updateAddress } from '../addressWriteApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -21,7 +20,6 @@ const ADDRESS_DTO = {
 describe('Feature edit-address - addressWriteApi (FR-03, M6.3)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('createAddress gửi POST /api/addresses và trả về địa chỉ đã lưu', async () => {
@@ -39,7 +37,7 @@ describe('Feature edit-address - addressWriteApi (FR-03, M6.3)', () => {
     };
     const saved = await createAddress(payload);
 
-    expect(post).toHaveBeenCalledWith('/identity-service/api/addresses', payload);
+    expect(post).toHaveBeenCalledWith('/api/addresses', payload);
     expect(saved.id).toBe('addr-1');
     expect(saved.isDefault).toBe(true);
   });
@@ -56,7 +54,7 @@ describe('Feature edit-address - addressWriteApi (FR-03, M6.3)', () => {
       detail: '29 Liễu Giai',
     });
 
-    expect(put.mock.calls[0][0]).toBe('/identity-service/api/addresses/addr-1');
+    expect(put.mock.calls[0][0]).toBe('/api/addresses/addr-1');
   });
 
   it('deleteAddress gọi DELETE và không cần unwrap (BE trả 204)', async () => {
@@ -64,6 +62,6 @@ describe('Feature edit-address - addressWriteApi (FR-03, M6.3)', () => {
 
     await deleteAddress('addr-1');
 
-    expect(del).toHaveBeenCalledWith('/identity-service/api/addresses/addr-1');
+    expect(del).toHaveBeenCalledWith('/api/addresses/addr-1');
   });
 });

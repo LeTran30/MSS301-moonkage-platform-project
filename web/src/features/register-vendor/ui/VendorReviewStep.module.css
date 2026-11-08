@@ -4,7 +4,7 @@
   gap: var(--space-5);
 }
 .stepContent h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   border-bottom: 1px solid var(--color-border);
   padding-bottom: var(--space-2);

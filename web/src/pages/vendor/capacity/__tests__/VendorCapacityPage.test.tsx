@@ -13,7 +13,11 @@ vi.mock('@/entities/vendor', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/entities/vendor')>();
   return {
     ...actual,
-    useMyVendorId: () => ({ kind: 'loaded', data: 'ven_quan', reload: vi.fn() }),
+    useMyVendorId: () => ({
+      kind: 'loaded',
+      data: 'ven_quan',
+      reload: vi.fn(),
+    }),
     useOrderProfile: () => ({
       kind: 'loaded',
       data: { weeklyCapacity: 300 },
@@ -26,19 +30,19 @@ function renderPage() {
   return render(
     <MemoryRouter>
       <VendorCapacityPage />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
 describe('VendorCapacityPage — màn hình hoãn', () => {
-  it('có tiêu đề nêu rõ mã trang B6.4', () => {
+  it('không để lộ mã trang trong giao diện', () => {
     renderPage();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/B6\.4/);
+    expect(screen.getByRole('heading', { level: 1 })).not.toHaveTextContent(/B6\.4/);
   });
 
-  it('gắn nhãn "Hoãn trong bản demo"', () => {
+  it('gắn nhãn "Chưa có trong phiên bản này"', () => {
     renderPage();
-    expect(screen.getByText(/Hoãn trong bản demo/i)).toBeInTheDocument();
+    expect(screen.getByText(/Chưa có trong phiên bản này/i)).toBeInTheDocument();
   });
 
   it('vẫn hiện công suất tuần lấy từ hồ sơ nhận đặt hàng', () => {

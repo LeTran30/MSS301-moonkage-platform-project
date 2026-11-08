@@ -4,10 +4,8 @@ import styles from './fulfillOrderUi.module.css';
 interface UploadMaketModalProps {
   open: boolean;
   maketFile: File | null;
-  maketNote: string;
   busy: boolean;
   onMaketFileChange: (file: File | null) => void;
-  onMaketNoteChange: (value: string) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
@@ -16,10 +14,8 @@ interface UploadMaketModalProps {
 export function UploadMaketModal({
   open,
   maketFile,
-  maketNote,
   busy,
   onMaketFileChange,
-  onMaketNoteChange,
   onClose,
   onSubmit,
 }: UploadMaketModalProps) {
@@ -44,11 +40,14 @@ export function UploadMaketModal({
           Tải lên bản vẽ thiết kế 2D/3D hộp quà, logo doanh nghiệp dập nổi và màu sắc quy chuẩn.
         </p>
         <div className={styles.formGroup}>
-          <label className={styles.label}>Tệp thiết kế Maket *</label>
-          <label className={styles.fileBox}>
+          <label className={styles.label} htmlFor="maket-file">
+            Tệp thiết kế Maket *
+          </label>
+          <label className={styles.fileBox} htmlFor="maket-file">
             <Icon name="image" size={20} />
             <span>{maketFile ? maketFile.name : 'Chọn tệp thiết kế...'}</span>
             <input
+              id="maket-file"
               type="file"
               className={styles.fileInput}
               accept="image/*,application/pdf"
@@ -56,16 +55,9 @@ export function UploadMaketModal({
             />
           </label>
         </div>
-        <div className={styles.formGroup}>
-          <label className={styles.label}>Ghi chú cho khách hàng</label>
-          <textarea
-            className={styles.textarea}
-            rows={3}
-            value={maketNote}
-            onChange={(e) => onMaketNoteChange(e.target.value)}
-            placeholder="Nêu rõ chất liệu giấy, quy cách ép nhũ, lưu ý khi duyệt..."
-          />
-        </div>
+        <p className={styles.modalSub}>
+          Cần giải thích thêm cho khách? Nhắn qua mục tin nhắn của đơn.
+        </p>
       </div>
     </Modal>
   );

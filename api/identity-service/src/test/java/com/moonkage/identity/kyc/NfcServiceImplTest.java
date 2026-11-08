@@ -49,6 +49,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 class NfcServiceImplTest {
 
+    private static NfcProperties propertiesWithPepper(String pepper) {
+        NfcProperties properties = new NfcProperties();
+        properties.setIdHashPepper(pepper);
+        return properties;
+    }
+
+    private static NfcProperties propertiesWithPiiKey(String base64Key) {
+        NfcProperties properties = new NfcProperties();
+        properties.setPiiKey(base64Key);
+        return properties;
+    }
+
     /** AC-04.5 - AC-04.11 with real hashing and encryption; only the JWE and the database are mocked. */
     @Nested
     class CardCheck {
@@ -71,8 +83,8 @@ class NfcServiceImplTest {
             legalProfileRepository = mock(LegalProfileRepository.class);
             decryptor = mock(NfcTransportDecryptor.class);
             outboxService = mock(OutboxService.class);
-            hasher = new IdNumberHasher("test-pepper");
-            piiCipher = new PiiCipher("AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=");
+            hasher = new IdNumberHasher(propertiesWithPepper("test-pepper"));
+            piiCipher = new PiiCipher(propertiesWithPiiKey("AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="));
             NfcProperties nfcProperties = new NfcProperties();
             attemptTracker = new NfcAttemptTracker(nfcProperties);
             service = new NfcServiceImpl(

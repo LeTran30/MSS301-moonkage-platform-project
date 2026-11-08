@@ -35,6 +35,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- the public HTTP contract every service answers with (envelope, page, gateway headers) -->
+        <dependency>
+            <groupId>com.moonkage</groupId>
+            <artifactId>common-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- BE-11b: /actuator/prometheus + the shared metric names -->
         <dependency>
             <groupId>com.moonkage</groupId>

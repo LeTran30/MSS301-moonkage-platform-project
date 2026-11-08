@@ -1,12 +1,8 @@
 import { apiClient, GATEWAY, unwrap, unwrapList } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import { useEffect, useState } from 'react';
 import { useStore } from '@/shared/lib';
-import {
-  requestStore,
-  type Quote,
-  type QuoteRequest,
-} from '../model/requestStore';
+import { requestStore, type Quote, type QuoteRequest } from '../model/requestStore';
 import { mapQuoteDto, mapQuoteRequestDto } from './quoteMappers';
 import type { AcceptanceDto, InvitationDto, QuoteDto, QuoteRequestDto } from './quoteDto';
 
@@ -19,9 +15,6 @@ import type { AcceptanceDto, InvitationDto, QuoteDto, QuoteRequestDto } from './
 export const quoteApi = {
   /** The buyer's quote requests, or the vendor's invitations. */
   async getRequests(): Promise<QuoteRequest[]> {
-    if (isDemoMode()) {
-      return requestStore.get();
-    }
     const res = await apiClient.get<unknown>(GATEWAY.QUOTATION.REQUESTS);
     return unwrapList<QuoteRequestDto>(res).map(mapQuoteRequestDto);
   },
@@ -31,23 +24,20 @@ export const quoteApi = {
    *
    * `GET /api/quote-requests?vendorId=...` answers the requests sent to the
    * caller's shop; without `vendorId` the backend answers the caller's own
-   * requests as a buyer (AC-16.3).
+   * requests as a buyer (AC-16.3). Each request carries the Shop's own quotes
+   * (the backend answers a vendor only its quotes), so the screen knows
+   * whether the Shop already answered and which quote it may withdraw.
    */
   async getRequestsByVendor(vendorId: string): Promise<QuoteRequest[]> {
-    if (isDemoMode()) {
-      return requestStore.get();
-    }
     const params = new URLSearchParams({ vendorId });
-    const res = await apiClient.get<unknown>(
-      `${GATEWAY.QUOTATION.REQUESTS}?${params.toString()}`,
+    const res = await apiClient.get<unknown>(`${GATEWAY.QUOTATION.REQUESTS}?${params.toString()}`);
+    const requests = unwrapList<QuoteRequestDto>(res).map(mapQuoteRequestDto);
+    return Promise.all(
+      requests.map(async (request) => ({ ...request, quotes: await quoteApi.getQuotes(request.id) })),
     );
-    return unwrapList<QuoteRequestDto>(res).map(mapQuoteRequestDto);
   },
 
   async getRequestById(id: string): Promise<QuoteRequest | null> {
-    if (isDemoMode()) {
-      return requestStore.get().find((r) => r.id === id) || null;
-    }
     const res = await apiClient.get<unknown>(GATEWAY.QUOTATION.REQUEST_BY_ID(id));
     const dto = unwrap<QuoteRequestDto>(res);
     if (!dto) return null;
@@ -60,18 +50,12 @@ export const quoteApi = {
 
   /** The vendor's quotes for one request. */
   async getQuotes(requestId: string): Promise<Quote[]> {
-    if (isDemoMode()) {
-      return requestStore.get().find((r) => r.id === requestId)?.quotes ?? [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.QUOTATION.REQUEST_QUOTES(requestId));
     return unwrapList<QuoteDto>(res).map(mapQuoteDto);
   },
 
   /** The vendors invited to a request (AC-36.3). */
   async getInvitations(requestId: string): Promise<InvitationDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.QUOTATION.REQUEST_INVITATIONS(requestId));
     return unwrapList<InvitationDto>(res);
   },
@@ -82,10 +66,11 @@ export const quoteApi = {
    * `includeRevisions=true` also answers the older revisions this quote
    * replaced, newest first.
    */
-  async getQuote(requestId: string, quoteId: string, includeRevisions = false): Promise<QuoteDto | null> {
-    if (isDemoMode()) {
-      return null;
-    }
+  async getQuote(
+    requestId: string,
+    quoteId: string,
+    includeRevisions = false,
+  ): Promise<QuoteDto | null> {
     const params = new URLSearchParams();
     if (includeRevisions) params.set('includeRevisions', 'true');
     const query = params.toString();
@@ -104,9 +89,6 @@ export const quoteApi = {
    * agreement (BR-04).
    */
   async getAcceptance(requestId: string, quoteId: string): Promise<AcceptanceDto | null> {
-    if (isDemoMode()) {
-      return null;
-    }
     const res = await apiClient.get<unknown>(GATEWAY.QUOTATION.GET_ACCEPTANCE(requestId, quoteId));
     const dto = unwrap<AcceptanceDto>(res);
     return dto ?? null;

@@ -1,3 +1,4 @@
+import { Icon } from '@/shared/ui';
 import styles from './editProductUi.module.css';
 
 /** The backend accepts 1 to 10 images per product (ProductConstant.MAX_IMAGES). */
@@ -48,7 +49,7 @@ export function ProductImagesField({ images, uploading, onUpload, onRemove }: Pr
                 aria-label={`Bỏ ảnh ${index + 1}`}
                 onClick={() => onRemove(image.key)}
               >
-                ✕
+                <Icon name="x" size={14} />
               </button>
             </span>
           ))}

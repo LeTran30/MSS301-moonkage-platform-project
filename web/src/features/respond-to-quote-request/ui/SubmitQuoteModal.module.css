@@ -3,8 +3,14 @@
 .body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 8px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+/* Hai ô ngắn trên một hàng: cả form nằm gọn trong hộp thoại, không phải cuộn. */
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
 }
 .actions {
   display: flex;
@@ -19,4 +25,10 @@
   margin: 0;
   font-size: 0.875rem;
   color: var(--color-danger);
+}
+
+@media (max-width: 560px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
 }

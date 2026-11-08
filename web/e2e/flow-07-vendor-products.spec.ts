@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { gotoRoute, waitForAppReady, trackConsoleErrors, isIgnorableConsoleError } from './helpers';
+import {
+  gotoRoute,
+  waitForAppReady,
+  login,
+  trackConsoleErrors,
+  isIgnorableConsoleError,
+  SEED_ACCOUNTS,
+} from './helpers';
 
 /**
  * FLOW 7 — Quản lý sản phẩm của người bán (B4.0, B4.1, FR-29 đến FR-34, FR-54).
@@ -7,32 +14,22 @@ import { gotoRoute, waitForAppReady, trackConsoleErrors, isIgnorableConsoleError
  * Luồng này kiểm tra vòng đời sản phẩm của một Shop: thêm mới, sửa, bật/tắt
  * hiển thị. Điểm quan trọng nhất là **BR-24**: sản phẩm không được xoá vĩnh
  * viễn — chỉ ẩn (HIDDEN) hoặc bị gỡ (REMOVED) bởi quản trị.
+ *
+ * Người bán đăng nhập bằng tài khoản seed thật; không còn persona mô phỏng
+ * ghi trong `localStorage`.
+ *
+ * Persona: `member4@mk.com` — tài khoản **đã được duyệt làm người bán và đã
+ * đóng phí mở bán**, nên có gian hàng để quản lý. Tài khoản mua lẻ
+ * (`member1`) không có gian hàng nên không mở được kênh người bán.
  */
 test.describe('FLOW 7 — Quản lý sản phẩm người bán', () => {
-  /** Đặt persona demo là chủ Shop có `vendorId` (Anh Quân — Hiệu Bảo An). */
-  async function signInAsVendorOwner(page: import('@playwright/test').Page) {
-    await page.addInitScript(() => {
-      window.localStorage.setItem(
-        'moonkage_current_user',
-        JSON.stringify({
-          id: 'usr_quan',
-          name: 'Anh Quân (Tiệm bánh có Shop)',
-          email: 'quan.bakery@hanoi.vn',
-          phone: '0933445566',
-          role: 'VENDOR',
-          nfcStatus: 'VERIFIED',
-          idCardNumberMasked: '0010••••5566',
-          vendorId: 'ven_quan',
-          vendorName: 'Hiệu Bánh Gia Truyền Bảo An',
-          hasShop: true,
-          acceptsCustomOrders: true,
-        }),
-      );
-    });
+  /** Đăng nhập bằng tài khoản đã có gian hàng. */
+  async function loginAsVendor(page: import('@playwright/test').Page) {
+    await login(page, SEED_ACCOUNTS.vendor.username, SEED_ACCOUNTS.vendor.password);
   }
 
   test('trang quản lý sản phẩm hiện tiêu đề và quy tắc không xoá vĩnh viễn', async ({ page }) => {
-    await signInAsVendorOwner(page);
+    await loginAsVendor(page);
     await gotoRoute(page, '/kenh-ban/san-pham');
     await waitForAppReady(page);
 
@@ -44,7 +41,7 @@ test.describe('FLOW 7 — Quản lý sản phẩm người bán', () => {
 
   /** B4.0 mở form B4.1 trên trang riêng (không còn modal). */
   async function openNewProductForm(page: import('@playwright/test').Page) {
-    await signInAsVendorOwner(page);
+    await loginAsVendor(page);
     await gotoRoute(page, '/kenh-ban/san-pham');
     await waitForAppReady(page);
     await page.getByRole('button', { name: /Thêm sản phẩm mới/i }).click();
@@ -122,7 +119,7 @@ test.describe('FLOW 7 — Quản lý sản phẩm người bán', () => {
 
   test('trang quản lý sản phẩm không có lỗi console', async ({ page }) => {
     const errors = trackConsoleErrors(page);
-    await signInAsVendorOwner(page);
+    await loginAsVendor(page);
     await gotoRoute(page, '/kenh-ban/san-pham');
     await waitForAppReady(page);
     await page.waitForTimeout(500);

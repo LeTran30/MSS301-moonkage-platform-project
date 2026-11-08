@@ -1,5 +1,6 @@
 package com.moonkage.orchestrator.infrastructure.messaging;
 
+import com.moonkage.outbox.EventExchange;
 import java.util.List;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String EVENTS_EXCHANGE = "moonkage.events";
+    public static final String EVENTS_EXCHANGE = EventExchange.NAME;
     public static final String EVENTS_DLX = "moonkage.events.dlx";
 
     public static final String AUDIT_QUEUE = "orchestrator.audit";
@@ -37,6 +38,14 @@ public class RabbitConfig {
 
     public static final List<String> NFC_ROUTING_KEYS =
             List.of("account.nfc_verified", "account.nfc_failed", "account.nfc_locked");
+
+    /** order-service chat.* (message_sent, read, typing): pushed as is to both sides of the chat. */
+    public static final String CHAT_QUEUE = "orchestrator.chat";
+
+    public static final String CHAT_ROUTING_KEY = "chat.#";
+
+    /** A chat push is a hint for an open page: one waiting longer than this is dropped, not delivered late. */
+    static final int CHAT_MESSAGE_TTL_MS = 30_000;
 
     @Bean
     TopicExchange eventsExchange() {
@@ -111,6 +120,16 @@ public class RabbitConfig {
                 .map(key -> (Declarable)
                         BindingBuilder.bind(nfcQueue).to(eventsExchange).with(key))
                 .toList());
+    }
+
+    @Bean
+    Queue chatQueue() {
+        return QueueBuilder.durable(CHAT_QUEUE).ttl(CHAT_MESSAGE_TTL_MS).build();
+    }
+
+    @Bean
+    Binding chatBinding(Queue chatQueue, TopicExchange eventsExchange) {
+        return BindingBuilder.bind(chatQueue).to(eventsExchange).with(CHAT_ROUTING_KEY);
     }
 
     /** The listener's parameter type decides the target class, not the publisher's __TypeId__ header. */

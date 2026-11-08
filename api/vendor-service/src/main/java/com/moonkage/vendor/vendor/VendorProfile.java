@@ -1,8 +1,8 @@
 package com.moonkage.vendor.vendor;
 
 import com.moonkage.vendor.common.vo.ProvinceCode;
-import com.moonkage.vendor.vendor.vo.RepresentativeName;
-import com.moonkage.vendor.vendor.vo.TaxCode;
+import com.moonkage.vendor.vendor.elements.RepresentativeName;
+import com.moonkage.vendor.vendor.elements.TaxCode;
 
 /**
  * What the owner declares in one submission (AC-26.1, AC-26.2), already checked: every rule-bearing field is a value

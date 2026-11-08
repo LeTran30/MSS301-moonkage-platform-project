@@ -11,10 +11,7 @@
   gap: 16px;
 }
 .title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .subtitle {
   color: var(--color-text-muted);
@@ -59,12 +56,14 @@
   color: var(--color-text);
 }
 .provinceChipActive {
-  background: var(--color-gold);
-  border-color: var(--color-gold);
-  color: var(--color-white);
+  /* Nền nhạt, chữ đậm: đọc được ở cả giao diện sáng lẫn tối. */
+  background: var(--color-gold-soft);
+  border-color: var(--color-gold-text);
+  color: var(--color-gold-text);
+  font-weight: var(--weight-semibold);
 }
 .provinceChipActive:hover {
-  color: var(--color-white);
+  color: var(--color-gold-text);
 }
 .fieldLabel {
   display: block;

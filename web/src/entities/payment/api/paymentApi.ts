@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap, unwrapPage } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * Wire shape of `com.moonkage.payment.dto.response.PaymentResponse`.
@@ -25,17 +24,9 @@ export interface PaymentDto {
  * The result page polls this endpoint: a payment created by the checkout only
  * becomes `SUCCEEDED` when the VNPay IPN arrives (BR-25).
  */
-/** Demo mode has no gateway and no IPN: every payment the demo opens is paid. */
-function demoPaidPayment(paymentId: string): PaymentDto {
-  return { paymentId, purpose: 'CHECKOUT', amount: 0, status: 'SUCCEEDED', paidAt: new Date().toISOString() };
-}
-
 export const paymentApi = {
   /** The state of one payment of the caller. */
   async getById(paymentId: string): Promise<PaymentDto | null> {
-    if (isDemoMode()) {
-      return demoPaidPayment(paymentId);
-    }
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.PAYMENT_BY_ID(paymentId));
     const dto = unwrap<PaymentDto>(res);
     return dto ?? null;
@@ -50,16 +41,12 @@ export const paymentApi = {
    * of the checkout.
    */
   async readVnpayReturn(callback: Record<string, string>): Promise<PaymentDto | null> {
-    if (isDemoMode()) {
-      // demoPaymentUrl() names the payment in `paymentId`.
-      return callback.paymentId ? demoPaidPayment(callback.paymentId) : null;
-    }
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(callback)) {
       params.set(key, value);
     }
     const res = await apiClient.get<unknown>(
-      `${GATEWAY.PAYMENT.VNPAY_RETURN}?${params.toString()}`
+      `${GATEWAY.PAYMENT.VNPAY_RETURN}?${params.toString()}`,
     );
     const dto = unwrap<PaymentDto>(res);
     return dto ?? null;
@@ -72,9 +59,6 @@ export const paymentApi = {
    * fees the platform collected.
    */
   async list(options?: { purpose?: PaymentDto['purpose'] }): Promise<PaymentDto[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const params = new URLSearchParams();
     if (options?.purpose) params.set('purpose', options.purpose);
     params.set('size', '100');

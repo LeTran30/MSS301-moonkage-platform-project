@@ -1,8 +1,8 @@
 package com.moonkage.vendor.vendor;
 
 import com.moonkage.vendor.common.vo.ProvinceCode;
-import com.moonkage.vendor.vendor.vo.RepresentativeName;
-import com.moonkage.vendor.vendor.vo.TaxCode;
+import com.moonkage.vendor.vendor.elements.RepresentativeName;
+import com.moonkage.vendor.vendor.elements.TaxCode;
 
 /** Valid data shared by the tests of the vendor component. */
 final class VendorTestData {

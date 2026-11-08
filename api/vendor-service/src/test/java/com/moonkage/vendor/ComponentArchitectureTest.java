@@ -15,12 +15,18 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Package-by-component rules of vendor-service (docs/conventions/coding-rules.md 1.1). Each top-level package
  * (vendor, registrationfee, inbox, outbox, ...) is a component: other code uses its public service interface and
- * DTOs; its entities, repositories and implementations are package-private. {@code web} is the only HTTP entry
- * point and nothing depends on it. Cycles between components are checked by the shared ArchitectureTest
+ * DTOs; its entities, repositories and implementations are package-private. {@code controller} is the only HTTP
+ * entry point and nothing depends on it. Cycles between components are checked by the shared ArchitectureTest
  * (NO_PACKAGE_CYCLES).
  *
  * <pre>
- * web ──▶ product ──▶ vendor ──▶ cakeattribute, registrationfee ──▶ security, client, inbox, outbox   (all ──▶ common)
+ * controller ──▶ product ─────────────┐
+ *            ──▶ deliveryarea ────────┼──▶ vendor ──▶ cakeattribute, registrationfee
+ *            ──▶ orderprofile ────────┘                       │
+ *                                                              └──▶ security, client, inbox, outbox   (all ──▶ common)
+ *
+ * deliveryarea and orderprofile implement vendor's DeliveryAreaReader and OrderProfileReader, so vendor reads them
+ * for its snapshot without depending on them.
  * </pre>
  */
 @AnalyzeClasses(
@@ -28,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
         importOptions = {ImportOption.DoNotIncludeTests.class, ImportOption.DoNotIncludeJars.class})
 class ComponentArchitectureTest {
 
-    private static final String WEB = "com.moonkage.vendor.web..";
+    private static final String CONTROLLER = "com.moonkage.vendor.controller..";
 
     @ArchTest
     static final ArchRule ENTITIES_STAY_INSIDE_THEIR_COMPONENT = classes()
@@ -57,19 +63,19 @@ class ComponentArchitectureTest {
             .because("callers depend on the service interface, the component's public API");
 
     @ArchTest
-    static final ArchRule CONTROLLERS_LIVE_IN_WEB = classes()
+    static final ArchRule CONTROLLERS_LIVE_IN_CONTROLLER = classes()
             .that()
             .areAnnotatedWith(RestController.class)
             .should()
-            .resideInAPackage(WEB)
-            .because("web is the HTTP layer outside every component");
+            .resideInAPackage(CONTROLLER)
+            .because("controller is the HTTP layer outside every component");
 
     @ArchTest
-    static final ArchRule NOTHING_DEPENDS_ON_WEB = noClasses()
+    static final ArchRule NOTHING_DEPENDS_ON_CONTROLLER = noClasses()
             .that()
-            .resideOutsideOfPackage(WEB)
+            .resideOutsideOfPackage(CONTROLLER)
             .should()
             .dependOnClassesThat()
-            .resideInAPackage(WEB)
+            .resideInAPackage(CONTROLLER)
             .because("components must not know how they are exposed over HTTP");
 }

@@ -3,6 +3,9 @@ import { routes } from '@/shared/config';
 import { Icon } from '@/shared/ui';
 import styles from './Footer.module.css';
 
+/** The year of the copyright line, read once when the app loads. */
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 export function Footer() {
   return (
     <footer className={styles.footer}>
@@ -17,7 +20,8 @@ export function Footer() {
               <span className={styles.brandName}>Moonkage</span>
             </div>
             <p className={styles.tagline}>
-              Sàn thương mại chuyên biệt về Bánh Trung Thu. Kết nối người mua lẻ, khách hàng doanh nghiệp và các nghệ nhân, xưởng làm bánh truyền thống trên toàn quốc.
+              Sàn thương mại chuyên biệt về Bánh Trung Thu. Kết nối người mua lẻ, khách hàng doanh
+              nghiệp và các nghệ nhân, xưởng làm bánh truyền thống trên toàn quốc.
             </p>
             <div className={styles.badges}>
               <span className={styles.verifyBadge}>
@@ -81,9 +85,6 @@ export function Footer() {
                 <Link to={routes.base.policy}>Thời hạn khiếu nại &amp; Đổi hoàn</Link>
               </li>
               <li>
-                <Link to={routes.system.sitemap}>Bản đồ cấu trúc 73 trang (IA)</Link>
-              </li>
-              <li>
                 <Link to={routes.admin.overview}>Cổng Quản Trị Hệ Thống</Link>
               </li>
             </ul>
@@ -91,9 +92,11 @@ export function Footer() {
         </div>
 
         <div className={styles.bottomBar}>
-          <div>© 2026 Moonkage Platform. Xây dựng chuẩn theo Kiến Trúc Thông Tin v1.7.</div>
+          <div>
+            © {COPYRIGHT_YEAR} Moonkage. Sàn bánh trung thu mua lẻ và đặt số lượng lớn.
+          </div>
           <div className={styles.metaFlags}>
-            <span>Mã nguồn: React 19 + TypeScript + CSS Modules (FSD Architecture)</span>
+            <span>Thanh toán an toàn qua VNPay</span>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ import com.moonkage.identity.account.dto.AccountResponse;
 import com.moonkage.identity.account.dto.AccountView;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.identity.profile.dto.UpdateProfileRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,5 +58,34 @@ class UserProfileServiceImplTest {
         AppException ex = assertThrows(AppException.class, () -> service.getFullName(ACCOUNT_ID));
 
         assertEquals(ErrorCode.USER_PROFILE_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    void aNewNameIsStoredAndAnswered() {
+        when(accountService.getAccount(ACCOUNT_ID))
+                .thenReturn(new AccountView(ACCOUNT_ID, "a@x.vn", "912345678", Role.MEMBER, true, null));
+        UserProfile profile =
+                UserProfile.builder().accountId(ACCOUNT_ID).fullName("Lan").build();
+        when(userProfileRepository.findById(ACCOUNT_ID)).thenReturn(Optional.of(profile));
+
+        AccountResponse response = service.updateFullName(ACCOUNT_ID, "Nguyễn Thị Lan");
+
+        assertEquals("Nguyễn Thị Lan", profile.getFullName());
+        assertEquals("Nguyễn Thị Lan", response.fullName());
+        assertEquals("a@x.vn", response.email());
+    }
+
+    @Test
+    void renamingAMissingProfileAnswersNotFound() {
+        when(userProfileRepository.findById(ACCOUNT_ID)).thenReturn(Optional.empty());
+
+        AppException ex = assertThrows(AppException.class, () -> service.updateFullName(ACCOUNT_ID, "Lan"));
+
+        assertEquals(ErrorCode.USER_PROFILE_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    void theRequestTrimsTheName() {
+        assertEquals("Lan", new UpdateProfileRequest("  Lan  ").fullName());
     }
 }

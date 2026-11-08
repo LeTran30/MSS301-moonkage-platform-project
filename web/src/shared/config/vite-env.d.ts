@@ -1,12 +1,15 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** API Gateway của backend Moonkage (rỗng khi chạy demo mode). */
+  /** API Gateway của backend Moonkage. */
   readonly VITE_API_BASE_URL?: string;
-  /** Bật chế độ demo (dữ liệu mock trong bộ nhớ). */
-  readonly VITE_DEMO_MODE?: string;
   /** WebSocket realtime của backend (FR-27). */
   readonly VITE_WS_URL?: string;
+  /**
+   * Origin của object storage (MinIO/CDN) phục vụ ảnh sản phẩm, ảnh báo giá.
+   * Nhiều origin thì tách bằng dấu phẩy. Dùng cho `img-src` của CSP.
+   */
+  readonly VITE_MEDIA_BASE_URL?: string;
 }
 
 interface ImportMeta {

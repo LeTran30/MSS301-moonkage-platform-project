@@ -1,5 +1,5 @@
 import { formatDateTime } from '@/shared/utils';
-import { Card } from '@/shared/ui';
+import { Card, StarRating } from '@/shared/ui';
 import type { ProductReview } from '../api/productApi';
 import styles from './ProductReviewList.module.css';
 
@@ -31,9 +31,8 @@ export function ProductReviewList({ reviews, state, errorMessage }: ProductRevie
       )}
       {reviews.map((r) => (
         <div key={r.id} className={styles.reviewRow}>
-          <span className={styles.reviewRating} aria-label={`${r.rating} sao`}>
-            {'★'.repeat(r.rating)}
-            {'☆'.repeat(Math.max(0, 5 - r.rating))}
+          <span className={styles.reviewRating}>
+            <StarRating value={r.rating} size={14} />
           </span>
           <span className={styles.reviewContent}>{r.content || '(không có nhận xét)'}</span>
           <span className={styles.reviewDate}>{formatDateTime(r.createdAt)}</span>

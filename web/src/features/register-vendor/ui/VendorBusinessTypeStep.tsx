@@ -1,5 +1,5 @@
 import { routes } from '@/shared/config';
-import { Button, ButtonLink, Icon } from '@/shared/ui';
+import { Button, ButtonLink, Icon, Radio } from '@/shared/ui';
 import type { VendorType } from '@/entities/vendor';
 import styles from './VendorBusinessTypeStep.module.css';
 
@@ -21,18 +21,16 @@ interface VendorBusinessTypeStepProps {
 export function VendorBusinessTypeStep({ value, onChange, onNext }: VendorBusinessTypeStepProps) {
   return (
     <div className={styles.stepContent}>
-      <h3 id="business-type-label">Bước 1: Chọn mô hình pháp lý của bạn (BR-33)</h3>
+      <h3 id="business-type-label">Bước 1: Chọn mô hình pháp lý của bạn</h3>
       <div className={styles.typeCards} role="radiogroup" aria-labelledby="business-type-label">
-        <label
-          className={`${styles.typeCard} ${value === 'HKD' ? styles.typeSelected : ''}`}
-        >
-          <input
-            type="radio"
+        <label className={`${styles.typeCard} ${value === 'HKD' ? styles.typeSelected : ''}`}>
+          <Radio
             name="business-type"
             value="HKD"
             checked={value === 'HKD'}
             onChange={() => onChange('HKD')}
-            className={styles.typeRadio}
+            inputClassName={styles.typeRadio}
+            aria-label="Hộ Kinh Doanh (HKD)"
           />
           <Icon name="store" size={28} />
           <div>
@@ -45,16 +43,14 @@ export function VendorBusinessTypeStep({ value, onChange, onNext }: VendorBusine
           {value === 'HKD' && <Icon name="check" size={18} className={styles.checkIcon} />}
         </label>
 
-        <label
-          className={`${styles.typeCard} ${value === 'DNTN' ? styles.typeSelected : ''}`}
-        >
-          <input
-            type="radio"
+        <label className={`${styles.typeCard} ${value === 'DNTN' ? styles.typeSelected : ''}`}>
+          <Radio
             name="business-type"
             value="DNTN"
             checked={value === 'DNTN'}
             onChange={() => onChange('DNTN')}
-            className={styles.typeRadio}
+            inputClassName={styles.typeRadio}
+            aria-label="Doanh Nghiệp Tư Nhân (DNTN)"
           />
           <Icon name="building" size={28} />
           <div>

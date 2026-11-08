@@ -2,10 +2,15 @@ server:
   port: 8082
   # trust X-Forwarded-* from the gateway so Swagger "Try it out" calls go through http://localhost:8080/<service>
   forward-headers-strategy: framework
+  # RT-02: finish the requests in flight before the container stops
+  shutdown: graceful
 
 spring:
   application:
     name: catalog-service
+  # RT-02: how long the container waits for the requests in flight
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   datasource:
     url: "jdbc:postgresql://${CATALOG_DB_HOST}:${CATALOG_DB_PORT}/catalog_db"
     username: ${DB_USERNAME}
@@ -18,9 +23,11 @@ spring:
     baseline-on-migrate: true
     baseline-version: 1
   jpa:
+    # no lazy loading in the web layer: every query the response needs is written out (DP-02)
+    open-in-view: false
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -38,6 +45,13 @@ spring:
 
 # values come from the repo-root .env (see .env.example)
 # catalog only renders the public image URLs of the products it copies; it never touches MinIO itself (BE-09).
+moonkage:
+  common-api:
+    error-handler:
+      # catalog keeps its own error boundary: it answers the ApiResponse envelope on every path, with its own
+      # CAT_* codes (audit M-03, backlog P1-5). The shared boundary would answer the envelope with the COMMON_*
+      # codes on every path, so it is off here.
+      enabled: false
 catalog:
   projections:
     capture-enabled: true

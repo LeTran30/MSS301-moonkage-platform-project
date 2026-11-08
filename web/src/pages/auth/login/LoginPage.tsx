@@ -1,17 +1,23 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { Button, Input } from '@/shared/ui';
 import { validators, useAction } from '@/shared/lib';
 import { useLogin } from '@/features/login';
-import { QuickPersonaSelector } from '@/features/switch-persona';
 import { AuthShell, authShellStyles } from '@/widgets/auth-shell';
+import { returnPathAfterLogin } from './returnPathAfterLogin';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState('0912839102');
-  const [password, setPassword] = useState('password123');
-  const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
+  const location = useLocation();
+  // Backend `LoginRequest.username` nhận email **hoặc** số điện thoại
+  // (M5.4 của đặc tả nội dung), nên nhãn cũng phải nói đúng điều đó.
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<{
+    identifier?: string;
+    password?: string;
+  }>({});
 
   const { busy, run, error } = useAction();
   const login = useLogin();
@@ -19,49 +25,56 @@ export function LoginPage() {
   const handleLogin = (e: FormEvent) => {
     e.preventDefault();
     void run(async () => {
-      const phoneErr = validators.phoneVN(phone);
+      const identifierErr = validators.loginIdentifier(identifier);
       const passErr = validators.password(password);
 
-      if (phoneErr || passErr) {
-        setErrors({ phone: phoneErr ?? undefined, password: passErr ?? undefined });
+      if (identifierErr || passErr) {
+        setErrors({
+          identifier: identifierErr ?? undefined,
+          password: passErr ?? undefined,
+        });
         return;
       }
       setErrors({});
-      await login(phone, password);
-      navigate(routes.account.overview);
+      await login(identifier.trim(), password);
+      navigate(returnPathAfterLogin(location.state), { replace: true });
     });
   };
 
   return (
     <AuthShell
-      icon="🥮"
+      icon="cake"
       title="Đăng nhập Moonkage"
       subtitle="Sàn thương mại điện tử chuyên biệt Bánh Trung Thu"
     >
       <form onSubmit={handleLogin} className={authShellStyles.form} noValidate>
         <div className={authShellStyles.formGroup}>
-          <label htmlFor="login-phone" className={authShellStyles.label}>Số điện thoại</label>
+          <label htmlFor="login-identifier" className={authShellStyles.label}>
+            Email hoặc số điện thoại
+          </label>
           <Input
-            id="login-phone"
-            value={phone}
+            id="login-identifier"
+            value={identifier}
             onChange={(e) => {
-              setPhone(e.target.value);
-              if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+              setIdentifier(e.target.value);
+              if (errors.identifier) setErrors((prev) => ({ ...prev, identifier: undefined }));
             }}
-            placeholder="0912 345 678"
-            aria-invalid={Boolean(errors.phone)}
-            aria-describedby={errors.phone ? 'login-phone-err' : undefined}
+            placeholder="0912 345 678 hoặc ten@mien.vn"
+            aria-invalid={Boolean(errors.identifier)}
+            aria-describedby={errors.identifier ? 'login-identifier-err' : undefined}
           />
-          {errors.phone && (
-            <span id="login-phone-err" className={authShellStyles.errorText} role="alert">
-              {errors.phone}
+          {errors.identifier && (
+            <span id="login-identifier-err" className={authShellStyles.errorText} role="alert">
+              {errors.identifier}
             </span>
           )}
         </div>
 
         <div className={authShellStyles.formGroup}>
           <div className={authShellStyles.passHeader}>
-            <label htmlFor="login-pass" className={authShellStyles.label}>Mật khẩu</label>
+            <label htmlFor="login-pass" className={authShellStyles.label}>
+              Mật khẩu
+            </label>
             <Link to={routes.auth.forgotPassword} className={authShellStyles.forgotPass}>
               Quên mật khẩu?
             </Link>
@@ -98,10 +111,6 @@ export function LoginPage() {
           Chưa có tài khoản? <Link to={routes.auth.register}>Đăng ký ngay</Link>
         </p>
       </form>
-
-      <div className={authShellStyles.quickPersonas}>
-        <QuickPersonaSelector />
-      </div>
     </AuthShell>
   );
 }

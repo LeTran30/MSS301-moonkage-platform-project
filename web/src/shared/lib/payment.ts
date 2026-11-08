@@ -1,5 +1,3 @@
-import { routes } from '@/shared/config';
-
 /**
  * Send the payer to the page the server answered (M4.2, FR-09, BR-25).
  *
@@ -9,9 +7,4 @@ import { routes } from '@/shared/config';
  */
 export function openPaymentPage(paymentUrl: string): void {
   window.location.assign(paymentUrl);
-}
-
-/** Demo mode has no gateway: the "payment page" is the result page itself. */
-export function demoPaymentUrl(paymentId: string): string {
-  return `${routes.base.paymentResult}?${new URLSearchParams({ paymentId }).toString()}`;
 }

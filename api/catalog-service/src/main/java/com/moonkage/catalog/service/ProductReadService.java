@@ -1,7 +1,7 @@
 package com.moonkage.catalog.service;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.catalog.dto.request.ProductSearchRequest;
-import com.moonkage.catalog.dto.response.PageResponse;
 import com.moonkage.catalog.dto.response.ProductFacetsResponse;
 import com.moonkage.catalog.dto.response.ProductListingResponse;
 import com.moonkage.catalog.dto.response.ProductReviewResponse;

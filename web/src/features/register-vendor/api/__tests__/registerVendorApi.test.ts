@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerVendor } from '../registerVendorApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 describe('Feature register-vendor - registerVendorApi (FR-26, BR-33)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('registerVendor gửi đúng SubmitVendorRequest (BR-33: chỉ HKD hoặc DNTN)', async () => {

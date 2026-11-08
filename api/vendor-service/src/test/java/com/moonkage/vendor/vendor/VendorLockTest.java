@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.Price;
-import com.moonkage.vendor.vendor.vo.DeliveryFee;
+import com.moonkage.vendor.vendor.elements.DeliveryFee;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 

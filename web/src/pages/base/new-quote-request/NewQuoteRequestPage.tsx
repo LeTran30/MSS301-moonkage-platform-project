@@ -1,27 +1,27 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { routes, PROVINCE_ITEMS, provinceCodeOf } from '@/shared/config';
+import { routes, PROVINCE_ITEMS } from '@/shared/config';
 import { Button, ButtonLink, toast } from '@/shared/ui';
-import { useAction, validators } from '@/shared/lib';
+import { focusFirstInvalidField, useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
 import type { CustomType } from '@/entities/request';
 import {
   NfcVerifyNotice,
+  OPEN_REQUEST_MIN_QUANTITY,
   QuoteRequestBasicsCard,
   QuoteRequestDeliveryCard,
   QuoteRequestFlavorCard,
   QuoteRequestPackagingCard,
+  joinCustomSpec,
   useCreateQuoteRequest,
+  validateQuoteForm,
+  type QuoteFormErrors,
 } from '@/features/request-quote';
 import styles from './NewQuoteRequestPage.module.css';
+import { useDeliveryProvinceCode } from '@/entities/region';
 
-/** Tên các trường có thể báo lỗi trong form yêu cầu báo giá. */
-type QuoteFormErrors = Partial<
-  Record<
-    'quantity' | 'deliveryDeadline' | 'recipientName' | 'recipientPhone' | 'deliveryAddress',
-    string
-  >
->;
+const OPEN_MIN_HINT = `Tối thiểu từ ${OPEN_REQUEST_MIN_QUANTITY} hộp để các xưởng nhận báo giá sỉ`;
+const BELOW_OPEN_MIN = `Số lượng tối thiểu từ ${OPEN_REQUEST_MIN_QUANTITY} hộp để các xưởng nhận báo giá sỉ`;
 
 export function NewQuoteRequestPage() {
   const user = useCurrentUser();
@@ -32,32 +32,36 @@ export function NewQuoteRequestPage() {
   // FR-16 & Sitemap cond: Người mua đã xác minh NFC. Chưa xác minh -> M6.4 rồi quay lại
   const isNfcVerified = user.nfcStatus === 'VERIFIED';
 
-  const [quantity, setQuantity] = useState('150');
-  const [deliveryDeadline, setDeliveryDeadline] = useState('2026-11-10');
+  /*
+   * Yêu cầu báo giá phải do người mua tự điền. Trước đây form điền sẵn 150
+   * hộp, hạn giao 10/11/2026, ngân sách 160.000đ, địa chỉ "Tòa tháp Capital
+   * Place", tên tệp logo "logo_aurora_vector.pdf" và yêu cầu in logo ép kim —
+   * tức là một yêu cầu hoàn chỉnh có thể gửi đi mà không ai nhập gì, và tệp
+   * logo được nói tới thì không hề tồn tại trên máy chủ.
+   */
+  const [quantity, setQuantity] = useState('');
+  const [deliveryDeadline, setDeliveryDeadline] = useState('');
   const [recipientName, setRecipientName] = useState(user.name);
   const [recipientPhone, setRecipientPhone] = useState(user.phone);
-  const [deliveryAddress, setDeliveryAddress] = useState(
-    'Tòa tháp Capital Place, 29 Liễu Giai, Ba Đình'
-  );
-  const [provinceCode, setProvinceCode] = useState(() => provinceCodeOf('Hà Nội'));
-  const [budget, setBudget] = useState('160000');
-  const [customLogoName] = useState('logo_aurora_vector.pdf');
-  const [customRequirements, setCustomRequirements] = useState(
-    'In logo ép kim mặt trước hộp và trên phong bì thiệt, tặng kèm túi giấy quai lụa đỏ.'
-  );
-  const [customTypes, setCustomTypes] = useState<CustomType[]>(['BAG', 'CARD']);
-  const [crustPreference, setCrustPreference] = useState('Bánh nướng truyền thống');
-  const [fillingPreference, setFillingPreference] = useState('Thập cẩm bát bửu, Hạt sen trà xanh');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  // Bắt đầu từ tỉnh giao người mua đang chọn ở header; người mua đổi được ở bước địa chỉ.
+  const deliveryProvinceCode = useDeliveryProvinceCode();
+  const [provinceCode, setProvinceCode] = useState(() => deliveryProvinceCode);
+  const [budget, setBudget] = useState('');
+  const [customRequirements, setCustomRequirements] = useState('');
+  const [customTypes, setCustomTypes] = useState<CustomType[]>([]);
+  const [crustPreference, setCrustPreference] = useState('');
+  const [fillingPreference, setFillingPreference] = useState('');
   const [fieldErrors, setFieldErrors] = useState<QuoteFormErrors>({});
 
   const provinceOptions = useMemo(
     () => PROVINCE_ITEMS.map((p) => ({ value: p.code, label: p.name })),
-    []
+    [],
   );
 
   function toggleCustomType(type: CustomType) {
     setCustomTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
   }
 
@@ -68,56 +72,34 @@ export function NewQuoteRequestPage() {
     setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
   }
 
-  /**
-   * Kiểm tra dữ liệu form phía client trước khi gọi API (FR-16).
-   *
-   * Trước đây form gửi thẳng lên API: một yêu cầu thiếu số lượng hoặc thiếu
-   * địa chỉ vẫn tạo ra một yêu cầu rác ở phía server. Giờ form chặn ở client
-   * và báo lỗi ngay cạnh ô nhập.
-   */
-  function validate(): QuoteFormErrors {
-    const next: QuoteFormErrors = {};
-
-    const quantityNum = parseInt(quantity, 10);
-    if (!quantity.trim() || Number.isNaN(quantityNum)) {
-      next.quantity = 'Số lượng hộp cần đặt không được để trống';
-    } else if (quantityNum < 20) {
-      next.quantity = 'Số lượng tối thiểu từ 20 hộp để các xưởng nhận báo giá sỉ';
-    }
-
-    if (!deliveryDeadline.trim()) {
-      next.deliveryDeadline = 'Hạn giao hàng mong muốn không được để trống';
-    }
-
-    if (!recipientName.trim()) {
-      next.recipientName = 'Người nhận không được để trống';
-    }
-
-    const phoneErr = validators.phoneVN(recipientPhone);
-    if (phoneErr) {
-      next.recipientPhone = phoneErr;
-    }
-
-    if (!deliveryAddress.trim()) {
-      next.deliveryAddress = 'Địa chỉ nhận hàng chi tiết không được để trống';
-    }
-
-    return next;
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isNfcVerified) {
-      toast.warning(
-        'Bạn cần xác minh danh tính bằng CCCD gắn chip (NFC) trước khi gửi yêu cầu báo giá.'
-      );
-      navigate(routes.account.verify, { state: { returnUrl: routes.base.quoteRequestNew } });
+
+    /*
+     * Kiểm tra trường bắt buộc **trước** khi kiểm tra NFC.
+     *
+     * Nếu kiểm tra NFC trước, người dùng thiếu thông tin bị đưa sang trang
+     * xác minh mà không ai báo họ thiếu gì — và mất toàn bộ những gì đã điền.
+     * Báo lỗi thiếu thông tin trước là hành trình tự nhiên hơn.
+     */
+    const validation = validateQuoteForm(
+      { quantity, deliveryDeadline, recipientName, recipientPhone, deliveryAddress },
+      OPEN_REQUEST_MIN_QUANTITY,
+      BELOW_OPEN_MIN,
+    );
+    setFieldErrors(validation);
+    if (Object.keys(validation).length > 0) {
+      focusFirstInvalidField(e.currentTarget);
       return;
     }
 
-    const validation = validate();
-    setFieldErrors(validation);
-    if (Object.keys(validation).length > 0) {
+    if (!isNfcVerified) {
+      toast.warning(
+        'Bạn cần xác minh danh tính bằng CCCD gắn chip (NFC) trước khi gửi yêu cầu báo giá.',
+      );
+      navigate(routes.account.verify, {
+        state: { returnUrl: routes.base.quoteRequestNew },
+      });
       return;
     }
 
@@ -126,12 +108,10 @@ export function NewQuoteRequestPage() {
       // as a nested object and the 2-digit `provinceCode` (BR-30).
       const created = await createQuoteRequest({
         type: 'OPEN',
-        quantity: parseInt(quantity, 10) || 100,
+        quantity: parseInt(quantity, 10),
         budget: budget ? parseInt(budget, 10) : undefined,
         customTypes: customTypes.length > 0 ? customTypes : undefined,
-        customSpec: [customRequirements, `Vỏ: ${crustPreference}`, `Nhân: ${fillingPreference}`]
-          .filter(Boolean)
-          .join(' | '),
+        customSpec: joinCustomSpec(customRequirements, crustPreference, fillingPreference),
         deliveryDeadline,
         delivery: {
           recipientName,
@@ -148,7 +128,7 @@ export function NewQuoteRequestPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>TẠO YÊU CẦU BÁO GIÁ MỞ (M3.1, FLOW 2, FR-16)</div>
+        <div className={styles.eyebrow}>TẠO YÊU CẦU BÁO GIÁ MỞ</div>
         <h1 className={styles.title}>Gửi Yêu Cầu Đặt Bánh Cho Nhiều Xưởng</h1>
         <p className={styles.lead}>
           Yêu cầu sẽ được gửi tới các xưởng bánh và tiệm bánh đạt chuẩn trên hệ thống để gửi bảng
@@ -156,7 +136,7 @@ export function NewQuoteRequestPage() {
         </p>
       </div>
 
-      {/* Cảnh báo cổng NFC (M6.4) */}
+      {/* Cảnh báo cổng NFC */}
       {!isNfcVerified && <NfcVerifyNotice />}
 
       {/* `noValidate`: để validate phía client của form chạy trước, thay vì để
@@ -175,6 +155,8 @@ export function NewQuoteRequestPage() {
           }}
           budget={budget}
           onBudgetChange={setBudget}
+          minQuantity={OPEN_REQUEST_MIN_QUANTITY}
+          quantityHint={OPEN_MIN_HINT}
           errors={fieldErrors}
         />
 
@@ -201,7 +183,6 @@ export function NewQuoteRequestPage() {
         />
 
         <QuoteRequestPackagingCard
-          customLogoName={customLogoName}
           customTypes={customTypes}
           onToggleCustomType={toggleCustomType}
           customRequirements={customRequirements}

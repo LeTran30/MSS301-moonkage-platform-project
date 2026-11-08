@@ -32,6 +32,8 @@ export const routes = {
     overview: '/tai-khoan', // M6.0
     orders: '/tai-khoan/don-hang', // M6.1
     order: (id: string) => `/tai-khoan/don-hang/${id}`, // M6.1.1, M6.1.2
+    // The same page opened on the maket tab, where the buyer approves the latest version (FR-20).
+    orderMaket: (id: string) => `/tai-khoan/don-hang/${id}?tab=maket`,
     orderDispute: (id: string) => `/tai-khoan/don-hang/${id}/khieu-nai`, // M6.1.3
     requests: '/tai-khoan/yeu-cau', // M6.2
     request: (id: string) => `/tai-khoan/yeu-cau/${id}`, // M6.2.1
@@ -41,6 +43,8 @@ export const routes = {
     addressNew: '/tai-khoan/dia-chi/moi',
     verify: '/tai-khoan/xac-minh', // M6.4
     profile: '/tai-khoan/thong-tin', // M6.5
+    messages: '/tai-khoan/tin-nhan', // Nhắn tin với shop
+    messagesWithShop: (vendorId: string) => `/tai-khoan/tin-nhan?shop=${encodeURIComponent(vendorId)}`,
   },
   vendor: {
     overview: '/kenh-ban', // B1.0
@@ -56,6 +60,7 @@ export const routes = {
     money: '/kenh-ban/tien', // B5.0
     reconciliation: '/kenh-ban/tien/doi-soat', // B5.1
     disbursements: '/kenh-ban/tien/giai-ngan', // B5.2
+    messages: '/kenh-ban/tin-nhan', // Hộp thư khách hỏi shop
     settings: '/kenh-ban/cai-dat', // B6.0
     legal: '/kenh-ban/cai-dat/phap-ly', // B6.1
     zones: '/kenh-ban/cai-dat/vung-giao', // B6.2
@@ -80,7 +85,6 @@ export const routes = {
     cakeCatalog: '/quan-tri/cau-hinh/vo-nhan', // Q6.4
   },
   system: {
-    sitemap: '/so-do-giao-dien',
     notFound: '/404',
   },
 } as const;
@@ -123,6 +127,4 @@ export const ROUTES = {
   ADMIN_MONEY: routes.admin.money,
   ADMIN_DISPUTES: routes.admin.disputes,
   ADMIN_CONFIG: routes.admin.config,
-
-  SITEMAP: routes.system.sitemap,
 } as const;

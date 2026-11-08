@@ -1,5 +1,6 @@
 package com.moonkage.payment.config;
 
+import com.moonkage.outbox.EventExchange;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.amqp.core.BindingBuilder;
@@ -17,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String EVENTS_EXCHANGE = "moonkage.events";
+    public static final String EVENTS_EXCHANGE = EventExchange.NAME;
 
     // read by order (CHECKOUT, REMAINDER), quotation (DEPOSIT) and vendor (REGISTRATION_FEE)
     public static final String PAYMENT_SUCCEEDED_ROUTING_KEY = "payment.succeeded";

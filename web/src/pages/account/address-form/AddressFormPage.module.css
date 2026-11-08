@@ -11,10 +11,7 @@
   align-items: center;
 }
 .title {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  margin: 0px;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .lead {
   max-width: 640px;
@@ -38,7 +35,7 @@
 .input {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: inherit;
@@ -50,6 +47,12 @@
   gap: 8px;
   cursor: pointer;
   margin-top: 4px;
+}
+.checkboxInput {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
 }
 .checkboxLabel {
   font-size: var(--text-sm);
@@ -63,4 +66,14 @@
   display: flex;
   gap: 12px;
   margin-top: 12px;
+}
+
+/* Màn hình hẹp: hai cột địa chỉ xuống một cột. */
+@media (max-width: var(--breakpoint-md)) {
+  .gridTwo {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    flex-wrap: wrap;
+  }
 }

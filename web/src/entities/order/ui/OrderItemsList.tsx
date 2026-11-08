@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Card } from '@/shared/ui';
+import { Card, ProductImage } from '@/shared/ui';
 import type { Order } from '../model/types';
 import styles from './OrderItemsList.module.css';
 
@@ -7,7 +7,12 @@ interface OrderItemsListProps {
   order: Order;
 }
 
-/** Danh sách mặt hàng trong đơn kèm tiền. */
+/**
+ * Danh sách mặt hàng trong đơn kèm tiền.
+ *
+ * Ảnh của dòng đơn đến từ danh mục sản phẩm. Khi máy chủ không có ảnh, màn
+ * hình hiện một ô trung tính có chữ đầu của tên sản phẩm — không dùng ảnh mẫu.
+ */
 export function OrderItemsList({ order }: OrderItemsListProps) {
   return (
     <Card padding="md" className={styles.card}>
@@ -15,7 +20,7 @@ export function OrderItemsList({ order }: OrderItemsListProps) {
       <div className={styles.itemsList}>
         {order.items.map((it, idx) => (
           <div key={idx} className={styles.itemRow}>
-            <img src={it.image} alt={it.name} className={styles.itemImg} loading="lazy" decoding="async" />
+            <ProductImage src={it.image} alt={it.name} className={styles.itemImg} />
             <div className={styles.itemInfo}>
               <strong>{it.name}</strong>
               <span>

@@ -31,9 +31,12 @@
 .radio {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   font-size: var(--text-sm);
   cursor: pointer;
+}
+.radioInput {
+  margin: 0;
 }
 .blockLabel {
   display: block;
@@ -48,7 +51,7 @@
 }
 .taxonomyChip {
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: inherit;
@@ -61,15 +64,16 @@
   color: var(--color-white);
 }
 .taxonomyChipGold {
-  border: 1px solid var(--color-gold);
-  background: var(--color-gold);
-  color: var(--color-white);
+  /* Nền nhạt, chữ đậm: đọc được ở cả giao diện sáng lẫn tối. */
+  border: 1px solid var(--color-gold-text);
+  background: var(--color-gold-soft);
+  color: var(--color-gold-text);
 }
 
 .input {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: inherit;
@@ -78,7 +82,7 @@
 .textarea {
   width: 100%;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: inherit;

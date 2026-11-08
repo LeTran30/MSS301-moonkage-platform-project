@@ -18,3 +18,21 @@ export function useDisputeByOrder(orderId: string | null) {
     orderId ? disputeApi.getByOrderId(orderId) : Promise.resolve(null),
   );
 }
+
+/**
+ * Một hồ sơ khiếu nại theo mã (Q5.1).
+ *
+ * `GET /api/orders?disputeStatus=OPEN` là danh sách hồ sơ **đang mở**, và mỗi
+ * hồ sơ trả về `disputeId`. Màn hình chi tiết nhận `disputeId` trên URL nên
+ * phải tìm trong danh sách thay vì đoán.
+ *
+ * Trả về `null` khi không có hồ sơ nào khớp — màn hình tự hiện "không tìm
+ * thấy" thay vì tự ý mở hồ sơ đầu tiên trong danh sách.
+ */
+export function useDisputeById(disputeId: string | null) {
+  return useQueryData(queryKeys.dispute.byId(disputeId ?? ''), async () => {
+    if (!disputeId) return null;
+    const disputes = await disputeApi.listOpen();
+    return disputes.find((d) => d.id === disputeId) ?? null;
+  });
+}

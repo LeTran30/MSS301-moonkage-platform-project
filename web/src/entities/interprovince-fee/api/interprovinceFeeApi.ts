@@ -1,5 +1,4 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
 
 /**
  * Wire shape of `com.moonkage.catalog.dto.response.InterprovinceFeeResponse`.
@@ -59,9 +58,6 @@ export function mapFeeTableDto(dto: InterprovinceFeeTableDto): InterprovinceFeeT
 export const interprovinceFeeApi = {
   /** The whole table (FR-52). */
   async getTable(): Promise<InterprovinceFeeTable> {
-    if (isDemoMode()) {
-      return { fees: [], complete: false };
-    }
     const res = await apiClient.get<unknown>(GATEWAY.LOGISTICS.INTERPROVINCE_FEES);
     const dto = unwrap<InterprovinceFeeTableDto>(res);
     if (!dto) {
@@ -72,11 +68,8 @@ export const interprovinceFeeApi = {
 
   /** The fee of one province (FR-52). */
   async getProvinceFee(provinceCode: string): Promise<InterprovinceFee> {
-    if (isDemoMode()) {
-      throw new Error('Biểu phí liên tỉnh chỉ có sẵn ở chế độ demo.');
-    }
     const res = await apiClient.get<unknown>(
-      GATEWAY.LOGISTICS.INTERPROVINCE_FEE_BY_PROVINCE(provinceCode)
+      GATEWAY.LOGISTICS.INTERPROVINCE_FEE_BY_PROVINCE(provinceCode),
     );
     const dto = unwrap<InterprovinceFeeDto>(res);
     if (!dto) {

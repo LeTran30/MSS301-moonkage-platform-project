@@ -1,19 +1,28 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatDateTime } from '@/shared/utils';
-import { Badge, Button, ButtonLink, Tabs, Breadcrumbs, toast } from '@/shared/ui';
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  Tabs,
+  Breadcrumbs,
+  ErrorState,
+  PageLoader,
+  toast,
+} from '@/shared/ui';
 import { openPaymentPage, useAction } from '@/shared/lib';
 import {
-  approveMaket,
-  requestMaketRevision,
-  useOrder,
+  orderCode,
+  useOrderDetail,
   useOrderMockups,
   useOrderProgress,
   useOrderReviews,
   type ProductReview,
 } from '@/entities/order';
 import {
+  OrderDeliveryInfo,
   OrderInvoiceInfo,
   OrderItemsList,
   OrderPaymentSummary,
@@ -31,8 +40,14 @@ type DetailTab = 'progress' | 'maket' | 'payment' | 'invoice' | 'reviews';
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const orderId = id || '';
-  const order = useOrder(orderId);
-  const [activeTab, setActiveTab] = useState<DetailTab>('progress');
+  // FR-11: `GET /api/orders/{orderId}` — chi tiết đơn đọc thẳng từ máy chủ.
+  const asyncOrder = useOrderDetail(orderId);
+  const order = asyncOrder.kind === 'loaded' ? asyncOrder.data : null;
+  // `?tab=maket` opens the page where the buyer has a maket to approve (link from "Việc cần bạn xử lý").
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<DetailTab>(() =>
+    searchParams.get('tab') === 'maket' ? 'maket' : 'progress',
+  );
   const { busy, run, error } = useAction();
   const confirmDelivery = useConfirmDelivery();
   const payRemainder = usePayRemainder();
@@ -40,9 +55,10 @@ export function OrderDetailPage() {
   const getInvoiceLink = useGetInvoiceLink();
 
   const isBulk = order?.type === 'BULK';
-  const currentMaket = order?.maketVersions?.[0];
+  // FR-22, M6.1.2: phần còn lại chỉ trả được sau khi Shop báo đã giao.
+  const canPayRemainder = isBulk && order?.status === 'DELIVERED';
 
-  // FR-21: `GET /api/orders/{orderId}/progress-updates` — lịch sử tiến độ.
+  // FR-21: `GET /api/orders/{orderId}/progress-updates` — lịch sách tiến độ.
   const asyncProgress = useOrderProgress(orderId);
   const progressUpdates = asyncProgress.kind === 'loaded' ? asyncProgress.data : [];
 
@@ -52,16 +68,19 @@ export function OrderDetailPage() {
 
   // Nạp bản maket mới nhất từ backend (FR-20): `GET /api/orders/{orderId}/mockups`.
   const asyncMockups = useOrderMockups(orderId);
+  const maketVersions = asyncMockups.kind === 'loaded' ? asyncMockups.data : [];
+  const currentMaket =
+    maketVersions.length > 0
+      ? maketVersions.reduce((a, b) => (b.version > a.version ? b : a))
+      : undefined;
 
-  useEffect(() => {
-    if (!orderId || !isBulk) return;
-    if (asyncMockups.kind !== 'loaded') return;
-    const versions = asyncMockups.data;
-    if (versions.length === 0) return;
-    // Ưu tiên bản mới nhất (versionNo cao nhất).
-    const latest = versions.reduce((a, b) => (b.version > a.version ? b : a));
-    if (latest.status === 'APPROVED') approveMaket(orderId, latest.version);
-  }, [orderId, isBulk, asyncMockups]);
+  if (asyncOrder.kind === 'loading') {
+    return <PageLoader />;
+  }
+
+  if (asyncOrder.kind === 'error') {
+    return <ErrorState message={asyncOrder.message} onRetry={asyncOrder.reload} />;
+  }
 
   if (!order) {
     return (
@@ -77,7 +96,7 @@ export function OrderDetailPage() {
   // Tabs cho đơn đặt hàng (M6.1.2): Tiến độ · Maket · Thanh toán · Hóa đơn
   const tabItems: { id: DetailTab; label: string }[] = [
     { id: 'progress', label: 'Tiến độ đơn hàng' },
-    ...(isBulk && order.maketVersions?.length
+    ...(isBulk && maketVersions.length > 0
       ? [{ id: 'maket' as const, label: 'Bản thiết kế Maket (in logo)' }]
       : []),
     { id: 'payment', label: 'Chi tiết thanh toán' },
@@ -90,22 +109,15 @@ export function OrderDetailPage() {
     void run(async () => {
       // Backend FR-20: PATCH /api/orders/{orderId}/mockups/{versionNo}
       await reviewMockup(order.id, currentMaket.version, 'APPROVED');
-      approveMaket(order.id, currentMaket.version);
       toast.success('Bạn đã duyệt maket thành công! Xưởng sẽ tiến hành đưa vào sản xuất.');
     });
   }
 
-  function handleRequestRevision() {
+  function handleRequestRevision(feedback: string) {
     if (!order || !currentMaket) return;
-    const feedback = prompt(
-      'Nhập nội dung bạn muốn xưởng điều chỉnh (Ví dụ: Đổi màu quai túi, to logo):'
-    );
-    if (!feedback || !feedback.trim()) return;
-
     void run(async () => {
       // Backend FR-20: `CHANGES_REQUESTED` bắt buộc có `reviewNote`.
       await reviewMockup(order.id, currentMaket.version, 'CHANGES_REQUESTED', feedback);
-      requestMaketRevision(order.id, currentMaket.version, feedback);
       toast.info('Đã gửi yêu cầu chỉnh sửa tới xưởng bánh!');
     });
   }
@@ -150,25 +162,41 @@ export function OrderDetailPage() {
             items={[
               { label: 'Tài khoản', path: routes.account.overview },
               { label: 'Đơn hàng của tôi', path: routes.account.orders },
-              { label: `#${order.id}` },
+              { label: `#${orderCode(order.id)}` },
             ]}
           />
           <h2 className={styles.title}>
-            Chi tiết đơn hàng #{order.id} {isBulk && <Badge tone="gold">Đơn Số Lượng Lớn</Badge>}
+            Chi tiết đơn hàng #{orderCode(order.id)} {isBulk && <Badge tone="gold">Đơn Số Lượng Lớn</Badge>}
           </h2>
           <div className={styles.meta}>
-            Xưởng/Tiệm: <strong>{order.vendorName}</strong> · Đặt ngày {formatDateTime(order.createdAt)}
+            Xưởng/Tiệm: <strong>{order.vendorName}</strong> · Đặt ngày{' '}
+            {formatDateTime(order.createdAt)}
           </div>
         </div>
 
         <div className={styles.headerAction}>
+          <ButtonLink
+            to={routes.account.messagesWithShop(order.vendorId)}
+            variant="outline"
+            size="sm"
+            iconLeft="message"
+          >
+            Nhắn shop
+          </ButtonLink>
           {order.status === 'DELIVERED' && (
             <>
-              <Button variant="primary" size="sm" loading={busy} onClick={handleConfirmReceived}>
-                Đã nhận hàng (FR-11)
-              </Button>
+              {/* Đơn đặt riêng: trả phần còn lại là bước nhận hàng, đơn tự hoàn tất (FR-22). */}
+              {canPayRemainder ? (
+                <Button variant="primary" size="sm" loading={busy} onClick={handlePayRemainder}>
+                  Thanh toán phần còn lại
+                </Button>
+              ) : (
+                <Button variant="primary" size="sm" loading={busy} onClick={handleConfirmReceived}>
+                  Đã nhận hàng
+                </Button>
+              )}
               <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
-                Báo vấn đề với đơn (M6.1.3)
+                Báo vấn đề với đơn
               </ButtonLink>
             </>
           )}
@@ -185,10 +213,11 @@ export function OrderDetailPage() {
         <div className={styles.tabSection}>
           <OrderProgressList order={order} progressUpdates={progressUpdates} />
           <OrderItemsList order={order} />
+          <OrderDeliveryInfo order={order} />
         </div>
       )}
 
-      {/* Tab 2: Maket (M6.1.2) - Duyệt hoặc Yêu cầu sửa */}
+      {/* Tab 2: Maket - Duyệt hoặc Yêu cầu sửa */}
       {activeTab === 'maket' && isBulk && (
         <div className={styles.tabSection}>
           <MaketReviewPanel
@@ -209,7 +238,7 @@ export function OrderDetailPage() {
             order={order}
             isBulk={isBulk}
             busy={busy}
-            onPayRemainder={handlePayRemainder}
+            onPayRemainder={canPayRemainder ? handlePayRemainder : undefined}
           />
           {error && (
             <p className={styles.pageError} role="alert">
@@ -226,7 +255,7 @@ export function OrderDetailPage() {
         </div>
       )}
 
-      {/* Tab 5: Đánh giá (FR-11) */}
+      {/* Tab 5: Đánh giá */}
       {activeTab === 'reviews' && (
         <div className={styles.tabSection}>
           {!isBulk && (order.status === 'DELIVERED' || order.status === 'COMPLETED') && (
@@ -235,7 +264,7 @@ export function OrderDetailPage() {
               products={order.items.flatMap((it) =>
                 it.productId && !reviews.some((r) => r.productId === it.productId)
                   ? [{ productId: it.productId, name: it.name }]
-                  : []
+                  : [],
               )}
             />
           )}

@@ -15,12 +15,12 @@ export function AccountOverviewPage() {
   const openRequests = requests.filter((r) => r.status === 'OPEN');
   return (
     <div className={styles.container}>
-      {/* Khối "Việc cần bạn" (M6.0 Spec) */}
+      {/* Khối "Việc cần bạn" */}
       {(pendingMaketOrders.length > 0 || openRequests.length > 0) && (
         <Card padding="md" tone="gold" className={styles.urgentCard}>
           <div className={styles.urgentHeader}>
             <Icon name="sparkle" size={18} />
-            <h3>Khối "Việc cần bạn" (M6.0)</h3>
+            <h3>Khối "Việc cần bạn"</h3>
           </div>
           <div className={styles.urgentList}>
             {pendingMaketOrders.map((o) => (
@@ -36,7 +36,8 @@ export function AccountOverviewPage() {
             {openRequests.map((r) => (
               <div key={r.id} className={styles.urgentItem}>
                 <div>
-                  <strong>Yêu cầu #{r.id}:</strong> Có {r.quotes.length} xưởng đã gửi bảng so sánh báo giá.
+                  <strong>Yêu cầu #{r.id}:</strong> Có {r.quotes.length} xưởng đã gửi bảng so sánh
+                  báo giá.
                 </div>
                 <ButtonLink to={routes.account.request(r.id)} variant="primary" size="sm">
                   Xem &amp; So sánh giá

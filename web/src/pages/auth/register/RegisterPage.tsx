@@ -71,7 +71,7 @@ export function RegisterPage() {
 
   return (
     <AuthShell
-      icon="🥮"
+      icon="cake"
       title="Tạo Tài Khoản Moonkage"
       subtitle="Đón Tết Đoàn Viên — Mua lẻ tinh tế, Đặt sỉ tối ưu"
     >

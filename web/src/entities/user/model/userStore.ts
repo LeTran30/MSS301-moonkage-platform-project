@@ -1,17 +1,16 @@
 import { createStore, useStore } from '@/shared/lib';
-import { DEMO_ACTORS, type User } from './types';
+import { GUEST_USER, type User } from './types';
 
-export const userStore = createStore<User>(DEMO_ACTORS.lan, 'moonkage_current_user');
+/**
+ * The signed-in account.
+ *
+ * The store starts as a guest and is filled by the sign-in flow
+ * (`useLogin`) or by the session restore (`sessionApi.getMyAccount`).
+ */
+export const userStore = createStore<User>(GUEST_USER);
 
 export function useCurrentUser(): User {
   return useStore(userStore);
-}
-
-export function switchDemoActor(actorKey: keyof typeof DEMO_ACTORS) {
-  const actor = DEMO_ACTORS[actorKey];
-  if (actor) {
-    userStore.set(actor);
-  }
 }
 
 export function setNfcVerified() {

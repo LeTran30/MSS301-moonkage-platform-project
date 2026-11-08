@@ -1,13 +1,36 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { resolveEscrowDispute } from '../disputeEscrow';
-import { resolveDispute, disputeStore, MOCK_DISPUTES } from '../disputeStore';
+import { resolveDispute, disputeStore, type Dispute } from '../disputeStore';
+
+/**
+ * Fixture of an open dispute (AC-49.3): the escrow holds 975.000đ, so the
+ * refund can never exceed that amount.
+ */
+const OPEN_DISPUTE: Dispute = {
+  id: 'DISP-088',
+  orderId: 'MK-1042',
+  buyerId: 'usr_buyer',
+  buyerName: 'Người mua',
+  vendorId: 'ven_shop',
+  vendorName: 'Xưởng bánh',
+  reason: 'DAMAGED',
+  description: 'Hộp bánh bị bẹp góc trong quá trình vận chuyển.',
+  images: [],
+  evidences: [],
+  createdAt: '2026-10-26T10:15:00Z',
+  status: 'OPEN',
+  orderTotalAmount: 975000,
+  escrowHoldingAmount: 975000,
+  disbursedAmount: 0,
+  maxRefundableAmount: 975000,
+};
 
 describe('Quy tắc ký quỹ Escrow & Phân xử khiếu nại (FR-49, AC-49.3)', () => {
   const escrowHolding = 450000;
   const maxRefund = 450000;
 
   beforeEach(() => {
-    disputeStore.set([...MOCK_DISPUTES]);
+    disputeStore.set([{ ...OPEN_DISPUTE }]);
   });
 
   describe('resolveEscrowDispute - Logic hạch toán độc lập', () => {
@@ -35,7 +58,7 @@ describe('Quy tắc ký quỹ Escrow & Phân xử khiếu nại (FR-49, AC-49.3)
     it('chặn vi phạm AC-49.3: không cho phép hoàn vượt quá số tiền Escrow đang giữ', () => {
       const res = resolveEscrowDispute(escrowHolding, maxRefund, 'PARTIAL_REFUND', 500000);
       expect(res.isValid).toBe(false);
-      expect(res.error).toContain('AC-49.3');
+      expect(res.error).toContain('không được vượt quá');
     });
 
     it('chặn số tiền hoàn âm', () => {
@@ -49,7 +72,7 @@ describe('Quy tắc ký quỹ Escrow & Phân xử khiếu nại (FR-49, AC-49.3)
       // DISP-088 có holding là 975.000
       const res = resolveDispute('DISP-088', 'PARTIAL_REFUND', 1200000, 'Test vi phạm');
       expect(res.isValid).toBe(false);
-      expect(res.error).toContain('AC-49.3');
+      expect(res.error).toContain('không được vượt quá');
 
       // Đảm bảo trạng thái trong store không bị thay đổi
       const d = disputeStore.get().find((item) => item.id === 'DISP-088');

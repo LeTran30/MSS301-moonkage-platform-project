@@ -5,6 +5,7 @@ import { captureApiError } from '@/shared/observability';
 import { GATEWAY } from './gateway';
 import { unwrap, type ApiEnvelope } from './envelope';
 import { clearTokens, getAccessToken, getRefreshToken, updateTokens } from './tokenVault';
+import { notifySessionExpired } from './sessionExpiry';
 
 export interface ApiFieldError {
   field: string;
@@ -44,6 +45,47 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
+/**
+ * The credential endpoints of identity-service (login, register, OTP, refresh).
+ * A 401 there means wrong credentials, not an expired session: it goes back to
+ * the form as it is, without a refresh and without leaving the page.
+ */
+const AUTH_ENDPOINT_PREFIX = '/api/auth/';
+
+const SESSION_EXPIRED_MESSAGE = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+const SESSION_REFRESH_FAILED_MESSAGE = 'Không thể làm mới phiên đăng nhập. Vui lòng đăng nhập lại.';
+const SIGN_IN_REQUIRED_MESSAGE = 'Vui lòng đăng nhập để tiếp tục.';
+
+function isAuthEndpoint(config: InternalAxiosRequestConfig | undefined): boolean {
+  return config?.url?.includes(AUTH_ENDPOINT_PREFIX) ?? false;
+}
+
+/**
+ * A 401 the client cannot recover from: drop the tokens and, when it matters,
+ * tell the app so it sends the user to the sign-in page.
+ *
+ * - With a session: it is gone, whatever the request was.
+ * - Without one: only a write asks for sign-in. A guest's GET answered 401 is
+ *   a background read of a page they may browse; moving them away would be
+ *   worse than the missing data.
+ */
+function giveUpSession(
+  config: InternalAxiosRequestConfig,
+  hadSession: boolean,
+  message: string,
+): Promise<never> {
+  clearTokens();
+  const isRead = (config.method ?? 'get').toLowerCase() === 'get';
+  if (hadSession) {
+    notifySessionExpired('EXPIRED');
+    return Promise.reject(new ApiError(message, 401));
+  }
+  if (!isRead) {
+    notifySessionExpired('SIGN_IN_REQUIRED');
+  }
+  return Promise.reject(new ApiError(SIGN_IN_REQUIRED_MESSAGE, 401));
+}
+
 // Mutex chống gọi refresh token song song
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -81,20 +123,28 @@ apiClient.interceptors.response.use(
   async (error: AxiosError<{ message?: string; errors?: ApiFieldError[] }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    // 401 của một request đã thử lại sau khi làm mới: phiên mới cũng bị từ chối.
+    if (
+      error.response?.status === 401 &&
+      originalRequest?._retry &&
+      !isAuthEndpoint(originalRequest)
+    ) {
+      return giveUpSession(originalRequest, true, SESSION_EXPIRED_MESSAGE);
+    }
+
     // 401 Unauthorized & chưa thử lại
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest)
+    ) {
       // Chế độ cookie: backend tự làm mới cookie và trả lại 200. Ta chỉ cần
-      // gửi lại request — không có token trong JS để refresh.
+      // gửi lại request — không có token trong JS để refresh. Lần thử lại mà
+      // vẫn 401 thì nhánh `_retry` ở trên kết thúc phiên.
       if (usesCookieAuth()) {
         originalRequest._retry = true;
-        try {
-          return await apiClient(originalRequest);
-        } catch {
-          clearTokens();
-          return Promise.reject(
-            new ApiError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 401),
-          );
-        }
+        return apiClient(originalRequest);
       }
 
       if (isRefreshing) {
@@ -102,6 +152,7 @@ apiClient.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
+            originalRequest._retry = true;
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
@@ -116,9 +167,8 @@ apiClient.interceptors.response.use(
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
         isRefreshing = false;
-        return Promise.reject(
-          new ApiError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 401)
-        );
+        const hadSession = getAccessToken() !== null;
+        return giveUpSession(originalRequest, hadSession, SESSION_EXPIRED_MESSAGE);
       }
 
       try {
@@ -142,10 +192,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        clearTokens();
-        return Promise.reject(
-          new ApiError('Không thể làm mới phiên đăng nhập. Vui lòng đăng nhập lại.', 401)
-        );
+        return giveUpSession(originalRequest, true, SESSION_REFRESH_FAILED_MESSAGE);
       } finally {
         isRefreshing = false;
       }

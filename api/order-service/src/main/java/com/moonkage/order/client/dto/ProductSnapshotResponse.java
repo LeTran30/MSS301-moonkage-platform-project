@@ -28,7 +28,8 @@ public record ProductSnapshotResponse(List<ProductPart> products, List<VendorPar
             int stock,
             Integer quoteThreshold,
             String deliveryLabel,
-            boolean purchasable) {}
+            boolean purchasable,
+            String imageKey) {}
 
     /** @param shippingFee whole VND; null when not deliverable (BR-30) */
     public record VendorPart(

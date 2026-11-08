@@ -17,8 +17,9 @@ export const queryKeys = {
     taxonomy: () => ['product', 'taxonomy'] as const,
   },
   vendor: {
-    catalog: () => ['vendor', 'catalog'] as const,
+    catalog: (provinceCode: string) => ['vendor', 'catalog', provinceCode] as const,
     detail: (vendorId: string | null) => ['vendor', 'detail', vendorId ?? ''] as const,
+    supplier: (vendorId: string | null) => ['vendor', 'supplier', vendorId ?? ''] as const,
     myId: () => ['vendor', 'my-id'] as const,
     orderProfile: (vendorId: string) => ['vendor', 'order-profile', vendorId] as const,
     deliveryAreas: (vendorId: string) => ['vendor', 'delivery-areas', vendorId] as const,
@@ -38,6 +39,10 @@ export const queryKeys = {
     mockups: (orderId: string) => ['order', 'mockups', orderId] as const,
     invoice: (orderId: string) => ['order', 'invoice', orderId] as const,
   },
+  chat: {
+    inbox: (as: string) => ['chat', 'inbox', as] as const,
+    thread: (conversationId: string) => ['chat', 'thread', conversationId] as const,
+  },
   cart: {
     mine: (provinceCode: string) => ['cart', 'mine', provinceCode] as const,
   },
@@ -51,6 +56,7 @@ export const queryKeys = {
   dispute: {
     open: () => ['dispute', 'open'] as const,
     byOrder: (orderId: string) => ['dispute', 'by-order', orderId] as const,
+    byId: (disputeId: string) => ['dispute', 'by-id', disputeId] as const,
   },
   ledger: {
     list: (vendorId?: string) => ['ledger', 'list', vendorId ?? ''] as const,

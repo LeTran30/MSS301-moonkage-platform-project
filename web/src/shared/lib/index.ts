@@ -53,5 +53,5 @@ export { useQueryData } from './useQueryData';
 export { useProgressiveList } from './useProgressiveList';
 export { validators } from './validators';
 
-
-export { demoPaymentUrl, openPaymentPage } from './payment';
+export { openPaymentPage } from './payment';
+export { focusFirstInvalidField } from './focusFirstInvalidField';

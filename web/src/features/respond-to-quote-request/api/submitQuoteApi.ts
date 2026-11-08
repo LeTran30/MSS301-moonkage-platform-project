@@ -1,6 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import { generateEntityId } from '@/shared/utils';
+
 import type { CustomType, Quote } from '@/entities/request';
 import { mapQuoteDto, type QuoteDto } from '@/entities/request';
 
@@ -48,37 +47,7 @@ export interface SubmitQuotePayload {
 }
 
 /** The vendor submits a quote for a request (FR-38). */
-export async function submitQuote(
-  requestId: string,
-  payload: SubmitQuotePayload
-): Promise<Quote> {
-  if (isDemoMode()) {
-    const itemsAmount = payload.items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-    const customSurcharge = (payload.customItems ?? []).reduce(
-      (sum, i) => sum + i.unitPrice * i.quantity,
-      0
-    );
-    const total = itemsAmount + customSurcharge + payload.shippingFee;
-    const deposit = Math.floor((total * payload.depositRate) / 100);
-    return {
-      id: generateEntityId('QUO'),
-      vendorId: '',
-      vendorName: '',
-      vendorRating: 0,
-      unitPrice: payload.items[0]?.unitPrice ?? 0,
-      shippingFee: payload.shippingFee,
-      totalPrice: total,
-      depositPercent: payload.depositRate,
-      depositAmount: deposit,
-      remainingAmount: total - deposit,
-      estimatedDeliveryDate: payload.deliveryDate,
-      deliveryMethod: payload.deliveryMethod,
-      validUntil: '',
-      note: payload.notes,
-      status: 'SUBMITTED',
-      acceptable: true,
-    };
-  }
+export async function submitQuote(requestId: string, payload: SubmitQuotePayload): Promise<Quote> {
   const res = await apiClient.post<unknown>(GATEWAY.QUOTATION.SUBMIT_QUOTE(requestId), payload);
   const dto = unwrap<QuoteDto>(res);
   if (!dto) {

@@ -13,10 +13,7 @@
   gap: 16px;
 }
 .title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0px;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .subtitle {
   color: var(--color-text-muted);
@@ -53,13 +50,32 @@
   width: 64px;
   height: 64px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 .productInfo {
   flex: 1;
 }
 .productName {
   font-weight: 600;
+  font-size: var(--text-sm);
+}
+.maketRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.maketThumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+.maketMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
   font-size: var(--text-sm);
 }
 .productMeta {
@@ -73,7 +89,7 @@
 .summaryBox {
   background: var(--color-surface-2);
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 .summaryRow {
   display: flex;

@@ -1,6 +1,7 @@
 package com.moonkage.quotation.controller;
 
-import com.moonkage.quotation.common.exception.ApiResponse;
+import com.moonkage.api.ApiResponse;
+import com.moonkage.api.GatewayHeader;
 import com.moonkage.quotation.dto.response.SupplierResponse;
 import com.moonkage.quotation.enums.CustomType;
 import com.moonkage.quotation.service.SupplierService;
@@ -26,7 +27,8 @@ public class SupplierController {
     /** @param minQty the quantity the buyer needs: only vendors whose minimum is at most this */
     @GetMapping
     public ResponseEntity<ApiResponse<List<SupplierResponse>>> searchSuppliers(
-            @Parameter(hidden = true) @RequestHeader(value = "X-Account-Id", required = false) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.ACCOUNT_ID, required = false)
+                    String accountId,
             @RequestParam(required = false) String provinceCode,
             @RequestParam(required = false) CustomType customType,
             @RequestParam(required = false) Integer minQty,
@@ -37,7 +39,8 @@ public class SupplierController {
 
     @GetMapping("/{vendorId}")
     public ResponseEntity<ApiResponse<SupplierResponse>> getSupplier(
-            @Parameter(hidden = true) @RequestHeader(value = "X-Account-Id", required = false) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.ACCOUNT_ID, required = false)
+                    String accountId,
             @PathVariable String vendorId) {
         return ResponseEntity.ok(ApiResponse.ok(supplierService.getSupplier(accountId, vendorId)));
     }

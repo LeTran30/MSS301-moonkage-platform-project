@@ -11,10 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.moonkage.api.GatewayHeader;
 import com.moonkage.storage.ObjectStorage;
 import com.moonkage.vendor.client.IdentityClient;
 import com.moonkage.vendor.client.PaymentClient;
-import com.moonkage.vendor.security.GatewayHeader;
 import com.moonkage.vendor.security.Role;
 import java.util.Locale;
 import org.junit.jupiter.api.AfterEach;

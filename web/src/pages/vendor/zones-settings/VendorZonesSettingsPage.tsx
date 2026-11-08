@@ -5,22 +5,47 @@ import { formatCurrency } from '@/shared/utils';
 import { Button, ButtonLink, Card, Breadcrumbs, Input, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
-import { useOwnVendorId } from '@/entities/vendor';
+import { useDeliveryAreas, useMyVendorDetail, useOwnVendorId } from '@/entities/vendor';
 import { useSaveDeliveryAreas, useUpdateVendor } from '@/features/edit-vendor-settings';
 
 export function VendorZonesSettingsPage() {
   const user = useCurrentUser();
   const vendorId = useOwnVendorId(user.vendorId);
 
-  const [selectedCodes, setSelectedCodes] = useState<string[]>(['01', '24', '33', '31']);
-  const [localDeliveryFee, setLocalDeliveryFee] = useState('25000');
+  /*
+   * Vùng giao và phí giao nội thành đọc từ máy chủ
+   * (`GET /api/vendors/{vendorId}/delivery-areas` và `GET /api/vendors/{vendorId}`).
+   * Trước đây form tự điền 4 tỉnh và phí 25.000đ — đó là cấu hình bịa, và
+   * người dùng có thể lưu nguyên xi mà không hề biết mình đang giao tới
+   * những tỉnh khác.
+   */
+  const asyncAreas = useDeliveryAreas(vendorId);
+  const asyncDetail = useMyVendorDetail(vendorId);
+
+  const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
+  const [localDeliveryFee, setLocalDeliveryFee] = useState('');
   const { busy, run, error } = useAction();
   const saveDeliveryAreas = useSaveDeliveryAreas();
   const updateVendor = useUpdateVendor();
 
+  // Nạp giá trị thật từ máy chủ vào form, một lần duy nhất.
+  const [areasLoaded, setAreasLoaded] = useState(false);
+  const serverAreas = asyncAreas.kind === 'loaded' ? asyncAreas.data : null;
+  if (serverAreas && !areasLoaded) {
+    setAreasLoaded(true);
+    setSelectedCodes(serverAreas);
+  }
+
+  const [feeLoaded, setFeeLoaded] = useState(false);
+  const serverFee = asyncDetail.kind === 'loaded' ? asyncDetail.data?.localDeliveryFee : undefined;
+  if (serverFee !== undefined && !feeLoaded) {
+    setFeeLoaded(true);
+    setLocalDeliveryFee(String(serverFee));
+  }
+
   function toggleProvince(code: string) {
     setSelectedCodes((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
     );
   }
 
@@ -50,9 +75,9 @@ export function VendorZonesSettingsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Cấu Hình Vùng Giao Hàng & Phí Vận Chuyển (B6.2)</h1>
+          <h1 className={styles.title}>Cấu Hình Vùng Giao Hàng & Phí Vận Chuyển</h1>
           <p className={styles.subtitle}>
-            Chọn các tỉnh xưởng giao hàng đến và đặt phí giao nội thành (BR-30)
+            Chọn các tỉnh xưởng giao hàng đến và đặt phí giao nội thành
           </p>
         </div>
       </div>
@@ -96,7 +121,9 @@ export function VendorZonesSettingsPage() {
             />
             <span className={styles.hint}>
               Phí giao nội thành hiện tại:{' '}
-              <strong>{formatCurrency(Number(localDeliveryFee) || 0)}</strong>
+              <strong>
+                {localDeliveryFee === '' ? 'Chưa khai báo' : formatCurrency(Number(localDeliveryFee) || 0)}
+              </strong>
             </span>
           </div>
 
@@ -119,4 +146,3 @@ export function VendorZonesSettingsPage() {
     </div>
   );
 }
-

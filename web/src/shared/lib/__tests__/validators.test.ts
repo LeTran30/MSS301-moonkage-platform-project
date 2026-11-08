@@ -20,8 +20,25 @@ describe('Shared Lib - Validators (T-16)', () => {
   it('phoneVN: kiểm tra 10 số điện thoại di động Việt Nam', () => {
     expect(validators.phoneVN('0912345678')).toBeNull();
     expect(validators.phoneVN('0388765432')).toBeNull();
-    expect(validators.phoneVN('123456')).toBe('Số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09)');
-    expect(validators.phoneVN('0212345678')).toBe('Số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09)');
+    expect(validators.phoneVN('123456')).toBe(
+      'Số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09)',
+    );
+    expect(validators.phoneVN('0212345678')).toBe(
+      'Số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09)',
+    );
+  });
+
+  it('loginIdentifier: nhận cả email lẫn số điện thoại (M5.4)', () => {
+    // Tài khoản seed dùng email; người dùng thật có thể dùng số điện thoại.
+    expect(validators.loginIdentifier('member1@mk.com')).toBeNull();
+    expect(validators.loginIdentifier('0912345678')).toBeNull();
+    expect(validators.loginIdentifier('  member1@mk.com  ')).toBeNull();
+
+    expect(validators.loginIdentifier('')).toBe('Email hoặc số điện thoại không được để trống');
+    expect(validators.loginIdentifier('khong-phai-email')).toBe(
+      'Số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09)',
+    );
+    expect(validators.loginIdentifier('abc@')).toBe('Email không hợp lệ (ví dụ: ten@mien.vn)');
   });
 
   it('password: yêu cầu tối thiểu 8 ký tự', () => {

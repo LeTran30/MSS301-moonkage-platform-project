@@ -11,7 +11,7 @@
 
 /* Gradients: darker, less saturated so the surfaces stay readable. */
 :root[data-theme='dark'] {
-  --gradient-gold: linear-gradient(135deg, #c9a25c 0%, #8f6418 55%, #6b4a12 100%);
+  --gradient-gold: linear-gradient(135deg, #e0bf80 0%, #c39746 55%, #a57725 100%);
   --gradient-ember: linear-gradient(135deg, #b03a28 0%, #8d1f19 50%, #5c120e 100%);
   --gradient-night: linear-gradient(160deg, #1a1009 0%, #0b0705 100%);
   --gradient-lacquer: linear-gradient(135deg, #2a0e0c 0%, #180706 50%, #0b0302 100%);
@@ -40,7 +40,7 @@
 /* The same for the automatic dark mode (no explicit data-theme). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --gradient-gold: linear-gradient(135deg, #c9a25c 0%, #8f6418 55%, #6b4a12 100%);
+    --gradient-gold: linear-gradient(135deg, #e0bf80 0%, #c39746 55%, #a57725 100%);
     --gradient-ember: linear-gradient(135deg, #b03a28 0%, #8d1f19 50%, #5c120e 100%);
     --gradient-night: linear-gradient(160deg, #1a1009 0%, #0b0705 100%);
     --gradient-lacquer: linear-gradient(135deg, #2a0e0c 0%, #180706 50%, #0b0302 100%);

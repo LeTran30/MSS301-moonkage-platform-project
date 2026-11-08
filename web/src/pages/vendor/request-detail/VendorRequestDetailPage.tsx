@@ -2,11 +2,11 @@ import styles from './VendorRequestDetailPage.module.css';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { formatCurrency } from '@/shared/utils';
+import { formatCurrency, formatDate } from '@/shared/utils';
 import { Badge, Breadcrumbs, Button, ButtonLink, Card, Input, Select, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useQuoteRequest } from '@/entities/request';
-import { useSubmitQuote } from '@/features/respond-to-quote-request';
+import { CUSTOM_TYPE_LABELS, requestCode, useQuoteRequest } from '@/entities/request';
+import { quoteLineDescription, useSubmitQuote } from '@/features/respond-to-quote-request';
 
 export function VendorRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,15 +15,19 @@ export function VendorRequestDetailPage() {
   const asyncRequest = useQuoteRequest(requestId);
   const req = asyncRequest.kind === 'loaded' ? asyncRequest.data : null;
 
-  const [pricePerBox, setPricePerBox] = useState<string>('160000');
+  /*
+   * Báo giá phải do xưởng tự nhập: trước đây form điền sẵn 160.000đ/hộp, cọc
+   * 40%, ngày giao 08/11/2026 và một ghi chú mô tả "hộp quà cao cấp ép kim
+   * logo" — tức là xưởng có thể gửi một báo giá hoàn toàn bịa mà không nhập
+   * một chữ nào. Nay mọi ô để trống cho xưởng điền.
+   */
+  const [pricePerBox, setPricePerBox] = useState<string>('');
   const [shippingFee, setShippingFee] = useState<string>('0');
-  const [depositPercent, setDepositPercent] = useState<string>('40');
-  const [deliveryDate, setDeliveryDate] = useState<string>('2026-11-08');
-  const [deliveryMethod, setDeliveryMethod] = useState<string>('Xe tải xưởng giao tận văn phòng');
+  const [depositPercent, setDepositPercent] = useState<string>('');
+  const [deliveryDate, setDeliveryDate] = useState<string>('');
+  const [deliveryMethod, setDeliveryMethod] = useState<string>('');
   const [validDays, setValidDays] = useState<string>('7');
-  const [note, setNote] = useState(
-    'Hộp quà cao cấp ép kim logo, tặng kèm túi giấy đỏ sang trọng. Đã bao gồm tem NFC chống giả.'
-  );
+  const [note, setNote] = useState('');
   const { busy, run, error } = useAction();
   const submitQuote = useSubmitQuote();
 
@@ -57,13 +61,22 @@ export function VendorRequestDetailPage() {
 
   function handleSubmitQuote(e: React.FormEvent) {
     e.preventDefault();
+    // Báo giá không có đơn giá hoặc ngày giao thì không gửi được.
+    if (!pricePerBox || Number(pricePerBox) <= 0) {
+      toast.error('Vui lòng nhập đơn giá mỗi hộp.');
+      return;
+    }
+    if (!deliveryDate) {
+      toast.error('Vui lòng chọn ngày giao hàng.');
+      return;
+    }
     void run(async () => {
       // FR-38: the client sends the lines and the shipping fee; the server
       // computes the total, the deposit and the remainder.
       await submitQuote(req!.id, {
         items: [
           {
-            description: `${quantity} hộp quà doanh nghiệp theo yêu cầu #${req!.id}`,
+            description: quoteLineDescription(req!),
             quantity,
             unitPrice: price,
           },
@@ -75,7 +88,7 @@ export function VendorRequestDetailPage() {
         validDays: Math.min(14, Math.max(1, Number(validDays) || 7)),
         notes: note,
       });
-      toast.success(`Đã gửi báo giá ${formatCurrency(price)}/hộp cho yêu cầu #${req!.id}!`);
+      toast.success(`Đã gửi báo giá ${formatCurrency(price)}/hộp cho yêu cầu #${requestCode(req!.id)}!`);
       asyncRequest.reload();
     });
   }
@@ -86,14 +99,14 @@ export function VendorRequestDetailPage() {
         items={[
           { label: 'Kênh Xưởng', to: routes.vendor.overview },
           { label: 'Yêu cầu báo giá sỉ (RFQ)', to: routes.vendor.requests },
-          { label: `Yêu cầu #${req.id}` },
+          { label: `Yêu cầu #${requestCode(req.id)}` },
         ]}
       />
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Chi Tiết RFQ #{req.id} (B3.1, B3.2)</h1>
-          <p className={styles.subtitle}>Doanh nghiệp: {req.buyerName}</p>
+          <h1 className={styles.title}>Chi Tiết RFQ #{requestCode(req.id)}</h1>
+          <p className={styles.subtitle}>Người đặt: {req.buyerName}</p>
         </div>
         <Badge tone="gold" size="md">
           {req.quantity} hộp bánh Trung Thu
@@ -106,15 +119,25 @@ export function VendorRequestDetailPage() {
           <div className={styles.specList}>
             <div className={styles.specRow}>
               <span>Mục tiêu:</span>
-              <strong>{req.customRequirements || 'Đặt bánh theo yêu cầu'}</strong>
+              <strong>{req.customRequirements || 'Khách không nêu yêu cầu riêng'}</strong>
             </div>
             <div className={styles.specRow}>
               <span>Thời hạn nhận bánh:</span>
-              <strong>{req.deliveryDeadline}</strong>
+              <strong>{req.deliveryDeadline ? formatDate(req.deliveryDeadline) : '—'}</strong>
+            </div>
+            <div className={styles.specRow}>
+              <span>Tùy chỉnh kèm theo:</span>
+              <span>
+                {req.customTypes && req.customTypes.length > 0
+                  ? req.customTypes.map((t) => CUSTOM_TYPE_LABELS[t]).join(', ')
+                  : 'Không có'}
+              </span>
             </div>
             <div className={styles.specRow}>
               <span>Ngân sách mục tiêu:</span>
-              <span>{req.budgetPerBox ? `${formatCurrency(req.budgetPerBox)} / hộp` : 'Chưa định'}</span>
+              <span>
+                {req.budgetPerBox ? `${formatCurrency(req.budgetPerBox)} / hộp` : 'Chưa định'}
+              </span>
             </div>
             <div className={styles.specRow}>
               <span>Địa điểm nhận hàng:</span>
@@ -127,7 +150,14 @@ export function VendorRequestDetailPage() {
           <div>
             <div className={styles.noteLabel}>Ghi chú yêu cầu riêng của doanh nghiệp:</div>
             <div className={styles.noteBox}>
-              "{req.customRequirements || 'Cần in logo thương hiệu của công ty lên nắp hộp, 4 vị nhân truyền thống ít ngọt cho khối văn phòng.'}"
+              "
+              {/*
+                Trước đây khi khách không ghi chú, UI tự hiện một đoạn yêu cầu bịa
+                ("in logo… 4 vị nhân truyền thống ít ngọt"). Xưởng có thể tưởng
+                đó là yêu cầu thật của khách. Nay nói rõ là không có ghi chú.
+              */}
+              {req.customRequirements || 'Khách không ghi chú yêu cầu riêng.'}
+              "
             </div>
           </div>
         </Card>
@@ -175,12 +205,21 @@ export function VendorRequestDetailPage() {
               <Select
                 label="Phương thức giao hàng"
                 options={[
-                  { value: 'Xe tải xưởng giao tận văn phòng', label: 'Xe tải xưởng giao tận văn phòng' },
-                  { value: 'Giao hàng chuyên nghiệp', label: 'Giao hàng chuyên nghiệp' },
-                  { value: 'Khách tự đến xưởng lấy', label: 'Khách tự đến xưởng lấy' },
+                  {
+                    value: 'Xe tải xưởng giao tận văn phòng',
+                    label: 'Xe tải xưởng giao tận văn phòng',
+                  },
+                  {
+                    value: 'Giao hàng chuyên nghiệp',
+                    label: 'Giao hàng chuyên nghiệp',
+                  },
+                  {
+                    value: 'Khách tự đến xưởng lấy',
+                    label: 'Khách tự đến xưởng lấy',
+                  },
                 ]}
                 value={deliveryMethod}
-                onChange={(e) => setDeliveryMethod(e.target.value)}
+                onChange={(v) => setDeliveryMethod(v)}
                 required
               />
             </div>
@@ -221,4 +260,3 @@ export function VendorRequestDetailPage() {
     </div>
   );
 }
-

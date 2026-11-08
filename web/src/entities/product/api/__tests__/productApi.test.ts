@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { productApi, mapProductDtoToEntity, mapCakeAttributeDto, type ProductDto } from '../productApi';
-import * as envModule from '@/shared/config/env';
+import {
+  productApi,
+  mapProductDtoToEntity,
+  mapCakeAttributeDto,
+  type ProductDto,
+} from '../productApi';
 import { apiClient } from '@/shared/api';
 import { envelope, page } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -40,28 +44,44 @@ describe('Product Entity - productApi (T-01)', () => {
   });
 
   it('ON_SALE của backend không bị ẩn (lỗi đã map thành HIDDEN)', () => {
-    const hidden = mapProductDtoToEntity({ id: 'x', name: 'x', listPrice: 1, status: 'HIDDEN' });
-    const removed = mapProductDtoToEntity({ id: 'x', name: 'x', listPrice: 1, status: 'REMOVED' });
+    const hidden = mapProductDtoToEntity({
+      id: 'x',
+      name: 'x',
+      listPrice: 1,
+      status: 'HIDDEN',
+    });
+    const removed = mapProductDtoToEntity({
+      id: 'x',
+      name: 'x',
+      listPrice: 1,
+      status: 'REMOVED',
+    });
     expect(hidden.status).toBe('HIDDEN');
     expect(removed.status).toBe('REMOVED');
   });
 
   it('mapCakeAttributeDto đọc label/sortOrder/active của backend', () => {
-    const item = mapCakeAttributeDto({ id: '1', group: 'CRUST', code: 'nuong', label: 'Bánh nướng', sortOrder: 1, active: true });
-    expect(item).toEqual({ code: 'nuong', name: 'Bánh nướng', type: 'crust', order: 1, isActive: true });
-  });
-
-  it('productApi.getProducts() đọc catalog của máy chủ cả khi bật chế độ demo (luồng 1 không còn mock)', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
-    const get = vi.spyOn(apiClient, 'get').mockResolvedValue(envelope(page([])));
-    const products = await productApi.getProducts();
-    expect(get).toHaveBeenCalledTimes(1);
-    expect(products).toEqual([]);
+    const item = mapCakeAttributeDto({
+      id: '1',
+      group: 'CRUST',
+      code: 'nuong',
+      label: 'Bánh nướng',
+      sortOrder: 1,
+      active: true,
+    });
+    expect(item).toEqual({
+      code: 'nuong',
+      name: 'Bánh nướng',
+      type: 'crust',
+      order: 1,
+      isActive: true,
+    });
   });
 
   it('productApi.getProducts() bóc envelope phân trang và gửi provinceCode bắt buộc', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
-    const listing: ProductDto[] = [{ id: 'api-prod-1', name: 'Bánh nướng Sen Trắng', listPrice: 95000 }];
+    const listing: ProductDto[] = [
+      { id: 'api-prod-1', name: 'Bánh nướng Sen Trắng', listPrice: 95000 },
+    ];
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(envelope(page(listing)));
 
     const products = await productApi.getProducts('Hà Nội');
@@ -74,17 +94,29 @@ describe('Product Entity - productApi (T-01)', () => {
   });
 
   it('productApi.getProducts() không nuốt lỗi API', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     vi.spyOn(apiClient, 'get').mockRejectedValue(new Error('HTTP 500'));
     await expect(productApi.getProducts('Hà Nội')).rejects.toThrow('HTTP 500');
   });
 
   it('productApi.getTaxonomy() bóc envelope danh mục vỏ và nhân', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope([
-        { id: '1', group: 'CRUST', code: 'nuong', label: 'Bánh nướng', sortOrder: 1, active: true },
-        { id: '2', group: 'FILLING', code: 'thap-cam', label: 'Thập cẩm', sortOrder: 1, active: true },
+        {
+          id: '1',
+          group: 'CRUST',
+          code: 'nuong',
+          label: 'Bánh nướng',
+          sortOrder: 1,
+          active: true,
+        },
+        {
+          id: '2',
+          group: 'FILLING',
+          code: 'thap-cam',
+          label: 'Thập cẩm',
+          sortOrder: 1,
+          active: true,
+        },
       ]),
     );
 

@@ -24,7 +24,7 @@ Service này thay `notification-service` của thiết kế: nhận mọi sự k
 | `GET /api/notifications?unreadOnly=&page=` | M | Thông báo của mình; `data.unreadCount` cho biểu tượng chuông | NFR-10 |
 | `PATCH /api/notifications/{notificationId}` | M | `{read: true}` | NFR-10 |
 | `PATCH /api/notifications` | M | `{read: true}` cho mọi thông báo của mình | NFR-10 |
-| `/ws` (STOMP) | M | `/user/queue/notifications`; `/user/queue/nfc` cho trang QR tự cập nhật | AC-04.5, NFR-10 |
+| `/ws` (STOMP) | M | `/user/queue/notifications`; `/user/queue/nfc` cho trang QR tự cập nhật; `/user/queue/chat` cho chat theo đơn | AC-04.5, NFR-10 |
 
 **Root AuditLog** (`/api/audit-logs`, chỉ đọc)
 
@@ -37,7 +37,7 @@ Service này thay `notification-service` của thiết kế: nhận mọi sự k
 
 **Phát**
 
-- Đẩy WebSocket `/user/queue/notifications`, `/user/queue/nfc`
+- Đẩy WebSocket `/user/queue/notifications`, `/user/queue/nfc`, `/user/queue/chat` (sự kiện `chat.*` của order-service, hàng đợi `orchestrator.chat`, không ghi log sự kiện)
 
 **Nghe**
 

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { addressApi } from '../addressApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -21,7 +20,6 @@ const ADDRESS_DTO = {
 describe('Address Entity - addressApi (FR-03)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
   });
 
   it('list đọc GET /api/addresses của identity-service', async () => {
@@ -29,7 +27,7 @@ describe('Address Entity - addressApi (FR-03)', () => {
 
     const addresses = await addressApi.list();
 
-    expect(get).toHaveBeenCalledWith('/identity-service/api/addresses');
+    expect(get).toHaveBeenCalledWith('/api/addresses');
     expect(addresses).toHaveLength(1);
     expect(addresses[0].recipientName).toBe('Chị Lan');
     expect(addresses[0].isDefault).toBe(true);

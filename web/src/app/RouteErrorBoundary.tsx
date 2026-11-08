@@ -22,7 +22,10 @@ export function RouteErrorBoundary() {
   // Báo trong effect chứ không trong render: boundary render lại nhiều lần,
   // báo trong render sẽ tạo bản sao lặp lại của cùng một lỗi.
   useEffect(() => {
-    captureUnexpectedError(error, { source: 'route-error-boundary', statusCode });
+    captureUnexpectedError(error, {
+      source: 'route-error-boundary',
+      statusCode,
+    });
   }, [error, statusCode]);
 
   const handleReload = () => {
@@ -40,8 +43,8 @@ export function RouteErrorBoundary() {
         <p className={styles.message}>{errorMessage}</p>
 
         <div className={styles.actions}>
-          <Button variant="primary" size="md" onClick={handleReload}>
-            🔄 Tải lại trang
+          <Button variant="primary" size="md" onClick={handleReload} iconLeft="refresh">
+            Tải lại trang
           </Button>
           <Link to="/" className={styles.homeLink}>
             Về trang chủ Moonkage

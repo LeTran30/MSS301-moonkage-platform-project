@@ -8,32 +8,30 @@ import { ENV } from '@/shared/config/env';
 export const GATEWAY = {
   // 1. Identity & Auth Service (AccountController, AuthController, KycController)
   IDENTITY: {
-    LOGIN: '/identity-service/api/auth/login',
-    REGISTER: '/identity-service/api/auth/register',
-    REFRESH: '/identity-service/api/auth/refresh-token', // AuthController: @PostMapping("/refresh-token")
-    ME: '/identity-service/api/accounts/me',             // AccountController: @GetMapping("/api/accounts/me")
-    // AccountController chưa có endpoint sửa hồ sơ (tài liệu vẽ
-    // PATCH /api/accounts/me/profile ở giai đoạn 3 của api-db-alignment-plan.md).
-    // Hằng số giữ lại cho tài liệu, nhưng chưa có endpoint chạy được.
-    UPDATE_PROFILE: '/identity-service/api/accounts/me/profile',
-    NFC_SESSIONS: '/identity-service/api/nfc/sessions',  // KycController: /api/nfc/sessions
-    NFC_SESSION_BY_ID: (sessionId: string) => `/identity-service/api/nfc/sessions/${sessionId}`,
-    NFC_SESSION_CARD: (sessionId: string) => `/identity-service/api/nfc/sessions/${sessionId}/card`,
-    NFC_VERIFY_STATUS: '/identity-service/api/nfc/status',
+    LOGIN: '/api/auth/login',
+    REGISTER: '/api/auth/register',
+    REFRESH: '/api/auth/refresh-token', // AuthController: @PostMapping("/refresh-token")
+    ME: '/api/accounts/me',             // AccountController: @GetMapping("/api/accounts/me")
+    // AccountController: @PatchMapping("/api/accounts/me/profile") — đổi họ tên hiển thị (FR-02).
+    UPDATE_PROFILE: '/api/accounts/me/profile',
+    NFC_SESSIONS: '/api/nfc/sessions',  // KycController: /api/nfc/sessions
+    NFC_SESSION_BY_ID: (sessionId: string) => `/api/nfc/sessions/${sessionId}`,
+    NFC_SESSION_CARD: (sessionId: string) => `/api/nfc/sessions/${sessionId}/card`,
+    NFC_VERIFY_STATUS: '/api/nfc/status',
     // AddressController: @RequestMapping("/api/addresses") — FR-03, sổ địa chỉ nhận hàng.
     // Tài liệu api-db/identity.md vẽ "/api/accounts/me/addresses" (giai đoạn 3 của
     // api-db-alignment-plan.md), nhưng code đang chạy dùng "/api/addresses"; theo quy tắc
     // "file trong repo là bản đúng" (docs/architecture/api-db/README.md) ta theo code.
-    ADDRESSES: '/identity-service/api/addresses',
-    ADDRESS_BY_ID: (addressId: string) => `/identity-service/api/addresses/${addressId}`,
+    ADDRESSES: '/api/addresses',
+    ADDRESS_BY_ID: (addressId: string) => `/api/addresses/${addressId}`,
     // AuthController: @PostMapping("/verify-account")
-    VERIFY_ACCOUNT: '/identity-service/api/auth/verify-account',
+    VERIFY_ACCOUNT: '/api/auth/verify-account',
     // AuthController: @PostMapping("/send-verify-account-otp")
-    SEND_VERIFY_ACCOUNT_OTP: '/identity-service/api/auth/send-verify-account-otp',
+    SEND_VERIFY_ACCOUNT_OTP: '/api/auth/send-verify-account-otp',
     // AuthController: @PostMapping("/reset-password")
-    RESET_PASSWORD: '/identity-service/api/auth/reset-password',
+    RESET_PASSWORD: '/api/auth/reset-password',
     // AuthController: @PostMapping("/send-reset-password-otp")
-    SEND_RESET_PASSWORD_OTP: '/identity-service/api/auth/send-reset-password-otp',
+    SEND_RESET_PASSWORD_OTP: '/api/auth/send-reset-password-otp',
   },
 
   // 2. Vendor Management Service (VendorController, SupplierController)
@@ -41,8 +39,8 @@ export const GATEWAY = {
     BASE: '/api/vendors',                                // VendorController: @GetMapping("/api/vendors")
     BY_ID: (id: string) => `/api/vendors/${id}`,
     REGISTER: '/api/vendors',                            // VendorController: @PostMapping("/api/vendors")
-    SUPPLIERS: '/quotation-service/api/suppliers',       // SupplierController
-    SUPPLIER_BY_ID: (id: string) => `/quotation-service/api/suppliers/${id}`,
+    SUPPLIERS: '/api/suppliers',       // SupplierController
+    SUPPLIER_BY_ID: (id: string) => `/api/suppliers/${id}`,
     REGISTRATION_FEE_CONFIG: '/api/registration-fee-config',
     // CakeAttributeController: @RequestMapping("/api/cake-attributes")
     CAKE_ATTRIBUTES: '/api/cake-attributes',
@@ -77,101 +75,112 @@ export const GATEWAY = {
   },
   // 3. Catalog & Taxonomy Service (ProductController, CakeAttributes)
   CATALOG: {
-    PRODUCTS: '/catalog-service/api/products',          // ProductController: /api/products
-    PRODUCT_BY_ID: (id: string) => `/catalog-service/api/products/${id}`,
+    PRODUCTS: '/api/products',          // ProductController: /api/products
+    PRODUCT_BY_ID: (id: string) => `/api/products/${id}`,
     // ProductReadController: @GetMapping("/{productId}/reviews") — đánh giá của sản phẩm (AC-11.3).
-    PRODUCT_REVIEWS: (id: string) => `/catalog-service/api/products/${id}/reviews`,
+    PRODUCT_REVIEWS: (id: string) => `/api/products/${id}/reviews`,
     CAKE_ATTRIBUTES: '/api/cake-attributes',             // Danh mục Vỏ & Nhân FR-54
     // BE nhận nhóm bằng query `?group=CRUST|FILLING`, không có path con riêng.
   },
 
   // 4. Quotation Service - B2B Số lượng lớn (QuoteRequestController)
   QUOTATION: {
-    BASE: '/quotation-service/api',
-    REQUESTS: '/quotation-service/api/quote-requests',
-    REQUEST_BY_ID: (id: string) => `/quotation-service/api/quote-requests/${id}`,
-    SUBMIT_QUOTE: (requestId: string) => `/quotation-service/api/quote-requests/${requestId}/quotes`,
-    REQUEST_QUOTES: (requestId: string) => `/quotation-service/api/quote-requests/${requestId}/quotes`,
+    // D-30 routes by aggregate root, so a service has no base path any more: the base of this group is the root
+    // of the aggregate it is about (QuoteRequestController: @RequestMapping("/api/quote-requests")).
+    BASE: '/api/quote-requests',
+    REQUESTS: '/api/quote-requests',
+    REQUEST_BY_ID: (id: string) => `/api/quote-requests/${id}`,
+    SUBMIT_QUOTE: (requestId: string) => `/api/quote-requests/${requestId}/quotes`,
+    REQUEST_QUOTES: (requestId: string) => `/api/quote-requests/${requestId}/quotes`,
     // QuoteRequestController: @GetMapping("/{requestId}/invitations")
     REQUEST_INVITATIONS: (requestId: string) =>
-      `/quotation-service/api/quote-requests/${requestId}/invitations`,
+      `/api/quote-requests/${requestId}/invitations`,
     // QuoteRequestController: @PostMapping("/{requestId}/quotes/{quoteId}/acceptance")
     ACCEPT_QUOTE: (requestId: string, quoteId: string) =>
-      `/quotation-service/api/quote-requests/${requestId}/quotes/${quoteId}/acceptance`,
+      `/api/quote-requests/${requestId}/quotes/${quoteId}/acceptance`,
     GET_ACCEPTANCE: (requestId: string, quoteId: string) =>
-      `/quotation-service/api/quote-requests/${requestId}/quotes/${quoteId}/acceptance`,
+      `/api/quote-requests/${requestId}/quotes/${quoteId}/acceptance`,
     // QuoteRequestController: @GetMapping("/{requestId}/quotes/{quoteId}")
     QUOTE_BY_ID: (requestId: string, quoteId: string) =>
-      `/quotation-service/api/quote-requests/${requestId}/quotes/${quoteId}`,
+      `/api/quote-requests/${requestId}/quotes/${quoteId}`,
     // QuoteRequestController: @PatchMapping("/{requestId}/quotes/{quoteId}") — chỉ WITHDRAWN (BR-05).
     UPDATE_QUOTE: (requestId: string, quoteId: string) =>
-      `/quotation-service/api/quote-requests/${requestId}/quotes/${quoteId}`,
+      `/api/quote-requests/${requestId}/quotes/${quoteId}`,
     // QuoteRequestController: @PatchMapping("/{requestId}/invitations/{vendorId}") — chỉ DECLINED (AC-36.3).
     UPDATE_INVITATION: (requestId: string, vendorId: string) =>
-      `/quotation-service/api/quote-requests/${requestId}/invitations/${vendorId}`,
+      `/api/quote-requests/${requestId}/invitations/${vendorId}`,
   },
 
   // 5. Order & Cart Service (CartController, CheckoutController, OrderDocumentController, DisputeController)
   ORDER: {
-    CART: '/order-service/api/carts/me',
-    CART_ITEMS: '/order-service/api/carts/me/items',
+    CART: '/api/carts/me',
+    CART_ITEMS: '/api/carts/me/items',
     // CartController: @DeleteMapping("/items/{itemId}") — 204, nothing to unwrap.
-    CART_ITEM: (itemId: string) => `/order-service/api/carts/me/items/${itemId}`,
-    CHECKOUT: '/order-service/api/checkouts',
+    CART_ITEM: (itemId: string) => `/api/carts/me/items/${itemId}`,
+    CHECKOUT: '/api/checkouts',
     // CheckoutController: @GetMapping("/{checkoutId}") — trạng thái checkout + orderIds đã tạo (FR-09).
-    CHECKOUT_BY_ID: (checkoutId: string) => `/order-service/api/checkouts/${checkoutId}`,
-    ORDERS: '/order-service/api/orders',
-    ORDER_BY_ID: (id: string) => `/order-service/api/orders/${id}`,
+    CHECKOUT_BY_ID: (checkoutId: string) => `/api/checkouts/${checkoutId}`,
+    ORDERS: '/api/orders',
+    ORDER_BY_ID: (id: string) => `/api/orders/${id}`,
     // OrderController: @PatchMapping("/{orderId}") — vendor chuyển bước (FR-32, FR-40),
     // buyer xác nhận đã nhận (FR-11).
-    ORDER_UPDATE: (id: string) => `/order-service/api/orders/${id}`,
+    ORDER_UPDATE: (id: string) => `/api/orders/${id}`,
     // FR-21: lịch sử tiến độ của đơn
-    PROGRESS_UPDATES: (id: string) => `/order-service/api/orders/${id}/progress-updates`,
+    PROGRESS_UPDATES: (id: string) => `/api/orders/${id}/progress-updates`,
     // FR-22: thanh toán phần còn lại của đơn custom
-    PAY_REMAINDER: (id: string) => `/order-service/api/orders/${id}/payments`,
+    PAY_REMAINDER: (id: string) => `/api/orders/${id}/payments`,
     // Mockups / Maket (OrderDocumentController: @RequestMapping("/api/orders"))
-    MAKET_MOCKUPS: (orderId: string) => `/order-service/api/orders/${orderId}/mockups`,
+    MAKET_MOCKUPS: (orderId: string) => `/api/orders/${orderId}/mockups`,
     MAKET_PATCH: (orderId: string, versionNo: number | string) =>
-      `/order-service/api/orders/${orderId}/mockups/${versionNo}`,
+      `/api/orders/${orderId}/mockups/${versionNo}`,
     // OrderDocumentController: @PostMapping("/uploads")
-    UPLOADS: '/order-service/api/orders/uploads',
+    UPLOADS: '/api/orders/uploads',
     // OrderDocumentController: @GetMapping("/{orderId}/invoice")
-    INVOICE: (orderId: string) => `/order-service/api/orders/${orderId}/invoice`,
+    INVOICE: (orderId: string) => `/api/orders/${orderId}/invoice`,
     // Khiếu nại (số ít theo DisputeController: @RequestMapping("/api/orders/{orderId}/dispute"))
-    DISPUTE: (orderId: string) => `/order-service/api/orders/${orderId}/dispute`,
-    DISPUTE_EVIDENCES: (orderId: string) => `/order-service/api/orders/${orderId}/dispute/evidences`,
+    DISPUTE: (orderId: string) => `/api/orders/${orderId}/dispute`,
+    DISPUTE_EVIDENCES: (orderId: string) => `/api/orders/${orderId}/dispute/evidences`,
     // Đánh giá sản phẩm (ReviewController: @RequestMapping("/api/orders/{orderId}/reviews"))
-    REVIEWS: (orderId: string) => `/order-service/api/orders/${orderId}/reviews`,
+    REVIEWS: (orderId: string) => `/api/orders/${orderId}/reviews`,
+    // Nhắn tin khách ↔ shop, mỗi cặp một cuộc trò chuyện (ChatController: @RequestMapping("/api/chat/conversations")).
+    // Tin mới, đã xem và đang soạn được đẩy qua STOMP /user/queue/chat.
+    CHAT_CONVERSATIONS: '/api/chat/conversations',
+    CHAT_CONVERSATION: (id: string) => `/api/chat/conversations/${id}`,
+    CHAT_MESSAGES: (id: string) => `/api/chat/conversations/${id}/messages`,
+    CHAT_READ: (id: string) => `/api/chat/conversations/${id}/read`,
+    CHAT_TYPING: (id: string) => `/api/chat/conversations/${id}/typing`,
   },
 
   // 6. Payment & Escrow Service (LedgerController, PaymentController)
   PAYMENT: {
-    BASE: '/payment-service/api',
-    VNPAY_IPN: '/payment-service/api/payments/vnpay/ipn',
-    VNPAY_RETURN: '/payment-service/api/payments/vnpay/return',
+    // D-30 routes by aggregate root, so a service has no base path any more: the base of this group is the root
+    // of the aggregate it is about (PaymentController: @RequestMapping("/api/payments")).
+    BASE: '/api/payments',
+    VNPAY_IPN: '/api/payments/vnpay/ipn',
+    VNPAY_RETURN: '/api/payments/vnpay/return',
     // PaymentController: @GetMapping, @GetMapping("/{paymentId}") — trạng thái giao dịch để poll (FR-09).
-    PAYMENTS: '/payment-service/api/payments',
-    PAYMENT_BY_ID: (paymentId: string) => `/payment-service/api/payments/${paymentId}`,
-    LEDGERS: '/payment-service/api/ledgers',
-    LEDGER_BY_ORDER: (orderId: string) => `/payment-service/api/ledgers/${orderId}`,
+    PAYMENTS: '/api/payments',
+    PAYMENT_BY_ID: (paymentId: string) => `/api/payments/${paymentId}`,
+    LEDGERS: '/api/ledgers',
+    LEDGER_BY_ORDER: (orderId: string) => `/api/ledgers/${orderId}`,
     // LedgerController: @GetMapping("/{orderId}/entries")
-    LEDGER_ENTRIES: (orderId: string) => `/payment-service/api/ledgers/${orderId}/entries`,
+    LEDGER_ENTRIES: (orderId: string) => `/api/ledgers/${orderId}/entries`,
     // LedgerController: @GetMapping("/{orderId}/refunds")
-    LEDGER_REFUNDS: (orderId: string) => `/payment-service/api/ledgers/${orderId}/refunds`,
+    LEDGER_REFUNDS: (orderId: string) => `/api/ledgers/${orderId}/refunds`,
     // LedgerController: @GetMapping("/{orderId}/disbursements")
-    LEDGER_DISBURSEMENTS: (orderId: string) => `/payment-service/api/ledgers/${orderId}/disbursements`,
+    LEDGER_DISBURSEMENTS: (orderId: string) => `/api/ledgers/${orderId}/disbursements`,
     // LedgerController: @PostMapping("/{orderId}/disbursements")
     LEDGER_DISBURSEMENT_CREATE: (orderId: string) =>
-      `/payment-service/api/ledgers/${orderId}/disbursements`,
+      `/api/ledgers/${orderId}/disbursements`,
     // LedgerController: @PatchMapping("/{orderId}/disbursements/{requestId}")
     LEDGER_DISBURSEMENT_REVIEW: (orderId: string, requestId: string) =>
-      `/payment-service/api/ledgers/${orderId}/disbursements/${requestId}`,
+      `/api/ledgers/${orderId}/disbursements/${requestId}`,
     // LedgerController: @PutMapping("/{orderId}/payout")
-    LEDGER_PAYOUT: (orderId: string) => `/payment-service/api/ledgers/${orderId}/payout`,
-    APPROVE_PAYOUT: (orderId: string) => `/payment-service/api/ledgers/${orderId}/payout`,
+    LEDGER_PAYOUT: (orderId: string) => `/api/ledgers/${orderId}/payout`,
+    APPROVE_PAYOUT: (orderId: string) => `/api/ledgers/${orderId}/payout`,
     // RefundController: @RequestMapping("/api/refunds") — các khoản hoàn cần xử lý tay (AC-49.3).
-    REFUNDS: '/payment-service/api/refunds',
-    REFUND_BY_ID: (refundId: string) => `/payment-service/api/refunds/${refundId}`,
+    REFUNDS: '/api/refunds',
+    REFUND_BY_ID: (refundId: string) => `/api/refunds/${refundId}`,
   },
 
   // 7. Logistics & WebSocket Realtime (InterprovinceFeeController, STOMP)
@@ -192,8 +201,9 @@ export const GATEWAY = {
     NOTIFICATION_MARK_READ: (notificationId: string) =>
       `/api/notifications/${notificationId}/read`,
     NOTIFICATIONS_MARK_ALL_READ: '/api/notifications/read-all',
-    // orchestrator-service chưa có REST cho nhật ký kiểm toán.
-    AUDIT_LOGS: '/orchestrator-service/api/audit-logs',
+    // orchestrator-service chưa có REST cho nhật ký kiểm toán, nên đường dẫn này
+    // chưa có route nào phục vụ (D-30: chỉ khai báo route cho endpoint đang chạy).
+    AUDIT_LOGS: '/api/audit-logs',
   },
 } as const;
 
@@ -201,8 +211,8 @@ export const GATEWAY = {
  * Các endpoint dự kiến nhưng BE hiện tại chưa công khai REST hoặc đang xử lý qua luồng nội bộ
  */
 export const NOT_IMPLEMENTED_YET = {
-  AUDIT_LOGS: '/orchestrator-service/api/audit-logs', // orchestrator chưa có REST cho audit log
-  VNPAY_CREATE_PUBLIC: '/payment-service/api/payments',      // BE-08b: cần endpoint public thay vì /internal/payments
+  AUDIT_LOGS: '/api/audit-logs', // orchestrator chưa có REST cho audit log
+  VNPAY_CREATE_PUBLIC: '/api/payments',      // BE-08b: cần endpoint public thay vì /internal/payments
 } as const;
 
 /** STOMP over WebSocket của orchestrator-service, đi qua gateway; token nằm trong CONNECT frame. */

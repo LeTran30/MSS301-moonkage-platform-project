@@ -9,7 +9,7 @@
   --color-surface-3: #efe3cd;
   --color-text: #2a1d14;
   --color-text-muted: #75604f;
-  --color-text-subtle: #9d8877;
+  --color-text-subtle: #766150;
   --color-border: #e8dcc6;
   --color-border-strong: #d6c4a6;
 
@@ -18,17 +18,21 @@
   --color-primary-hover: #921d17;
   --color-primary-soft: #f8e1dc;
   --color-on-primary: #fffaf3;
+  /* `--color-gold` là màu trang trí (viền, gradient, glow) — tương phản trên
+     nền sáng chỉ ~3.2:1 nên không dùng làm màu chữ. */
   --color-gold: #b8862b;
-  --color-gold-hover: #9b6f1f;
+  /* Màu vàng dành cho **chữ**: ≥4.5:1 trên mọi nền sáng của hệ thống. */
+  --color-gold-text: #855f16;
+  --color-gold-hover: #6f4f13;
   --color-gold-soft: #f5e6c4;
   --color-gold-bright: #e2b25c;
   --color-ink: #2f4b6e;
   --color-ink-soft: #e1e9f3;
 
-  /* Trạng thái */
-  --color-success: #2f7a4a;
+  /* Trạng thái — mỗi màu đạt ≥4.5:1 trên nền sáng nhạt nhất (surface-3). */
+  --color-success: #2a7042;
   --color-success-soft: #dff0e3;
-  --color-warning: #a8670f;
+  --color-warning: #8a5a0c;
   --color-warning-soft: #f9ead0;
   --color-danger: #b3261e;
   --color-danger-soft: #f8e1dc;
@@ -64,7 +68,7 @@
   --color-red: var(--color-danger);
 
   /* Gradient & Theme Patterns */
-  --gradient-gold: linear-gradient(135deg, #e9c27a 0%, #b8862b 55%, #8f6418 100%);
+  --gradient-gold: linear-gradient(135deg, #e9c27a 0%, #cfa544 55%, #b8862b 100%);
   --gradient-ember: linear-gradient(135deg, #d8452f 0%, #b3261e 50%, #7d1712 100%);
   --gradient-night: linear-gradient(160deg, #2a1810 0%, #160d08 100%);
   --gradient-paper: radial-gradient(1200px 600px at 85% -10%, rgb(226 178 92 / 0.18), transparent 60%),
@@ -85,7 +89,6 @@
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
-  --text-md: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.375rem;
   --text-2xl: 1.75rem;
@@ -117,11 +120,19 @@
   /* Kích thước */
   --container: 1240px;
   --container-narrow: 860px;
+  /* Giá trị khởi đầu; Header đo chiều cao thật và ghi đè (useHeaderHeightVar). */
   --header-h: 72px;
   --sidebar-w: 248px;
   --control-h: 42px;
   --control-h-sm: 34px;
   --control-h-lg: 50px;
+
+  /* Breakpoint chuẩn — dùng cho media query trong toàn bộ dự án.
+     Giá trị tính bằng px để khớp với `min-width` trong `@media`. */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
 
   /* Bo góc, bóng */
   --radius-xs: 4px;
@@ -163,14 +174,15 @@
     --color-surface-3: #31261d;
     --color-text: #f4ead9;
     --color-text-muted: #bba68f;
-    --color-text-subtle: #8c7a68;
+    --color-text-subtle: #a4947f;
     --color-border: #3a2d22;
     --color-border-strong: #4d3d2f;
-    --color-primary: #e0574b;
-    --color-primary-hover: #ec6e62;
+    --color-primary: #ef8073;
+    --color-primary-hover: #f28f83;
     --color-primary-soft: #3b1a16;
     --color-on-primary: #1a0f0b;
     --color-gold: #e2b25c;
+    --color-gold-text: #e8bf74;
     --color-gold-hover: #efc77c;
     --color-gold-soft: #3a2c15;
     --color-ink: #8fb3e0;
@@ -229,14 +241,15 @@
   --color-surface-3: #31261d;
   --color-text: #f4ead9;
   --color-text-muted: #bba68f;
-  --color-text-subtle: #8c7a68;
+  --color-text-subtle: #a4947f;
   --color-border: #3a2d22;
   --color-border-strong: #4d3d2f;
-  --color-primary: #e0574b;
-  --color-primary-hover: #ec6e62;
+  --color-primary: #ef8073;
+  --color-primary-hover: #f28f83;
   --color-primary-soft: #3b1a16;
   --color-on-primary: #1a0f0b;
   --color-gold: #e2b25c;
+  --color-gold-text: #e8bf74;
   --color-gold-hover: #efc77c;
   --color-gold-soft: #3a2c15;
   --color-ink: #8fb3e0;
@@ -256,12 +269,29 @@
   color-scheme: dark;
 }
 
-/* Màu theo khu: Kênh người bán dùng vàng đồng, Quản trị dùng mực xanh */
+/*
+ * Màu theo khu — `data-zone` đặt ở layout (Base / Vendor / Admin).
+ *
+ * Quyết định (audit §1.8 / §6.3): **giữ lại** hệ màu theo khu và đưa nó vào
+ * sử dụng thật thay vì xoá. Lý do:
+ *
+ * - Ba khu có ngôn ngữ thị giác khác nhau: Kênh người bán mang sắc vàng đồng
+ *   (thợ thủ công), Quản trị mang sắc mực xanh (nội bộ), Khu mua hàng giữ
+ *   sắc đỏ thương hiệu. Đây là tín hiệu định hướng thật, không phải trang trí.
+ * - Token luôn trỏ tới bảng màu đã kiểm tra contrast ⇒ không tạo thêm màu mới.
+ *
+ * Mọi vị trí dùng màu khu đều đi qua `--color-zone` / `--color-zone-soft` để
+ * đổi khu chỉ cần sửa một chỗ.
+ */
+[data-zone='base'] {
+  --color-zone: var(--color-primary);
+  --color-zone-soft: var(--color-primary-soft);
+}
 [data-zone='vendor'] {
-  --color-zone: var(--color-gold);
+  --color-zone: var(--color-gold-text);
   --color-zone-soft: var(--color-gold-soft);
 }
 [data-zone='admin'] {
-  --color-zone: var(--color-ink);
-  --color-zone-soft: var(--color-ink-soft);
+  --color-zone: var(--color-info);
+  --color-zone-soft: var(--color-info-soft);
 }
