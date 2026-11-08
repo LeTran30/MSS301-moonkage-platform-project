@@ -19,6 +19,7 @@ import { orderCode, useOrderDetail } from '@/entities/order';
 import {
   disputeStore,
   useDisputes,
+  useDisputeByOrder,
   DISPUTE_REASON_LABELS,
   DISPUTE_DECISION_LABELS,
   type DisputeReason,
@@ -38,6 +39,11 @@ export function OrderDisputePage() {
   // FR-12: `GET /api/orders/{orderId}` — chi tiết đơn đọc thẳng từ máy chủ.
   const asyncOrder = useOrderDetail(orderId);
   const order = asyncOrder.kind === 'loaded' ? asyncOrder.data : null;
+  // FR-12: hồ sơ khiếu nại đọc thẳng từ máy chủ (`GET /api/orders/{id}/dispute`).
+  // Store chỉ là bộ đệm trong phiên: nếu chỉ đọc store thì tải lại trang sẽ
+  // không thấy khiếu nại đã gửi trước đó.
+  const asyncDispute = useDisputeByOrder(orderId);
+  const serverDispute = asyncDispute.kind === 'loaded' ? asyncDispute.data : null;
   const disputes = useDisputes();
   const navigate = useNavigate();
   const { busy, run, error } = useAction();
@@ -46,7 +52,8 @@ export function OrderDisputePage() {
   // (đang tải / lỗi / huỷ) thay vì page tự gọi API.
   const evidenceUpload = useFileUpload('ORDER');
 
-  const existingDispute = disputes.find((d) => d.orderId === orderId);
+  const existingDispute =
+    serverDispute ?? disputes.find((d) => d.orderId === orderId) ?? null;
 
   const [reason, setReason] = useState<DisputeReason>('DAMAGED');
   const [description, setDescription] = useState('');
@@ -78,22 +85,23 @@ export function OrderDisputePage() {
       });
 
       // Giữ lại các thông tin sổ tiền mà backend không trả về trong hồ sơ khiếu nại.
-      disputeStore.set((prev) =>
-        prev.map((d) =>
-          d.id === created.id
-            ? {
-                ...d,
-                buyerId: order.buyerId,
-                buyerName: order.buyerName,
-                vendorId: order.vendorId,
-                vendorName: order.vendorName,
-                orderTotalAmount: order.total,
-                escrowHoldingAmount: order.total,
-                maxRefundableAmount: order.total,
-              }
-            : d,
-        ),
-      );
+      // Hồ sơ vừa tạo cũng phải vào store — nếu không, các màn hình khác (danh sách
+      // khiếu nại của tôi) sẽ không thấy nó cho tới lần tải lại trang.
+      disputeStore.set((prev) => {
+        const enriched = {
+          ...created,
+          buyerId: order.buyerId,
+          buyerName: order.buyerName,
+          vendorId: order.vendorId,
+          vendorName: order.vendorName,
+          orderTotalAmount: order.total,
+          escrowHoldingAmount: order.total,
+          maxRefundableAmount: order.total,
+        };
+        const index = prev.findIndex((d) => d.id === created.id);
+        if (index === -1) return [...prev, enriched];
+        return prev.map((d, i) => (i === index ? { ...d, ...enriched } : d));
+      });
 
       toast.success(
         'Khiếu nại đã được gửi! Hệ thống đã khóa tiền tạm giữ Escrow và thông báo cho người bán + quản trị.',
