@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   apiDelete,
   apiGet,
+  apiGetIfExists,
   apiPatch,
   apiPost,
   gatewayUrl,
@@ -78,6 +79,77 @@ async function availableProduct(page: Page, vendorId: string): Promise<Product> 
     throw new Error(`Không có sản phẩm nào còn hàng của Shop ${vendorId}.`);
   }
   return product;
+}
+
+/**
+ * Tỉnh mà trang danh mục đang dùng để lọc.
+ *
+ * Trang danh mục đọc tỉnh giao hàng từ `localStorage` (mặc định `01` — Hà Nội),
+ * và `GET /api/products` **bắt buộc** phải có `provinceCode`. Nếu hỏi sai tỉnh thì
+ * danh sách trả về lệch với những gì trang đang hiện ⇒ tìm được sản phẩm "còn
+ * hàng" trong API nhưng không có trên trang (hoặc ngược lại).
+ */
+async function catalogProvince(page: Page): Promise<string> {
+  const stored = await page.evaluate(() => localStorage.getItem('moonkage_delivery_province'));
+  return stored && /^\d{2}$/.test(stored) ? stored : '01';
+}
+
+/**
+ * Tồn kho của mọi sản phẩm trong danh mục, đọc từ catalog thật.
+ *
+ * Vì sao cần: danh mục vẫn hiện sản phẩm đã **hết hàng**, và thẻ của sản
+ * phẩm hết hàng không có nút "Thêm vào giỏ" (nút đổi thành "Tạm hết hàng").
+ * Test nào cần bấm nút mua thì phải chọn đúng sản phẩm còn hàng, không được
+ * mù quáng bấm thẻ đầu tiên — mỗi lần chạy test lại trừ tồn kho, nên thẻ
+ * đầu tiên có thể hết hàng sau vài lần chạy.
+ */
+async function catalogStock(page: Page): Promise<Map<string, number>> {
+  const provinceCode = await catalogProvince(page);
+  const payload = await apiGet<unknown>(
+    page,
+    gatewayUrl(`/api/products?provinceCode=${provinceCode}&size=100`),
+  );
+  const data = unwrapData<{ content?: Array<{ id: string; stock?: number }> }>(payload);
+  return new Map((data?.content ?? []).map((p) => [p.id, p.stock ?? 0]));
+}
+
+/**
+ * Mở trang chi tiết của một sản phẩm **còn hàng**, bấm từ trang danh mục.
+ *
+ * Chọn theo tồn kho thật (đọc từ API) chứ không theo vị trí trên trang, để test
+ * không phụ thuộc thứ tự sắp xếp của danh mục.
+ */
+async function openInStockProduct(page: Page): Promise<void> {
+  const stock = await catalogStock(page);
+  const provinceCode = await catalogProvince(page);
+
+  const links = page.locator('article a[href*="/san-pham/"]');
+  const total = await links.count();
+
+  for (let index = 0; index < total; index += 1) {
+    const href = await links.nth(index).getAttribute('href');
+    const productId = href?.split('/san-pham/')[1]?.split(/[/?#]/)[0];
+    if (!productId) continue;
+
+    let inStock = (stock.get(productId) ?? 0) > 0;
+    if (!inStock) {
+      // Không có trong bản danh mục (lọc theo tỉnh khác, hoặc sản phẩm vừa lên
+      // sàn): hỏi thẳng sản phẩm đó để không bỏ sót sản phẩm còn hàng.
+      const detail = await apiGetIfExists<unknown>(
+        page,
+        gatewayUrl(`/api/products/${productId}?provinceCode=${provinceCode}`),
+      );
+      const data = unwrapData<{ stock?: number } | null>(detail);
+      inStock = (data?.stock ?? 0) > 0;
+    }
+    if (!inStock) continue;
+
+    await links.nth(index).click();
+    await expect(page).toHaveURL(/\/san-pham\/.+/);
+    return;
+  }
+
+  throw new Error('Danh mục không có sản phẩm nào còn hàng để thêm vào giỏ.');
 }
 
 /**
@@ -217,8 +289,8 @@ test.describe('FLOW 1 — Mua lẻ', () => {
     await page.goto('/san-pham');
     await expect(page.locator('#root')).toBeVisible();
 
-    await page.locator('article a').first().click();
-    await expect(page).toHaveURL(/\/san-pham\/.+/);
+    // Chọn sản phẩm **còn hàng**: sản phẩm hết hàng không có nút "Thêm vào giỏ".
+    await openInStockProduct(page);
 
     const addButton = page.getByRole('button', { name: /Thêm vào giỏ/i });
     await expect(addButton).toBeVisible();
