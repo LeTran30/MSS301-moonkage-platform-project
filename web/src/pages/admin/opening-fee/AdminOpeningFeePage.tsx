@@ -49,7 +49,7 @@ export function AdminOpeningFeePage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Cấu Hình Phí Mở Bán Gian Hàng</h1>
+          <h1 className={styles.title}>Cấu hình phí mở bán gian hàng</h1>
           <p className={styles.subtitle}>
             Thiết lập mức phí kích hoạt gian hàng. Mức mới có hiệu lực từ thời điểm lưu và không
             thay đổi các mức đã thu.

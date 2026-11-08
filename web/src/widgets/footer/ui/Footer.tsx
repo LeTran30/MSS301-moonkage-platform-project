@@ -20,7 +20,7 @@ export function Footer() {
               <span className={styles.brandName}>Moonkage</span>
             </div>
             <p className={styles.tagline}>
-              Sàn thương mại chuyên biệt về Bánh Trung Thu. Kết nối người mua lẻ, khách hàng doanh
+              Sàn thương mại chuyên về bánh trung thu. Kết nối người mua lẻ, khách hàng doanh
               nghiệp và các nghệ nhân, xưởng làm bánh truyền thống trên toàn quốc.
             </p>
             <div className={styles.badges}>

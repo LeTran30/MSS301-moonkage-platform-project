@@ -70,7 +70,7 @@ export function AttachVendorDocumentModal({
     >
       <div className={styles.body}>
         <p className={styles.hint}>
-          Hoá đơn phí đăng ký được quản trị gắn sau khi người bán nộp phí thành công (Q-36). Tài
+          Hoá đơn phí đăng ký được quản trị gắn sau khi người bán nộp phí thành công. Tài
           liệu được lưu ở kho riêng tư, người bán không tự gắn được.
         </p>
 

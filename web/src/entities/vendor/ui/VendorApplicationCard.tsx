@@ -85,7 +85,7 @@ export function VendorApplicationCard({
           </Button>
           {onAttachFeeInvoice && (
             <Button variant="ghost" size="sm" onClick={() => onAttachFeeInvoice(vendor)}>
-              Gắn hoá đơn phí (Q-36)
+              Gắn hoá đơn phí
             </Button>
           )}
         </div>

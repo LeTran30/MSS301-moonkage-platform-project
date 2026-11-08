@@ -118,7 +118,7 @@ export function HeaderMobileNav({ selectedProvince, onOpenLocation }: HeaderMobi
                 className={styles.drawerItem}
                 onClick={() => setOpen(false)}
               >
-                <Icon name="sparkle" size={18} /> Tạo yêu cầu báo giá
+                <Icon name="file" size={18} /> Tạo yêu cầu báo giá
               </Link>
               <Link
                 to={routes.base.vendors}

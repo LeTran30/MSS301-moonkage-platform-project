@@ -81,7 +81,7 @@ export function DepositPaymentPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Ký Quỹ Đặt Cọc Đơn Sỉ (#{requestCode(req.id)})</h1>
+          <h1 className={styles.title}>Đặt cọc đơn số lượng lớn (#{requestCode(req.id)})</h1>
           <p className={styles.subtitle}>
             Bảo lãnh thanh toán qua Moonkage Escrow — Xưởng chỉ nhận tiền khi giao bánh đạt chuẩn
           </p>
@@ -93,7 +93,7 @@ export function DepositPaymentPage() {
 
       <div className={styles.grid}>
         <Card padding="lg" className={styles.card}>
-          <h2 className={styles.cardTitle}>Thông Tin Đơn Đặt Bánh Số Lượng Lớn</h2>
+          <h2 className={styles.cardTitle}>Thông tin đơn đặt bánh số lượng lớn</h2>
           <div className={styles.specList}>
             <div className={styles.specRow}>
               <span>Mục tiêu:</span>
@@ -136,7 +136,7 @@ export function DepositPaymentPage() {
         </Card>
 
         <Card padding="lg" className={styles.card}>
-          <h2 className={styles.cardTitle}>Cấu Hình Phương Thức Ký Quỹ</h2>
+          <h2 className={styles.cardTitle}>Phương thức đặt cọc</h2>
 
           <div>
             <span className={styles.groupLabel} id="pm-label">

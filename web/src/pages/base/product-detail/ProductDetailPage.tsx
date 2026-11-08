@@ -182,7 +182,7 @@ export function ProductDetailPage() {
                       {/* Lối gửi yêu cầu báo giá nếu đặt nhiều (AC-08.2, FR-08) */}
                       {product.bulkQuoteThreshold && quantity >= product.bulkQuoteThreshold && (
                         <div className={styles.bulkThresholdNotice}>
-                          <Icon name="sparkle" size={16} />
+                          <Icon name="info" size={16} />
                           <div>
                             Số lượng chọn ({quantity} hộp) đã đạt ngưỡng báo giá sỉ! Bạn có thể đặt
                             hàng trực tiếp hoặc gửi yêu cầu báo giá riêng để có chiết khấu tốt hơn.

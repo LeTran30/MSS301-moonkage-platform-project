@@ -72,7 +72,7 @@ export function RegisterPage() {
   return (
     <AuthShell
       icon="cake"
-      title="Tạo Tài Khoản Moonkage"
+      title="Tạo tài khoản Moonkage"
       subtitle="Đón Tết Đoàn Viên — Mua lẻ tinh tế, Đặt sỉ tối ưu"
     >
       <div className={pageStyles.roleSwitch} role="group" aria-label="Loại tài khoản">

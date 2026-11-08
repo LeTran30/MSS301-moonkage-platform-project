@@ -14,7 +14,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-zone);
+  color: var(--color-text);
   margin-bottom: var(--space-1);
 }
 

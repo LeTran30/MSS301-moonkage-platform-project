@@ -47,7 +47,7 @@ export function RegisterConfirmPage() {
   return (
     <AuthShell
       icon="lock"
-      title="Xác Nhận Tài Khoản"
+      title="Xác nhận tài khoản"
       subtitle={
         <>
           Mã OTP đã được gửi tới email <strong>{email || 'của bạn'}</strong>

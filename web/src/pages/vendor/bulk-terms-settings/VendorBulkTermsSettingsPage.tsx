@@ -100,7 +100,7 @@ export function VendorBulkTermsSettingsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Chính Sách Báo Giá Sỉ & Chiết Khấu Doanh Nghiệp</h1>
+          <h1 className={styles.title}>Chính sách báo giá sỉ và chiết khấu doanh nghiệp</h1>
           <p className={styles.subtitle}>
             Thiết lập bảng giá theo số lượng để gợi ý khi doanh nghiệp gửi yêu cầu RFQ
           </p>

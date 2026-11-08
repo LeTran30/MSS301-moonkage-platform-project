@@ -19,8 +19,7 @@ export function VendorsListPage() {
     <div className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
-        <div className={styles.eyebrow}>DANH SÁCH ĐƠN VỊ CUNG CẤP</div>
-        <h1 className={styles.title}>Nghệ Nhân, Xưởng Bánh &amp; Tiệm Gia Truyền</h1>
+        <h1 className={styles.title}>Nghệ nhân, xưởng bánh và tiệm gia truyền</h1>
         <p className={styles.lead}>
           Bao gồm cả các nghệ nhân chỉ nhận sản xuất hợp đồng (nhãn "Chỉ nhận đặt hàng") và các tiệm
           có bán lẻ sẵn.

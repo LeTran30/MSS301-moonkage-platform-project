@@ -12,7 +12,7 @@ export function NotFoundPage() {
         <div className={styles.moonIllustration} aria-hidden="true">
           <Icon name="cake" size={72} />
         </div>
-        <h1 className={styles.title}>404 - Lạc Bước Đêm Rằm</h1>
+        <h1 className={styles.title}>Không tìm thấy trang</h1>
         <p className={styles.desc}>
           Ánh trăng soi bóng nhưng con đường bạn tìm kiếm không tồn tại trên bản đồ Moonkage hoặc
           gian hàng đã dời sang phố khác.

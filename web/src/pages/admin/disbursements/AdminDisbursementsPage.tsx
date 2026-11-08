@@ -85,7 +85,7 @@ export function AdminDisbursementsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Phê Duyệt Lệnh Giải Ngân Ký Quỹ Escrow</h1>
+          <h1 className={styles.title}>Duyệt lệnh giải ngân tiền ký quỹ</h1>
           <p className={styles.subtitle}>
             Kiểm soát các lệnh rút tiền từ xưởng bánh sau khi đơn hàng được đối soát hợp lệ
           </p>

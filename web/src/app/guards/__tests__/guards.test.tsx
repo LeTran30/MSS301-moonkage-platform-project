@@ -129,7 +129,7 @@ describe('RequireAdmin — hồi quy phiên làm việc', () => {
       </RequireAdmin>,
     );
 
-    expect(screen.queryByText(/Từ chối quyền truy cập/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bạn không có quyền vào khu vực này/)).not.toBeInTheDocument();
     expect(screen.queryByText('NOI_DUNG_BAO_VE')).not.toBeInTheDocument();
   });
 
@@ -145,7 +145,7 @@ describe('RequireAdmin — hồi quy phiên làm việc', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Từ chối quyền truy cập/)).toBeInTheDocument();
+      expect(screen.getByText(/Bạn không có quyền vào khu vực này/)).toBeInTheDocument();
     });
   });
 

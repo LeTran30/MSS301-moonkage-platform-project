@@ -52,7 +52,7 @@ export function Header({ zone = 'shop' }: HeaderProps) {
             </span>
             <div className={styles.logoText}>
               <span className={styles.brandName}>Moonkage</span>
-              <span className={styles.brandTagline}>{inVendor ? 'Kênh người bán' : 'Sàn Bánh Trung Thu'}</span>
+              <span className={styles.brandTagline}>{inVendor ? 'Kênh người bán' : 'Sàn bánh trung thu'}</span>
             </div>
           </Link>
 

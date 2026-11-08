@@ -71,7 +71,7 @@ export function VendorSellingModeStep({
       </div>
 
       <div className={styles.feeNotice}>
-        <Icon name="sparkle" size={16} />
+        <Icon name="info" size={16} />
         <span>
           <strong>Lưu ý phí mở bán:</strong> Sau khi hồ sơ được Đội vận hành kiểm duyệt thông qua,
           bạn sẽ thanh toán phí mở bán 200.000đ (thanh toán 1 lần qua VNPay) để chính thức kích hoạt

@@ -166,7 +166,7 @@ export function VendorOrderDetailPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Xử Lý Đơn Hàng #{orderCode(order.id)}</h1>
+          <h1 className={styles.title}>Xử lý đơn hàng #{orderCode(order.id)}</h1>
           <p className={styles.subtitle}>
             Ngày đặt: {formatDate(order.createdAt)} · Người nhận: {order.shippingAddress.receiver} (
             {order.shippingAddress.phone})

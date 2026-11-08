@@ -61,7 +61,7 @@ export function AdminCakeCatalogPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Từ Điển Danh Mục Vỏ & Nhân Bánh</h1>
+          <h1 className={styles.title}>Danh mục vỏ và nhân bánh</h1>
           <p className={styles.subtitle}>
             Chuẩn hóa danh mục phân loại để khách hàng lọc chính xác hương vị bánh trên toàn sàn
           </p>
@@ -88,7 +88,7 @@ export function AdminCakeCatalogPage() {
           <div className={styles.gridTwo}>
             <Card padding="lg" className={styles.cardBody}>
               <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Danh Mục Loại Vỏ Bánh (Crusts)</h2>
+                <h2 className={styles.sectionTitle}>Loại vỏ bánh</h2>
                 <Button
                   size="sm"
                   variant="outline"
@@ -130,7 +130,7 @@ export function AdminCakeCatalogPage() {
 
             <Card padding="lg" className={styles.cardBody}>
               <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Danh Mục Vị Nhân Bánh (Fillings)</h2>
+                <h2 className={styles.sectionTitle}>Vị nhân bánh</h2>
                 <Button
                   size="sm"
                   variant="outline"

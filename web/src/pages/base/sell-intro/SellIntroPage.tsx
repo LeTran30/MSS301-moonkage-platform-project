@@ -7,9 +7,8 @@ export function SellIntroPage() {
     <div className={styles.container}>
       <div className={styles.hero}>
         <div className={styles.heroContent}>
-          <span className={styles.eyebrow}>HỢP TÁC KINH DOANH</span>
           <h1 className={styles.title}>
-            Đưa Hương Vị Bánh Trung Thu Của Bạn Đến Hàng Triệu Khách Hàng
+            Đưa bánh trung thu của bạn tới thêm nhiều khách hàng
           </h1>
           <p className={styles.lead}>
             Moonkage cung cấp nền tảng số chuyên nghiệp cho các tiệm bánh gia truyền và xưởng sản

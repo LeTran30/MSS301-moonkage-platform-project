@@ -115,6 +115,7 @@
 }
 .sold {
   color: var(--color-text-subtle);
+  white-space: nowrap;
 }
 .actions {
   margin-top: var(--space-3);

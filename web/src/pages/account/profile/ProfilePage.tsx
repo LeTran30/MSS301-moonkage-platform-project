@@ -11,7 +11,7 @@ export function ProfilePage() {
       <Card padding="lg" className={styles.card}>
         <div className={styles.cardHeader}>
           <Icon name="user" size={20} />
-          <h3>Thông Tin Cá Nhân</h3>
+          <h3>Thông tin cá nhân</h3>
         </div>
 
         <EditProfileForm />

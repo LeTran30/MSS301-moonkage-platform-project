@@ -69,8 +69,7 @@ export function CatalogPage() {
     <div className={styles.container}>
       {/* Breadcrumb & Header */}
       <div className={styles.header}>
-        <div className={styles.eyebrow}>DANH MỤC MUA LẺ</div>
-        <h1 className={styles.title}>Bánh Trung Thu Mua Lẻ Giao Tận Nơi</h1>
+        <h1 className={styles.title}>Bánh trung thu mua lẻ, giao tận nơi</h1>
         <p className={styles.lead}>
           Lựa chọn các hương vị bánh truyền thống và sáng tạo từ nhiều tiệm bánh uy tín.
           {rawQ && (

@@ -67,7 +67,7 @@ test.describe('FLOW 3 — Đăng nhập & phân quyền', () => {
 
     // Khu vực quản trị bị chặn ở tầng route (guard `RequireAdmin`), nên nội dung
     // quản trị không được render — chỉ có thông báo từ chối quyền.
-    await expect(page.getByRole('heading', { name: /Từ chối quyền truy cập/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Bạn không có quyền vào khu vực này/i })).toBeVisible();
     await expect(page.getByText(/chỉ dành cho người dùng có vai trò/i)).toBeVisible();
 
     // Nội dung quản trị thật sự không được phép hiện ra.
@@ -81,7 +81,7 @@ test.describe('FLOW 3 — Đăng nhập & phân quyền', () => {
     await waitForAppReady(page);
 
     // Không bị chặn 403 — nội dung quản trị phải hiện ra.
-    await expect(page.getByRole('heading', { name: /Từ chối quyền truy cập/i })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: /Bạn không có quyền vào khu vực này/i })).toHaveCount(0);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 });

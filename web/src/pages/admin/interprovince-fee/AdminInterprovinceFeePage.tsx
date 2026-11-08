@@ -57,7 +57,7 @@ export function AdminInterprovinceFeePage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Biểu Phí Vận Chuyển Liên Tỉnh & Xe Lạnh</h1>
+          <h1 className={styles.title}>Biểu phí vận chuyển liên tỉnh và xe lạnh</h1>
           <p className={styles.subtitle}>
             Quy định mức trần cước phí vận chuyển bánh Trung Thu bảo quản đặc biệt giữa các tỉnh
             thành

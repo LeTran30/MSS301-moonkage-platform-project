@@ -33,7 +33,7 @@ export function AdminReconciliationPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Đối Soát &amp; Báo Cáo Tài Chính Toàn Sàn</h1>
+          <h1 className={styles.title}>Đối soát và báo cáo tài chính toàn sàn</h1>
           <p className={styles.subtitle}>
             Tổng hợp dòng tiền GMV, khoản đã hoàn trả và số dư ký quỹ Escrow đang bảo chứng
           </p>

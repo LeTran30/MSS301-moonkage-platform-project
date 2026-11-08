@@ -48,13 +48,13 @@ export function VendorFeePage() {
       <Breadcrumbs
         items={[
           { label: 'Kênh Xưởng', to: routes.vendor.overview },
-          { label: 'Phí Mở Bán Gian Hàng' },
+          { label: 'Phí mở bán gian hàng' },
         ]}
       />
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Kích Hoạt Gian Hàng & Phí Mở Bán</h1>
+          <h1 className={styles.title}>Kích hoạt gian hàng và phí mở bán</h1>
           <p className={styles.subtitle}>
             Phí duy trì kiểm định chất lượng, gắn tem chống giả NFC và kết nối mạng lưới doanh
             nghiệp
@@ -73,7 +73,7 @@ export function VendorFeePage() {
           onClick={() => setFeePlan('SEASONAL')}
         >
           <div className={styles.planHeader}>
-            <h2 className={styles.planTitle}>Phí Mở Bán Gian Hàng</h2>
+            <h2 className={styles.planTitle}>Phí mở bán gian hàng</h2>
             <Badge tone="gold">Phổ biến nhất</Badge>
           </div>
           <div className={styles.planPrice}>

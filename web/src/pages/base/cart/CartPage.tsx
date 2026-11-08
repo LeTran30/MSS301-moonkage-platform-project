@@ -98,7 +98,7 @@ export function CartPage() {
                               {/* Cảnh báo vượt ngưỡng sỉ -> Gợi ý chuyển sang luồng báo giá sỉ */}
                               {item.bulkQuoteThreshold && item.quantity >= item.bulkQuoteThreshold && (
                                 <div className={styles.bulkThresholdAlert}>
-                                  <Icon name="sparkle" size={13} /> Đặt {item.quantity} hộp đã đạt ngưỡng sỉ.
+                                  <Icon name="info" size={13} /> Đặt {item.quantity} hộp đã đạt ngưỡng sỉ.
                                   <Link to={routes.base.vendorRequest(group.vendorId)}>
                                     Gửi yêu cầu báo giá cho shop này →
                                   </Link>

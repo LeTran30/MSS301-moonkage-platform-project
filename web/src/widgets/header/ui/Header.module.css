@@ -241,6 +241,7 @@
   align-items: center;
   gap: var(--space-3);
   margin-left: auto;
+  flex: none;
 }
 .iconBtn {
   position: relative;
@@ -369,7 +370,8 @@
   place-items: center;
 }
 .userName {
-  max-width: 120px;
+  min-width: 0;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -756,6 +758,16 @@
   }
   .provinceGrid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile: chỉ còn biểu tượng đèn lồng, để nút menu không bị đẩy xuống hàng riêng. */
+@media (max-width: 480px) {
+  .logoText {
+    display: none;
+  }
+  .mainInner {
+    flex-wrap: wrap;
   }
 }
 
