@@ -11,6 +11,18 @@ spring:
   # RT-02: how long the container waits for the requests in flight
   lifecycle:
     timeout-per-shutdown-phase: 20s
+  # More than one thread for the scheduled tasks.
+  #
+  # Vì sao: mặc định của Spring Boot là **một** thread cho mọi `@Scheduled`.
+  # Ở đây có hai việc định kỳ cùng dùng thread đó: `RefundJob` (quét hoàn tiền, gọi
+  # ra VNPay — một hệ thống bên ngoài) và relay outbox (phát sự kiện của đơn).
+  # Nếu lần gọi VNPay treo, relay outbox cũng ngừng theo ⇒ sự kiện của đơn không
+  # đi nữa ⇒ đơn không bao giờ sang `PAID`. Với nhiều thread, một việc treo chỉ
+  # chặn chính nó, và việc còn lại vẫn chạy.
+  task:
+    scheduling:
+      pool:
+        size: 2
   cloud:
     openfeign:
       client:
@@ -124,6 +136,9 @@ vnpay:
   confirm-on-return: ${VNPAY_CONFIRM_ON_RETURN:false}
   # merchant_webapi: refunds (AC-49.3)
   api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}
+  # Bao lâu thì bỏ một lần gọi hoàn tiền. Không đặt được là "chờ mãi" — lần gọi
+  # nằm trong tác vụ định kỳ, nên nó phải có thời hạn (xem `VnpayRefundClient`).
+  refund-timeout: ${VNPAY_REFUND_TIMEOUT:10s}
 
 payment:
   # PENDING payments past expires_at become FAILED (payment.failed)
