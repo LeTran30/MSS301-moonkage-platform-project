@@ -40,7 +40,7 @@ test.describe('FLOW 6 — Xác minh danh tính NFC', () => {
     await gotoRoute(page, '/tai-khoan/xac-minh');
     await waitForAppReady(page);
 
-    await expect(page.getByRole('heading', { level: 2 })).toContainText(/Xác Thực Thẻ Căn Cước/i);
+    await expect(page.getByRole('heading', { level: 2 })).toContainText(/Xác thực căn cước/i);
 
     // Trạng thái định danh.
     await expect(page.getByText('CHƯA ĐỊNH DANH')).toBeVisible();
