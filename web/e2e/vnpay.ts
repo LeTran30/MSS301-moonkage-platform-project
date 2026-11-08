@@ -1,4 +1,17 @@
 import { createHmac } from 'node:crypto';
+// Nạp `.env` ở thư mục gốc vào `process.env` (biến sẵn có thắng).
+//
+// Vì sao cần: `VNPAY_HASH_SECRET` và `VNPAY_TMN_CODE` nằm trong `.env` của
+// stack backend ở thư mục gốc repo — không phải trong `web/.env` (file cục
+// bộ của developer, gitignore, CI checkout sạch nên không có). Nếu module này
+// không nạp `.env` thì `vnpaySecret()` trả `undefined` và mọi luồng có
+// thanh toán chết ngay.
+//
+// Lưu ý: import này **phải** ở đây, không chỉ trong `nfc.ts` — mỗi module
+// của test runner là một entrypoint riêng, nên module nào đọc `process.env`
+// thì module đó phải tự kéo `env.ts` vào. `env.ts` nạp `.env` một lần rồi
+// để các module khác đọc qua `process.env`.
+import './env';
 
 /**
  * Ký callback VNPay giống hệt `VnpaySigner` của payment-service.

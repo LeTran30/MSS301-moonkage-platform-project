@@ -1,4 +1,13 @@
 import { gatewayUrl } from './helpers';
+// Nạp `.env` ở thư mục gốc vào `process.env` (biến sẵn có thắng).
+//
+// Vì sao cần: `RABBITMQ_USERNAME` / `RABBITMQ_PASSWORD` (để bắt OTP qua
+// management API) nằm trong `.env` của stack backend ở thư mục gốc repo.
+//
+// Lưu ý: import này **phải** ở đây, không chỉ trong `nfc.ts` — mỗi module
+// của test runner là một entrypoint riêng, nên module nào đọc `process.env`
+// thì module đó phải tự kéo `env.ts` vào.
+import './env';
 
 /**
  * Tạo tài khoản **mới** cho test E2E và lấy mã OTP xác nhận email.

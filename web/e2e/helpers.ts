@@ -1,4 +1,16 @@
 import { expect, type Page } from '@playwright/test';
+// Nạp `.env` ở thư mục gốc vào `process.env` (biến sẵn có thắng).
+//
+// Vì sao cần: `SEED_PASSWORD` (mật khẩu của các tài khoản seed) nằm trong
+// `.env` của stack backend ở thư mục gốc repo. `web/.env` là file cục bộ của
+// developer (gitignore) nên CI checkout sạch không có — mà test lại đọc
+// `process.env.SEED_PASSWORD` ngay ở dòng dưới. Không nạp `.env` thì mọi test
+// đăng nhập dùng mật khẩu mặc định và đỏ khi seed đã đổi.
+//
+// Lưu ý: import này **phải** ở đây, không chỉ trong `nfc.ts` — mỗi module
+// của test runner là một entrypoint riêng, nên module nào đọc `process.env`
+// thì module đó phải tự kéo `env.ts` vào.
+import './env';
 
 /**
  * Tiện ích dùng chung cho các test E2E.
