@@ -1,6 +1,6 @@
 # Lưu trữ file: gộp file-service hay bỏ hẳn
 
-> **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/services/common-storage/classes/ObjectStorage.md](../services/common-storage/classes/ObjectStorage.md).
+> **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/archive/2026-11-08-class-docs/common-storage/ObjectStorage.md](2026-11-08-class-docs/common-storage/ObjectStorage.md).
 
 Ngày lập: 2026-10-19. Trạng thái: **đã chọn B (2026-10-20)**; xong B1–B3, B7, B9; B6 chưa có màn hình nào cần sửa; B4, B5 làm cùng FR; B8 xem mục 5.
 
@@ -132,7 +132,7 @@ Thứ tự đề xuất: B1 → B2 → B3 (catalog đang có dữ liệu ảnh t
 ## 5. Đã làm (2026-10-20)
 
 - Chốt mục 4: chọn **B**; tách 2 bucket `MINIO_PUBLIC_BUCKET` (ảnh sản phẩm) và `MINIO_PRIVATE_BUCKET` (còn lại và upload chưa xác nhận); làm ngay B1–B3, B7.
-- **B1** `api/common-storage`: `ObjectStorage.createPresignedUploadLink` (presigned PUT vào `tmp/` bucket riêng tư), `moveUploadedFile` (kiểm loại thật theo đuôi, kích thước, chuyển sang `<prefix>/<uuid>.<ext>`, xóa file vi phạm), `toPublicUrl`, `createPresignedDownloadUrl`, `delete`, `createMissingBuckets` (policy đọc công khai, lifecycle xóa `tmp/` sau 1 ngày). Cấu hình `storage.*`; loại và kích thước theo từng service (`FileLimit`). Pseudocode: `docs/services/common-storage/classes/ObjectStorage.md`, `docs/services/catalog/classes/ProductServiceImpl.md`.
+- **B1** `api/common-storage`: `ObjectStorage.createPresignedUploadLink` (presigned PUT vào `tmp/` bucket riêng tư), `moveUploadedFile` (kiểm loại thật theo đuôi, kích thước, chuyển sang `<prefix>/<uuid>.<ext>`, xóa file vi phạm), `toPublicUrl`, `createPresignedDownloadUrl`, `delete`, `createMissingBuckets` (policy đọc công khai, lifecycle xóa `tmp/` sau 1 ngày). Cấu hình `storage.*`; loại và kích thước theo từng service (`FileLimit`). Pseudocode: `docs/archive/2026-11-08-class-docs/common-storage/ObjectStorage.md`, `docs/services/catalog/classes/ProductServiceImpl.md`.
 - **B3** catalog: `POST /api/seller/products/images/uploads` {contentType, sizeBytes} → {tempKey, uploadUrl, contentType, expiresAt}. Request tạo/sửa sản phẩm đổi `imageUrls` → `imageKeys`; response có cả `imageKeys` và `imageUrls`. Ảnh bị bỏ khi sửa sẽ bị xóa sau khi commit; nếu rollback thì xóa ảnh vừa chuyển. Giới hạn ở `catalog.product-image` trong `application.yml`.
 - **B7** gỡ module, Dockerfile, container, Swagger của file-service; catalog-service phụ thuộc `minio` trong docker-compose.
 - **B8** làm tay trên mỗi máy dev: cột `product_images.file_url` đổi thành `object_key` và `ddl-auto: update` không đổi tên cột cũ (NOT NULL), nên chạy `ALTER TABLE product_images RENAME COLUMN file_url TO object_key;` trong `catalog_db` trước khi khởi động catalog mới (giữ khóa ngoại; URL cũ còn trong cột sẽ thành ảnh hỏng, chỉ là dữ liệu thử). Bucket cũ `ecommerce` không còn dùng, xóa trong console MinIO. Đã làm trên máy dev ngày 2026-10-20 (bảng đang rỗng).

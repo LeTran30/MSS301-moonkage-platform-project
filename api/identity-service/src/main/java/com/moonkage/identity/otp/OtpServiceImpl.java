@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * One-time codes of register and password reset, kept in memory per (purpose, email). Flow and invariants:
- * docs/services/identity/classes/OtpServiceImpl.md. Four limits protect them:
+ * docs/archive/2026-11-08-class-docs/identity/OtpServiceImpl.md. Four limits protect them:
  *
  * <ol>
  *   <li>a cooldown between two sends;

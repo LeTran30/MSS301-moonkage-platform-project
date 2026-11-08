@@ -3,7 +3,7 @@
  * Đối chiếu hằng đường dẫn viết tay trong `shared/api/gateway.ts` với hợp đồng
  * OpenAPI đã sinh (`shared/api/generated/openapi.json`).
  *
- * Vì sao cần (C-3 trong `docs/architecture/debt-implementation-plan.md`):
+ * Vì sao cần (C-3 trong `docs/work/plans/debt-implementation-plan.md`):
  * `gateway.ts` có 65 hằng đường dẫn do tay viết. Type sinh từ OpenAPI không
  * tự bắt được hằng viết sai — chỉ báo lỗi khi ai đó *dùng* nó. Script này
  * chủ động đi tìm hằng nào không tồn tại trong hợp đồng thật, nên lỗi lộ ra

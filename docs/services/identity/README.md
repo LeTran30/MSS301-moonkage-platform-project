@@ -4,7 +4,7 @@ Cách làm theo project Capstone (E-commerce): `Account` có vai (`Role` enum, c
 
 Mọi request đi qua gateway `http://localhost:8080`. Prefix của identity-service: `/identity-service/api/auth`.
 
-Kế hoạch đưa entity về hướng rich entity (entity tự giữ đúng thuộc tính của nó): [domain-model-plan.md](domain-model-plan.md).
+Kế hoạch đưa entity về hướng rich entity (entity tự giữ đúng thuộc tính của nó): [../../archive/2026-10-29-identity-domain-model-plan.md](../../archive/2026-10-29-identity-domain-model-plan.md).
 
 ## Dữ liệu
 
@@ -39,7 +39,7 @@ Mỗi package cấp một dưới `com.moonkage.identity` là một **component*
 | `security` | — | `JwtTokenProvider`, `JwtClaims`, `JwtFilter`, `AccountPrincipal`, `CurrentUser(Info)`, `CurrentUserArgumentResolver`, `SecurityConfig`, `SecurityConstant`, `SecurityProperties` | `account` |
 | `common` | — | `BaseEntity`, `DomainGuard`, `RequestText`, `TimeConstant`, `AppException`, `ErrorCode`, cấu hình (`ClockConfig`, `DotEnvConfig`, `LocaleConfig`, `OpenApiConfig`, `RabbitConfig`) | — |
 
-Mọi component đều dùng `common` và atom của `account.atom` (atom là thành phần cấu tạo nên entity, nằm cùng component với entity; `account` là component dưới cùng nên ai cũng dùng được). Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ComponentArchitectureTest` (entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [domain-model-plan.md](domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
+Mọi component đều dùng `common` và atom của `account.atom` (atom là thành phần cấu tạo nên entity, nằm cùng component với entity; `account` là component dưới cùng nên ai cũng dùng được). Giữa hai component chỉ có liên kết bằng id (`addresses.account_id`, `user_profiles.account_id`, `legal_profiles.account_id`), không có quan hệ JPA chéo; khóa ngoại vẫn nằm ở DB. Luật được kiểm bằng `ComponentArchitectureTest` (entity, repository, `*ServiceImpl` không public; controller chỉ ở `web`; không ai phụ thuộc `web`; entity không phụ thuộc Spring Security), `DomainModelArchitectureTest` (rich entity: không có đường ghi công khai vào entity, thời gian lấy từ bean `Clock`; xem [../../archive/2026-10-29-identity-domain-model-plan.md](../../archive/2026-10-29-identity-domain-model-plan.md#luật-máy-kiểm)) và `ArchitectureTest.NO_PACKAGE_CYCLES`.
 
 Endpoint nội bộ `/internal/**` nằm trong controller của chính tài nguyên đó (vd `POST /internal/accounts/check` ở `AccountController`), đánh `@Hidden`; không tách controller riêng cho đường nội bộ.
 

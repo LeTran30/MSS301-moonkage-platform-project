@@ -4,7 +4,7 @@
 
 Thư viện giữ **tên metric dùng chung** (BE-11b): cùng một tên metric ở hai service nghĩa là cùng một thứ, nên một dashboard hay một luật cảnh báo viết một lần là chạy được cho mọi service. Nó cũng giữ hàm che dữ liệu cá nhân trước khi ghi vào log (NFR-03, RT-03), và **che dữ liệu cá nhân trong span của trace** trước khi span rời khỏi service (BE-11).
 
-- Quyết định liên quan: NFR-03 (PII, [../../architecture/architecture-standards.md](../../architecture/architecture-standards.md) §4.7), RT-03 (log không chứa secret, [../../conventions/code-quality-rules.md](../../conventions/code-quality-rules.md)), BE-11 (tracing, [../../architecture/be-improve-progress-2026-11-04.md](../../architecture/be-improve-progress-2026-11-04.md)).
+- Quyết định liên quan: NFR-03 (PII, [../../architecture/architecture-standards.md](../../architecture/architecture-standards.md) §4.7), RT-03 (log không chứa secret, [../../conventions/code-quality-rules.md](../../conventions/code-quality-rules.md)), BE-11 (tracing, [../../architecture/be-improve-progress-2026-11-04.md](../../archive/2026-11-04-be-improve-progress.md)).
 
 ## Trách nhiệm
 
@@ -188,5 +188,5 @@ cd api
 ## Xem thêm
 
 - [../common-outbox/README.md](../common-outbox/README.md) — thư viện relay, nơi gauge outbox được đẩy giá trị và nơi trace context được mang qua hàng đợi.
-- [../../architecture/be-improve-progress-2026-11-04.md](../../architecture/be-improve-progress-2026-11-04.md) — tiến độ BE-11b và BE-11.
-- [../../architecture/debt-implementation-plan.md](../../architecture/debt-implementation-plan.md) — hạng mục C-2 (OpenTelemetry tracing).
+- [../../architecture/be-improve-progress-2026-11-04.md](../../archive/2026-11-04-be-improve-progress.md) — tiến độ BE-11b và BE-11.
+- [../../architecture/debt-implementation-plan.md](../../work/plans/debt-implementation-plan.md) — hạng mục C-2 (OpenTelemetry tracing).

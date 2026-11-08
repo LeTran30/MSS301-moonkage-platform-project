@@ -2,7 +2,7 @@
 
 > **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/services/vendor/README.md](../services/vendor/README.md).
 
-> **Trạng thái:** Đề xuất (2026-10-26). Đích là [api-db/vendor.md](../architecture/api-db/vendor.md); kế hoạch này chỉ chia việc và thứ tự. Khi hai bên lệch, `vendor.md` là bản đúng. Là phần vendor của giai đoạn 2 và 4.1 trong [api-db-alignment-plan.md](../architecture/api-db-alignment-plan.md).
+> **Trạng thái:** Đề xuất (2026-10-26). Đích là [api-db/vendor.md](../architecture/api-db/vendor.md); kế hoạch này chỉ chia việc và thứ tự. Khi hai bên lệch, `vendor.md` là bản đúng. Là phần vendor của giai đoạn 2 và 4.1 trong [2026-10-22-api-db-alignment-plan.md](2026-10-22-api-db-alignment-plan.md).
 
 ## Hiện trạng (nhánh `fix/vendor-entities-schema`)
 
@@ -176,7 +176,7 @@ Không làm VO cho trường không có luật riêng (`address`, `description`)
 - Thứ tự bằng nhau xếp theo khóa tên, để mọi lần đọc cùng thứ tự. `sortOrder` âm → `VENDOR_109`.
 - Không phát sự kiện khi đổi danh mục: catalog chỉ giữ mã, nhãn và thứ tự lấy từ endpoint này (L-19).
 - Làm luôn phần vỏ và nhân của hồ sơ nhận đặt hàng dời từ giai đoạn 3 (AC-35.2): bảng `order_profile_cake_attributes`, bỏ cột `cake_types` (migration `V2026_10_26_1100`). `PUT order-profile` nhận `crustCodes`, `fillingCodes`; tự sản xuất bắt buộc ít nhất một vỏ và một nhân. Mã không có hoặc đã ẩn → `VENDOR_022` tại trường; mã đã ẩn mà hồ sơ đang có thì giữ được (giống AC-33.6). Response và `VendorSnapshotEvent.orderProfile` mang `crustCodes`, `fillingCodes` theo thứ tự của danh mục.
-- Theo [correctness-review.md](../services/vendor/correctness-review.md): luật đủ điều khoản theo nguồn hàng chuyển từ service vào `OrderTerms` (constructor gọn, nhận `SupplySource`; `SupplySource.produces()`/`resells()`), kèm `leadTimeDays ≥ 0` (`VENDOR_110`). `packagingTypes`, `distributedBrands` có `@Size` (trước đây dài quá 255 ký tự ra 500).
+- Theo [2026-10-26-vendor-correctness-review.md](2026-10-26-vendor-correctness-review.md): luật đủ điều khoản theo nguồn hàng chuyển từ service vào `OrderTerms` (constructor gọn, nhận `SupplySource`; `SupplySource.produces()`/`resells()`), kèm `leadTimeDays ≥ 0` (`VENDOR_110`). `packagingTypes`, `distributedBrands` có `@Size` (trước đây dài quá 255 ký tự ra 500).
 - `CakeAttributeService.select(group, codes, linkedIds)` là chỗ dùng chung cho giai đoạn 5 (sản phẩm): cùng luật "mã đang hiện, hoặc đã ẩn nhưng đang gắn".
 
 - Entity `CakeAttribute`; danh mục ban đầu đã có trong migration `V2026_10_22_1500`.

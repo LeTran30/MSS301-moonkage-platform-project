@@ -1,11 +1,12 @@
 # Tài liệu Moonkage
 
-Đây là **cửa trước** của kho tài liệu dự án. Mọi tài liệu nằm trong `docs/`, xếp theo **loại**: mỗi loại trả lời một câu hỏi và có người sửa riêng.
+Đây là **cửa trước** của kho tài liệu dự án. Mọi tài liệu nằm trong `docs/`, xếp theo **việc người đọc cần làm** theo khung [Diátaxis](https://diataxis.fr) (học, làm, tra cứu, hiểu), cộng thêm một khu cho việc theo thời điểm và một khu lưu trữ.
 
 - Cần biết **hệ thống phải làm gì** → [product/](product/)
-- Cần biết **hệ thống được xây ra sao** → [architecture/](architecture/)
-- Cần biết **viết code đúng chuẩn** → [architecture/architecture-standards.md](architecture/architecture-standards.md) và [conventions/](conventions/)
+- Cần **hiểu** hệ thống được xây ra sao → [architecture/](architecture/)
+- Cần **tra** hợp đồng API, schema, quy ước code → [architecture/api-db/](architecture/api-db/README.md), [conventions/](conventions/)
 - Cần **làm** một việc cụ thể → [guides/](guides/)
+- Cần biết **đang làm gì, đã rà soát gì** → [work/](work/)
 
 ## Tôi muốn…
 
@@ -17,15 +18,17 @@
 | Biết hệ thống phải làm gì (FR, AC, BR) | [product/requirements.md](product/requirements.md) |
 | Biết hệ thống được xây ra sao (service, API, sự kiện, quyết định D-xx) | [architecture/software-design.md](architecture/software-design.md) |
 | Biết chuẩn kiến trúc bắt buộc phải tuân thủ (đặt tên, API, dữ liệu, security, test) | [architecture/architecture-standards.md](architecture/architecture-standards.md) |
-| Biết code hiện tại đang lệch chuẩn ở đâu và cần sửa gì | [architecture/codebase-conformance-review.md](architecture/codebase-conformance-review.md) |
+| Biết code hiện tại đang lệch chuẩn ở đâu và cần sửa gì | [work/reviews/codebase-conformance-review.md](work/reviews/codebase-conformance-review.md) |
 | Biết API công khai và schema của từng service | [architecture/api-db/README.md](architecture/api-db/README.md) |
 | Biết quyết định kiến trúc nào đã chốt, cái nào còn mở | [architecture/software-design.md](architecture/software-design.md) (mục 11) và [architecture/api-db/decisions.md](architecture/api-db/decisions.md) |
 | Biết hình dạng dữ liệu cần đối chiếu với API (mục L-xx) | [architecture/api-db/decisions.md](architecture/api-db/decisions.md) |
 | Viết code đúng quy ước (đặt tên, thứ tự, comment) | [conventions/coding-rules.md](conventions/coding-rules.md) |
 | Kiểm tra chất lượng code (lint, test, coverage) | [conventions/code-quality-rules.md](conventions/code-quality-rules.md) |
 | Mở branch, commit, PR, review | [../.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) |
-| Hiểu một service: luồng, API, class nặng | [services/](services/) |
-| Biết cần làm gì để tối ưu điểm theo bảng chấm đồ án | [architecture/grading-readiness-plan-2026-11-07.md](architecture/grading-readiness-plan-2026-11-07.md) |
+| Hiểu một service: luồng, API, cấu hình | [services/](services/) |
+| Biết luồng người dùng nào đã chạy được, kết quả E2E gần nhất | [work/reports/](work/reports/) |
+| Xem việc đang lên kế hoạch hoặc đang rà soát | [work/](work/) |
+| Biết cần làm gì để tối ưu điểm theo bảng chấm đồ án | [work/plans/grading-readiness-plan-2026-11-07.md](work/plans/grading-readiness-plan-2026-11-07.md) |
 | Gọi thử API | Swagger `http://localhost:8080/swagger-ui.html` · Postman [api/mk-auth.json](api/mk-auth.json) |
 
 ### Theo vai trò
@@ -35,129 +38,65 @@
 | **Người mới (mọi vai)** | [guides/getting-started.md](guides/getting-started.md) → [architecture/software-design.md](architecture/software-design.md) | [guides/database.md](guides/database.md) |
 | **Làm UI (frontend)** | [architecture/architecture-standards.md](architecture/architecture-standards.md) §6 (Frontend) | [conventions/coding-rules.md](conventions/coding-rules.md), [architecture/api-db/README.md](architecture/api-db/README.md) |
 | **Làm backend** | [architecture/architecture-standards.md](architecture/architecture-standards.md) §2–§5 | [architecture/api-db/README.md](architecture/api-db/README.md), [architecture/api-db/decisions.md](architecture/api-db/decisions.md) |
-| **Làm API / hợp đồng** | [architecture/api-db/README.md](architecture/api-db/README.md) | [architecture/api-db/decisions.md](architecture/api-db/decisions.md), [architecture/api-db-alignment-plan.md](architecture/api-db-alignment-plan.md) |
-| **Triển khai / vận hành** | [guides/getting-started.md](guides/getting-started.md) | [guides/database.md](guides/database.md), [architecture/be-improve-progress-2026-11-04.md](architecture/be-improve-progress-2026-11-04.md) |
-| **Việc còn nợ — làm tiếp** | [architecture/debt-implementation-plan.md](architecture/debt-implementation-plan.md) | [architecture/codebase-conformance-review.md](architecture/codebase-conformance-review.md) §8, [architecture/user-flow-readiness.md](architecture/user-flow-readiness.md) |
-| **Sự cố production** | [architecture/software-design.md](architecture/software-design.md) (luồng sự kiện, mục 4–7) | [architecture/user-flow-readiness.md](architecture/user-flow-readiness.md), [guides/git-workflow.md](guides/git-workflow.md) |
+| **Làm API / hợp đồng** | [architecture/api-db/README.md](architecture/api-db/README.md) | [architecture/api-db/decisions.md](architecture/api-db/decisions.md), [architecture/api-db/integration.md](architecture/api-db/integration.md) |
+| **Triển khai / vận hành** | [guides/getting-started.md](guides/getting-started.md) | [guides/database.md](guides/database.md), [architecture/software-design.md](architecture/software-design.md) §9 (Docker Compose) |
+| **Việc còn nợ — làm tiếp** | [work/plans/debt-implementation-plan.md](work/plans/debt-implementation-plan.md) | [work/reviews/codebase-conformance-review.md](work/reviews/codebase-conformance-review.md) §8, [work/reports/user-flow-readiness.md](work/reports/user-flow-readiness.md) |
+| **Sự cố production** | [architecture/software-design.md](architecture/software-design.md) (luồng sự kiện, mục 4–7) | [work/reports/user-flow-readiness.md](work/reports/user-flow-readiness.md), [guides/git-workflow.md](guides/git-workflow.md) |
 
 ## Cấu trúc
 
-| Thư mục | Trả lời câu hỏi | Ai sửa, khi nào |
-|---|---|---|
-| [product/](product/) | Xây **gì**? Nguồn sự thật: [context](product/context.md) → [user stories](product/user-stories.md) → [requirements](product/requirements.md) | Khi requirement đổi |
-| [architecture/](architecture/) | Xây **thế nào**? [software-design.md](architecture/software-design.md) | Khi có quyết định thiết kế |
-| [conventions/](conventions/) | Viết code **ra sao**? | Hiếm; cả nhóm đồng ý |
-| [guides/](guides/) | **Làm** việc X thế nào? | Khi quy trình đổi |
-| [services/](services/) | Service Y **chạy** ra sao? | **Cùng PR** với code của service đó |
-| [api/](api/) | Bộ request mẫu (Postman) | Khi API đổi |
-| [archive/](archive/) | Trước đây đã khảo sát, rà soát, quyết gì? | Không sửa nữa |
+Mỗi thư mục chứa đúng **một loại** tài liệu. Loại quyết định ai sửa, khi nào sửa, và tài liệu sống bao lâu.
 
-### Cây tài liệu
+| Thư mục | Loại (Diátaxis) | Trả lời câu hỏi | Ai sửa, khi nào |
+|---|---|---|---|
+| [product/](product/) | Reference nghiệp vụ | Xây **gì**? [context](product/context.md) → [user stories](product/user-stories.md) → [requirements](product/requirements.md); tài liệu IA ở [product/ia/](product/ia/) | Khi requirement đổi |
+| [architecture/](architecture/) | Explanation | Xây **thế nào**, vì sao? [software-design.md](architecture/software-design.md), [architecture-standards.md](architecture/architecture-standards.md), [web-package-architecture.md](architecture/web-package-architecture.md) | Khi có quyết định thiết kế |
+| [architecture/api-db/](architecture/api-db/README.md) | Reference kỹ thuật | Hợp đồng API, schema, sự kiện của từng service; sổ quyết định [decisions.md](architecture/api-db/decisions.md) | **Cùng PR** khi API hoặc schema đổi |
+| [conventions/](conventions/) | Reference kỹ thuật | Viết code **ra sao**? | Hiếm; cả nhóm đồng ý |
+| [guides/](guides/) | Tutorial + How-to | **Làm** việc X thế nào? | Khi quy trình đổi |
+| [services/](services/) | Reference + Explanation | Service Y **chạy** ra sao: luồng, API, cấu hình, lý do của schema (`db-review.md`) | **Cùng PR** với code của service đó |
+| [api/](api/) | Reference | Bộ request mẫu (Postman) | Khi API đổi |
+| [work/](work/) | Việc theo thời điểm | Đang **kế hoạch** gì ([plans/](work/plans/)), đã **rà soát** gì ([reviews/](work/reviews/)), **chạy thử** ra sao ([reports/](work/reports/))? | Người làm việc đó; xong thì chuyển vào `archive/` |
+| [archive/](archive/) | Lịch sử | Trước đây đã khảo sát, rà soát, quyết gì? | Không sửa nữa |
 
-```text
-docs/
-├── README.md                      ← bạn đang đọc: bản đồ tài liệu
-├── product/                       ← XÂY GÌ (nghiệp vụ, không nói về code)
-│   ├── context.md                 Bối cảnh nền tảng, phạm vi, đối tượng
-│   ├── user-stories.md            Câu chuyện người dùng theo vai
-│   ├── requirements.md            FR / AC / BR / Q-xx — nguồn sự thật nghiệp vụ
-│   └── midfi-content-spec.md      Nội dung màn hình bản mid-fi
-├── architecture/                  ← XÂY THẾ NÀO
-│   ├── software-design.md         Thiết kế hệ thống; quyết định D-01 → D-24 (mục 11)
-│   ├── architecture-standards.md  Chuẩn kiến trúc bắt buộc (BẮT BUỘC / KHUYẾN NGHỊ)
-│   ├── codebase-conformance-review.md  Rà soát code thực tế so với chuẩn; backlog P0/P1/P2
-│   ├── api-db-alignment-plan.md   Kế hoạch đưa code về khớp phác thảo API–DB
-│   ├── debt-implementation-plan.md Kế hoạch thực hiện các việc còn nợ sau 2026-11-06
-│   ├── grading-readiness-plan-2026-11-07.md Kế hoạch tối ưu điểm theo bảng chấm đồ án
-│   ├── be-improve-progress-2026-11-04.md  Tiến độ cải thiện backend
-│   ├── user-flow-readiness.md     Mức độ sẵn sàng của từng luồng người dùng
-│   └── api-db/                    Phác thảo API + database theo từng service
-│       ├── README.md              Quy ước chung, aggregate root, bảng định tuyến
-│       ├── identity.md            Account, hồ sơ, địa chỉ, NFC, OTP
-│       ├── vendor.md              Người bán, giấy tờ, duyệt, phí đăng ký, sản phẩm (ghi)
-│       ├── catalog.md             Bản đọc sản phẩm, đánh giá, phí liên tỉnh
-│       ├── quotation.md           Yêu cầu báo giá, báo giá, bản chép chấp nhận
-│       ├── order.md               Giỏ, checkout, đơn, maket, khiếu nại
-│       ├── payment.md             Thanh toán, hoàn tiền, sổ tiền, giải ngân
-│       ├── orchestrator.md        Thông báo, nhật ký
-│       ├── integration.md         Sự kiện và API nội bộ toàn hệ thống
-│       ├── decisions.md           Quyết định L-01 → L-19 (điểm lệch schema–code)
-│       └── db-review-proposals.md Rà soát database P-01 → P-09
-├── conventions/                   ← VIẾT CODE RA SAO
-│   ├── coding-rules.md            Đặt tên, thứ tự, comment, cấu trúc tài liệu class
-│   └── code-quality-rules.md      Lint, format, test, coverage, cổng chất lượng
-├── guides/                        ← LÀM VIỆC X THẾ NÀO
-│   ├── getting-started.md         Chạy dự án từ số 0
-│   ├── database.md                Flyway, seed, sổ ID, cách đổi schema an toàn
-│   └── git-workflow.md            Branch, commit, rebase, quy tắc đặt tên branch
-├── services/                      ← SERVICE NÀY CHẠY RA SAO (viết cùng PR với code)
-│   ├── identity/README.md         Tổng quan identity-service
-│   ├── identity/classes/          Tài liệu class nặng (Rules Phần 5)
-│   ├── catalog/README.md          Tổng quan catalog-service
-│   ├── catalog/classes/
-│   ├── quotation/README.md        Tổng quan quotation-service
-│   ├── quotation/classes/
-│   ├── vendor/README.md           Tổng quan vendor-service
-│   ├── order/README.md            Tổng quan order-service
-│   ├── payment/README.md          Tổng quan payment-service
-│   ├── orchestrator/README.md     Tổng quan orchestrator-service
-│   ├── common-storage/README.md    Tổng quan thư viện lưu trữ đối tượng
-│   ├── common-storage/classes/    Tài liệu thư viện lưu trữ đối tượng
-│   ├── common-api/README.md       Tổng quan thư viện hợp đồng HTTP
-│   ├── common-outbox/README.md    Tổng quan thư viện relay outbox
-│   ├── common-reference/README.md Tổng quan thư viện danh mục tham chiếu
-│   └── common-observability/README.md Tổng quan thư viện metric dùng chung
-├── scripts/                   ← SCRIPT kiểm tài liệu (chạy tay và trong CI)
-│   └── check-class-docs.mjs    Tài liệu class còn khớp với mã nguồn không
-├── api/                           ← BỘ REQUEST MẪU (Postman)
-│   ├── mk-auth.json
-│   └── mk-vendor.json
-└── archive/                       ← KHÔNG SỬA NỮA
-    └── 2026-11-06-session-notes.md  Chuẩn hoá kiến trúc & cổng chất lượng (PR #98)
-```
+README này không giữ cây thư mục chép tay, vì cây đó lệch ngay khi có file mới. Danh sách file xem trực tiếp trong từng thư mục.
 
 ### Services
 
-| Service | Tổng quan | Class nặng |
-|---|---|---|
-| identity | [services/identity/README.md](services/identity/README.md) | [classes/](services/identity/classes/) |
-| catalog | [services/catalog/README.md](services/catalog/README.md) | [classes/](services/catalog/classes/) |
-| quotation | [services/quotation/README.md](services/quotation/README.md) | [classes/](services/quotation/classes/) |
-| vendor | [services/vendor/README.md](services/vendor/README.md) | — |
-| order | [services/order/README.md](services/order/README.md) | — |
-| payment | [services/payment/README.md](services/payment/README.md) | — |
-| orchestrator | [services/orchestrator/README.md](services/orchestrator/README.md) | — |
-| common-storage (thư viện) | [services/common-storage/README.md](services/common-storage/README.md) | [classes/](services/common-storage/classes/) |
-| common-api (thư viện) | [services/common-api/README.md](services/common-api/README.md) | — |
-| common-outbox (thư viện) | [services/common-outbox/README.md](services/common-outbox/README.md) | — |
-| common-reference (thư viện) | [services/common-reference/README.md](services/common-reference/README.md) | — |
-| common-observability (thư viện) | [services/common-observability/README.md](services/common-observability/README.md) | — |
+| Service | Tổng quan |
+|---|---|
+| identity | [services/identity/README.md](services/identity/README.md) |
+| catalog | [services/catalog/README.md](services/catalog/README.md) |
+| quotation | [services/quotation/README.md](services/quotation/README.md) |
+| vendor | [services/vendor/README.md](services/vendor/README.md) |
+| order | [services/order/README.md](services/order/README.md) |
+| payment | [services/payment/README.md](services/payment/README.md) |
+| orchestrator | [services/orchestrator/README.md](services/orchestrator/README.md) |
+| common-storage (thư viện) | [services/common-storage/README.md](services/common-storage/README.md) |
+| common-api (thư viện) | [services/common-api/README.md](services/common-api/README.md) |
+| common-outbox (thư viện) | [services/common-outbox/README.md](services/common-outbox/README.md) |
+| common-reference (thư viện) | [services/common-reference/README.md](services/common-reference/README.md) |
+| common-observability (thư viện) | [services/common-observability/README.md](services/common-observability/README.md) |
 
-Bảy service nghiệp vụ (`identity`, `catalog`, `quotation`, `vendor`, `order`, `payment`, `orchestrator`) và năm thư viện dùng chung (`common-storage`, `common-api`, `common-outbox`, `common-reference`, `common-observability`) đều có README.
-
-**Cố ý không có README** — các module còn lại trong `api/pom.xml` không phải service nghiệp vụ:
+Bảy service nghiệp vụ và năm thư viện dùng chung đều có README. Các module còn lại trong `api/pom.xml` cố ý không có README:
 
 | Module | Vì sao không có README riêng |
 |---|---|
-| `api-gateway` | **Hạ tầng.** Chỉ định tuyến, kiểm token, rate limit — không có bounded context, không sở hữu dữ liệu, không có aggregate root. Xem [architecture/software-design.md](architecture/software-design.md) và [guides/getting-started.md](guides/getting-started.md) |
-| `discovery-server` | **Hạ tầng.** Chỉ đăng ký Eureka — không có bounded context, không sở hữu dữ liệu |
+| `api-gateway` | **Hạ tầng.** Chỉ định tuyến, kiểm token, rate limit. Không có bounded context, không sở hữu dữ liệu. Xem [architecture/software-design.md](architecture/software-design.md) và [guides/getting-started.md](guides/getting-started.md) |
+| `discovery-server` | **Hạ tầng.** Chỉ đăng ký Eureka. Không có bounded context, không sở hữu dữ liệu |
 | `config` | **Cấu hình build.** Bộ luật ArchUnit và Checkstyle dùng chung, không phải artifact Maven |
-
-`common-storage` được tài liệu hoá như một thư viện vì nó đã có tài liệu class sẵn ([services/common-storage/classes/](services/common-storage/classes/)) và là thư viện duy nhất có hợp đồng cấu hình (`storage.*`) mà từng service phải tự khai báo. Bốn thư viện `common-*` còn lại được tài liệu hoá theo cùng mẫu (P2-12, xong 2026-11-06): [common-api](services/common-api/README.md) (vỏ câu trả lời HTTP, mã lỗi framework, ranh giới lỗi dùng chung), [common-outbox](services/common-outbox/README.md) (relay phát sự kiện lên RabbitMQ), [common-reference](services/common-reference/README.md) (enum `Province`, A-18) và [common-observability](services/common-observability/README.md) (tên metric dùng chung, che PII).
 
 Service chưa có thư mục thì tạo `services/<tên>/README.md` khi viết tài liệu đầu tiên.
 
 ## Quy tắc
 
 1. **Một nội dung, một chỗ.** Chỗ khác chỉ đặt link, không chép lại.
-2. **Tên file `kebab-case.md`**, không dấu cách, không ghi phiên bản trong tên (lịch sử nằm trong git và bảng thay đổi của file). Tài liệu sinh ra từ mã nguồn dùng `PascalCase.md` (ví dụ `docs/services/identity/classes/AuthServiceImpl.md`).
+2. **Tên file `kebab-case.md`**, không dấu cách, không ghi ngày hay phiên bản trong tên (lịch sử nằm trong git và bảng thay đổi của file). Ngoại lệ: file trong `work/` và `archive/` được ghi ngày, vì chúng gắn với một thời điểm.
 3. **Link tương đối** (`../guides/database.md`), không dùng `file:///` hay đường dẫn máy cá nhân. CI kiểm tra link hỏng (`.github/workflows/docs-links.yml`).
-4. **Tài liệu class nặng** (Rules Phần 5) đặt tại `services/<service>/classes/<ClassName>.md`.
-5. **Quyết định kiến trúc = ADR.** Mọi quyết định có hậu quả lâu dài (đổi ranh giới service, đổi hợp đồng API, đổi chiến lược dữ liệu) phải có một mã `D-xx` với Context / Decision / Consequences / Status. ADR đã chốt không sửa nội dung — sai thì thêm ADR mới thay vì sửa đè.
-6. **Kế hoạch và bản rà soát** ghi trạng thái ngay dưới tiêu đề (`Đề xuất` · `Đang làm` · `Xong <ngày>`). Xong rồi thì chuyển vào `archive/` với tên `YYYY-MM-DD-<việc>.md` và thêm dòng **Lưu trữ** trỏ tới tài liệu hiện hành.
+4. **Đặt tài liệu theo loại, không theo người viết hay theo module code.** Kế hoạch, rà soát, báo cáo chạy thử của một service vẫn vào `work/`, không vào `services/<service>/`. Tài liệu frontend cũng nằm trong `docs/`, không tạo lại `web/doc/`.
+5. **Quyết định kiến trúc = ADR.** Mọi quyết định có hậu quả lâu dài (đổi ranh giới service, đổi hợp đồng API, đổi chiến lược dữ liệu) phải có một mã `D-xx` với Context / Decision / Consequences / Status. ADR đã chốt không sửa nội dung: sai thì thêm ADR mới thay vì sửa đè. Mã `D-xx` chỉ dùng cho ADR; mục trong kế hoạch đặt mã khác.
+6. **Vòng đời của `work/`.** Mỗi file ghi trạng thái ngay dưới tiêu đề (`Đề xuất` · `Đang làm` · `Xong <ngày>`). Xong rồi thì chuyển vào `archive/` với tên `YYYY-MM-DD-<việc>.md` và thêm dòng **Lưu trữ** trỏ tới tài liệu hiện hành.
 7. **Ghi chú sau buổi làm việc:** đưa vào issue/PR, hoặc `archive/YYYY-MM-DD-session-notes.md`. Không tạo thư mục ghi chú riêng.
-8. **Phân biệt sự thật với đề xuất.** Tài liệu mô tả trạng thái code phải trích dẫn đường dẫn cụ thể; đề xuất phải nằm ở mục riêng và ghi rõ mức độ chắc chắn. Cấu trúc chuẩn ở [architecture/architecture-standards.md](architecture/architecture-standards.md) §9.
-9. **Tài liệu class nặng phải sống cùng class.** Mỗi file `services/<service>/classes/<ClassName>.md` mô tả **một class Java cụ thể** (`api/<module>/src/main/java/.../<ClassName>.java`).
-   - **Khi nào phải cập nhật:** trong **cùng PR** với bất kỳ thay đổi nào sau đây chạm vào class đó: đổi tên class, đổi package, đổi tên/xoá method, đổi luật bất biến, đổi mã lỗi nghiệp vụ, đổi thứ tự trạng thái. Nếu class không còn đáng viết tài liệu thì **xoá file** `classes/<ClassName>.md` trong cùng PR.
-   - **Ai giữ:** tác giả của PR đó (người sửa code class đó). Người giữ tài liệu chỉ ghi lại danh sách class nặng trong [architecture/architecture-standards.md](architecture/architecture-standards.md) §7.6.
-   - **Kiểm tra không cũ:** chạy `node docs/scripts/check-class-docs.mjs` — script đối chiếu **tên file** `classes/<ClassName>.md` với file `<ClassName>.java` trong module Maven tương ứng (`docs/services/<service>` ↔ `api/<service>-service`; `common-storage` giữ nguyên tên). Script chạy trong CI ở `.github/workflows/docs-links.yml`, bước **Check class docs match source**. Script chỉ bắt được class **đã đổi tên hoặc bị xoá**; nội dung tài liệu có còn đúng với hành vi mới thì người sửa PR phải tự đọc lại — đó là lý do quy tắc nằm trong quy trình review, không chỉ ở CI.
+8. **Phân biệt sự thật với đề xuất.** Tài liệu mô tả trạng thái code phải trích dẫn đường dẫn cụ thể; đề xuất phải nằm ở mục riêng và ghi rõ mức độ chắc chắn. Cấu trúc chuẩn ở [architecture/architecture-standards.md](architecture/architecture-standards.md) §8.
+9. **Không viết tài liệu theo class** (ngừng từ 2026-11-08). Luồng nghiệp vụ ghi ở `services/<service>/README.md`; 20 file cũ nằm ở [archive/2026-11-08-class-docs/](archive/2026-11-08-class-docs/README.md).
+10. **Không đặt file chứa dữ liệu cá nhân trong `docs/`.** `docs/Template.xlsx` và `docs/assets/` đã được thêm vào `.gitignore`.

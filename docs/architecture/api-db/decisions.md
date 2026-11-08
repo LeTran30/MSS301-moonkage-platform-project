@@ -120,7 +120,7 @@ Chi tiết và SQL ở [db-review-proposals.md](db-review-proposals.md). Tất c
 
 ## Quyết định kiến trúc D-25 → D-30 (rút ra 2026-11-05; D-25 → D-29 đã chốt 2026-11-06, D-30 còn "Đề xuất")
 
-Những quyết định dưới đây được rút ra từ rà soát code thực tế ngày 2026-11-05 (xem [../codebase-conformance-review.md](../codebase-conformance-review.md)). Mỗi mục dùng đúng bốn phần: Context / Decision / Consequences / Status. Số mã tiếp tục từ D-24 của [software-design.md](../software-design.md).
+Những quyết định dưới đây được rút ra từ rà soát code thực tế ngày 2026-11-05 (xem [../codebase-conformance-review.md](../../work/reviews/codebase-conformance-review.md)). Mỗi mục dùng đúng bốn phần: Context / Decision / Consequences / Status. Số mã tiếp tục từ D-24 của [software-design.md](../software-design.md).
 
 ### D-25: Danh sách origin CORS và ranh giới tin cậy ở Gateway
 
@@ -276,7 +276,7 @@ Phía web, `web/src/shared/api/gateway.ts` đang trộn **cả hai** kiểu đư
 
 **Status.** Đã chốt (2026-11-07). Thay cho D-24 đang "Mở".
 
-> **Cập nhật 2026-11-06 — phần đường dẫn đã xong, phần tắt locator còn mở.** Đường dẫn canonical theo aggregate root đã khai báo cho **cả 7 service** trong `api/api-gateway/src/main/resources/application.yml` (khai báo cả dạng gốc `/api/x` lẫn dạng con `/api/x/**`); 65 hằng đường dẫn cũ trong `web/src/shared/api/gateway.ts` đã chuyển sang `/api/...`; và `LegacyPathRedirectFilter` đã trả **308** cho dạng cũ của cả 7 service (giữ nguyên method và query string). Chi tiết: [../debt-implementation-plan.md](../debt-implementation-plan.md) §1 (A-1, A-2, A-3).
+> **Cập nhật 2026-11-06 — phần đường dẫn đã xong, phần tắt locator còn mở.** Đường dẫn canonical theo aggregate root đã khai báo cho **cả 7 service** trong `api/api-gateway/src/main/resources/application.yml` (khai báo cả dạng gốc `/api/x` lẫn dạng con `/api/x/**`); 65 hằng đường dẫn cũ trong `web/src/shared/api/gateway.ts` đã chuyển sang `/api/...`; và `LegacyPathRedirectFilter` đã trả **308** cho dạng cũ của cả 7 service (giữ nguyên method và query string). Chi tiết: [../debt-implementation-plan.md](../../work/plans/debt-implementation-plan.md) §1 (A-1, A-2, A-3).
 >
 > **Cập nhật 2026-11-07 — D-30 đã chốt, locator đã tắt.** `spring.cloud.gateway.discovery.locator.enabled: false` và toàn bộ dạng cũ đã xoá khỏi `SecurityConfig.java`. App mobile (Flutter, repo riêng `C:\Workspace\MSS301\moonkage-mobile`) **đã chuyển** sang `/api/...` — commit `d4c78aa`, 94/94 test Flutter pass, `flutter analyze` sạch.
 >
@@ -297,7 +297,7 @@ Phía web, `web/src/shared/api/gateway.ts` đang trộn **cả hai** kiểu đư
 |---|---|
 | [../software-design.md](../software-design.md) | Thiết kế hệ thống, quyết định D-01 → D-24 (mục 11) |
 | [../architecture-standards.md](../architecture-standards.md) | Chuẩn kiến trúc mà các quyết định này cụ thể hoá |
-| [../codebase-conformance-review.md](../codebase-conformance-review.md) | Rà soát code thực tế, backlog P0/P1/P2 |
+| [../codebase-conformance-review.md](../../work/reviews/codebase-conformance-review.md) | Rà soát code thực tế, backlog P0/P1/P2 |
 | [../../guides/database.md](../../guides/database.md) | Sổ ID, quy tắc Flyway và seed |
 | [README.md](README.md) | Bảng mục lục API–DB theo service |
 

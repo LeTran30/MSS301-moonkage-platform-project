@@ -4,7 +4,7 @@
 
 ## 0. Trạng thái triển khai, 02/11/2026
 
-Phase D đã nối adapter theo tài liệu này (xem [implementation-plan](implementation-plan.md#phase-d-02112026-nối-adapter)); gate D mở ngày 02/11/2026. Adapter đọc đúng payload vendor-service và order-service đang phát. Chỗ khác với đề xuất bên dưới:
+Phase D đã nối adapter theo tài liệu này (xem [implementation-plan](../../work/plans/catalog-implementation-plan.md#phase-d-02112026-nối-adapter)); gate D mở ngày 02/11/2026. Adapter đọc đúng payload vendor-service và order-service đang phát. Chỗ khác với đề xuất bên dưới:
 
 - **review.created** đã theo envelope v1 (§7) từ 02/11/2026: order-service phát qua `OutboxService.enqueueState` với aggregateType REVIEW, aggregateId = reviewId, sourceVersion 1; `data` có thêm `orderId`, catalog bỏ qua. Trước ngày này sự kiện nằm ở gốc JSON; bản cũ còn trong inbox sẽ giữ pending vì thiếu schemaVersion.
 - product.upserted có thêm `resold`; catalog bỏ qua (không có cột).
@@ -199,7 +199,7 @@ Phải duyệt các điểm sau trước full rebuild:
 | Public resolver nhãn hidden | Vendor resolver theo group/code, không public picker hidden | ĐÃ DUYỆT |
 | Replay feed/checkpoint/target generation | Full snapshot manifest + order reviews, inbox retry; generation riêng nếu full rebuild | ĐÃ DUYỆT |
 | Endpoint sản phẩm vendor thay writer legacy | Owner triển khai và nghiệm thu trước xóa writer catalog | CHƯA CÓ endpoint thay thế |
-| Audit phí liên tỉnh | [Handoff orchestrator](orchestrator-handoff.md): bind/adapter/processed_events atomic | CHƯA CÓ adapter E2E |
+| Audit phí liên tỉnh | [Handoff orchestrator](../../archive/2026-10-27-catalog-orchestrator-handoff.md): bind/adapter/processed_events atomic | CHƯA CÓ adapter E2E |
 
 ## 11. Tiêu chí nghiệm thu sau duyệt (Phase D, chưa thực hiện ở C)
 

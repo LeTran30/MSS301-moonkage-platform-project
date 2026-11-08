@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
  * How a person gets into the platform: login identifiers, password, role (FR-01, FR-02; docs/services/identity/
  * db-identify.md). Package-private: other components see an {@link AccountView} through {@link AccountService}.
  *
- * <p>Keeps its own fields right (docs/services/identity/domain-model-plan.md, Account): created only by
+ * <p>Keeps its own fields right (docs/archive/2026-10-29-identity-domain-model-plan.md, Account): created only by
  * {@link #registerMember}, changed only by the named methods below. Email, phone number and role never change; no
  * code path creates an ADMIN (admins come from the seed).
  */
