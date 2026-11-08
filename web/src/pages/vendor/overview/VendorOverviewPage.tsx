@@ -92,7 +92,7 @@ export function VendorOverviewPage() {
           <div className={styles.preLaunchIcon}>
             <Icon name="store" size={40} />
           </div>
-          <h2>Hồ Sơ Cửa Hàng &amp; Phí Mở Bán</h2>
+          <h2>Hồ sơ cửa hàng và phí mở bán</h2>
           <p>
             Trạng thái xét duyệt hồ sơ:{' '}
             {/* Trạng thái đọc từ máy chủ; khi chưa tải xong thì không hiện một
@@ -152,7 +152,6 @@ export function VendorOverviewPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <div className={styles.eyebrow}>KÊNH BÁN HÀNG · TỔNG QUAN</div>
           <h1 className={styles.title}>
             {vendor?.businessName || user.vendorName || 'Gian hàng của tôi'}
           </h1>
@@ -171,8 +170,7 @@ export function VendorOverviewPage() {
       {/* Khối "Việc cần làm" */}
       <Card padding="md" tone="gold" className={styles.actionCard}>
         <div className={styles.actionCardHeader}>
-          <Icon name="sparkle" size={18} />
-          <h3>Khối &quot;Việc cần làm hôm nay&quot;</h3>
+          <h3>Việc cần làm hôm nay</h3>
         </div>
         <div className={styles.actionList}>
           {pendingOrders.length > 0 && (

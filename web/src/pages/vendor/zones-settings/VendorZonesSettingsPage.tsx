@@ -75,7 +75,7 @@ export function VendorZonesSettingsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Cấu Hình Vùng Giao Hàng & Phí Vận Chuyển</h1>
+          <h1 className={styles.title}>Vùng giao hàng và phí vận chuyển</h1>
           <p className={styles.subtitle}>
             Chọn các tỉnh xưởng giao hàng đến và đặt phí giao nội thành
           </p>

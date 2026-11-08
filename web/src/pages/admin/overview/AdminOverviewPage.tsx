@@ -28,13 +28,13 @@ export function AdminOverviewPage() {
                 <h1 className={styles.title}>Bàn làm việc Quản trị viên</h1>
                 <p className={styles.desc}>
                   Giám sát vận hành toàn sàn Moonkage: duyệt người bán, phân xử khiếu nại, giữ tiền
-                  ký quỹ Escrow và cấu hình tham số sàn.
+                  ký quỹ và cấu hình tham số sàn.
                 </p>
               </div>
               <div className={styles.systemStatus}>
                 <span className={styles.pulseDot} />
                 <span>
-                  Hệ thống Escrow &amp; Cổng VNPAY: <strong>Hoạt động bình thường</strong>
+                  Ký quỹ và cổng VNPay: <strong>Hoạt động bình thường</strong>
                 </span>
               </div>
             </div>
@@ -86,7 +86,7 @@ export function AdminOverviewPage() {
                   <Badge tone="neutral">Duyệt danh mục</Badge>
                 </div>
                 <p className={styles.queueDesc}>
-                  Kiểm tra thông tin nguyên liệu, phân loại Vỏ &amp; Nhân theo quy chuẩn.
+                  Kiểm tra thông tin nguyên liệu, phân loại vỏ và nhân theo quy chuẩn.
                 </p>
                 <div className={styles.queueAction}>
                   <Button
@@ -124,13 +124,13 @@ export function AdminOverviewPage() {
             {/* Financial Escrow Snapshot */}
             <Card className={styles.financeCard}>
               <CardHeader
-                title="Tổng quan dòng tiền ký quỹ Escrow toàn sàn"
+                title="Dòng tiền ký quỹ toàn sàn"
                 description="Tất cả các dòng tiền thanh toán được tạm giữ bởi Moonkage để đảm bảo an toàn giao dịch"
               />
 
               <div className={styles.financeMetrics}>
                 <div className={styles.metric}>
-                  <span className={styles.metricLabel}>Tổng tiền đang giữ trong Escrow</span>
+                  <span className={styles.metricLabel}>Tổng tiền đang giữ</span>
                   <strong className={styles.metricVal}>{formatCurrency(data.escrowTotal)}</strong>
                   <span className={styles.metricSub}>Bao gồm cọc sản xuất &amp; đơn bán lẻ</span>
                 </div>
@@ -164,7 +164,7 @@ export function AdminOverviewPage() {
               <div>
                 <h4>Cấu hình quy tắc &amp; danh mục sàn</h4>
                 <p>
-                  Điều chỉnh biểu phí ship liên tỉnh, phí mở bán và danh mục Vỏ &amp; Nhân bánh.
+                  Điều chỉnh biểu phí ship liên tỉnh, phí mở bán và danh mục vỏ và nhân bánh.
                 </p>
               </div>
               <Button variant="ghost" onClick={() => navigate(routes.admin.config)}>

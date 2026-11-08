@@ -25,7 +25,7 @@ export function DisputeCaseCard({ dispute, onResolve }: DisputeCaseCardProps) {
           <Badge tone="red">Đang chờ Admin phân xử</Badge>
         </div>
         <div className={styles.escrowBox}>
-          <span className={styles.escrowLabel}>Tiền đang giữ (Escrow):</span>
+          <span className={styles.escrowLabel}>Tiền đang giữ:</span>
           <strong className={styles.escrowVal}>
             {formatCurrency(dispute.escrowHoldingAmount)}
           </strong>

@@ -49,9 +49,9 @@ export function AdminPayoutsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Lịch Sử Chuyển Tiền &amp; Ủy Nhiệm Chi</h1>
+          <h1 className={styles.title}>Lịch sử chuyển tiền và ủy nhiệm chi</h1>
           <p className={styles.subtitle}>
-            Nhật ký giao dịch chuyển tiền tự động từ tài khoản Escrow sang tài khoản ngân hàng của
+            Nhật ký giao dịch chuyển tiền tự động từ tài khoản ký quỹ sang tài khoản ngân hàng của
             xưởng
           </p>
         </div>

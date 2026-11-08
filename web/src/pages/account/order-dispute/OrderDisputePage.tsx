@@ -104,7 +104,7 @@ export function OrderDisputePage() {
       });
 
       toast.success(
-        'Khiếu nại đã được gửi! Hệ thống đã khóa tiền tạm giữ Escrow và thông báo cho người bán + quản trị.',
+        'Khiếu nại đã được gửi! Hệ thống đã khóa tiền tạm giữ và thông báo cho người bán + quản trị.',
       );
       navigate(routes.account.order(order.id));
     });
@@ -128,8 +128,7 @@ export function OrderDisputePage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>KHIẾU NẠI ĐƠN HÀNG</div>
-        <h2 className={styles.title}>Báo Vấn Đề Với Đơn #{orderCode(order.id)}</h2>
+        <h2 className={styles.title}>Báo vấn đề với đơn #{orderCode(order.id)}</h2>
         <p className={styles.lead}>
           Hạn khiếu nại còn lại:{' '}
           <strong>{order.disputeDeadline ? '3 ngày nội thành' : 'Hợp lệ'}</strong>. Tiền sẽ được giữ
@@ -146,7 +145,7 @@ export function OrderDisputePage() {
               <h3>Trạng thái: {statusLabel[existingDispute.status]}</h3>
             </div>
             <Badge tone={existingDispute.status === 'OPEN' ? 'amber' : 'green'}>
-              {existingDispute.status}
+              {statusLabel[existingDispute.status]}
             </Badge>
           </div>
 

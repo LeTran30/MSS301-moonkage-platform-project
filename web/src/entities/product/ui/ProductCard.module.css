@@ -82,6 +82,7 @@
   font-weight: var(--weight-semibold);
   line-height: 1.4;
   margin: 0;
+  text-wrap: pretty;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -115,6 +116,7 @@
 }
 .sold {
   color: var(--color-text-subtle);
+  white-space: nowrap;
 }
 .actions {
   margin-top: var(--space-3);

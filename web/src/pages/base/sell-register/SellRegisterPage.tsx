@@ -155,8 +155,7 @@ export function SellRegisterPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>ĐĂNG KÝ BÁN HÀNG TRÊN MOONKAGE</div>
-        <h1 className={styles.title}>Khai Hồ Sơ Pháp Lý Đơn Vị Kinh Doanh</h1>
+        <h1 className={styles.title}>Khai hồ sơ pháp lý đơn vị kinh doanh</h1>
         <p className={styles.lead}>
           Hồ sơ chỉ áp dụng cho Hộ kinh doanh cá thể và Doanh nghiệp tư nhân. Doanh nghiệp lớn vui
           lòng liên hệ đội vận hành sàn.

@@ -117,7 +117,7 @@ export function VendorRequestsPage() {
           </p>
         </div>
         <div className={styles.badgeHint}>
-          <Icon name="sparkle" size={16} /> Cơ hội doanh số:{' '}
+          <Icon name="package" size={16} /> Cơ hội doanh số:{' '}
           <strong>
             {openRequests.reduce((sum, r) => sum + r.quantity, 0).toLocaleString()} hộp bánh
           </strong>

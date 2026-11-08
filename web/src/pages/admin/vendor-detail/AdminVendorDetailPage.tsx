@@ -83,7 +83,7 @@ export function AdminVendorDetailPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Thẩm Định Xưởng Bánh: {vendor?.businessName ?? vendorId}</h1>
+          <h1 className={styles.title}>Thẩm định xưởng bánh: {vendor?.businessName ?? vendorId}</h1>
           <p className={styles.subtitle}>
             Mã định danh: {vendor?.id ?? vendorId}
             {vendor?.provinceCode ? ` · Địa bàn: ${provinceNameOf(vendor.provinceCode)}` : ''}
@@ -125,7 +125,7 @@ export function AdminVendorDetailPage() {
             <>
             <div className={styles.gridTwo}>
               <Card padding="lg" className={styles.cardBody}>
-                <h2 className={styles.sectionTitle}>Hồ Sơ Năng Lực & Nguồn Gốc</h2>
+                <h2 className={styles.sectionTitle}>Hồ sơ năng lực và nguồn gốc</h2>
                 <div className={styles.keyValueList}>
                   <div className={styles.keyValueRow}>
                     <span className={styles.keyValueLabel}>Đại diện pháp luật:</span>
@@ -174,7 +174,7 @@ export function AdminVendorDetailPage() {
               </Card>
 
               <Card padding="lg" className={styles.cardBody}>
-                <h2 className={styles.sectionTitle}>Chứng Nhận & Tài Liệu Hồ Sơ</h2>
+                <h2 className={styles.sectionTitle}>Chứng nhận và tài liệu hồ sơ</h2>
                 {detail.documents && detail.documents.length > 0 ? (
                   <div className={styles.certificateList}>
                     {detail.documents.map((doc) => (

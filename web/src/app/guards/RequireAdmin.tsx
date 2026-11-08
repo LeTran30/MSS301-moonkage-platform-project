@@ -23,11 +23,10 @@ export function RequireAdmin({ children }: Props) {
           <div className={styles.forbiddenIcon}>
             <Icon name="shield" size={48} />
           </div>
-          <h2 className={styles.forbiddenTitle}>Từ chối quyền truy cập (403)</h2>
+          <h2 className={styles.forbiddenTitle}>Bạn không có quyền vào khu vực này</h2>
           <p className={styles.forbiddenText}>
-            Khu vực Quản trị sàn chỉ dành cho người dùng có vai trò{' '}
-            <strong>Quản trị viên (ADMIN)</strong>. Tài khoản hiện tại: <strong>{user.name}</strong>{' '}
-            ({user.role}).
+            Khu vực quản trị chỉ dành cho quản trị viên của sàn. Bạn đang đăng nhập bằng tài khoản{' '}
+            <strong>{user.name}</strong>.
           </p>
           <div className={styles.forbiddenActions}>
             <Button variant="secondary" size="md" onClick={() => (window.location.href = '/')}>

@@ -194,7 +194,7 @@ export function VendorProductFormPage() {
 
       <div className={styles.header}>
         <h1 className={styles.title}>
-          {isEdit ? `Cập nhật: ${existing?.name ?? ''}` : 'Đăng Sản Phẩm Bánh Trung Thu Mới'}
+          {isEdit ? `Cập nhật: ${existing?.name ?? ''}` : 'Đăng sản phẩm mới'}
         </h1>
       </div>
 

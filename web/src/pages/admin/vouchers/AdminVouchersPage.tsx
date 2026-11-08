@@ -22,7 +22,7 @@ export function AdminVouchersPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản Lý Voucher Hệ Thống</h1>
+          <h1 className={styles.title}>Quản lý voucher hệ thống</h1>
           <p className={styles.subtitle}>
             Tạo mã giảm giá cho đơn mua lẻ: số tiền giảm cố định và thời hạn sử dụng.
           </p>

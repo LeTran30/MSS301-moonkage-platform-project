@@ -21,7 +21,6 @@ export function OrdersListPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>ĐƠN HÀNG CỦA TÔI</div>
         <h2 className={styles.title}>Danh sách đơn hàng</h2>
         <p className={styles.lead}>
           Theo dõi tiến độ giao bánh, duyệt bản thiết kế in logo và yêu cầu hỗ trợ khiếu nại.
@@ -192,7 +191,7 @@ export function OrdersListPage() {
 
               <div className={styles.orderFooter}>
                 <div className={styles.bulkNotice}>
-                  <Icon name="sparkle" size={16} />
+                  <Icon name="palette" size={16} />
                   <span>
                     Xưởng đã tải lên maket hộp. Vui lòng xem và duyệt để bắt đầu đúc bánh.
                   </span>

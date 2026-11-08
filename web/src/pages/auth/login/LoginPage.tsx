@@ -45,7 +45,7 @@ export function LoginPage() {
     <AuthShell
       icon="cake"
       title="Đăng nhập Moonkage"
-      subtitle="Sàn thương mại điện tử chuyên biệt Bánh Trung Thu"
+      subtitle="Sàn thương mại điện tử chuyên về bánh trung thu"
     >
       <form onSubmit={handleLogin} className={authShellStyles.form} noValidate>
         <div className={authShellStyles.formGroup}>

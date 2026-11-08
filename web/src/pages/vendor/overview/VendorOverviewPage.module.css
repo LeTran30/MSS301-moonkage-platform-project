@@ -13,12 +13,6 @@
   gap: var(--space-2);
   flex-wrap: wrap;
 }
-.eyebrow {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  color: var(--color-zone);
-}
 .title {
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);

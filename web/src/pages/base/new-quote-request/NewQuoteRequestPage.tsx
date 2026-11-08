@@ -128,8 +128,7 @@ export function NewQuoteRequestPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>TẠO YÊU CẦU BÁO GIÁ MỞ</div>
-        <h1 className={styles.title}>Gửi Yêu Cầu Đặt Bánh Cho Nhiều Xưởng</h1>
+        <h1 className={styles.title}>Gửi yêu cầu đặt bánh cho nhiều xưởng</h1>
         <p className={styles.lead}>
           Yêu cầu sẽ được gửi tới các xưởng bánh và tiệm bánh đạt chuẩn trên hệ thống để gửi bảng
           báo giá cạnh tranh.

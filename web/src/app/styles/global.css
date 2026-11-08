@@ -8,15 +8,12 @@ body {
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--color-text);
-  background: var(--gradient-paper), var(--color-bg);
-  background-attachment: fixed;
+  background: var(--color-bg);
 }
 /*
  * Thang tiêu đề thống nhất.
  *
- * Mỗi cấp tiêu đề dùng **sans** để không trộn hai hệ chữ song song; serif
- * (Playfair) chỉ dành cho phần thị giác nổi bật — tiêu đề hero, tên thương
- * hiệu · nền mỗi trang chỉ có **một** điểm nhấn serif.
+ * Toàn bộ giao diện dùng một họ chữ (Be Vietnam Pro); thứ bậc đến từ cỡ và độ đậm.
  *
  * Mỗi cấp đều = chữ chữ body (16px) và bậc tiêu đề luôn lớn hơn nội dung.
  */

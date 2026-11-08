@@ -143,8 +143,7 @@ export function NfcVerifyPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>XÁC MINH DANH TÍNH</div>
-        <h2 className={styles.title}>Xác Thực Thẻ Căn Cước Công Dân Gắn Chip (NFC)</h2>
+        <h2 className={styles.title}>Xác thực căn cước công dân gắn chip (NFC)</h2>
         <p className={styles.lead}>
           Đảm bảo tính pháp lý khi giao dịch hợp đồng số lượng lớn hoặc đăng ký trở thành người bán
           trên Moonkage.

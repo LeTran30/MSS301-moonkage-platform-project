@@ -22,7 +22,7 @@ interface DisputeResolutionModalProps {
 /**
  * Ra phán quyết tranh chấp (Q5.1, Flow 5, FR-49).
  *
- * Quy tắc AC-49.3: số tiền hoàn không được vượt quá số tiền Escrow đang giữ.
+ * Quy tắc AC-49.3: số tiền hoàn không được vượt quá số tiền đang giữ.
  */
 export function DisputeResolutionModal({
   open,
@@ -56,7 +56,7 @@ export function DisputeResolutionModal({
     >
       <div className={styles.modalBody}>
         <div className={styles.escrowSummary}>
-          <span>Số tiền Moonkage đang giữ trong Escrow:</span>
+          <span>Số tiền Moonkage đang giữ:</span>
           <strong>{formatCurrency(maxRefundAllowed)}</strong>
         </div>
 

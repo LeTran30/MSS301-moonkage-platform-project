@@ -106,14 +106,14 @@ export function AdminDisputeDetailPage() {
       <Breadcrumbs
         items={[
           { label: 'Quản Trị', to: routes.admin.overview },
-          { label: 'Tranh chấp Escrow', to: routes.admin.disputes },
+          { label: 'Tranh chấp', to: routes.admin.disputes },
           { label: `Hồ sơ #${dispute.id}` },
         ]}
       />
 
       <div className={styles.headerRow}>
         <div>
-          <h1 className={styles.title}>Hội Đồng Trọng Tài Tranh Chấp #{dispute.id}</h1>
+          <h1 className={styles.title}>Phân xử tranh chấp #{dispute.id}</h1>
           <p className={styles.subtitle}>
             Đơn hàng: #{dispute.orderId} · Ký quỹ tạm giữ:{' '}
             <strong>{formatCurrency(escrowAmount)}</strong>
@@ -126,7 +126,7 @@ export function AdminDisputeDetailPage() {
 
       <div className={styles.grid}>
         <Card padding="lg" className={styles.card}>
-          <h2 className={styles.cardTitle}>Nội Dung Khiếu Nại Của Bên Mua</h2>
+          <h2 className={styles.cardTitle}>Nội dung khiếu nại của bên mua</h2>
           <div className={styles.detailList}>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Lý do:</span>
@@ -159,7 +159,7 @@ export function AdminDisputeDetailPage() {
         </Card>
 
         <Card padding="lg" className={styles.card}>
-          <h2 className={styles.cardTitle}>Phán Quyết & Hạch Toán Ký Quỹ Escrow</h2>
+          <h2 className={styles.cardTitle}>Phán quyết và hạch toán tiền ký quỹ</h2>
 
           {alreadyResolved ? (
             <div className={styles.detailList}>

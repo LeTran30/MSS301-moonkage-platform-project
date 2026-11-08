@@ -50,8 +50,7 @@ export function RequestsListPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <div className={styles.eyebrow}>YÊU CẦU &amp; BÁO GIÁ</div>
-          <h2 className={styles.title}>Quản Lý Yêu Cầu Báo Giá Của Bạn</h2>
+          <h2 className={styles.title}>Yêu cầu báo giá của bạn</h2>
           <p className={styles.lead}>
             Theo dõi danh sách yêu cầu đặt số lượng lớn và so sánh bảng giá từ các xưởng.
           </p>
