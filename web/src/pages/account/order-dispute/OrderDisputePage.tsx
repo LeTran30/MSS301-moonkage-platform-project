@@ -96,7 +96,7 @@ export function OrderDisputePage() {
       );
 
       toast.success(
-        'Khiếu nại đã được gửi! Hệ thống đã khóa tiền tạm giữ Escrow và thông báo cho người bán + quản trị.',
+        'Khiếu nại đã được gửi! Hệ thống đã khóa tiền tạm giữ và thông báo cho người bán + quản trị.',
       );
       navigate(routes.account.order(order.id));
     });

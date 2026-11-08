@@ -106,7 +106,7 @@ export function AdminDisputeDetailPage() {
       <Breadcrumbs
         items={[
           { label: 'Quản Trị', to: routes.admin.overview },
-          { label: 'Tranh chấp Escrow', to: routes.admin.disputes },
+          { label: 'Tranh chấp', to: routes.admin.disputes },
           { label: `Hồ sơ #${dispute.id}` },
         ]}
       />

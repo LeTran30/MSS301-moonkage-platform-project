@@ -35,7 +35,7 @@ export function Footer() {
 
           {/* Cột Mua hàng */}
           <div className={styles.linkCol}>
-            <h4 className={styles.colTitle}>Mua Bánh</h4>
+            <h4 className={styles.colTitle}>Mua bánh</h4>
             <ul className={styles.linkList}>
               <li>
                 <Link to={routes.base.catalog}>Mua lẻ bánh trung thu</Link>
@@ -57,7 +57,7 @@ export function Footer() {
 
           {/* Cột Kênh người bán */}
           <div className={styles.linkCol}>
-            <h4 className={styles.colTitle}>Dành Cho Người Bán</h4>
+            <h4 className={styles.colTitle}>Dành cho người bán</h4>
             <ul className={styles.linkList}>
               <li>
                 <Link to={routes.base.sellIntro}>Bán hàng trên Moonkage</Link>
@@ -76,7 +76,7 @@ export function Footer() {
 
           {/* Cột Quy chế & Hỗ trợ */}
           <div className={styles.linkCol}>
-            <h4 className={styles.colTitle}>Chính Sách &amp; Vận Hành</h4>
+            <h4 className={styles.colTitle}>Chính sách và vận hành</h4>
             <ul className={styles.linkList}>
               <li>
                 <Link to={routes.base.policy}>Chính sách mua bán &amp; Giữ tiền</Link>

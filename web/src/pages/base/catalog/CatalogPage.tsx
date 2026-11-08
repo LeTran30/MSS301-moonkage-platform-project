@@ -100,7 +100,7 @@ export function CatalogPage() {
 
           {/* Vỏ bánh */}
           <div className={styles.filterGroup}>
-            <div className={styles.filterGroupTitle}>Vỏ bánh (Chọn nhiều)</div>
+            <div className={styles.filterGroupTitle}>Vỏ bánh (chọn nhiều)</div>
             <div className={styles.chipList}>
               {crusts
                 .filter((c) => c.isActive)
@@ -122,7 +122,7 @@ export function CatalogPage() {
 
           {/* Nhân bánh */}
           <div className={styles.filterGroup}>
-            <div className={styles.filterGroupTitle}>Vị nhân (Chọn nhiều)</div>
+            <div className={styles.filterGroupTitle}>Vị nhân (chọn nhiều)</div>
             <div className={styles.chipList}>
               {fillings
                 .filter((f) => f.isActive)
@@ -144,7 +144,7 @@ export function CatalogPage() {
 
           {/* Thương hiệu */}
           <div className={styles.filterGroup}>
-            <div className={styles.filterGroupTitle}>Thương hiệu / Hiệu bánh</div>
+            <div className={styles.filterGroupTitle}>Thương hiệu, hiệu bánh</div>
             <Select
               options={[
                 { value: 'ALL', label: 'Tất cả thương hiệu' },
@@ -206,7 +206,7 @@ export function CatalogPage() {
                 ) : (
                   // Không có kết quả -> Gợi ý bỏ lọc + lối Tạo yêu cầu báo giá (M2.0 note)
                   <EmptyState
-                    icon="sparkle"
+                    icon="search"
                     title="Không tìm thấy sản phẩm phù hợp bộ lọc"
                     description="Bạn có thể thử bỏ bớt bộ lọc, hoặc tạo ngay yêu cầu đặt số lượng lớn để các xưởng liên hệ tư vấn."
                     action={

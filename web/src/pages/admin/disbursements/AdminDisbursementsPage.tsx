@@ -79,7 +79,7 @@ export function AdminDisbursementsPage() {
         items={[
           { label: 'Quản Trị', to: routes.admin.overview },
           { label: 'Quản lý tài chính', to: routes.admin.money },
-          { label: 'Phê duyệt giải ngân Escrow' },
+          { label: 'Duyệt giải ngân' },
         ]}
       />
 

@@ -77,7 +77,7 @@ export function VendorDisbursementsPage() {
         items={[
           { label: 'Kênh Xưởng', to: routes.vendor.overview },
           { label: 'Ví & Tài chính', to: routes.vendor.money },
-          { label: 'Yêu cầu giải ngân Escrow' },
+          { label: 'Yêu cầu giải ngân' },
         ]}
       />
 

@@ -135,9 +135,9 @@ export function HomePage() {
                 <p className={styles.vendorIntro}>{v.introduction}</p>
 
                 {v.bulkMinQuantity && (
-                  <div className={styles.vendorBulkInfo}>
-                    <Icon name="package" size={14} /> Nhận đặt từ <strong>{v.bulkMinQuantity} hộp</strong> · Chuẩn bị trong {v.bulkLeadTimeDays} ngày
-                  </div>
+                  <p className={styles.vendorBulkInfo}>
+                    Nhận đặt từ <strong>{v.bulkMinQuantity} hộp</strong>, chuẩn bị trong {v.bulkLeadTimeDays} ngày
+                  </p>
                 )}
 
                 <div className={styles.vendorActionRow}>

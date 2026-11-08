@@ -7,7 +7,7 @@ export function PolicyPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Chính sách sàn Moonkage</h1>
         <p className={styles.desc}>
-          Quy chế vận hành, cơ chế bảo vệ giao dịch ký quỹ Escrow, thời hạn khiếu nại và cam kết
+          Quy chế vận hành, cơ chế bảo vệ giao dịch ký quỹ, thời hạn khiếu nại và cam kết
           chất lượng bánh trung thu.
         </p>
       </div>

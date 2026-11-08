@@ -26,7 +26,7 @@ export function QuoteRequestPackagingCard({
 }: QuoteRequestPackagingCardProps) {
   return (
     <Card padding="lg" className={styles.card}>
-      <h3 className={styles.cardTitle}>3. Yêu cầu tùy chỉnh bao bì &amp; in ấn (Custom Logo)</h3>
+      <h3 className={styles.cardTitle}>3. Yêu cầu tùy chỉnh bao bì &amp; in ấn</h3>
 
       {/*
         `CreateQuoteRequestRequest` không có trường tệp logo, và

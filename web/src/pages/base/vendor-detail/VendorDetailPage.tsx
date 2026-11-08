@@ -117,7 +117,6 @@ function VendorProfile({ vendor }: { vendor: Vendor }) {
               <ButtonLink
                 to={routes.base.vendorRequest(vendor.id)}
                 variant="primary"
-                iconLeft="sparkle"
               >
                 Gửi yêu cầu báo giá riêng
               </ButtonLink>

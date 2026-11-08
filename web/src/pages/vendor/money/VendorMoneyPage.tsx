@@ -85,8 +85,7 @@ export function VendorMoneyPage() {
         <div>
           <h1 className={styles.title}>Đối soát &amp; Dòng tiền</h1>
           <p className={styles.desc}>
-            Theo dõi doanh thu bán lẻ, nhận giải ngân tiền cọc theo tiến độ và quản lý số dư ký quỹ
-            Escrow.
+            Theo dõi doanh thu bán lẻ, nhận giải ngân tiền cọc theo tiến độ và quản lý số dư ký quỹ.
           </p>
         </div>
         <Button variant="primary" iconLeft="wallet" onClick={() => openWithdraw()}>
@@ -121,7 +120,7 @@ export function VendorMoneyPage() {
 
       <div className={styles.escrowNotice}>
         <Icon name="shield" size={18} />{' '}
-        <strong>Cơ chế Escrow bảo vệ người bán &amp; người mua:</strong> Tiền thanh toán của người
+        <strong>Cơ chế ký quỹ bảo vệ người bán &amp; người mua:</strong> Tiền thanh toán của người
         mua được Moonkage giữ an toàn. Với đơn đặt hàng doanh nghiệp, tiền cọc được giải ngân khi
         khách duyệt Maket; tiền còn lại được giải ngân sau khi giao hàng thành công và hết hạn khiếu
         nại (48h).

@@ -58,7 +58,7 @@ export function AdminDisputesPage() {
     const numRefund = Number(refundAmount) || 0;
     if (decision === 'PARTIAL_REFUND' && numRefund > maxRefundAllowed) {
       toast.error(
-        `Số tiền hoàn (${formatCurrency(numRefund)}) không được vượt quá số tiền Escrow đang giữ (${formatCurrency(maxRefundAllowed)}).`,
+        `Số tiền hoàn (${formatCurrency(numRefund)}) không được vượt quá số tiền đang giữ (${formatCurrency(maxRefundAllowed)}).`,
       );
       return;
     }
@@ -114,10 +114,10 @@ export function AdminDisputesPage() {
           <h1 className={styles.title}>Phân xử khiếu nại &amp; Tranh chấp</h1>
           <p className={styles.desc}>
             Thực hiện trọng tài giải quyết tranh chấp. Bảo vệ quyền lợi người mua và xưởng sản xuất
-            qua quỹ ký quỹ Escrow.
+            qua quỹ ký quỹ.
           </p>
         </div>
-        <div className={styles.escrowRuleBadge}>Hoàn tối đa = Số tiền đang giữ trong Escrow</div>
+        <div className={styles.escrowRuleBadge}>Hoàn tối đa bằng số tiền đang giữ</div>
       </div>
 
       {successMsg && (

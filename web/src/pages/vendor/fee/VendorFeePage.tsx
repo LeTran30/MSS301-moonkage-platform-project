@@ -89,7 +89,7 @@ export function VendorFeePage() {
             <li>Đăng tải không giới hạn sản phẩm bánh Trung Thu</li>
             <li>Nhận yêu cầu báo giá sỉ RFQ từ mạng lưới doanh nghiệp</li>
             <li>Cấp tem NFC chống hàng giả miễn phí đợt đầu</li>
-            <li>Hỗ trợ trọng tài Escrow bảo lãnh thanh toán 100%</li>
+            <li>Hỗ trợ phân xử tranh chấp, bảo lãnh thanh toán 100%</li>
           </ul>
           <Button
             variant={feePlan === 'SEASONAL' ? 'primary' : 'outline'}

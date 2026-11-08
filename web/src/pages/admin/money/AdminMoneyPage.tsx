@@ -93,7 +93,7 @@ export function AdminMoneyPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản trị dòng tiền Escrow &amp; Giải ngân</h1>
+          <h1 className={styles.title}>Dòng tiền ký quỹ và giải ngân</h1>
           <p className={styles.desc}>
             Duyệt lệnh giải ngân tiền cọc, thực thi khóa tiền khi có khiếu nại và quản lý chu kỳ đối
             soát.
@@ -110,7 +110,7 @@ export function AdminMoneyPage() {
       {/* Escrow Mechanism Highlights */}
       <div className={styles.statsGrid}>
         <Card className={styles.statCard}>
-          <span className={styles.statLabel}>Tổng tiền trong quỹ Escrow sàn</span>
+          <span className={styles.statLabel}>Tổng tiền ký quỹ của sàn</span>
           <strong className={styles.statVal}>{formatCurrency(totalHeld)}</strong>
           <span className={styles.statSub}>Được bảo chứng tại tài khoản trung gian</span>
         </Card>

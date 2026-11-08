@@ -75,7 +75,7 @@ export function DepositPaymentPage() {
             label: req.customRequirements || `Yêu cầu #${requestCode(req.id)}`,
             to: routes.account.request(req.id),
           },
-          { label: 'Ký quỹ đặt cọc Escrow' },
+          { label: 'Đặt cọc' },
         ]}
       />
 
@@ -83,7 +83,7 @@ export function DepositPaymentPage() {
         <div>
           <h1 className={styles.title}>Đặt cọc đơn số lượng lớn (#{requestCode(req.id)})</h1>
           <p className={styles.subtitle}>
-            Bảo lãnh thanh toán qua Moonkage Escrow — Xưởng chỉ nhận tiền khi giao bánh đạt chuẩn
+            Bảo lãnh thanh toán qua ký quỹ Moonkage: Xưởng chỉ nhận tiền khi giao bánh đạt chuẩn
           </p>
         </div>
         <Badge tone="gold" size="md">
@@ -123,7 +123,7 @@ export function DepositPaymentPage() {
 
           <div className={styles.escrowBox}>
             <h3 className={styles.escrowTitle}>
-              <Icon name="shield" size={18} /> Cam kết an toàn Escrow
+              <Icon name="shield" size={18} /> Cam kết an toàn
             </h3>
             <ul className={styles.escrowList}>
               <li>Tiền cọc được phong tỏa trong tài khoản trung gian của Moonkage.</li>
@@ -204,7 +204,7 @@ export function DepositPaymentPage() {
               onClick={handleConfirmDeposit}
               loading={busy}
             >
-              Xác Nhận Ký Quỹ Escrow An Toàn
+              Xác nhận đặt cọc
             </Button>
           </div>
         </Card>

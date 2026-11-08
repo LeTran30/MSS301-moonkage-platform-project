@@ -83,7 +83,7 @@ export function NotificationsPage() {
           { id: 'ORDER', label: 'Đơn hàng' },
           { id: 'QUOTE', label: 'Báo giá B2B' },
           { id: 'MAKET', label: 'Duyệt Maket' },
-          { id: 'DISPUTE', label: 'Khiếu nại & Escrow' },
+          { id: 'DISPUTE', label: 'Khiếu nại và ký quỹ' },
         ]}
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as NotifTab)}
