@@ -1,9 +1,11 @@
 package com.moonkage.payment.gateway;
 
 import com.moonkage.payment.config.VnpayProperties;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -16,6 +18,7 @@ import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -23,6 +26,12 @@ import org.springframework.web.client.RestClientException;
 /**
  * VNPay sandbox refund API (merchant_webapi, command "refund", A-11). Any answer other than 00, and any error on the
  * way, is a failed refund: the caller then marks it for manual handling (AC-49.3), never retries on its own.
+ *
+ * <p>Vì sao client này có timeout riêng: lần gọi VNPay nằm trong {@code RefundJob}, một tác vụ định kỳ chạy
+ * trên thread của scheduler. Nếu cuộc gọi không có thời hạn, một sandbox chậm (hoặc không tới được) giữ
+ * thread đó **mãi** ⇒ không chỉ lần quét hoàn tiền sau bị treo, mà cả relay outbox đi cùng thread đó
+ * cũng ngừng ⇒ sự kiện của đơn không đi nữa. Timeout ở đây giữ lỗi ở đúng chỗ của nó: một lần hoàn
+ * tiền hỏng thành {@code MANUAL_REQUIRED} cho admin, thay vì làm tê liệt cả service.
  */
 @Slf4j
 @Component
@@ -37,12 +46,21 @@ public class VnpayRefundClient {
     // shortcut: the merchant server's own IP is not known inside Docker; VNPay sandbox accepts any
     private static final String SERVER_IP = "127.0.0.1";
 
+    /** Bao lâu thì bỏ một lần gọi VNPay. Xem `vnpay.refund-timeout` trong application.yml. */
     private final VnpayProperties properties;
+
     private final RestClient restClient;
 
     public VnpayRefundClient(VnpayProperties properties, RestClient.Builder restClientBuilder) {
         this.properties = properties;
-        this.restClient = restClientBuilder.build();
+        Duration timeout = properties.getRefundTimeout();
+        // Timeout tường minh, không dựa vào `spring.http.client.*`: cấu hình đó mặc định là **rỗng**
+        // (không có connect timeout, không có read timeout). Một client không có thời hạn là một client
+        // có thể treo vô hạn — đúng thứ mà `RefundJob` không được phép để xảy ra.
+        HttpClient httpClient = HttpClient.newBuilder().connectTimeout(timeout).build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(timeout);
+        this.restClient = restClientBuilder.requestFactory(requestFactory).build();
     }
 
     /**
