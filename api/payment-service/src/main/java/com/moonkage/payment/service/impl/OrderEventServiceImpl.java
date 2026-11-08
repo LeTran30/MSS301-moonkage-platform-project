@@ -56,11 +56,17 @@ public class OrderEventServiceImpl implements OrderEventService {
         if (!inboxService.markProcessed(event.eventId(), RabbitConfig.DISPUTE_OPENED_ROUTING_KEY)) {
             return;
         }
-        snapshotRepository.findForUpdateByOrderId(event.orderId()).ifPresent(snapshot -> {
-            snapshot.setDisputeOpen(true);
-            // AC-43.3: an order under dispute has no expected payout date
-            ledgerService.describe(event.orderId(), snapshot.getVendorId(), null);
-        });
+        // The snapshot is created by `order.created`. If it is not there yet the dispute would be lost forever, so the
+        // event is refused and RabbitMQ hands it back later (the inbox mark rolls back with it).
+        OrderSnapshot snapshot =
+                snapshotRepository.findForUpdateByOrderId(event.orderId()).orElse(null);
+        if (snapshot == null) {
+            throw new IllegalStateException(
+                    "Chưa có order_snapshots cho đơn " + event.orderId() + ": sự kiện khiếu nại được giao lại sau.");
+        }
+        snapshot.setDisputeOpen(true);
+        // AC-43.3: an order under dispute has no expected payout date
+        ledgerService.describe(event.orderId(), snapshot.getVendorId(), null);
     }
 
     @Override
@@ -69,10 +75,14 @@ public class OrderEventServiceImpl implements OrderEventService {
         if (!inboxService.markProcessed(event.eventId(), RabbitConfig.DISPUTE_RESOLVED_ROUTING_KEY)) {
             return;
         }
-        snapshotRepository.findForUpdateByOrderId(event.orderId()).ifPresent(snapshot -> {
-            snapshot.setDisputeOpen(false);
-            ledgerService.describe(event.orderId(), snapshot.getVendorId(), expectedPayoutDate(snapshot));
-        });
+        OrderSnapshot snapshot =
+                snapshotRepository.findForUpdateByOrderId(event.orderId()).orElse(null);
+        if (snapshot == null) {
+            throw new IllegalStateException(
+                    "Chưa có order_snapshots cho đơn " + event.orderId() + ": sự kiện khiếu nại được giao lại sau.");
+        }
+        snapshot.setDisputeOpen(false);
+        ledgerService.describe(event.orderId(), snapshot.getVendorId(), expectedPayoutDate(snapshot));
         if (event.refundAmount() != null && event.refundAmount() > 0) {
             refundService.requestForDispute(event.orderId(), event.disputeId(), event.refundAmount());
         }
