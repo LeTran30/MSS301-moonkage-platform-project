@@ -123,6 +123,11 @@ async function openInStockProduct(page: Page): Promise<void> {
   const stock = await catalogStock(page);
   const provinceCode = await catalogProvince(page);
 
+  // Danh mục tải **bất đồng bộ**: thẻ sản phẩm xuất hiện sau khi API trả lời.
+  // Phải chờ thẻ đầu tiên hiện ra, nếu không `links.count()` sẽ bằng 0 và vòng
+  // lặp dưới không có gì để xét.
+  await expect(page.locator('article').first()).toBeVisible();
+
   const links = page.locator('article a[href*="/san-pham/"]');
   const total = await links.count();
 
