@@ -1,6 +1,6 @@
 # Khảo sát hiện trạng luồng xác minh NFC (FR-04)
 
-> **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/services/identity/classes/NfcServiceImpl.md](../services/identity/classes/NfcServiceImpl.md).
+> **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/archive/2026-11-08-class-docs/identity/NfcServiceImpl.md](2026-11-08-class-docs/identity/NfcServiceImpl.md).
 
 Ngày khảo sát: 2026-10-19. Dựa trên code hiện có, không dựa trên tài liệu kế hoạch.
 

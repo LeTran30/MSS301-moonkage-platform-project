@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Two-step upload straight between the client and MinIO (Software Design 5.1 rule 5, section 8): the client POSTs the
  * file to MinIO under a signed policy, then the owning service checks it and moves it to its final key. Flow and
- * invariants: docs/services/common-storage/classes/ObjectStorage.md.
+ * invariants: docs/archive/2026-11-08-class-docs/common-storage/ObjectStorage.md.
  *
  * <p>Object names are {@code <keyPrefix>/<uuid>.<ext>}: no account id or personal data, so who may see a file is
  * decided by the owning service's records, not by its path.

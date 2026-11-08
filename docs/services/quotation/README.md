@@ -57,7 +57,7 @@ Khác với bảng thiết kế: báo giá gửi `validDays` (1–14, Q-19) thay
 | BR-17 một báo giá thắng | Mọi thay đổi khóa dòng `quote_requests` (`SELECT … FOR UPDATE`); cọc thành công đóng các báo giá còn lại |
 | L-10 bản chép ràng buộc | `snapshot` JSON chuẩn hóa (khóa sắp xếp) + SHA-256; trigger DB cấm sửa |
 
-Class nặng: [QuoteRequestServiceImpl](classes/QuoteRequestServiceImpl.md), [QuoteServiceImpl](classes/QuoteServiceImpl.md), [QuoteAcceptanceServiceImpl](classes/QuoteAcceptanceServiceImpl.md).
+Class nặng: [QuoteRequestServiceImpl](../../archive/2026-11-08-class-docs/quotation/QuoteRequestServiceImpl.md), [QuoteServiceImpl](../../archive/2026-11-08-class-docs/quotation/QuoteServiceImpl.md), [QuoteAcceptanceServiceImpl](../../archive/2026-11-08-class-docs/quotation/QuoteAcceptanceServiceImpl.md).
 
 ## Dữ liệu người bán
 

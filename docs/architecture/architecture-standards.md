@@ -1,7 +1,7 @@
 # Chuẩn kiến trúc Moonkage
 
 > **Trạng thái:** Chuẩn hiệu hành (2026-11-05). Áp dụng cho toàn bộ mã nguồn trong `api/` và `web/`.
-> **Phạm vi:** bắt buộc cho mọi thay đổi mới. Mã cũ không tự động hợp lệ — xem [đối chiếu tuân thủ](codebase-conformance-review.md).
+> **Phạm vi:** bắt buộc cho mọi thay đổi mới. Mã cũ không tự động hợp lệ — xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md).
 > **Nguồn:** mọi quy tắc dưới đây đều bám theo code đang chạy, không lấy từ tài liệu lý thuyết. Khi tài liệu và code lệch nhau, **code là bản đúng** cho tới khi có quyết định kiến trúc mới ([`api-db/decisions.md`](api-db/decisions.md)).
 
 ## Mục lục
@@ -29,7 +29,7 @@ Mỗi quy tắc có ba phần:
 | **Lý do** | Một câu: vì sao quy tắc này tồn tại trong codebase này. |
 | **Ví dụ đúng / sai** | Trích từ mã nguồn thật của repo, kèm đường dẫn. |
 
-Quy tắc có hiệu lực ngay với code mới. Với code cũ, xem [đối chiếu tuân thủ](codebase-conformance-review.md) để biết mục nào đang nợ và xử lý theo thứ tự ưu tiên đã nêu.
+Quy tắc có hiệu lực ngay với code mới. Với code cũ, xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md) để biết mục nào đang nợ và xử lý theo thứ tự ưu tiên đã nêu.
 
 ---
 
@@ -49,7 +49,7 @@ Repo có 14 module Maven trong `api/` (đếm bằng `api/*/pom.xml`):
 | `discovery-server` | Eureka |
 | `identity-service`, `catalog-service`, `vendor-service`, `quotation-service`, `order-service`, `payment-service`, `orchestrator-service` | 7 service nghiệp vụ |
 | `common-reference`, `common-storage`, `common-observability` | Thư viện dùng chung |
-| `common-api`, `common-outbox` | Thư viện hợp đồng API và hạ tầng outbox — đã khai báo trong `api/pom.xml` nhưng **chưa service nào dùng** và **chưa commit**, xem [đối chiếu tuân thủ](codebase-conformance-review.md) |
+| `common-api`, `common-outbox` | Thư viện hợp đồng API và hạ tầng outbox — đã khai báo trong `api/pom.xml` nhưng **chưa service nào dùng** và **chưa commit**, xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md) |
 | `config` | Không phải module: thư mục tài nguyên dùng chung cho build (`config/checkstyle/`, `config/archunit/`) |
 
 **Ví dụ sai:** đặt thêm một entity của `order-service` vào `common-storage` để "dùng chung cho nhanh" — vi phạm ranh giới database (mỗi service một DB).
@@ -295,7 +295,7 @@ Quy ước đặc biệt của repo: nhiều component dùng chung **một** sty
 **Lý do:** CI `docs-links.yml` dùng lychee kiểm tra link hỏng trong mọi file `.md`; đường dẫn sai sẽ làm PR fail.
 
 - Tài liệu trong `docs/` đặt tên `kebab-case.md`, không có dấu cách, **không** ghi phiên bản trong tên (lịch sử nằm trong git và bảng thay đổi của file).
-- Tài liệu hạ tầng web (`web/doc/`) đang dùng tên `UPPER_SNAKE_CASE` — lệch quy ước; xem [đối chiếu tuân thủ](codebase-conformance-review.md).
+- Tài liệu hạ tầng web (`docs/archive/`) đang dùng tên `UPPER_SNAKE_CASE` — lệch quy ước; xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md).
 - Đường dẫn tài liệu phải tương đối (`../guides/database.md`), không dùng `file:///` hay đường dẫn máy cá nhân.
 
 ---
@@ -332,9 +332,9 @@ Hình dạng chuẩn — đúng như backend đang trả:
 | `path` | Tùy chọn | Đường dẫn request |
 | `timestamp` | Có | Thời điểm sinh phản hồi |
 
-Lưu ý hiện trạng: `catalog-service` và `orchestrator-service` **không** có trường `errors`; 5 service còn lại có. Chuẩn là có `errors` — xem [đối chiếu tuân thủ](codebase-conformance-review.md).
+Lưu ý hiện trạng: `catalog-service` và `orchestrator-service` **không** có trường `errors`; 5 service còn lại có. Chuẩn là có `errors` — xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md).
 
-**Nguồn duy nhất của envelope:** `api/common-api` đã có `ApiResponse<T>` đúng chuẩn (record 7 trường, có `errors` + `FieldError`, đủ factory `ok()/ok(T)/created/error(...)`). Mọi service phải dùng nó — **không** tự định nghĩa lại. Lưu ý hiện trạng: module đã được khai báo trong `api/pom.xml` nhưng **chưa service nào khai báo dependency**, nên 7 bản `ApiResponse` cục bộ vẫn còn (xem [đối chiếu tuân thủ](codebase-conformance-review.md), H-01 và H-10).
+**Nguồn duy nhất của envelope:** `api/common-api` đã có `ApiResponse<T>` đúng chuẩn (record 7 trường, có `errors` + `FieldError`, đủ factory `ok()/ok(T)/created/error(...)`). Mọi service phải dùng nó — **không** tự định nghĩa lại. Lưu ý hiện trạng: module đã được khai báo trong `api/pom.xml` nhưng **chưa service nào khai báo dependency**, nên 7 bản `ApiResponse` cục bộ vẫn còn (xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md), H-01 và H-10).
 
 **Ví dụ sai:**
 
@@ -585,7 +585,7 @@ Không có script seed chạy tay; không có auto-seeder bằng Java ở mọi 
 
 **Relay dùng chung:** `api/common-outbox` cung cấp `OutboxRelay` (đọc theo lô → `waitForConfirmsOrDie` → mới đánh dấu `published_at`) và interface `OutboxEventSource` mà mỗi service tự cài. Service giữ bảng `outbox_events` và entity của riêng mình; không viết lại relay riêng.
 
-Lưu ý hiện trạng: `api/common-outbox` đã được khai báo trong `api/pom.xml` nhưng **chưa service nào khai báo dependency**, và thư mục module **chưa được commit** — nên 5 bản `OutboxRelay` cục bộ vẫn còn (xem [đối chiếu tuân thủ](codebase-conformance-review.md) H-04 và H-10).
+Lưu ý hiện trạng: `api/common-outbox` đã được khai báo trong `api/pom.xml` nhưng **chưa service nào khai báo dependency**, và thư mục module **chưa được commit** — nên 5 bản `OutboxRelay` cục bộ vẫn còn (xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md) H-04 và H-10).
 
 **Mẫu Inbox — mỗi service nhận sự kiện có:**
 
@@ -1126,7 +1126,7 @@ Không được thay bước chờ này bằng một lệnh `curl` đơn lẻ: `
 |---|---|---|
 | `code-quality.yml` | `api/**` thay đổi | `./mvnw clean verify` |
 | `web-quality.yml` | `web/**` thay đổi | lint → CSS → spec-ID → encoding → build → bundle → vitest → coverage → E2E |
-| `docs-links.yml` | `**/*.md` hoặc `api/**/*.java` thay đổi | lychee kiểm link hỏng → `check-class-docs.mjs` kiểm tài liệu class còn khớp mã nguồn |
+| `docs-links.yml` | `**/*.md` thay đổi | lychee kiểm link hỏng |
 | `pr-conventions.yml` | mọi PR | kiểm đặt tên branch, commit, PR |
 
 ### 7.5. Tài liệu phải đi kèm code
@@ -1141,32 +1141,10 @@ Không được thay bước chờ này bằng một lệnh `curl` đơn lẻ: `
 | Đổi schema | File migration + `docs/guides/database.md` nếu đụng sổ ID |
 | Đổi quyết định kiến trúc | `docs/architecture/api-db/decisions.md` (ADR mới) |
 | Đổi cấu trúc package | `docs/conventions/coding-rules.md` nếu quy ước đổi |
-| Đổi/xoá một class có tài liệu ở `docs/services/<service>/classes/` | Sửa hoặc xoá `docs/services/<service>/classes/<ClassName>.md` **cùng PR** (xem [../README.md](../README.md) quy tắc 9) |
 
-### 7.6. Tài liệu class nặng: ai sửa, khi nào, kiểm bằng gì
+### 7.6. Tài liệu class nặng (ngừng áp dụng)
 
-**Mức độ bắt buộc: BẮT BUỘC**
-
-**Lý do:** `docs/services/*/classes/*.md` là tài liệu **sinh tay** mô tả pseudocode của class. Không có quy trình thì nó lệch dần và người đọc tưởng hành vi cũ vẫn đúng.
-
-| Câu hỏi | Trả lời |
-|---|---|
-| **Phạm vi** | Mỗi file `docs/services/<service>/classes/<ClassName>.md` mô tả **một** class Java `api/<module>/src/main/java/**/<ClassName>.java`. Tên file phải **khớp đúng** tên class (kể cả phân biệt hoa thường). Ánh xạ thư mục → module: `docs/services/<service>` ↔ `api/<service>-service`, riêng `common-storage` giữ nguyên tên. |
-| **Khi nào phải cập nhật** | Trong **cùng PR** với thay đổi chạm vào class: đổi tên class, đổi package, đổi/xoá method, đổi luật bất biến, đổi mã lỗi nghiệp vụ, đổi thứ tự trạng thái. Class không còn đáng viết tài liệu → **xoá file** tài liệu trong cùng PR. |
-| **Ai giữ** | Tác giả của PR đó — người sửa code của class đó. Người giữ tài liệu chỉ cập nhật danh sách class nặng ở đây. |
-| **Kiểm tra bằng gì** | `node docs/scripts/check-class-docs.mjs` — đối chiếu tên file `classes/<ClassName>.md` với file `<ClassName>.java` trong module tương ứng. Chạy trong `.github/workflows/docs-links.yml`, bước **Check class docs match source**; job này chạy khi `**/*.md` **hoặc** `api/**/*.java` thay đổi. |
-| **Giới hạn của bước kiểm tra** | Script bắt được class **đã đổi tên hoặc bị xoá**. Nội dung tài liệu có còn đúng với hành vi mới thì người review PR phải đọc lại — CI không thay được bước đọc đó. |
-
-Danh sách class được tài liệu hoá (20 file) nằm ở `docs/services/*/classes/`:
-
-| Service | Class |
-|---|---|
-| identity | `AccountServiceImpl`, `AddressServiceImpl`, `AuthServiceImpl`, `EmailServiceImpl`, `LegalProfileServiceImpl`, `NfcServiceImpl`, `OtpServiceImpl`, `OutboxServiceImpl` |
-| catalog | `CatalogProjectionServiceImpl`, `InterprovinceFeeServiceImpl`, `JdbcCatalogProjectionRepository`, `OutboxDeliveryServiceImpl`, `ProductReadServiceImpl`, `ProjectionInboxServiceImpl`, `ProjectionRecoveryServiceImpl`, `ProjectionReplayEntryServiceImpl` |
-| quotation | `QuoteAcceptanceServiceImpl`, `QuoteRequestServiceImpl`, `QuoteServiceImpl` |
-| common-storage | `ObjectStorage` |
-
-Tiêu chuẩn nội dung một file tài liệu class: [../conventions/coding-rules.md](../conventions/coding-rules.md) Phần 5.
+> **Ngừng áp dụng từ 2026-11-08.** Không viết tài liệu class mới; CI không còn bước **Check class docs match source**. 20 file cũ, script kiểm và nguyên văn mục này nằm ở [../archive/2026-11-08-class-docs/](../archive/2026-11-08-class-docs/README.md).
 
 ---
 
@@ -1198,6 +1176,8 @@ Tiêu chuẩn nội dung một file tài liệu class: [../conventions/coding-ru
 | Hướng dẫn thao tác | `docs/guides/` | `database.md`, `getting-started.md` |
 | Tài liệu service | `docs/services/<service>/` | `identity/README.md` |
 | Bộ request Postman | `docs/api/` | `mk-auth.json` |
+| Kế hoạch, rà soát, báo cáo chạy thử còn hiệu lực | `docs/work/plans/`, `docs/work/reviews/`, `docs/work/reports/` | `debt-implementation-plan.md`, `e2e-run-2026-11-08.md` |
+| Tài liệu frontend | `docs/architecture/` (không dùng `web/doc/`) | `web-package-architecture.md` |
 | Lịch sử, khảo sát đã xong | `docs/archive/` | `2026-10-26-*.md` |
 
 ### 8.3. Định dạng ADR
@@ -1247,7 +1227,7 @@ Quy ước bổ sung:
 
 - Tài liệu kế hoạch/rà soát ghi trạng thái ngay dưới tiêu đề: `Đề xuất` · `Đang làm` · `Xong <ngày>`.
 - Xong thì chuyển vào `docs/archive/` với tên `YYYY-MM-DD-<việc>.md` và thêm dòng **Lưu trữ** trỏ tới tài liệu hiện hành.
-- Tài liệu class nặng đặt ở `docs/services/<service>/classes/<ClassName>.md`.
+- Kế hoạch, rà soát, báo cáo đang còn hiệu lực đặt ở `docs/work/plans/`, `docs/work/reviews/`, `docs/work/reports/`.
 
 ---
 
@@ -1312,11 +1292,11 @@ Các ngoại lệ dưới đây là **cố ý** và không phải mẫu để sa
 | Ngoại lệ | Lý do |
 |---|---|
 | `orchestrator-service` dùng layout hexagonal (`application/`, `domain/`, `infrastructure/`, `contract/`) khác 6 service kia | Service này không sở hữu nghiệp vụ người dùng; nó điều phối sự kiện và template. Luật ArchUnit vẫn áp dụng vì nó dùng tên package chuẩn (`controller`/`service`/`repository` không có — nên các luật liên quan `allowEmptyShould(true)`) |
-| `catalog-service` và `orchestrator-service` không có trường `errors` trong envelope | Vẫn đúng hợp đồng ở mức tối thiểu; đang được chuẩn hoá về `ApiResponse` của `api/common-api` (xem [đối chiếu tuân thủ](codebase-conformance-review.md) H-01) |
+| `catalog-service` và `orchestrator-service` không có trường `errors` trong envelope | Vẫn đúng hợp đồng ở mức tối thiểu; đang được chuẩn hoá về `ApiResponse` của `api/common-api` (xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md) H-01) |
 | `identity-service` và `vendor-service` dùng `web/` làm tầng controller thay vì `controller/` | Package-by-component đặt controller cạnh component. Hướng đích chuẩn là `controller/` cho cả repo — xem H-09 |
 | Nhiều component dùng chung một file `*Ui.module.css` | Các component thực chất là các phần của một màn hình. Quy tắc: file CSS phải có **ít nhất một** component dùng; xoá component thì xoá luôn stylesheet (H-06, H-07) |
 | `shared/config/gateway.ts` và `shared/config/routes.ts` biết tên nghiệp vụ | Ngoại lệ đã thống nhất: chúng chỉ chứa *cấu hình đường dẫn*, không chứa logic. Tách ra sẽ buộc các slice import ngang nhau |
-| `web/doc/` dùng tên file `UPPER_SNAKE_CASE` | Vẫn tồn tại; nên đổi về `kebab-case` khi có đợt dọn tài liệu (xem [đối chiếu tuân thủ](codebase-conformance-review.md)) |
+| `docs/archive/` dùng tên file `UPPER_SNAKE_CASE` | Vẫn tồn tại; nên đổi về `kebab-case` khi có đợt dọn tài liệu (xem [đối chiếu tuân thủ](../work/reviews/codebase-conformance-review.md)) |
 
 ---
 
@@ -1324,7 +1304,7 @@ Các ngoại lệ dưới đây là **cố ý** và không phải mẫu để sa
 
 | Tài liệu | Nội dung |
 |---|---|
-| [codebase-conformance-review.md](codebase-conformance-review.md) | Đối chiếu code hiện tại với chuẩn này, kèm backlog P0/P1/P2 |
+| [../work/reviews/codebase-conformance-review.md](../work/reviews/codebase-conformance-review.md) | Đối chiếu code hiện tại với chuẩn này, kèm backlog P0/P1/P2 |
 | [software-design.md](software-design.md) | Thiết kế hệ thống, danh sách quyết định D-01 → D-24 |
 | [api-db/README.md](api-db/README.md) | Quy ước chung về API và database |
 | [api-db/decisions.md](api-db/decisions.md) | ADR đã chốt và đề xuất |

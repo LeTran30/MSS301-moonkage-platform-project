@@ -102,3 +102,7 @@ web/e2e/_tmp-*
 web/e2e/tmp-*
 web/preview.err
 web/preview.out
+
+# Local files in docs/: a template holding personal data, and unshared images
+docs/Template.xlsx
+docs/assets/

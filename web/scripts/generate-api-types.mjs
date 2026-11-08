@@ -2,7 +2,7 @@
 /**
  * Sinh type TypeScript từ OpenAPI của 7 service, hợp nhất thành một hợp đồng.
  *
- * Vì sao cần (C-3 trong `docs/architecture/debt-implementation-plan.md`): 65 hằng
+ * Vì sao cần (C-3 trong `docs/work/plans/debt-implementation-plan.md`): 65 hằng
  * đường dẫn trong `shared/api/gateway.ts` do tay viết và phải khớp với
  * controller của backend. Hôm nay khớp, nhưng không có gì ngăn ai thêm một
  * endpoint ở backend mà web không biết. Sinh type từ OpenAPI biến hợp đồng đó

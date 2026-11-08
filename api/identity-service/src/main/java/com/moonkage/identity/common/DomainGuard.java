@@ -6,8 +6,8 @@ import java.util.regex.Pattern;
 
 /**
  * The checks an entity or value object runs on every value it is given, so no path can build one in a wrong state or
- * change it into one (docs/services/identity/domain-model-plan.md, rule 1). A broken rule answers 400 INVALID_INPUT
- * with the field name as argument; a request DTO normally catches it first, with a message per field.
+ * change it into one (docs/archive/2026-10-29-identity-domain-model-plan.md, rule 1). A broken rule answers
+ * 400 INVALID_INPUT with the field name as argument; a request DTO normally catches it first, with a message per field.
  */
 public final class DomainGuard {
 

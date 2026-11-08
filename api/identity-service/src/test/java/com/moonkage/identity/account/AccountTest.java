@@ -16,8 +16,8 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 /**
- * One test per line of the Account invariant table (docs/services/identity/domain-model-plan.md): an account cannot be
- * built wrong, and every change keeps it right. Normalising email and phone: ValueObjectsTest.
+ * One test per line of the Account invariant table (docs/archive/2026-10-29-identity-domain-model-plan.md): an account
+ * cannot be built wrong, and every change keeps it right. Normalising email and phone: ValueObjectsTest.
  */
 class AccountTest {
 
