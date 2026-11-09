@@ -4,6 +4,7 @@ import { routes } from '@/shared/config';
 import { Icon } from '@/shared/ui';
 import {
   markNotificationAsRead,
+  notificationApi,
   useNotifications,
   useUnreadNotificationsCount,
 } from '@/entities/notification';
@@ -36,6 +37,9 @@ export function HeaderNotifications() {
             </Link>
           </div>
           <div className={styles.notifList}>
+            {notifications.length === 0 && (
+              <p className={styles.notifEmpty}>Chưa có thông báo nào.</p>
+            )}
             {notifications.map((n) => (
               <Link
                 key={n.id}
@@ -43,6 +47,8 @@ export function HeaderNotifications() {
                 className={`${styles.notifItem} ${!n.isRead ? styles.unread : ''}`}
                 onClick={() => {
                   markNotificationAsRead(n.id);
+                  // The server is the source of truth; a failed call only keeps it unread.
+                  if (!n.isRead) void notificationApi.markRead(n.id).catch(() => undefined);
                   setOpen(false);
                 }}
               >
