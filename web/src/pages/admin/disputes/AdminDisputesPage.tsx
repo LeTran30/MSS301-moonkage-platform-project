@@ -1,53 +1,56 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Tabs, toast, AsyncState, EmptyState, Card, Icon } from '@/shared/ui';
-import { formatCurrency } from '@/shared/utils';
-import { routes } from '@/shared/config';
+import { Tabs, toast, AsyncState, EmptyState } from '@/shared/ui';
+import { formatCurrency, shortCode } from '@/shared/utils';
 import { useAction } from '@/shared/lib';
-import type { Dispute, DisputeDecision } from '@/entities/dispute';
-import { useOpenDisputes } from '@/entities/dispute';
-import { DisputeCaseCard, DisputeResolutionCard } from '@/entities/dispute';
+import {
+  DisputeCaseCard,
+  DisputeResolutionCard,
+  useDisputeQueue,
+  type Dispute,
+  type DisputeDecision,
+} from '@/entities/dispute';
+import { useManualRefunds } from '@/entities/payment';
 import { DisputeResolutionModal, useResolveDispute } from '@/features/resolve-disputes';
+import { ManualRefundList } from './ManualRefundList';
 import styles from './AdminDisputesPage.module.css';
 
-type DisputeTab = 'PENDING' | 'RESOLVED';
+type DisputeTab = 'PENDING' | 'REFUNDS' | 'RESOLVED';
 
 /**
- * Q5.0, Q5.1 — các khiếu nại đang chờ quyết định.
+ * Q5.0, Q5.1 — hàng đợi khiếu nại của quản trị viên.
  *
- * `GET /api/orders?disputeStatus=OPEN` (FR-49) rồi
- * `GET /api/orders/{orderId}/dispute` cho hồ sơ khiếu nại của từng đơn; quyết
- * định là `PATCH /api/orders/{orderId}/dispute` (FR-49).
- *
- * Trước đây trang chỉ hiện hồ sơ **đầu tiên** trong danh sách và dùng sẵn
- * số tiền hoàn 135.000đ — nên hồ sơ thứ hai trở đi không bao giờ được xử lý.
+ * `GET /api/orders/disputes?status=OPEN|RESOLVED` (FR-49) cho hai tab hồ sơ;
+ * quyết định là `PATCH /api/orders/{orderId}/dispute`. Lệnh hoàn VNPay từ chối
+ * nằm ở tab xử lý tay (`GET /api/refunds`, AC-49.3).
  */
 export function AdminDisputesPage() {
   const [activeTab, setActiveTab] = useState<DisputeTab>('PENDING');
   const { busy, run, error } = useAction();
   const resolveDispute = useResolveDispute();
 
-  const asyncDisputes = useOpenDisputes();
-  const disputes: Dispute[] = asyncDisputes.kind === 'loaded' ? asyncDisputes.data : [];
+  const asyncOpen = useDisputeQueue('OPEN');
+  const openCount = asyncOpen.kind === 'loaded' ? asyncOpen.data.length : 0;
+  const asyncResolved = useDisputeQueue('RESOLVED');
+  // Phán quyết hoàn tiền mà VNPay từ chối thành khoản chờ chuyển khoản tay (AC-49.3).
+  const asyncRefunds = useManualRefunds();
+  const refundCount = asyncRefunds.kind === 'loaded' ? asyncRefunds.data.length : 0;
 
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
   const [activeDispute, setActiveDispute] = useState<Dispute | null>(null);
   const [decision, setDecision] = useState<DisputeDecision>('PARTIAL_REFUND');
   const [refundAmount, setRefundAmount] = useState('');
   const [adminNote, setAdminNote] = useState('');
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [resolvedDispute, setResolvedDispute] = useState<Dispute | null>(null);
 
-  const maxRefundAllowed =
-    activeDispute?.maxRefundableAmount ?? activeDispute?.escrowHoldingAmount ?? 0;
-
-  const pendingDisputes = disputes.filter((d) => d.status !== 'RESOLVED');
+  const maxRefundAllowed = activeDispute?.maxRefundableAmount ?? 0;
+  // FULL_REFUND hoàn đúng tổng tiền đơn (DisputeServiceImpl.resolve), không phải số đang giữ.
+  const orderTotal = activeDispute?.orderTotalAmount ?? 0;
 
   const handleOpenResolve = (dispute: Dispute) => {
     setActiveDispute(dispute);
-    // Số tiền hoàn mặc định bằng toàn bộ số đang giữ trong Escrow; quản trị
-    // viên giảm xuống nếu chọn phân bổ một phần.
-    setRefundAmount(String(dispute.escrowHoldingAmount ?? 0));
+    // Hoàn một phần phải nhỏ hơn tổng đơn, nên không điền sẵn con số nào:
+    // quản trị viên tự nhập khoản bồi thường.
+    setDecision('PARTIAL_REFUND');
+    setRefundAmount('');
     setAdminNote('');
     setResolveModalOpen(true);
   };
@@ -56,55 +59,46 @@ export function AdminDisputesPage() {
     if (!activeDispute) return;
 
     const numRefund = Number(refundAmount) || 0;
-    if (decision === 'PARTIAL_REFUND' && numRefund > maxRefundAllowed) {
-      toast.error(
-        `Số tiền hoàn (${formatCurrency(numRefund)}) không được vượt quá số tiền đang giữ (${formatCurrency(maxRefundAllowed)}).`,
-      );
-      return;
+    if (decision === 'PARTIAL_REFUND') {
+      // Máy chủ nhận hoàn một phần khi 0 < số tiền < tổng đơn (REFUND_AMOUNT_INVALID).
+      const ceiling = Math.min(maxRefundAllowed, orderTotal - 1);
+      if (numRefund <= 0 || numRefund > ceiling) {
+        toast.error(
+          `Số tiền hoàn một phần phải lớn hơn 0 và không quá ${formatCurrency(ceiling)}. Muốn hoàn hết, chọn "Hoàn toàn bộ".`,
+        );
+        return;
+      }
     }
     if (!adminNote.trim()) {
-      toast.error('Vui lòng nêu căn cứ phán quyết trọng tài.');
+      toast.error('Vui lòng nêu căn cứ phán quyết.');
       return;
     }
 
     const finalRefund =
-      decision === 'FULL_REFUND' ? maxRefundAllowed : decision === 'PARTIAL_REFUND' ? numRefund : 0;
+      decision === 'FULL_REFUND' ? orderTotal : decision === 'PARTIAL_REFUND' ? numRefund : 0;
 
     void run(async () => {
-      // Backend FR-49: PATCH /api/orders/{orderId}/dispute với ResolveDisputeRequest.
-      const resolved = await resolveDispute(activeDispute.orderId, {
+      await resolveDispute(activeDispute.orderId, {
         decision,
         refundAmount: finalRefund,
         decisionReason: adminNote.trim(),
       });
 
-      // Kết quả phán quyết để hiển thị ở tab "Đã có phán quyết".
-      setResolvedDispute({
-        ...activeDispute,
-        status: 'RESOLVED',
-        decision: resolved.decision ?? decision,
-        refundAmount: resolved.refundAmount ?? finalRefund,
-        adminNote: adminNote.trim(),
-        decidedAt: new Date().toISOString(),
-        resolvedAt: resolved.resolvedAt ?? new Date().toISOString(),
-      });
-
-      // Danh sách khiếu nại đang mở đã thay đổi ở phía máy chủ.
-      asyncDisputes.reload();
-
-      setSuccessMsg(
-        `Đã phân xử khiếu nại #${activeDispute.id} thành công! Phương án: ${
-          decision === 'FULL_REFUND'
-            ? 'Hoàn toàn bộ tiền giữ'
-            : decision === 'PARTIAL_REFUND'
-              ? `Hoàn ${formatCurrency(finalRefund)} cho khách`
-              : 'Bác khiếu nại (Giải ngân cho xưởng)'
-        }`,
+      toast.success(
+        `Đã phân xử khiếu nại #${shortCode(activeDispute.id)}: ${
+          decision === 'REJECTED'
+            ? 'bác khiếu nại, tiền về Shop'
+            : `hoàn ${formatCurrency(finalRefund)} cho người mua`
+        }.`,
       );
+      // Hồ sơ chuyển từ tab mở sang tab đã phân xử; lệnh hoàn có thể vừa rơi
+      // vào hàng xử lý tay.
+      asyncOpen.reload();
+      asyncResolved.reload();
+      asyncRefunds.reload();
       setResolveModalOpen(false);
       setActiveDispute(null);
     });
-    setTimeout(() => setSuccessMsg(null), 5000);
   };
 
   return (
@@ -113,83 +107,88 @@ export function AdminDisputesPage() {
         <div>
           <h1 className={styles.title}>Phân xử khiếu nại &amp; Tranh chấp</h1>
           <p className={styles.desc}>
-            Thực hiện trọng tài giải quyết tranh chấp. Bảo vệ quyền lợi người mua và xưởng sản xuất
-            qua quỹ ký quỹ.
+            Xem bằng chứng hai bên rồi quyết định hoàn tiền cho người mua hay chuyển tiền cho Shop.
           </p>
         </div>
         <div className={styles.escrowRuleBadge}>Hoàn tối đa bằng số tiền đang giữ</div>
       </div>
 
-      {successMsg && (
-        <div className={styles.alertSuccess} role="status">
-          <Icon name="check" size={16} /> {successMsg}
-        </div>
-      )}
-
       <Tabs<DisputeTab>
         items={[
-          { id: 'PENDING', label: `Cần phân xử (${pendingDisputes.length})` },
+          { id: 'PENDING', label: `Cần phân xử (${openCount})` },
+          { id: 'REFUNDS', label: `Hoàn tiền xử lý tay (${refundCount})` },
           { id: 'RESOLVED', label: 'Đã có phán quyết' },
         ]}
         activeId={activeTab}
         onChange={setActiveTab}
       />
 
-      <AsyncState
-        state={asyncDisputes}
-        onRetry={asyncDisputes.reload}
-        loadingMessage="Đang tải hồ sơ khiếu nại..."
-        isEmpty={() => disputes.length === 0}
-        empty={
-          <EmptyState
-            icon="shield"
-            title="Không có khiếu nại nào cần phân xử"
-            description="Mọi khiếu nại của sàn đã được xử lý. Khi có khiếu nại mở, hồ sơ sẽ hiện ở đây."
-          />
-        }
-      >
-        {() =>
-          activeTab === 'PENDING' ? (
-            pendingDisputes.length === 0 ? (
-              <EmptyState
-                icon="shield"
-                title="Không có khiếu nại nào cần phân xử"
-                description="Mọi khiếu nại của sàn đã được xử lý. Khi có khiếu nại mở, hồ sơ sẽ hiện ở đây."
-              />
-            ) : (
-              <div className={styles.caseList}>
-                {pendingDisputes.map((dispute) => (
-                  <DisputeCaseCard
-                    key={dispute.id}
-                    dispute={dispute}
-                    onResolve={() => handleOpenResolve(dispute)}
-                  />
-                ))}
-              </div>
-            )
-          ) : null
-        }
-      </AsyncState>
-
-      {/* When Resolved or tab is RESOLVED */}
-      {activeTab === 'RESOLVED' && resolvedDispute && (
-        <DisputeResolutionCard dispute={resolvedDispute} />
+      {activeTab === 'PENDING' && (
+        <AsyncState
+          state={asyncOpen}
+          onRetry={asyncOpen.reload}
+          loadingMessage="Đang tải hồ sơ khiếu nại..."
+          isEmpty={(disputes) => disputes.length === 0}
+          empty={
+            <EmptyState
+              icon="shield"
+              title="Không có khiếu nại nào cần phân xử"
+              description="Khi người mua mở khiếu nại, hồ sơ sẽ hiện ở đây."
+            />
+          }
+        >
+          {(disputes) => (
+            <div className={styles.caseList}>
+              {disputes.map((dispute) => (
+                <DisputeCaseCard
+                  key={dispute.id}
+                  dispute={dispute}
+                  onResolve={() => handleOpenResolve(dispute)}
+                />
+              ))}
+            </div>
+          )}
+        </AsyncState>
       )}
 
-      {activeTab === 'RESOLVED' && !resolvedDispute && (
-        <Card padding="lg">
-          <p>Chưa có phán quyết nào trong phiên làm việc này.</p>
-          <p>
-            Các hồ sơ đã phán quyết được lưu ở máy chủ. Xem lại danh sách đầy đủ tại{' '}
-            <Link to={routes.admin.disputes}>khiếu nại đang mở</Link>.
-          </p>
-        </Card>
+      {activeTab === 'REFUNDS' && (
+        <AsyncState
+          state={asyncRefunds}
+          onRetry={asyncRefunds.reload}
+          loadingMessage="Đang tải các khoản hoàn tiền..."
+        >
+          {(refunds) => <ManualRefundList refunds={refunds} onSettled={asyncRefunds.reload} />}
+        </AsyncState>
       )}
 
-      {/* Modal Ra phán quyết */}
+      {activeTab === 'RESOLVED' && (
+        <AsyncState
+          state={asyncResolved}
+          onRetry={asyncResolved.reload}
+          loadingMessage="Đang tải các phán quyết..."
+          isEmpty={(disputes) => disputes.length === 0}
+          empty={
+            <EmptyState
+              icon="shield"
+              title="Chưa có phán quyết nào"
+              description="Khiếu nại đã phân xử sẽ hiện ở đây, mới nhất trước."
+            />
+          }
+        >
+          {(disputes) => (
+            <div className={styles.caseList}>
+              {disputes.map((dispute) => (
+                <DisputeResolutionCard key={dispute.id} dispute={dispute} />
+              ))}
+            </div>
+          )}
+        </AsyncState>
+      )}
+
       <DisputeResolutionModal
         open={resolveModalOpen}
         maxRefundAllowed={maxRefundAllowed}
+        orderTotal={orderTotal}
         decision={decision}
         refundAmount={refundAmount}
         adminNote={adminNote}

@@ -99,7 +99,7 @@ export function mapOrderDtoToEntity(dto: OrderDto): Order {
     status: mapOrderStatus(dto.status),
     deliveredAt: dto.deliveredAt,
     disputeDeadline: dto.complaintDeadline,
-    hasDispute: false,
+    hasDispute: dto.disputeOpen === true,
     trackingCode: dto.trackingCode,
     interprovince: dto.interprovince === true,
     hasCustom: dto.hasCustom === true,

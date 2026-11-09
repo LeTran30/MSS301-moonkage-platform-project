@@ -11,10 +11,10 @@ export const GATEWAY = {
     LOGIN: '/api/auth/login',
     REGISTER: '/api/auth/register',
     REFRESH: '/api/auth/refresh-token', // AuthController: @PostMapping("/refresh-token")
-    ME: '/api/accounts/me',             // AccountController: @GetMapping("/api/accounts/me")
+    ME: '/api/accounts/me', // AccountController: @GetMapping("/api/accounts/me")
     // AccountController: @PatchMapping("/api/accounts/me/profile") — đổi họ tên hiển thị (FR-02).
     UPDATE_PROFILE: '/api/accounts/me/profile',
-    NFC_SESSIONS: '/api/nfc/sessions',  // KycController: /api/nfc/sessions
+    NFC_SESSIONS: '/api/nfc/sessions', // KycController: /api/nfc/sessions
     NFC_SESSION_BY_ID: (sessionId: string) => `/api/nfc/sessions/${sessionId}`,
     NFC_SESSION_CARD: (sessionId: string) => `/api/nfc/sessions/${sessionId}/card`,
     NFC_VERIFY_STATUS: '/api/nfc/status',
@@ -36,13 +36,13 @@ export const GATEWAY = {
 
   // 2. Vendor Management Service (VendorController, SupplierController)
   VENDOR: {
-    BASE: '/api/vendors',                                // VendorController: @GetMapping("/api/vendors")
+    BASE: '/api/vendors', // VendorController: @GetMapping("/api/vendors")
     BY_ID: (id: string) => `/api/vendors/${id}`,
     // VendorController: @GetMapping("/api/vendors/{vendorId}/summary") — tóm tắt công khai
     // của một tiệm bánh (B-3.2): mở cho khách, chỉ có id, tên, tỉnh và các cờ bán hàng.
     SUMMARY: (id: string) => `/api/vendors/${id}/summary`,
-    REGISTER: '/api/vendors',                            // VendorController: @PostMapping("/api/vendors")
-    SUPPLIERS: '/api/suppliers',       // SupplierController
+    REGISTER: '/api/vendors', // VendorController: @PostMapping("/api/vendors")
+    SUPPLIERS: '/api/suppliers', // SupplierController
     SUPPLIER_BY_ID: (id: string) => `/api/suppliers/${id}`,
     REGISTRATION_FEE_CONFIG: '/api/registration-fee-config',
     // CakeAttributeController: @RequestMapping("/api/cake-attributes")
@@ -78,11 +78,11 @@ export const GATEWAY = {
   },
   // 3. Catalog & Taxonomy Service (ProductController, CakeAttributes)
   CATALOG: {
-    PRODUCTS: '/api/products',          // ProductController: /api/products
+    PRODUCTS: '/api/products', // ProductController: /api/products
     PRODUCT_BY_ID: (id: string) => `/api/products/${id}`,
     // ProductReadController: @GetMapping("/{productId}/reviews") — đánh giá của sản phẩm (AC-11.3).
     PRODUCT_REVIEWS: (id: string) => `/api/products/${id}/reviews`,
-    CAKE_ATTRIBUTES: '/api/cake-attributes',             // Danh mục Vỏ & Nhân FR-54
+    CAKE_ATTRIBUTES: '/api/cake-attributes', // Danh mục Vỏ & Nhân FR-54
     // BE nhận nhóm bằng query `?group=CRUST|FILLING`, không có path con riêng.
   },
 
@@ -96,8 +96,7 @@ export const GATEWAY = {
     SUBMIT_QUOTE: (requestId: string) => `/api/quote-requests/${requestId}/quotes`,
     REQUEST_QUOTES: (requestId: string) => `/api/quote-requests/${requestId}/quotes`,
     // QuoteRequestController: @GetMapping("/{requestId}/invitations")
-    REQUEST_INVITATIONS: (requestId: string) =>
-      `/api/quote-requests/${requestId}/invitations`,
+    REQUEST_INVITATIONS: (requestId: string) => `/api/quote-requests/${requestId}/invitations`,
     // QuoteRequestController: @PostMapping("/{requestId}/quotes/{quoteId}/acceptance")
     ACCEPT_QUOTE: (requestId: string, quoteId: string) =>
       `/api/quote-requests/${requestId}/quotes/${quoteId}/acceptance`,
@@ -141,6 +140,8 @@ export const GATEWAY = {
     // OrderDocumentController: @GetMapping("/{orderId}/invoice")
     INVOICE: (orderId: string) => `/api/orders/${orderId}/invoice`,
     // Khiếu nại (số ít theo DisputeController: @RequestMapping("/api/orders/{orderId}/dispute"))
+    /** FR-49, Q5.0: the admin's disputes across orders (`?status=OPEN|RESOLVED`). */
+    DISPUTES: '/api/orders/disputes',
     DISPUTE: (orderId: string) => `/api/orders/${orderId}/dispute`,
     DISPUTE_EVIDENCES: (orderId: string) => `/api/orders/${orderId}/dispute/evidences`,
     // Đánh giá sản phẩm (ReviewController: @RequestMapping("/api/orders/{orderId}/reviews"))
@@ -173,8 +174,7 @@ export const GATEWAY = {
     // LedgerController: @GetMapping("/{orderId}/disbursements")
     LEDGER_DISBURSEMENTS: (orderId: string) => `/api/ledgers/${orderId}/disbursements`,
     // LedgerController: @PostMapping("/{orderId}/disbursements")
-    LEDGER_DISBURSEMENT_CREATE: (orderId: string) =>
-      `/api/ledgers/${orderId}/disbursements`,
+    LEDGER_DISBURSEMENT_CREATE: (orderId: string) => `/api/ledgers/${orderId}/disbursements`,
     // LedgerController: @PatchMapping("/{orderId}/disbursements/{requestId}")
     LEDGER_DISBURSEMENT_REVIEW: (orderId: string, requestId: string) =>
       `/api/ledgers/${orderId}/disbursements/${requestId}`,
@@ -201,8 +201,7 @@ export const GATEWAY = {
     // NotificationController (BE-04b): @RequestMapping("/api/notifications").
     // Gateway định tuyến path này tới orchestrator-service (application.yml).
     NOTIFICATIONS: '/api/notifications',
-    NOTIFICATION_MARK_READ: (notificationId: string) =>
-      `/api/notifications/${notificationId}/read`,
+    NOTIFICATION_MARK_READ: (notificationId: string) => `/api/notifications/${notificationId}/read`,
     NOTIFICATIONS_MARK_ALL_READ: '/api/notifications/read-all',
     // orchestrator-service chưa có REST cho nhật ký kiểm toán, nên đường dẫn này
     // chưa có route nào phục vụ (D-30: chỉ khai báo route cho endpoint đang chạy).
@@ -215,7 +214,7 @@ export const GATEWAY = {
  */
 export const NOT_IMPLEMENTED_YET = {
   AUDIT_LOGS: '/api/audit-logs', // orchestrator chưa có REST cho audit log
-  VNPAY_CREATE_PUBLIC: '/api/payments',      // BE-08b: cần endpoint public thay vì /internal/payments
+  VNPAY_CREATE_PUBLIC: '/api/payments', // BE-08b: cần endpoint public thay vì /internal/payments
 } as const;
 
 /** STOMP over WebSocket của orchestrator-service, đi qua gateway; token nằm trong CONNECT frame. */
@@ -233,4 +232,3 @@ export function websocketUrl(path: string): string {
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   return url.toString();
 }
-

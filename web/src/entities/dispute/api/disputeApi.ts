@@ -1,28 +1,24 @@
-import { apiClient, GATEWAY, unwrap } from '@/shared/api';
+import { ApiError, apiClient, GATEWAY, unwrap, unwrapPage } from '@/shared/api';
 
-import { orderApi } from '@/entities/order/@x/dispute';
 import { ledgerApi } from '@/entities/payment/@x/dispute';
-import {
-  disputeStore,
-  type Dispute,
-  type DisputeDecision,
-  type DisputeEvidence,
-  type DisputeParty,
-  type DisputeReason,
-  type DisputeStatus,
-} from '../model/disputeStore';
+import type {
+  Dispute,
+  DisputeDecision,
+  DisputeParty,
+  DisputeReason,
+  DisputeStatus,
+} from '../model/dispute';
 
-/**
- * Wire shape of `com.moonkage.order.dto.response.DisputeResponse`.
- *
- * The backend names the money of a dispute nowhere: the refundable amount comes
- * from the payment ledger, not from the dispute itself. The UI therefore reads
- * the escrow amount from `GET /api/ledgers/{orderId}` and only reads
- * `decision` / `refundAmount` back from the dispute.
- */
+/** Wire shape of `com.moonkage.order.dto.response.DisputeResponse`. */
 export interface DisputeDto {
   disputeId: string;
   orderId: string;
+  /** The Shop's name on the day of the order; null on older orders. */
+  vendorName?: string | null;
+  /** Who received the order: the name the buyer gave for it. */
+  recipientName?: string | null;
+  /** What the buyer paid for the order; a full refund gives it back. */
+  orderTotalAmount?: number;
   reason: DisputeReason;
   description: string;
   status: DisputeStatus;
@@ -42,61 +38,49 @@ export interface DisputeDto {
 /**
  * Map a backend dispute to the UI entity.
  *
- * `ledger` là sổ tiền của đơn: nó cho biết đang **giữ** bao nhiêu trong
- * Escrow (`held`) và tổng đơn là bao nhiêu (`totalCollected`). Không có nó
- * thì các con số này bằng 0 và quy tắc AC-49.3 không kiểm tra được.
+ * `held` là số đang giữ trong sổ tiền của đơn (`GET /api/ledgers/{orderId}`):
+ * trần hoàn tiền theo AC-49.3. Người mua không đọc được sổ tiền, nên khi không
+ * có thì số này là 0 chứ không đoán.
  */
-export function mapDisputeDtoToEntity(
-  dto: DisputeDto,
-  fallbackOrderId?: string,
-  ledger?: {
-    held?: number;
-    totalCollected?: number;
-    disbursed?: number;
-  } | null,
-): Dispute {
-  const existing = disputeStore.get().find((d) => d.id === dto.disputeId);
-  const evidences: DisputeEvidence[] = (dto.evidences ?? []).map((e) => ({
-    party: e.party,
-    downloadUrl: e.downloadUrl,
-    note: e.note,
-    createdAt: e.createdAt,
-  }));
-
-  // Số tiền đang giữ: ưu tiên sổ tiền của máy chủ, sau đó tới giá trị đã
-  // biết trong phiên, cuối cùng mới là 0 (không phải một con số bịa ra).
-  const escrowHoldingAmount = ledger?.held ?? existing?.escrowHoldingAmount ?? 0;
-  const orderTotalAmount = ledger?.totalCollected ?? existing?.orderTotalAmount ?? 0;
-  const disbursedAmount = ledger?.disbursed ?? existing?.disbursedAmount ?? 0;
-
+export function mapDisputeDtoToEntity(dto: DisputeDto, held?: number | null): Dispute {
+  const escrowHoldingAmount = held ?? 0;
   return {
     id: dto.disputeId,
-    orderId: dto.orderId || fallbackOrderId || '',
-    buyerId: existing?.buyerId ?? '',
-    buyerName: existing?.buyerName ?? '',
-    vendorId: existing?.vendorId ?? '',
-    vendorName: existing?.vendorName ?? '',
+    orderId: dto.orderId,
+    buyerName: dto.recipientName ?? '',
+    vendorName: dto.vendorName ?? '',
     reason: dto.reason,
     description: dto.description,
-    images: evidences.map((e) => e.downloadUrl),
-    evidences,
-    createdAt: dto.createdAt ?? new Date().toISOString(),
+    evidences: (dto.evidences ?? []).map((e) => ({
+      party: e.party,
+      downloadUrl: e.downloadUrl,
+      note: e.note,
+      createdAt: e.createdAt,
+    })),
+    createdAt: dto.createdAt ?? '',
     status: dto.status,
     resolvedAt: dto.resolvedAt ?? undefined,
-    orderTotalAmount,
+    orderTotalAmount: dto.orderTotalAmount ?? 0,
     escrowHoldingAmount,
-    disbursedAmount,
-    // AC-49.3: tối đa hoàn được = đúng số tiền đang giữ trong Escrow.
     maxRefundableAmount: escrowHoldingAmount,
     decision: dto.decision ?? undefined,
     refundAmount: dto.refundAmount ?? undefined,
-    adminNote: dto.decisionReason ?? existing?.adminNote,
-    decidedAt: dto.resolvedAt ?? existing?.decidedAt,
+    adminNote: dto.decisionReason ?? undefined,
   };
 }
 
+/** Số đang giữ của đơn; sổ tiền là dữ liệu bổ sung nên lỗi của nó không làm hỏng hồ sơ. */
+async function heldOf(orderId: string): Promise<number | null> {
+  try {
+    const ledger = await ledgerApi.getLedger(orderId);
+    return ledger?.held ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * The read side of the disputes (FR-49, Q5.0).
+ * The read side of the disputes (FR-12, FR-49, Q5.0).
  *
  * The writes (`openDispute`, `addDisputeEvidence`, `resolveDispute`) belong to
  * the `file-complaint` and `resolve-disputes` features
@@ -104,42 +88,39 @@ export function mapDisputeDtoToEntity(
  */
 export const disputeApi = {
   /**
-   * The open disputes of the platform (FR-49, Q5.0).
+   * The admin's queue (FR-49, Q5.0): `GET /api/orders/disputes?status=`.
    *
-   * `GET /api/orders?disputeStatus=OPEN` lists the orders waiting for a
-   * decision; `GET /api/orders/{orderId}/dispute` reads the dispute of each.
+   * Open ones come oldest first, each with the amount its order still holds;
+   * decided ones latest decision first (their ledger is no longer needed).
    */
-  async listOpen(): Promise<Dispute[]> {
-    const orders = await orderApi.getOrders({ openDispute: true });
-    const disputes: Dispute[] = [];
-    for (const order of orders) {
-      const dispute = await disputeApi.getByOrderId(order.id);
-      if (dispute) disputes.push(dispute);
+  async list(status: DisputeStatus): Promise<Dispute[]> {
+    const params = new URLSearchParams({ status, size: '100' });
+    const res = await apiClient.get<unknown>(`${GATEWAY.ORDER.DISPUTES}?${params.toString()}`);
+    const dtos = unwrapPage<DisputeDto>(res);
+    if (status === 'RESOLVED') {
+      return dtos.map((dto) => mapDisputeDtoToEntity(dto));
     }
-    return disputes;
+    return Promise.all(
+      dtos.map(async (dto) => mapDisputeDtoToEntity(dto, await heldOf(dto.orderId))),
+    );
   },
 
   /**
-   * The one dispute of an order (the backend allows only one open dispute per order).
+   * The latest dispute of an order, or `null` when the order never had one.
    *
-   * Sổ tiền của đơn được đọc kèm: `GET /api/ledgers/{orderId}` cho biết đang
-   * giữ bao nhiêu trong Escrow — con số mà AC-49.3 chặn trần hoàn tiền.
+   * Sổ tiền của đơn được đọc kèm khi người xem có quyền (Shop, quản trị viên).
    */
   async getByOrderId(orderId: string): Promise<Dispute | null> {
-    const res = await apiClient.get<unknown>(GATEWAY.ORDER.DISPUTE(orderId));
+    let res;
+    try {
+      res = await apiClient.get<unknown>(GATEWAY.ORDER.DISPUTE(orderId));
+    } catch (error) {
+      // 404 DISPUTE_001: đơn chưa từng bị khiếu nại — không phải lỗi của màn hình.
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
     const dto = unwrap<DisputeDto>(res);
     if (!dto) return null;
-
-    // Sổ tiền là dữ liệu bổ sung: đọc song song với hồ sơ khiếu nại và bỏ
-    // qua lỗi của nó, vì hồ sơ khiếu nại vẫn dùng được kể cả khi sổ tiền
-    // tạm thời không trả lời.
-    let ledger = null;
-    try {
-      ledger = await ledgerApi.getLedger(orderId);
-    } catch {
-      ledger = null;
-    }
-
-    return mapDisputeDtoToEntity(dto, orderId, ledger);
+    return mapDisputeDtoToEntity(dto, await heldOf(orderId));
   },
 };

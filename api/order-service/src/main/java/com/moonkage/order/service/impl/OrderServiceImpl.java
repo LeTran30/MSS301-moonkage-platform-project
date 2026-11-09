@@ -17,11 +17,13 @@ import com.moonkage.order.entity.InvoiceInfo;
 import com.moonkage.order.entity.Order;
 import com.moonkage.order.entity.OrderItem;
 import com.moonkage.order.entity.ProgressUpdate;
+import com.moonkage.order.enums.DisputeStatus;
 import com.moonkage.order.enums.MockupReviewStatus;
 import com.moonkage.order.enums.OrderKind;
 import com.moonkage.order.enums.OrderStatus;
 import com.moonkage.order.exception.AppException;
 import com.moonkage.order.exception.ErrorCode;
+import com.moonkage.order.repository.DisputeRepository;
 import com.moonkage.order.repository.MockupVersionRepository;
 import com.moonkage.order.repository.OrderItemRepository;
 import com.moonkage.order.repository.OrderRepository;
@@ -39,6 +41,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final DisputeRepository disputeRepository;
     private final MockupVersionRepository mockupVersionRepository;
     private final ProgressUpdateRepository progressUpdateRepository;
     private final InboxService inboxService;
@@ -95,12 +99,14 @@ public class OrderServiceImpl implements OrderService {
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
         Page<Order> orders = orderRepository.search(
                 buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable);
+        List<String> orderIds = orders.map(Order::getId).toList();
         Map<String, List<OrderItem>> itemsByOrder = orders.isEmpty()
                 ? Map.of()
-                : orderItemRepository.findByOrderIdIn(orders.map(Order::getId).toList()).stream()
+                : orderItemRepository.findByOrderIdIn(orderIds).stream()
                         .collect(Collectors.groupingBy(item -> item.getOrder().getId()));
-        return PageResponse.from(
-                orders.map(order -> toResponse(order, itemsByOrder.getOrDefault(order.getId(), List.of()))));
+        Set<String> disputed = orders.isEmpty() ? Set.of() : disputeRepository.findOrderIdsWithOpenDispute(orderIds);
+        return PageResponse.from(orders.map(order -> toResponse(
+                order, itemsByOrder.getOrDefault(order.getId(), List.of()), disputed.contains(order.getId()))));
     }
 
     @Override
@@ -242,6 +248,10 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() != OrderStatus.DELIVERED || order.getReceivedConfirmedAt() != null) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
+        // A buy-now order would complete here while the admin has yet to decide who gets the money.
+        if (disputeRepository.existsByOrderIdAndStatus(order.getId(), DisputeStatus.OPEN)) {
+            throw new AppException(ErrorCode.DISPUTE_ALREADY_OPEN);
+        }
         order.setReceivedConfirmedAt(Instant.now());
         if (order.getKind() == OrderKind.BUY_NOW) {
             moveTo(order, OrderStatus.COMPLETED, null, List.of());
@@ -381,6 +391,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse toResponse(Order order, List<OrderItem> items) {
+        return toResponse(order, items, disputeRepository.existsByOrderIdAndStatus(order.getId(), DisputeStatus.OPEN));
+    }
+
+    private OrderResponse toResponse(Order order, List<OrderItem> items, boolean disputeOpen) {
         InvoiceInfo invoice = order.getInvoiceInfo();
         return new OrderResponse(
                 order.getId(),
@@ -417,6 +431,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getDeliveredAt(),
                 order.getReceivedConfirmedAt(),
                 order.getComplaintDeadline(),
+                disputeOpen,
                 order.getCreatedAt(),
                 items.stream()
                         .map(i -> new OrderResponse.Item(

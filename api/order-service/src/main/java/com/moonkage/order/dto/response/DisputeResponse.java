@@ -7,10 +7,19 @@ import com.moonkage.order.enums.DisputeStatus;
 import java.time.Instant;
 import java.util.List;
 
-/** The dispute of an order with both parties' evidence (AC-49.1). */
+/**
+ * The dispute of an order with both parties' evidence (AC-49.1).
+ *
+ * @param vendorName the Shop's name on the day of the order; null on older orders
+ * @param recipientName who received the order, the name the buyer gave for it
+ * @param orderTotalAmount what the buyer paid for the order; a full refund gives it back
+ */
 public record DisputeResponse(
         String disputeId,
         String orderId,
+        String vendorName,
+        String recipientName,
+        long orderTotalAmount,
         DisputeReason reason,
         String description,
         DisputeStatus status,

@@ -428,7 +428,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_2"];
+        get: operations["PaymentList_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -799,6 +799,22 @@ export interface paths {
         get: operations["OrderList"];
         put?: never;
         post: operations["OrderCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OrderList_2"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2148,6 +2164,17 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponsePageResponseDisputeResponse: {
+            code?: string;
+            data?: components["schemas"]["PageResponseDisputeResponse"];
+            errors?: components["schemas"]["OrderFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ApiResponsePageResponseLedgerResponse: {
             code?: string;
             data?: components["schemas"]["PageResponseLedgerResponse"];
@@ -2715,14 +2742,18 @@ export interface components {
             disputeId?: string;
             evidences?: components["schemas"]["Evidence"][];
             orderId?: string;
+            /** Format: int64 */
+            orderTotalAmount?: number;
             /** @enum {string} */
             reason?: "WRONG_ITEM" | "DAMAGED" | "LATE_DELIVERY" | "WRONG_LOGO" | "OTHER";
+            recipientName?: string;
             /** Format: int64 */
             refundAmount?: number;
             /** Format: date-time */
             resolvedAt?: string;
             /** @enum {string} */
             status?: "OPEN" | "RESOLVED";
+            vendorName?: string;
         };
         Document: {
             /** @enum {string} */
@@ -3022,6 +3053,7 @@ export interface components {
             depositAmount?: number;
             /** Format: int64 */
             discountAmount?: number;
+            disputeOpen?: boolean;
             hasCustom?: boolean;
             hasInvoiceFile?: boolean;
             id?: string;
@@ -3079,6 +3111,17 @@ export interface components {
             ownerLegalName?: string;
             /** Format: int32 */
             submissionNo?: number;
+        };
+        PageResponseDisputeResponse: {
+            content?: components["schemas"]["DisputeResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
         };
         PageResponseLedgerResponse: {
             content?: components["schemas"]["LedgerResponse"][];
@@ -4625,7 +4668,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    PaymentList_2: {
         parameters: {
             query?: {
                 page?: number;
@@ -5368,6 +5411,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseReviewResponse"];
+                };
+            };
+        };
+    };
+    OrderList_2: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: "OPEN" | "RESOLVED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseDisputeResponse"];
                 };
             };
         };

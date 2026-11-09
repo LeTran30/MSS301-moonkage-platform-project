@@ -7,6 +7,8 @@ interface DisputeResolutionModalProps {
   open: boolean;
   /** Số tiền Escrow đang giữ = trần hoàn tối đa (AC-49.3). */
   maxRefundAllowed: number;
+  /** Tổng tiền đơn: "Hoàn toàn bộ" hoàn đúng số này (FULL_REFUND). */
+  orderTotal: number;
   decision: DisputeDecision;
   refundAmount: string;
   adminNote: string;
@@ -27,6 +29,7 @@ interface DisputeResolutionModalProps {
 export function DisputeResolutionModal({
   open,
   maxRefundAllowed,
+  orderTotal,
   decision,
   refundAmount,
   adminNote,
@@ -74,8 +77,8 @@ export function DisputeResolutionModal({
                 aria-label="Hoàn tiền một phần"
               />
               <div>
-                <strong>Hoàn tiền một phần (Được khuyến nghị)</strong>
-                <p>Người mua nhận lại một khoản bồi thường; xưởng nhận phần còn lại.</p>
+                <strong>Hoàn tiền một phần</strong>
+                <p>Người mua nhận lại một khoản bồi thường; Shop nhận phần còn lại.</p>
               </div>
             </label>
 
@@ -85,11 +88,11 @@ export function DisputeResolutionModal({
                 checked={decision === 'FULL_REFUND'}
                 onChange={() => onDecisionChange('FULL_REFUND')}
                 inputClassName={styles.radioInput}
-                aria-label="Hoàn 100% tiền đang giữ"
+                aria-label="Hoàn toàn bộ tiền đơn"
               />
               <div>
-                <strong>Hoàn 100% tiền đang giữ ({formatCurrency(maxRefundAllowed)})</strong>
-                <p>Hàng hư hỏng hoàn toàn không thể sử dụng do lỗi xưởng đóng gói.</p>
+                <strong>Hoàn toàn bộ tiền đơn ({formatCurrency(orderTotal)})</strong>
+                <p>Lỗi thuộc về Shop và hàng không dùng được.</p>
               </div>
             </label>
 
@@ -102,8 +105,8 @@ export function DisputeResolutionModal({
                 aria-label="Bác khiếu nại, giải ngân toàn bộ cho người bán"
               />
               <div>
-                <strong>Bác khiếu nại (Giải ngân toàn bộ cho người bán)</strong>
-                <p>Bằng chứng người mua cung cấp không hợp lệ hoặc lỗi từ người mua.</p>
+                <strong>Bác khiếu nại (tiền về Shop)</strong>
+                <p>Bằng chứng không cho thấy lỗi của Shop.</p>
               </div>
             </label>
           </div>
@@ -118,13 +121,13 @@ export function DisputeResolutionModal({
               id="refund-amount"
               type="number"
               value={refundAmount}
-              min={0}
-              max={maxRefundAllowed}
+              min={1}
+              max={Math.min(maxRefundAllowed, orderTotal - 1)}
               onChange={(e) => onRefundAmountChange(e.target.value)}
-              placeholder="Ví dụ: 1350000"
+              placeholder={`Nhỏ hơn ${formatCurrency(orderTotal)}`}
             />
             <span className={styles.hint}>
-              Xưởng sẽ nhận:{' '}
+              Shop nhận phần còn lại:{' '}
               <strong>
                 {formatCurrency(Math.max(0, maxRefundAllowed - Number(refundAmount)))}
               </strong>

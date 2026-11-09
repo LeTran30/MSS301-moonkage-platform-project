@@ -97,10 +97,11 @@ export function OrdersListPage() {
                   {order.status === 'DELIVERED' && (
                     <ButtonLink
                       to={routes.account.orderDispute(order.id)}
-                      variant="danger"
+                      variant={order.hasDispute ? 'outline' : 'danger'}
                       size="sm"
                     >
-                      <Icon name="alert" size={14} /> Báo vấn đề với đơn
+                      <Icon name="alert" size={14} />{' '}
+                      {order.hasDispute ? 'Xem khiếu nại' : 'Báo vấn đề với đơn'}
                     </ButtonLink>
                   )}
                   <ButtonLink to={routes.account.order(order.id)} variant="primary" size="sm">
@@ -149,7 +150,7 @@ export function OrdersListPage() {
 
               {order.vendorName && (
                 <div className={styles.shopRow}>
-                  <Icon name="store" size={14} /> Xưởng thực hiện: <strong>{order.vendorName}</strong>
+                  <Icon name="store" size={14} /> Shop: <strong>{order.vendorName}</strong>
                 </div>
               )}
 

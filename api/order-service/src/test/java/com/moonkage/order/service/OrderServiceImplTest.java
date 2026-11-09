@@ -26,6 +26,7 @@ import com.moonkage.order.enums.OrderKind;
 import com.moonkage.order.enums.OrderStatus;
 import com.moonkage.order.exception.AppException;
 import com.moonkage.order.exception.ErrorCode;
+import com.moonkage.order.repository.DisputeRepository;
 import com.moonkage.order.repository.MockupVersionRepository;
 import com.moonkage.order.repository.OrderItemRepository;
 import com.moonkage.order.repository.OrderRepository;
@@ -54,6 +55,7 @@ class OrderServiceImplTest {
 
     private final OrderRepository orderRepository = mock(OrderRepository.class);
     private final OrderItemRepository orderItemRepository = mock(OrderItemRepository.class);
+    private final DisputeRepository disputeRepository = mock(DisputeRepository.class);
     private final MockupVersionRepository mockupVersionRepository = mock(MockupVersionRepository.class);
     private final ProgressUpdateRepository progressUpdateRepository = mock(ProgressUpdateRepository.class);
     private final InboxService inboxService = mock(InboxService.class);
@@ -69,6 +71,7 @@ class OrderServiceImplTest {
         service = new OrderServiceImpl(
                 orderRepository,
                 orderItemRepository,
+                disputeRepository,
                 mockupVersionRepository,
                 progressUpdateRepository,
                 inboxService,

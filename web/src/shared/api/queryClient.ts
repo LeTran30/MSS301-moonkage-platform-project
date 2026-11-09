@@ -54,9 +54,12 @@ export const queryKeys = {
     quotes: (requestId: string) => ['quote', 'quotes', requestId] as const,
   },
   dispute: {
-    open: () => ['dispute', 'open'] as const,
+    queue: (status: 'OPEN' | 'RESOLVED') => ['dispute', 'queue', status] as const,
     byOrder: (orderId: string) => ['dispute', 'by-order', orderId] as const,
-    byId: (disputeId: string) => ['dispute', 'by-id', disputeId] as const,
+  },
+  refund: {
+    /** The refunds the gateway refused, which an admin settles by hand (AC-49.3). */
+    manual: () => ['refund', 'manual'] as const,
   },
   ledger: {
     list: (vendorId?: string) => ['ledger', 'list', vendorId ?? ''] as const,

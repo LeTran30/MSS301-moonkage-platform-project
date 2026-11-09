@@ -13,6 +13,7 @@ import java.util.List;
  * @param paymentGroupId the checkout that paid it; buy-now orders of one checkout share it (BR-29)
  * @param invoiceInfo null = personal invoice
  * @param vendorName the Shop's name on the day of the order; null on older orders
+ * @param disputeOpen a dispute of the order waits for the admin's decision (FR-12, FR-49)
  */
 public record OrderResponse(
         String id,
@@ -43,6 +44,7 @@ public record OrderResponse(
         Instant deliveredAt,
         Instant receivedConfirmedAt,
         Instant complaintDeadline,
+        boolean disputeOpen,
         Instant createdAt,
         List<Item> items) {
 

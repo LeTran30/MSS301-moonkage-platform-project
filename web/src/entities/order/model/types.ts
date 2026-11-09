@@ -59,7 +59,7 @@ export type Order = {
   /** The shop and the buyer are in different provinces: shipping needs a tracking code (AC-32.3). */
   interprovince?: boolean;
   deliveredAt?: string;
-  disputeDeadline?: string; // 3 ngày nội thành, 7 ngày liên tỉnh/đặt hàng (Q-10)
+  disputeDeadline?: string; // hạn khiếu nại máy chủ tính khi đơn giao (Q-10)
   hasDispute?: boolean;
   disputeId?: string;
   hasInvoice?: boolean;

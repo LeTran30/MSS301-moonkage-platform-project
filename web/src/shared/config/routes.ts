@@ -44,7 +44,8 @@ export const routes = {
     verify: '/tai-khoan/xac-minh', // M6.4
     profile: '/tai-khoan/thong-tin', // M6.5
     messages: '/tai-khoan/tin-nhan', // Nhắn tin với shop
-    messagesWithShop: (vendorId: string) => `/tai-khoan/tin-nhan?shop=${encodeURIComponent(vendorId)}`,
+    messagesWithShop: (vendorId: string) =>
+      `/tai-khoan/tin-nhan?shop=${encodeURIComponent(vendorId)}`,
   },
   vendor: {
     overview: '/kenh-ban', // B1.0
@@ -77,7 +78,6 @@ export const routes = {
     payouts: '/quan-tri/tien/chuyen-tien', // Q4.2
     reconciliation: '/quan-tri/tien/doi-soat', // Q4.3
     disputes: '/quan-tri/khieu-nai', // Q5.0
-    dispute: (id: string) => `/quan-tri/khieu-nai/${id}`, // Q5.1
     config: '/quan-tri/cau-hinh', // Q6.0
     interprovinceFee: '/quan-tri/cau-hinh/phi-lien-tinh', // Q6.1
     openingFee: '/quan-tri/cau-hinh/phi-mo-ban', // Q6.2

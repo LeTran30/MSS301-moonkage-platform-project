@@ -3528,6 +3528,61 @@
         }
       }
     },
+    "/api/orders/disputes": {
+      "get": {
+        "tags": [
+          "dispute-queue-controller"
+        ],
+        "operationId": "OrderList_2",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "OPEN",
+              "enum": [
+                "OPEN",
+                "RESOLVED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseDisputeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/checkouts/{checkoutId}": {
       "get": {
         "tags": [
@@ -4107,7 +4162,7 @@
         "tags": [
           "ledger-controller"
         ],
-        "operationId": "list_2",
+        "operationId": "PaymentList_2",
         "parameters": [
           {
             "name": "vendorId",
@@ -8689,6 +8744,16 @@
           "orderId": {
             "type": "string"
           },
+          "vendorName": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "orderTotalAmount": {
+            "type": "integer",
+            "format": "int64"
+          },
           "reason": {
             "type": "string",
             "enum": [
@@ -9347,6 +9412,9 @@
             "type": "string",
             "format": "date-time"
           },
+          "disputeOpen": {
+            "type": "boolean"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -9779,6 +9847,64 @@
           "averageOrderValue": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ApiResponsePageResponseDisputeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseDisputeResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderFieldError"
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseDisputeResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisputeResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

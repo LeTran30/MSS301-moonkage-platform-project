@@ -1,55 +1,60 @@
-import { formatCurrency } from '@/shared/utils';
-import { Badge, Card, Icon } from '@/shared/ui';
-import type { Dispute } from '../model/disputeStore';
+import { formatCurrency, formatDateTime, shortCode } from '@/shared/utils';
+import { Badge, Card } from '@/shared/ui';
+import { DISPUTE_DECISION_LABELS, DISPUTE_REASON_LABELS, type Dispute } from '../model/dispute';
 import styles from './DisputeResolutionCard.module.css';
 
 interface DisputeResolutionCardProps {
   dispute: Dispute;
 }
 
-/** Kết quả phán quyết tranh chấp đã có (Q5.1). */
+/**
+ * Một khiếu nại đã phân xử (Q5.0, FR-49).
+ *
+ * Số hoàn là số máy chủ ghi trong phán quyết; phần còn lại của đơn thuộc về Shop.
+ */
 export function DisputeResolutionCard({ dispute }: DisputeResolutionCardProps) {
-  const refund = dispute.refundAmount || 0;
+  const refund = dispute.refundAmount ?? 0;
   return (
     <Card className={styles.resolvedCard}>
       <div className={styles.resolvedHeader}>
         <div>
-          <span className={styles.disputeId}>#{dispute.id}</span>
-          <h3 className={styles.orderRef}>Phán quyết tranh chấp đơn #{dispute.orderId}</h3>
+          <span className={styles.disputeId}>Khiếu nại #{shortCode(dispute.id)}</span>
+          <h3 className={styles.orderRef}>
+            Đơn #{shortCode(dispute.orderId)}
+            {dispute.vendorName && <> · {dispute.vendorName}</>}
+          </h3>
         </div>
-        <Badge tone="green">
-          <Icon name="check" size={13} /> Đã giải quyết xong
-        </Badge>
+        <Badge tone="green">Đã phân xử</Badge>
       </div>
 
       <div className={styles.resolutionDetails}>
         <div className={styles.resRow}>
-          <span>Hình thức phán quyết:</span>
+          <span>Người mua khiếu nại</span>
           <strong>
-            {dispute.decision === 'FULL_REFUND'
-              ? 'Hoàn tiền toàn bộ cho người mua'
-              : dispute.decision === 'PARTIAL_REFUND'
-                ? 'Bồi hoàn một phần cho người mua'
-                : 'Bác bỏ khiếu nại của người mua'}
+            {dispute.buyerName || 'Người mua'} · {DISPUTE_REASON_LABELS[dispute.reason]}
           </strong>
         </div>
-
         <div className={styles.resRow}>
-          <span>Số tiền hoàn trả người mua:</span>
+          <span>Phán quyết</span>
+          <strong>{dispute.decision ? DISPUTE_DECISION_LABELS[dispute.decision] : '—'}</strong>
+        </div>
+        <div className={styles.resRow}>
+          <span>Hoàn cho người mua</span>
           <strong className={styles.refundVal}>{formatCurrency(refund)}</strong>
         </div>
-
         <div className={styles.resRow}>
-          <span>Số tiền giải ngân cho người bán:</span>
+          <span>Phần còn lại của đơn về Shop</span>
           <strong className={styles.payoutVal}>
-            {formatCurrency(dispute.escrowHoldingAmount - refund)}
+            {formatCurrency(Math.max(0, dispute.orderTotalAmount - refund))}
           </strong>
         </div>
-
-        <div className={styles.resRow}>
-          <span>Căn cứ &amp; Nhận định của Admin:</span>
-          <p className={styles.adminNote}>{dispute.adminNote}</p>
-        </div>
+        {dispute.resolvedAt && (
+          <div className={styles.resRow}>
+            <span>Phân xử lúc</span>
+            <strong>{formatDateTime(dispute.resolvedAt)}</strong>
+          </div>
+        )}
+        {dispute.adminNote && <p className={styles.adminNote}>Căn cứ: {dispute.adminNote}</p>}
       </div>
     </Card>
   );
