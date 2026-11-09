@@ -56,7 +56,8 @@ export interface VendorDetailDto {
   deliveryAreas?: string[];
   registrationFeePaidAt?: string | null;
   documents?: Array<{ id: string; kind: string; uploadedAt?: string }>;
-  ownerCheck?: unknown;
+  /** The latest comparison with the owner's NFC card; only admins see it (AC-26.8). */
+  ownerCheck?: OwnerCheckDto | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -157,6 +158,12 @@ export interface VendorResponseDto {
   supplySource?: string;
   sellsShop?: boolean;
   acceptsOrders?: boolean;
+  /** HOUSEHOLD_BUSINESS or SOLE_PROPRIETORSHIP (BR-33). */
+  entityType?: 'HOUSEHOLD_BUSINESS' | 'SOLE_PROPRIETORSHIP';
+  /** The registration fee came in: only then does the admin attach its invoice (Q-36). */
+  registrationFeePaid?: boolean;
+  /** When the profile was first submitted. */
+  createdAt?: string;
 }
 
 /**
@@ -206,8 +213,8 @@ export interface OwnerCheckDto {
   ownerIdMasked?: string;
   nfcVerifiedAt?: string;
   idMatch?: boolean;
-  /** `NameMatch`: EXACT, FUZZY, MISMATCH. */
-  nameMatch?: 'EXACT' | 'FUZZY' | 'MISMATCH';
+  /** `NameMatch` (A-15): MATCH or MISMATCH, no fuzzy level. */
+  nameMatch?: 'MATCH' | 'MISMATCH';
   checkedAt?: string;
 }
 

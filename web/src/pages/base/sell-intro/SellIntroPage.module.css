@@ -67,6 +67,16 @@
   line-height: 1.5;
 }
 
+.grid + .grid {
+  margin-top: var(--space-6);
+}
+.companyNote {
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
 /* Màn hình hẹp: hero hai cột xuống một cột. */
 @media (max-width: var(--breakpoint-md)) {
   .hero {

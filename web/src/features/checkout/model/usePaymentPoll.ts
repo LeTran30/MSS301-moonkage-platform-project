@@ -11,7 +11,11 @@ import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
  * therefore asks the backend instead of trusting the redirect (AC-09.7).
  */
 export type PaymentPollState = {
-  kind: 'idle' | 'pending' | 'succeeded' | 'failed';
+  /**
+   * `unreadable`: the server never answered for this payment within the polls
+   * (no session, no access, network); the screen must not claim it is pending.
+   */
+  kind: 'idle' | 'pending' | 'succeeded' | 'failed' | 'unreadable';
   payment?: PaymentDto | null;
   /** The ids of the orders the payment created, once it succeeded. */
   orderIds: string[];
@@ -112,7 +116,14 @@ export function usePaymentPoll(
         }
       } catch {
         if (!current) return;
-        setState({ kind: 'pending', orderIds: [], amount: 0 });
+        // A read can fail for a moment (network, a service restarting): try
+        // again like a pending payment, and keep what was already known.
+        if (pollsRef.current < MAX_POLLS) {
+          setState((prev) => ({ ...prev, kind: prev.kind === 'idle' ? 'pending' : prev.kind }));
+          window.setTimeout(() => void poll(), POLL_INTERVAL_MS);
+        } else {
+          setState((prev) => ({ ...prev, kind: 'unreadable' }));
+        }
       }
     }
 

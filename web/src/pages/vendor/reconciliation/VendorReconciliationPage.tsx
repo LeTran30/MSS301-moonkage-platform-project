@@ -51,7 +51,7 @@ export function VendorReconciliationPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Ví & Tài chính', to: routes.vendor.money },
           { label: 'Lịch sử đối soát' },
         ]}

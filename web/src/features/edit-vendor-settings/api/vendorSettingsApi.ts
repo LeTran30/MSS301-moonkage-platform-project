@@ -1,7 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
 
 import type {
-  PresignedUploadLink,
   SaveOrderProfilePayload,
   SubmitVendorPayload,
   UpdateVendorPayload,
@@ -53,19 +52,4 @@ export async function resubmitVendorProfile(
 ): Promise<VendorDetailDto | null> {
   const res = await apiClient.put<unknown>(GATEWAY.VENDOR.BY_ID(vendorId), payload);
   return unwrap<VendorDetailDto>(res);
-}
-
-/**
- * Step 1 of a document upload (FR-26): ask the backend for a signed upload
- * link, then send the file to `uploadUrl` and keep the `tempKey`.
- */
-export async function createVendorUploadLink(
-  contentType: string,
-  sizeBytes: number,
-): Promise<PresignedUploadLink | null> {
-  const res = await apiClient.post<unknown>(GATEWAY.VENDOR.UPLOADS, {
-    contentType,
-    sizeBytes,
-  });
-  return unwrap<PresignedUploadLink>(res);
 }

@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -51,9 +52,12 @@ class VendorSubmissionService {
     /**
      * Checks the request and asks identity-service about the owner's card, so a submission that is stored is one that
      * already passed every rule.
+     *
+     * @param kindsOnFile the kinds of document the vendor already has (none on the first submission): a resubmission
+     *     only sends the documents it replaces (AC-27.2)
      */
-    PreparedSubmission prepare(SubmitVendorRequest request, String accountId) {
-        CheckedSubmission checked = check(request);
+    PreparedSubmission prepare(SubmitVendorRequest request, String accountId, Set<DocumentKind> kindsOnFile) {
+        CheckedSubmission checked = check(request, kindsOnFile);
         OwnerCard ownerCard = getOwnerCard(accountId, checked.idNumber());
         return new PreparedSubmission(toProfile(request, checked, ownerCard), ownerCard);
     }
@@ -75,7 +79,7 @@ class VendorSubmissionService {
     }
 
     /** Every format and completeness rule of a submission, before anything is called or stored (AC-26.1, AC-26.2). */
-    private static CheckedSubmission check(SubmitVendorRequest request) {
+    private static CheckedSubmission check(SubmitVendorRequest request, Set<DocumentKind> kindsOnFile) {
         VendorEntityType entityType = atField(FIELD_ENTITY_TYPE, () -> toEntityType(request.entityType()));
         TaxCode taxCode = atField(FIELD_TAX_CODE, () -> TaxCode.of(request.taxCode()));
         ProvinceCode provinceCode = atField(FIELD_PROVINCE_CODE, () -> ProvinceCode.of(request.provinceCode()));
@@ -88,7 +92,7 @@ class VendorSubmissionService {
         if (!request.sellsShop() && !request.acceptsOrders()) {
             throw new AppException(ErrorCode.SELLING_MODE_REQUIRED);
         }
-        checkDocumentKinds(request.documents());
+        checkDocumentKinds(request.documents(), kindsOnFile);
         return new CheckedSubmission(
                 entityType, taxCode, provinceCode, representativeName, idNumber, bankAccountNumber);
     }
@@ -103,8 +107,12 @@ class VendorSubmissionService {
                         Arrays.stream(VendorEntityType.values()).map(Enum::name).collect(Collectors.joining(", "))));
     }
 
-    /** One document of each kind the owner sends, nothing else (AC-26.1). */
-    private static void checkDocumentKinds(List<SubmitVendorRequest.Document> documents) {
+    /**
+     * At most one document of each kind the owner sends, nothing else; every such kind is sent now or already on file
+     * (AC-26.1, AC-27.2).
+     */
+    private static void checkDocumentKinds(
+            List<SubmitVendorRequest.Document> documents, Set<DocumentKind> kindsOnFile) {
         Map<DocumentKind, Long> countByKind = documents.stream()
                 .collect(Collectors.groupingBy(SubmitVendorRequest.Document::kind, Collectors.counting()));
         for (Map.Entry<DocumentKind, Long> entry : countByKind.entrySet()) {
@@ -113,7 +121,7 @@ class VendorSubmissionService {
             }
         }
         for (DocumentKind required : DocumentKind.SUBMITTED_BY_OWNER) {
-            if (!countByKind.containsKey(required)) {
+            if (!countByKind.containsKey(required) && !kindsOnFile.contains(required)) {
                 throw new AppException(ErrorCode.DOCUMENT_REQUIRED, required.name()).atField(FIELD_DOCUMENTS);
             }
         }

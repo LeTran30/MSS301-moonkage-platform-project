@@ -341,6 +341,43 @@ class VendorApiIntegrationTest {
     }
 
     @Test
+    void aResubmissionSendsOnlyTheDocumentsItReplaces() throws Exception {
+        String vendorId = submitAndGetId();
+        review(vendorId, Map.of("decision", "NEEDS_INFO", "reason", "Giấy ATTP mờ"))
+                .andExpect(status().isCreated());
+
+        Map<String, Object> body = submission();
+        body.put("documents", List.of(document("FOOD_SAFETY", TEMP_PREFIX + "food-safety-2")));
+        mvc.perform(asMember(put("/api/vendors/{id}", vendorId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andExpect(jsonPath("$.data.documents", hasSize(2)));
+
+        assertEquals(
+                3,
+                jdbcTemplate.queryForObject(
+                        "SELECT count(*) FROM vendor_documents WHERE vendor_id = ?", Integer.class, vendorId));
+    }
+
+    @Test
+    void aResubmissionWithoutDocumentsKeepsTheOnesOnFile() throws Exception {
+        String vendorId = submitAndGetId();
+        review(vendorId, Map.of("decision", "NEEDS_INFO", "reason", "Sai địa chỉ"))
+                .andExpect(status().isCreated());
+
+        Map<String, Object> body = submission();
+        body.remove("documents");
+        mvc.perform(asMember(put("/api/vendors/{id}", vendorId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andExpect(jsonPath("$.data.documents", hasSize(2)));
+    }
+
+    @Test
     void aPendingProfileCannotBeResubmitted() throws Exception {
         String vendorId = submitAndGetId();
 
@@ -425,7 +462,10 @@ class VendorApiIntegrationTest {
 
         mvc.perform(asMember(get("/api/vendors").param("ownerAccountId", "me")))
                 .andExpect(jsonPath("$.data", hasSize(1)))
-                .andExpect(jsonPath("$.data[0].id").value(vendorId));
+                .andExpect(jsonPath("$.data[0].id").value(vendorId))
+                .andExpect(jsonPath("$.data[0].entityType").value("SOLE_PROPRIETORSHIP"))
+                .andExpect(jsonPath("$.data[0].registrationFeePaid").value(false))
+                .andExpect(jsonPath("$.data[0].createdAt").value(notNullValue()));
         mvc.perform(get("/internal/vendors/by-owner/{accountId}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(vendorId))

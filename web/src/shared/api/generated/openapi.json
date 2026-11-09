@@ -5258,10 +5258,10 @@
           },
           "documents": {
             "type": "array",
+            "description": "the first submission sends one of each kind the owner provides; a resubmission sends only the\n     kinds it replaces, and every kind left out keeps the document the vendor has (AC-27.2)",
             "items": {
               "$ref": "#/components/schemas/Document"
-            },
-            "minItems": 1
+            }
           }
         },
         "required": [
@@ -5270,7 +5270,6 @@
           "bankAccountNumber",
           "bankName",
           "businessName",
-          "documents",
           "entityType",
           "provinceCode",
           "representativeIdNumber",
@@ -6505,6 +6504,19 @@
           },
           "acceptsOrders": {
             "type": "boolean"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "HOUSEHOLD_BUSINESS or SOLE_PROPRIETORSHIP, so the admin list shows the kind of unit (BR-33)"
+          },
+          "registrationFeePaid": {
+            "type": "boolean",
+            "description": "whether the registration fee came in, so the admin attaches its invoice only then (Q-36)"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "when the profile was first submitted, so the admin list shows how long it has waited"
           }
         }
       },

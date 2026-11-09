@@ -36,6 +36,8 @@ function resultCopy(purpose: PaymentDto['purpose'] | undefined, referenceId: str
       retryTo: routes.account.requests,
       retryLabel: 'Về yêu cầu và báo giá',
       orderTo,
+      homeTo: routes.account.orders,
+      homeLabel: 'Về danh sách đơn hàng của tôi',
     };
   }
   if (purpose === 'REMAINDER') {
@@ -47,6 +49,21 @@ function resultCopy(purpose: PaymentDto['purpose'] | undefined, referenceId: str
       retryTo: orderTo ?? routes.account.orders,
       retryLabel: 'Về đơn hàng',
       orderTo,
+      homeTo: routes.account.orders,
+      homeLabel: 'Về danh sách đơn hàng của tôi',
+    };
+  }
+  if (purpose === 'REGISTRATION_FEE') {
+    // FR-53: the fee opens the Shop; the seller goes on in the seller channel.
+    return {
+      title: 'Đã đóng phí mở bán',
+      body: 'Gian hàng của bạn đã mở bán: bạn có thể đăng sản phẩm và nhận đơn.',
+      failedBody: 'Cổng thanh toán báo giao dịch không thành công. Tiền chưa bị trừ, bạn có thể đóng phí lại.',
+      retryTo: routes.vendor.fee,
+      retryLabel: 'Đóng phí lại',
+      orderTo: null as string | null,
+      homeTo: routes.vendor.overview,
+      homeLabel: 'Vào kênh người bán',
     };
   }
   return {
@@ -57,6 +74,8 @@ function resultCopy(purpose: PaymentDto['purpose'] | undefined, referenceId: str
     retryTo: routes.base.cart,
     retryLabel: 'Quay lại giỏ hàng',
     orderTo: null as string | null,
+    homeTo: routes.account.orders,
+    homeLabel: 'Về danh sách đơn hàng của tôi',
   };
 }
 
@@ -104,7 +123,11 @@ export function PaymentResultPage() {
 
   // Nothing names a payment: never show a success the server has not confirmed.
   const awaitsReturn = searchParams.has('vnp_TxnRef') || searchParams.has('paymentId');
-  if (poll.kind === 'idle' && (returnUnknown || (!paymentId && !awaitsReturn))) {
+  // Or the server never answered for it: say so rather than "pending" forever.
+  if (
+    poll.kind === 'unreadable' ||
+    (poll.kind === 'idle' && (returnUnknown || (!paymentId && !awaitsReturn)))
+  ) {
     return (
       <div className={styles.container}>
         <Card padding="lg" className={styles.resultCard}>
@@ -142,13 +165,14 @@ export function PaymentResultPage() {
           </Badge>
           <h1 className={styles.title}>Đang chờ cổng thanh toán xác nhận</h1>
           <p className={styles.desc}>
-            Khoản tiền {formatCurrency(amount)} đã được gửi tới VNPay. Trang này tự cập nhật ngay
-            khi hệ thống nhận được xác nhận (IPN) của cổng thanh toán.
+            {amount > 0 ? `Khoản tiền ${formatCurrency(amount)}` : 'Khoản thanh toán'} đã được gửi
+            tới VNPay. Trang này tự cập nhật ngay khi hệ thống nhận được xác nhận của cổng thanh
+            toán.
           </p>
 
           <div className={styles.actions}>
-            <ButtonLink to={routes.account.orders} variant="primary" iconLeft="package">
-              Về danh sách đơn hàng của tôi
+            <ButtonLink to={copy.homeTo} variant="primary">
+              {copy.homeLabel}
             </ButtonLink>
           </div>
         </Card>
@@ -192,7 +216,10 @@ export function PaymentResultPage() {
         </Badge>
         <h1 className={styles.title}>{copy.title}</h1>
         <p className={styles.desc}>
-          Khoản tiền {formatCurrency(amount)} đã được ký quỹ an toàn qua VNPay. {copy.body}
+          {purpose === 'REGISTRATION_FEE'
+            ? `Đã nhận ${formatCurrency(amount)} qua VNPay.`
+            : `Khoản tiền ${formatCurrency(amount)} đã được ký quỹ an toàn qua VNPay.`}{' '}
+          {copy.body}
         </p>
 
         {isCheckout && (
@@ -237,11 +264,11 @@ export function PaymentResultPage() {
         )}
 
         <div className={styles.actions}>
-          <ButtonLink to={routes.account.orders} variant="primary" iconLeft="package">
-            Về danh sách đơn hàng của tôi
+          <ButtonLink to={copy.homeTo} variant="primary">
+            {copy.homeLabel}
           </ButtonLink>
-          {/* Đơn đặt riêng đi tiếp ở trang đơn, không quay lại mua lẻ. */}
-          {purpose !== 'DEPOSIT' && purpose !== 'REMAINDER' && (
+          {/* Đơn đặt riêng và phí mở bán đi tiếp ở chỗ khác, không quay lại mua lẻ. */}
+          {isCheckout && (
             <ButtonLink to={routes.base.catalog} variant="secondary">
               Tiếp tục mua sắm
             </ButtonLink>

@@ -22,7 +22,7 @@ export function VendorCapacityPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Cài đặt bán hàng', to: routes.vendor.settings },
           { label: 'Lịch công suất' },
         ]}

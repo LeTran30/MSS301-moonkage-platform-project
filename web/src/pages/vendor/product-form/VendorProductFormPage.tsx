@@ -186,7 +186,7 @@ export function VendorProductFormPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Quản lý sản phẩm', to: routes.vendor.products },
           { label: isEdit ? 'Chỉnh sửa sản phẩm' : 'Đăng sản phẩm mới' },
         ]}

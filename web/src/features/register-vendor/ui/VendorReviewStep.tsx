@@ -1,6 +1,7 @@
 import { provinceNameOf } from '@/shared/config';
 import { Button, Icon } from '@/shared/ui';
-import type { VendorRegistrationForm } from '../model/vendorRegistrationForm';
+import { DOCUMENT_LABELS, OWNER_DOCUMENT_KINDS } from '@/entities/vendor';
+import { SELLING_MODE_LABELS, type VendorRegistrationForm } from '../model/vendorRegistrationForm';
 import styles from './VendorReviewStep.module.css';
 
 interface VendorReviewStepProps {
@@ -8,6 +9,8 @@ interface VendorReviewStepProps {
   /** Chưa xác minh NFC thì không được nộp hồ sơ. */
   isNfcVerified: boolean;
   busy: boolean;
+  /** Lỗi máy chủ trả về khi nộp mà không gắn được vào ô nào. */
+  error?: string | null;
   onBack: () => void;
   onSubmit: () => void;
 }
@@ -17,6 +20,7 @@ export function VendorReviewStep({
   form,
   isNfcVerified,
   busy,
+  error,
   onBack,
   onSubmit,
 }: VendorReviewStepProps) {
@@ -26,11 +30,9 @@ export function VendorReviewStep({
 
       <div className={styles.reviewBox}>
         <div>
-          <strong>Tên Shop:</strong> {form.shopName} (
-          {form.businessType === 'HKD' ? 'Hộ kinh doanh' : 'Doanh nghiệp tư nhân'})
-        </div>
-        <div>
-          <strong>Pháp lý:</strong> {form.legalName} · MST: {form.taxCode}
+          <strong>Đơn vị:</strong> {form.legalName} (
+          {form.businessType === 'HKD' ? 'Hộ kinh doanh' : 'Doanh nghiệp tư nhân'}) · MST:{' '}
+          {form.taxCode}
         </div>
         <div>
           <strong>Đại diện:</strong> {form.representativeName} · CCCD: {form.idCardNumber}
@@ -43,8 +45,15 @@ export function VendorReviewStep({
           {form.bankAccountHolder}
         </div>
         <div>
-          <strong>Nguồn hàng:</strong> {form.sourceType} · Hình thức: {form.sellingMode}
+          <strong>Nguồn hàng:</strong> {form.sourceType} · Hình thức:{' '}
+          {SELLING_MODE_LABELS[form.sellingMode]}
         </div>
+        {OWNER_DOCUMENT_KINDS.map((kind) => (
+          <div key={kind}>
+            <strong>{DOCUMENT_LABELS[kind]}:</strong>{' '}
+            {form.documents[kind]?.fileName ?? 'Chưa tải lên'}
+          </div>
+        ))}
       </div>
 
       {!isNfcVerified && (
@@ -52,6 +61,12 @@ export function VendorReviewStep({
           <Icon name="shield" size={18} />
           <span>Bạn cần hoàn tất bước xác minh NFC CCCD để nộp hồ sơ đăng ký người bán.</span>
         </div>
+      )}
+
+      {error && (
+        <p role="alert" className={styles.submitError}>
+          {error}
+        </p>
       )}
 
       <div className={styles.actionRow}>

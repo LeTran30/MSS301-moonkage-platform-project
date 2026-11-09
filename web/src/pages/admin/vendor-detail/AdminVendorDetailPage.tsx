@@ -5,9 +5,12 @@ import { routes } from '@/shared/config';
 import { provinceNameOf } from '@/shared/config';
 import { AsyncState, Badge, Button, ButtonLink, Card, Breadcrumbs, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useVendorDetail } from '@/entities/vendor';
-import { useReviewApplication, VendorReviewModal } from '@/features/review-applications';
-import { DOCUMENT_LABELS } from '@/features/edit-vendor-settings';
+import { useVendorDetail, VENDOR_STATUS_LABELS } from '@/entities/vendor';
+import {
+  useReviewApplication,
+  VendorDocumentLinks,
+  VendorReviewModal,
+} from '@/features/review-applications';
 
 /**
  * Q2.1 — thẩm định một hồ sơ người bán.
@@ -29,7 +32,7 @@ export function AdminVendorDetailPage() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [licenseChecked, setLicenseChecked] = useState(false);
   const [registryChecked, setRegistryChecked] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  const [reviewReason, setReviewReason] = useState('');
 
   const vendor = asyncVendor.kind === 'loaded' ? asyncVendor.data : null;
 
@@ -50,18 +53,19 @@ export function AdminVendorDetailPage() {
     });
   }
 
-  function handleReject() {
+  function handleSendBack(decision: 'NEEDS_INFO' | 'REJECT') {
     if (!vendor) return;
-    if (!rejectReason.trim()) {
-      toast.warning('Vui lòng nhập lý do từ chối hồ sơ để người bán bổ sung.');
+    const reason = reviewReason.trim();
+    if (!reason) {
+      toast.warning('Vui lòng nhập lý do để người bán biết cần sửa gì.');
       return;
     }
     void run(async () => {
       // AC-45.2: NEEDS_INFO và REJECT đều cần lý do để chủ Shop đọc và
       // bổ sung hồ sơ.
       const review = await reviewApplication(vendor.id, {
-        decision: 'REJECT',
-        reason: rejectReason.trim(),
+        decision,
+        reason,
         licenseChecked,
       });
       if (!review) return;
@@ -91,14 +95,9 @@ export function AdminVendorDetailPage() {
         </div>
         <div className={styles.actions}>
           {vendor && vendor.status !== 'APPROVED' && (
-            <>
-              <Button variant="primary" onClick={() => setReviewModalOpen(true)}>
-                Phê Duyệt Đạt Chuẩn
-              </Button>
-              <Button variant="outline" onClick={() => setReviewModalOpen(true)}>
-                Yêu Cầu Bổ Sung Hồ Sơ
-              </Button>
-            </>
+            <Button variant="primary" onClick={() => setReviewModalOpen(true)}>
+              Thẩm định hồ sơ
+            </Button>
           )}
           {vendor?.status === 'APPROVED' && (
             <Badge tone="green" size="md">
@@ -163,7 +162,7 @@ export function AdminVendorDetailPage() {
                   <div className={styles.keyValueRow}>
                     <span className={styles.keyValueLabel}>Trạng thái hồ sơ:</span>
                     <Badge tone={detail.status === 'APPROVED' ? 'green' : 'amber'} size="sm">
-                      {detail.status ?? 'PENDING'}
+                      {detail.status ? VENDOR_STATUS_LABELS[detail.status] : '—'}
                     </Badge>
                   </div>
                 </div>
@@ -175,30 +174,7 @@ export function AdminVendorDetailPage() {
 
               <Card padding="lg" className={styles.cardBody}>
                 <h2 className={styles.sectionTitle}>Chứng nhận và tài liệu hồ sơ</h2>
-                {detail.documents && detail.documents.length > 0 ? (
-                  <div className={styles.certificateList}>
-                    {detail.documents.map((doc) => (
-                      <div key={doc.id} className={styles.certificateCard}>
-                        <div className={styles.certificateHeader}>
-                          <strong className={styles.certificateTitle}>
-                            {DOCUMENT_LABELS[doc.kind as keyof typeof DOCUMENT_LABELS] ?? doc.kind}
-                          </strong>
-                          <Badge tone="green">Đã đính kèm</Badge>
-                        </div>
-                        <p className={styles.certificateNote}>
-                          {doc.uploadedAt
-                            ? `Tải lên lúc ${new Date(doc.uploadedAt).toLocaleString('vi-VN')}`
-                            : 'Tài liệu đã được người bán gửi kèm hồ sơ.'}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={styles.bodyText}>
-                    Người bán chưa đính kèm chứng nhận nào. Phê duyệt hồ sơ cần ít nhất một tài liệu
-                    (Giấy phép kinh doanh hoặc VSATTP).
-                  </p>
-                )}
+                <VendorDocumentLinks vendorId={detail.id} documents={detail.documents ?? []} />
               </Card>
             </div>
 
@@ -207,15 +183,16 @@ export function AdminVendorDetailPage() {
               vendor={detail}
               licenseChecked={licenseChecked}
               registryChecked={registryChecked}
-              rejectReason={rejectReason}
+              reason={reviewReason}
               busy={busy}
               error={error}
               onLicenseCheckedChange={setLicenseChecked}
               onRegistryCheckedChange={setRegistryChecked}
-              onRejectReasonChange={setRejectReason}
+              onReasonChange={setReviewReason}
               onClose={() => setReviewModalOpen(false)}
               onApprove={handleApprove}
-              onReject={handleReject}
+              onRequestInfo={() => handleSendBack('NEEDS_INFO')}
+              onReject={() => handleSendBack('REJECT')}
             />
             </>
           ) : null

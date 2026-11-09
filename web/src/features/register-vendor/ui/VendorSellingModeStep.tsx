@@ -1,10 +1,17 @@
-import { Button, Icon, Input } from '@/shared/ui';
-import type { SellingMode } from '@/entities/vendor';
-import type { VendorRegistrationForm, VendorSourceType } from '../model/vendorRegistrationForm';
+import { Button, Icon } from '@/shared/ui';
+import { OWNER_DOCUMENT_KINDS, type SellingMode, type VendorDocumentKind } from '@/entities/vendor';
+import {
+  SELLING_MODE_LABELS,
+  type VendorRegistrationForm,
+  type VendorSourceType,
+} from '../model/vendorRegistrationForm';
+import { VendorDocumentUploadField } from './VendorDocumentUploadField';
 import styles from './VendorSellingModeStep.module.css';
 
 interface VendorSellingModeStepProps {
   form: VendorRegistrationForm;
+  /** Lỗi của từng giấy tờ (thiếu tệp, hoặc máy chủ từ chối). */
+  errors?: Partial<Record<VendorDocumentKind, string>>;
   onChange: (patch: Partial<VendorRegistrationForm>) => void;
   onBack: () => void;
   onNext: () => void;
@@ -15,6 +22,7 @@ const SOURCE_OPTIONS: VendorSourceType[] = ['Tự sản xuất', 'Bán lại', '
 /** Bước 3: nguồn hàng, cách thức bán và tài liệu pháp lý (BR-21, FR-26). */
 export function VendorSellingModeStep({
   form,
+  errors = {},
   onChange,
   onBack,
   onNext,
@@ -46,27 +54,16 @@ export function VendorSellingModeStep({
           Hình thức bán hàng trên Moonkage:
         </div>
         <div className={styles.optionRow} role="group" aria-labelledby="selling-mode-label">
-          <button
-            type="button"
-            className={`${styles.radioPill} ${form.sellingMode === 'BOTH' ? styles.radioSelected : ''}`}
-            onClick={() => onChange({ sellingMode: 'BOTH' as SellingMode })}
-          >
-            Có hàng sẵn bán lẻ &amp; Nhận đơn đặt sỉ
-          </button>
-          <button
-            type="button"
-            className={`${styles.radioPill} ${form.sellingMode === 'CUSTOM_ORDER' ? styles.radioSelected : ''}`}
-            onClick={() => onChange({ sellingMode: 'CUSTOM_ORDER' })}
-          >
-            Chỉ nhận đơn đặt hàng số lượng lớn (Xưởng)
-          </button>
-          <button
-            type="button"
-            className={`${styles.radioPill} ${form.sellingMode === 'RETAIL_SHOP' ? styles.radioSelected : ''}`}
-            onClick={() => onChange({ sellingMode: 'RETAIL_SHOP' })}
-          >
-            Chỉ bán lẻ sản phẩm có sẵn tại Shop
-          </button>
+          {(Object.keys(SELLING_MODE_LABELS) as SellingMode[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              className={`${styles.radioPill} ${form.sellingMode === mode ? styles.radioSelected : ''}`}
+              onClick={() => onChange({ sellingMode: mode })}
+            >
+              {SELLING_MODE_LABELS[mode]}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -80,28 +77,22 @@ export function VendorSellingModeStep({
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label} htmlFor="business-license-key">
-          Mã tệp Giấy phép kinh doanh (objectKey sau khi tải lên)
-        </label>
-        <Input
-          id="business-license-key"
-          value={form.businessLicenseKey}
-          onChange={(e) => onChange({ businessLicenseKey: e.target.value })}
-          placeholder="VD: vendors/abc/business-license.pdf"
-          hint="Tải lên trước qua POST /api/vendors/uploads rồi dán tempKey vào đây"
-        />
-      </div>
-
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor="food-safety-key">
-          Mã tệp Giấy chứng nhận An toàn thực phẩm (objectKey)
-        </label>
-        <Input
-          id="food-safety-key"
-          value={form.foodSafetyKey}
-          onChange={(e) => onChange({ foodSafetyKey: e.target.value })}
-          placeholder="VD: vendors/abc/food-safety.jpg"
-        />
+        <div className={styles.label} id="documents-label">
+          Giấy tờ pháp lý (ảnh chụp rõ nét hoặc PDF):
+        </div>
+        <div className={styles.documentGrid} role="group" aria-labelledby="documents-label">
+          {OWNER_DOCUMENT_KINDS.map((kind) => (
+            <VendorDocumentUploadField
+              key={kind}
+              kind={kind}
+              value={form.documents[kind]}
+              error={errors[kind]}
+              onUploaded={(document) =>
+                onChange({ documents: { ...form.documents, [kind]: document } })
+              }
+            />
+          ))}
+        </div>
       </div>
 
       <div className={styles.actionRow}>

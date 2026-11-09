@@ -63,26 +63,3 @@
   line-height: 1.6;
   margin: 6px 0 0;
 }
-.certificateList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.certificateCard {
-  padding: 16px;
-  background: var(--color-surface-2);
-  border-radius: var(--radius-md);
-}
-.certificateHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.certificateTitle {
-  font-size: var(--text-sm);
-}
-.certificateNote {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  margin: 4px 0 0;
-}

@@ -9,11 +9,18 @@ type NavItem = {
   icon: IconName;
   badge?: string | number;
   condition?: boolean;
+  /** Vẫn hiện khi Shop chưa mở bán (hồ sơ đang xét hoặc chưa đóng phí). */
+  beforeLaunch?: boolean;
 };
 
 type Props = {
   hasShop?: boolean;
   acceptsCustomOrders?: boolean;
+  /**
+   * Shop đã mở bán chưa (`canOperate`). Trước khi mở bán, kênh chỉ có trạng
+   * thái hồ sơ, hồ sơ pháp lý và thông báo (B1.0).
+   */
+  canOperate?: boolean;
   /** Gọi khi người dùng chọn một mục (dùng để đóng drawer trên mobile). */
   onNavigate?: () => void;
   /** Ẩn phần đầu (nhãn khu + trạng thái) — dùng khi nằm trong drawer đã có tiêu đề. */
@@ -27,6 +34,7 @@ type Props = {
 export function VendorSidebarContent({
   hasShop = true,
   acceptsCustomOrders = true,
+  canOperate = true,
   onNavigate,
   showHeader = true,
 }: Props) {
@@ -38,6 +46,7 @@ export function VendorSidebarContent({
       title: 'Tổng quan bán hàng',
       path: routes.vendor.overview,
       icon: 'dashboard',
+      beforeLaunch: true,
     },
     { title: 'Đơn hàng của Shop', path: routes.vendor.orders, icon: 'package' },
     { title: 'Tin nhắn khách hàng', path: routes.vendor.messages, icon: 'message' },
@@ -68,12 +77,20 @@ export function VendorSidebarContent({
       path: routes.vendor.settings,
       icon: 'settings',
     },
+    {
+      title: 'Hồ sơ pháp lý',
+      path: routes.vendor.legal,
+      icon: 'shield',
+      condition: !canOperate, // Khi đã mở bán, mục này nằm trong Cài đặt bán hàng.
+      beforeLaunch: true,
+    },
     // Hộp thư thuộc về chính tài khoản đã đăng nhập, nên xưởng mở từ đây thay vì
     // cần một hộp thư riêng.
     {
       title: 'Thông báo cửa hàng',
       path: routes.base.notifications,
       icon: 'bell',
+      beforeLaunch: true,
     },
   ];
 
@@ -83,14 +100,22 @@ export function VendorSidebarContent({
         <div className={styles.header}>
           <div className={styles.zoneTag}>KÊNH NGƯỜI BÁN</div>
           <div className={styles.shopStatus}>
-            <span className={styles.onlineDot} /> Đang hoạt động
+            {canOperate ? (
+              <>
+                <span className={styles.onlineDot} /> Đang mở bán
+              </>
+            ) : (
+              <>
+                <span className={styles.pendingDot} /> Chưa mở bán
+              </>
+            )}
           </div>
         </div>
       )}
 
       <nav className={styles.nav} aria-label="Điều hướng kênh người bán">
         {items
-          .filter((it) => it.condition !== false)
+          .filter((it) => it.condition !== false && (canOperate || it.beforeLaunch))
           .map((it) => {
             const isActive =
               location.pathname === it.path ||

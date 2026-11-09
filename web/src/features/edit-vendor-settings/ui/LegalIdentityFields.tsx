@@ -1,3 +1,4 @@
+import { PROVINCE_ITEMS } from '@/shared/config';
 import { Input, Select } from '@/shared/ui';
 import styles from './vendorSettingsUi.module.css';
 
@@ -14,6 +15,9 @@ interface LegalIdentityFieldsProps {
   onProvinceCodeChange: (value: string) => void;
   representativeName: string;
   onRepresentativeNameChange: (value: string) => void;
+  /** Số CCCD đầy đủ: máy chủ chỉ trả bản đã che, nên người bán nhập lại mỗi lần nộp. */
+  representativeIdNumber: string;
+  onRepresentativeIdNumberChange: (value: string) => void;
   supplySource: 'SELF_PRODUCED' | 'RESELL' | 'BOTH';
   onSupplySourceChange: (value: 'SELF_PRODUCED' | 'RESELL' | 'BOTH') => void;
 }
@@ -37,6 +41,8 @@ export function LegalIdentityFields({
   onProvinceCodeChange,
   representativeName,
   onRepresentativeNameChange,
+  representativeIdNumber,
+  onRepresentativeIdNumberChange,
   supplySource,
   onSupplySourceChange,
 }: LegalIdentityFieldsProps) {
@@ -101,16 +107,12 @@ export function LegalIdentityFields({
           />
         </div>
         <div>
-          <label className={styles.label} htmlFor="legal-province-code">
-            Mã tỉnh / thành phố *
-          </label>
-          <Input
-            id="legal-province-code"
-            type="text"
-            value={provinceCode}
-            onChange={(e) => onProvinceCodeChange(e.target.value)}
-            placeholder="Ví dụ: 01"
+          <Select
+            label="Tỉnh / Thành phố trụ sở"
             required
+            options={PROVINCE_ITEMS.map((p) => ({ value: p.code, label: p.name }))}
+            value={provinceCode}
+            onChange={onProvinceCodeChange}
           />
         </div>
       </div>
@@ -123,12 +125,31 @@ export function LegalIdentityFields({
           <Input
             id="legal-representative"
             type="text"
-            placeholder="Ví dụ: Nguyễn Thị Mai"
+            placeholder="Ví dụ: NGUYEN THI MAI"
             value={representativeName}
             onChange={(e) => onRepresentativeNameChange(e.target.value)}
+            hint="Viết không dấu, đúng như trên CCCD"
             required
           />
         </div>
+        <div>
+          <label className={styles.label} htmlFor="legal-representative-id">
+            Số CCCD của người đại diện *
+          </label>
+          <Input
+            id="legal-representative-id"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={representativeIdNumber}
+            onChange={(e) => onRepresentativeIdNumberChange(e.target.value)}
+            hint="Đủ 12 số, trùng với CCCD đã xác minh NFC"
+            required
+          />
+        </div>
+      </div>
+
+      <div className={styles.gridTwo}>
         <div>
           <Select
             label="Nguồn hàng"

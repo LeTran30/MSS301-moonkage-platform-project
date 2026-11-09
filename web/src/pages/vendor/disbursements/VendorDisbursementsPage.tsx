@@ -75,7 +75,7 @@ export function VendorDisbursementsPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Ví & Tài chính', to: routes.vendor.money },
           { label: 'Yêu cầu giải ngân' },
         ]}

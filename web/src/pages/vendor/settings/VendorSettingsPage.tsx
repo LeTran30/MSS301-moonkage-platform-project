@@ -166,7 +166,12 @@ export function VendorSettingsPage() {
           "Lưu" không hề gọi máy chủ; bản sao đó đã bị gỡ bỏ.
         */
         loadedDetail && vendorId ? (
-          <LegalProfileForm key={vendorId} vendorId={vendorId} detail={loadedDetail} />
+          <LegalProfileForm
+            key={vendorId}
+            vendorId={vendorId}
+            detail={loadedDetail}
+            onSaved={vendorDetail.reload}
+          />
         ) : (
           <Card padding="lg" className={styles.deferredCard}>
             <p className={styles.desc}>Đang tải hồ sơ pháp lý của gian hàng…</p>

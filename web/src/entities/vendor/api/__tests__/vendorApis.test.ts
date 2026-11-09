@@ -100,7 +100,7 @@ describe('Vendor Entity - vendorAdminApi (FR-45, FR-46)', () => {
           submissionNo: 1,
           ownerLegalName: 'Nguyễn A',
           idMatch: true,
-          nameMatch: 'EXACT',
+          nameMatch: 'MATCH',
         },
       ]) as never,
     );
@@ -108,7 +108,7 @@ describe('Vendor Entity - vendorAdminApi (FR-45, FR-46)', () => {
     const checks = await vendorAdminApi.getOwnerChecks('ven-1');
 
     expect(get).toHaveBeenCalledWith('/api/vendors/ven-1/owner-checks');
-    expect(checks[0].nameMatch).toBe('EXACT');
+    expect(checks[0].nameMatch).toBe('MATCH');
   });
 });
 

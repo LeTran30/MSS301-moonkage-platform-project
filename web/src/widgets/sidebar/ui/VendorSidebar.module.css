@@ -40,6 +40,12 @@
   border-radius: 50%;
   background: var(--color-success);
 }
+.pendingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-gold);
+}
 .nav {
   display: flex;
   flex-direction: column;

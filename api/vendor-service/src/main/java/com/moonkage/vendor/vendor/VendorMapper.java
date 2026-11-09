@@ -26,7 +26,10 @@ final class VendorMapper {
                 v.getStatus().name(),
                 v.getSupplySource().name(),
                 v.isSellsShop(),
-                v.isAcceptsOrders());
+                v.isAcceptsOrders(),
+                v.getEntityType().name(),
+                v.isRegistrationFeePaid(),
+                v.getCreatedAt());
     }
 
     /** @param ownerCheck null when the caller may not see it */

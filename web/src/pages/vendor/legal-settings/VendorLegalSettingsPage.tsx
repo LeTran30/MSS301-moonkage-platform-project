@@ -1,6 +1,6 @@
 import { routes } from '@/shared/config';
 import { Badge, Breadcrumbs, AsyncState } from '@/shared/ui';
-import { useMyVendorDetail, useMyVendorId } from '@/entities/vendor';
+import { useMyVendorDetail, useMyVendorId, VENDOR_STATUS_LABELS } from '@/entities/vendor';
 import { LegalProfileForm } from '@/features/edit-vendor-settings';
 import styles from './VendorLegalSettingsPage.module.css';
 
@@ -15,7 +15,7 @@ export function VendorLegalSettingsPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Cài đặt gian hàng', to: routes.vendor.settings },
           { label: 'Hồ sơ pháp lý & VSATTP' },
         ]}
@@ -28,10 +28,18 @@ export function VendorLegalSettingsPage() {
             Thông tin bắt buộc để duy trì tích xanh kiểm định và phân phối bánh ra toàn quốc
           </p>
         </div>
-        <Badge tone={detail?.status === 'APPROVED' ? 'green' : 'amber'} size="md">
-          {detail?.status === 'APPROVED' ? 'Đã kiểm duyệt đạt chuẩn' : 'Hồ sơ chờ duyệt'}
-        </Badge>
+        {detail?.status && (
+          <Badge tone={detail.status === 'APPROVED' ? 'green' : 'amber'} size="md">
+            {VENDOR_STATUS_LABELS[detail.status]}
+          </Badge>
+        )}
       </div>
+
+      {detail?.statusReason && (detail.status === 'NEEDS_INFO' || detail.status === 'REJECTED') && (
+        <p role="status" className={styles.reviewReason}>
+          <strong>Đội vận hành ghi chú:</strong> {detail.statusReason}
+        </p>
+      )}
 
       <AsyncState
         state={asyncProfile}
@@ -40,7 +48,12 @@ export function VendorLegalSettingsPage() {
       >
         {(detail) =>
           detail ? (
-            <LegalProfileForm key={vendorId ?? ''} vendorId={vendorId ?? ''} detail={detail} />
+            <LegalProfileForm
+              key={vendorId ?? ''}
+              vendorId={vendorId ?? ''}
+              detail={detail}
+              onSaved={asyncProfile.reload}
+            />
           ) : null
         }
       </AsyncState>

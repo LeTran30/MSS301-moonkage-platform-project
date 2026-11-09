@@ -3637,7 +3637,11 @@ export interface components {
             bankAccountNumber: string;
             bankName: string;
             businessName: string;
-            documents: components["schemas"]["Document"][];
+            /**
+             * @description the first submission sends one of each kind the owner provides; a resubmission sends only the
+             *          kinds it replaces, and every kind left out keeps the document the vendor has (AC-27.2)
+             */
+            documents?: components["schemas"]["Document"][];
             /** @description HOUSEHOLD_BUSINESS or SOLE_PROPRIETORSHIP; a company is refused with its own message (BR-33) */
             entityType: string;
             provinceCode: string;
@@ -3814,8 +3818,17 @@ export interface components {
         VendorResponse: {
             acceptsOrders?: boolean;
             businessName?: string;
+            /**
+             * Format: date-time
+             * @description when the profile was first submitted, so the admin list shows how long it has waited
+             */
+            createdAt?: string;
+            /** @description HOUSEHOLD_BUSINESS or SOLE_PROPRIETORSHIP, so the admin list shows the kind of unit (BR-33) */
+            entityType?: string;
             id?: string;
             ownerAccountId?: string;
+            /** @description whether the registration fee came in, so the admin attaches its invoice only then (Q-36) */
+            registrationFeePaid?: boolean;
             sellsShop?: boolean;
             status?: string;
             supplySource?: string;

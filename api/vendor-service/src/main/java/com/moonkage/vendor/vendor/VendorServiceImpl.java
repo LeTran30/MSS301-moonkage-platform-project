@@ -23,6 +23,7 @@ import com.moonkage.vendor.vendor.elements.DeliveryFee;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -70,7 +71,8 @@ class VendorServiceImpl implements VendorService {
         if (caller.role() != Role.MEMBER) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
-        VendorSubmissionService.PreparedSubmission prepared = submissionService.prepare(request, caller.accountId());
+        VendorSubmissionService.PreparedSubmission prepared =
+                submissionService.prepare(request, caller.accountId(), Set.of());
         if (vendorRepository.existsByOwnerAccountId(caller.accountId())) {
             throw new AppException(ErrorCode.VENDOR_ALREADY_EXISTS);
         }
@@ -138,12 +140,14 @@ class VendorServiceImpl implements VendorService {
         if (!vendorFinder.get(vendorId).isOwnedBy(caller.accountId())) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
-        VendorSubmissionService.PreparedSubmission prepared = submissionService.prepare(request, caller.accountId());
+        Map<DocumentKind, VendorDocument> currentDocuments = documentService.currentDocuments(vendorId);
+        VendorSubmissionService.PreparedSubmission prepared =
+                submissionService.prepare(request, caller.accountId(), currentDocuments.keySet());
 
         // locked only now, not across the call to identity-service; the status check runs before any file moves
         Vendor vendor = vendorFinder.getForChange(vendorId);
         vendor.resubmit(prepared.profile());
-        documentService.attachDocuments(vendorId, request.documents(), documentService.currentDocuments(vendorId));
+        documentService.attachDocuments(vendorId, request.documents(), currentDocuments);
         submissionService.recordSubmission(vendor, prepared);
         snapshotPublisher.announceUpdated(vendor, caller.accountId());
         return toDetailResponse(vendor, caller);

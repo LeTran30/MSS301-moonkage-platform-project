@@ -1,6 +1,7 @@
 export { useVendor, useVendors, vendorStore } from './model/vendorStore';
 export type { SellingMode, Vendor, VendorApprovalStatus, VendorType } from './model/vendorStore';
 export type { VendorDocumentKind } from './model/vendorDocument';
+export { DOCUMENT_LABELS, OWNER_DOCUMENT_KINDS } from './model/vendorDocument';
 export { useVendorCatalog } from './model/useVendorCatalog';
 export { cakeAttributeApi } from './api/cakeAttributeApi';
 export { vendorAdminApi } from './api/vendorAdminApi';
@@ -27,6 +28,7 @@ export type {
   VendorReviewDto,
 } from './api/vendorDto';
 export { registrationFeeApi } from './api/registrationFeeApi';
+export { uploadVendorDocument } from './api/vendorDocumentUploadApi';
 export type { RegistrationFeeConfig, RegistrationFeePaymentLink } from './api/registrationFeeApi';
 export {
   mapDeliveryLabel,
