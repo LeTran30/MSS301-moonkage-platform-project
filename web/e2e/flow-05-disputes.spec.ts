@@ -535,9 +535,11 @@ test.describe('FLOW 5 — Khiếu nại & phân xử tranh chấp', () => {
     await page.goto(`/tai-khoan/don-hang/${order.id}/khieu-nai`);
     await expect(page.locator('#root')).toBeVisible();
 
-    await expect(page.getByText(/Mã khiếu nại:/)).toBeVisible();
+    await expect(page.getByText(/Mã khiếu nại #/)).toBeVisible();
+    await expect(page.getByText('Đang chờ quản trị viên phân xử')).toBeVisible();
     await expect(page.getByText(/Lý do:/)).toBeVisible();
-    await expect(page.getByText(/Tiền tạm giữ trên sàn:/)).toBeVisible();
-    await expect(page.getByText(/Tối đa có thể hoàn:/)).toBeVisible();
+    // Người mua không đọc được sổ tiền, nên trang chỉ nêu giá trị đơn (AC-49.3).
+    await expect(page.getByText(/Giá trị đơn:/)).toBeVisible();
+    await expect(page.getByText('Shop chưa gửi bằng chứng.')).toBeVisible();
   });
 });
