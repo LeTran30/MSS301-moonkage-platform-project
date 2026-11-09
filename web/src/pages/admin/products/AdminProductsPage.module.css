@@ -192,3 +192,10 @@
   background: var(--color-surface);
   color: var(--color-text);
 }
+.removedReason {
+  display: block;
+  max-width: 220px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
