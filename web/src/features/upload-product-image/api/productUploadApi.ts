@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { ProductUploadLink } from '@/entities/vendor';
 
 /**
@@ -20,11 +20,8 @@ import type { ProductUploadLink } from '@/entities/vendor';
 export async function createProductUploadLink(
   vendorId: string,
   contentType: string,
-  sizeBytes: number
+  sizeBytes: number,
 ): Promise<ProductUploadLink | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.PRODUCT_UPLOADS(vendorId), {
     contentType,
     sizeBytes,

@@ -43,7 +43,7 @@ export function AdminCakeCatalogPage() {
       toast.success(
         attribute.active
           ? `Đã ẩn "${attribute.label}" khỏi bộ lọc của khách hàng.`
-          : `Đã hiện "${attribute.label}" trong bộ lọc.`
+          : `Đã hiện "${attribute.label}" trong bộ lọc.`,
       );
       listQuery.reload();
     });
@@ -61,9 +61,7 @@ export function AdminCakeCatalogPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>
-            Từ Điển Danh Mục Vỏ & Nhân Bánh (Q6.4, FR-06)
-          </h1>
+          <h1 className={styles.title}>Danh mục vỏ và nhân bánh</h1>
           <p className={styles.subtitle}>
             Chuẩn hóa danh mục phân loại để khách hàng lọc chính xác hương vị bánh trên toàn sàn
           </p>
@@ -90,7 +88,7 @@ export function AdminCakeCatalogPage() {
           <div className={styles.gridTwo}>
             <Card padding="lg" className={styles.cardBody}>
               <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Danh Mục Loại Vỏ Bánh (Crusts)</h2>
+                <h2 className={styles.sectionTitle}>Loại vỏ bánh</h2>
                 <Button
                   size="sm"
                   variant="outline"
@@ -132,7 +130,7 @@ export function AdminCakeCatalogPage() {
 
             <Card padding="lg" className={styles.cardBody}>
               <div className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>Danh Mục Vị Nhân Bánh (Fillings)</h2>
+                <h2 className={styles.sectionTitle}>Vị nhân bánh</h2>
                 <Button
                   size="sm"
                   variant="outline"
@@ -178,21 +176,27 @@ export function AdminCakeCatalogPage() {
       <Modal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title={`Thêm ${group === 'CRUST' ? 'loại vỏ' : 'vị nhân'} mới (AC-54.1)`}
+        title={`Thêm ${group === 'CRUST' ? 'loại vỏ' : 'vị nhân'} mới`}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Hủy</Button>
-            <Button variant="primary" loading={busy} onClick={handleCreate}>Thêm giá trị</Button>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="primary" loading={busy} onClick={handleCreate}>
+              Thêm giá trị
+            </Button>
           </>
         }
       >
         <div className={styles.modalBody}>
           <p className={styles.modalSub}>
-            Mã giá trị (<code>code</code>) và thứ tự hiển thị do hệ thống sinh từ tên này.
-            Tên trùng sẽ bị từ chối (409 VENDOR_020).
+            Mã giá trị (<code>code</code>) và thứ tự hiển thị do hệ thống sinh từ tên này. Tên trùng
+            sẽ bị từ chối (409 VENDOR_020).
           </p>
           <div className={styles.formGroup}>
-            <label className={styles.label} htmlFor="attribute-label">Tên hiển thị *</label>
+            <label className={styles.label} htmlFor="attribute-label">
+              Tên hiển thị *
+            </label>
             <Input
               id="attribute-label"
               value={label}
@@ -205,4 +209,3 @@ export function AdminCakeCatalogPage() {
     </div>
   );
 }
-

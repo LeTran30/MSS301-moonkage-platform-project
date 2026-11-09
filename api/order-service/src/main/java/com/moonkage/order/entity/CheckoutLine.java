@@ -37,6 +37,8 @@ public class CheckoutLine {
     @Column(nullable = false)
     private String productName;
 
+    private String imageKey;
+
     @Column(nullable = false)
     private Long unitPrice;
 

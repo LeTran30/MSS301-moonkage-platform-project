@@ -1,6 +1,7 @@
 package com.moonkage.quotation.controller;
 
-import com.moonkage.quotation.common.exception.ApiResponse;
+import com.moonkage.api.ApiResponse;
+import com.moonkage.api.GatewayHeader;
 import com.moonkage.quotation.dto.request.AcceptQuoteRequest;
 import com.moonkage.quotation.dto.request.CreateQuoteRequestRequest;
 import com.moonkage.quotation.dto.request.SubmitQuoteRequest;
@@ -47,7 +48,7 @@ public class QuoteRequestController {
     /** FR-15 (type DIRECT), FR-16 (type OPEN). Needs a verified NFC (BR-23). */
     @PostMapping
     public ResponseEntity<ApiResponse<QuoteRequestResponse>> create(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
             @Valid @RequestBody CreateQuoteRequestRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(quoteRequestService.create(accountId, request)));
@@ -56,24 +57,24 @@ public class QuoteRequestController {
     /** No vendorId: the caller's own requests (AC-16.3). vendorId: requests sent to the caller's vendor (FR-36). */
     @GetMapping
     public ResponseEntity<ApiResponse<List<QuoteRequestResponse>>> searchRequests(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.USER_ROLE, required = false) String role,
             @RequestParam(required = false) String vendorId) {
         return ResponseEntity.ok(ApiResponse.ok(quoteRequestService.searchRequests(accountId, role, vendorId)));
     }
 
     @GetMapping("/{requestId}")
     public ResponseEntity<ApiResponse<QuoteRequestResponse>> getRequest(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.USER_ROLE, required = false) String role,
             @PathVariable String requestId) {
         return ResponseEntity.ok(ApiResponse.ok(quoteRequestService.getRequest(accountId, role, requestId)));
     }
 
     @GetMapping("/{requestId}/invitations")
     public ResponseEntity<ApiResponse<List<InvitationResponse>>> getInvitations(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.USER_ROLE, required = false) String role,
             @PathVariable String requestId) {
         return ResponseEntity.ok(ApiResponse.ok(quoteRequestService.getInvitations(accountId, role, requestId)));
     }
@@ -81,7 +82,7 @@ public class QuoteRequestController {
     /** {@code {"status": "DECLINED", "declineReason": "..."}} (AC-36.3). */
     @PatchMapping("/{requestId}/invitations/{vendorId}")
     public ResponseEntity<ApiResponse<InvitationResponse>> updateInvitation(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
             @PathVariable String requestId,
             @PathVariable String vendorId,
             @Valid @RequestBody UpdateInvitationRequest request) {
@@ -92,8 +93,8 @@ public class QuoteRequestController {
     /** The comparison table for the buyer (FR-17); a vendor sees only its own quote. */
     @GetMapping("/{requestId}/quotes")
     public ResponseEntity<ApiResponse<List<QuoteResponse>>> getQuotes(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.USER_ROLE, required = false) String role,
             @PathVariable String requestId) {
         return ResponseEntity.ok(ApiResponse.ok(quoteService.getQuotes(accountId, role, requestId)));
     }
@@ -101,7 +102,7 @@ public class QuoteRequestController {
     /** FR-38. The server computes totals, deposit and remainder; supersedesQuoteId sends a new revision (BR-05). */
     @PostMapping("/{requestId}/quotes")
     public ResponseEntity<ApiResponse<QuoteResponse>> submitQuote(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
             @PathVariable String requestId,
             @Valid @RequestBody SubmitQuoteRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -110,8 +111,8 @@ public class QuoteRequestController {
 
     @GetMapping("/{requestId}/quotes/{quoteId}")
     public ResponseEntity<ApiResponse<QuoteResponse>> getQuote(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.USER_ROLE, required = false) String role,
             @PathVariable String requestId,
             @PathVariable String quoteId,
             @RequestParam(defaultValue = "false") boolean includeRevisions) {
@@ -122,7 +123,7 @@ public class QuoteRequestController {
     /** {@code {"status": "WITHDRAWN"}}: the only change to a sent quote (BR-05). */
     @PatchMapping("/{requestId}/quotes/{quoteId}")
     public ResponseEntity<ApiResponse<QuoteResponse>> updateQuote(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
             @PathVariable String requestId,
             @PathVariable String quoteId,
             @Valid @RequestBody UpdateQuoteRequest request) {
@@ -132,7 +133,7 @@ public class QuoteRequestController {
     /** FR-19: freezes the binding copy and returns where to pay the deposit. */
     @PostMapping("/{requestId}/quotes/{quoteId}/acceptance")
     public ResponseEntity<ApiResponse<AcceptQuoteResponse>> accept(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
             @PathVariable String requestId,
             @PathVariable String quoteId,
             @Valid @RequestBody(required = false) AcceptQuoteRequest request) {
@@ -142,8 +143,8 @@ public class QuoteRequestController {
 
     @GetMapping("/{requestId}/quotes/{quoteId}/acceptance")
     public ResponseEntity<ApiResponse<AcceptanceResponse>> getAcceptance(
-            @Parameter(hidden = true) @RequestHeader("X-Account-Id") String accountId,
-            @Parameter(hidden = true) @RequestHeader(value = "X-User-Role", required = false) String role,
+            @Parameter(hidden = true) @RequestHeader(GatewayHeader.ACCOUNT_ID) String accountId,
+            @Parameter(hidden = true) @RequestHeader(value = GatewayHeader.USER_ROLE, required = false) String role,
             @PathVariable String requestId,
             @PathVariable String quoteId) {
         return ResponseEntity.ok(

@@ -1,10 +1,10 @@
 package com.moonkage.gateway.config;
 
+import com.moonkage.api.GatewayHeader;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import javax.crypto.spec.SecretKeySpec;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
@@ -42,14 +42,8 @@ import org.springframework.web.server.ServerWebExchange;
  */
 @Configuration
 @EnableWebFluxSecurity
-@EnableConfigurationProperties(RateLimitProperties.class)
+@EnableConfigurationProperties({RateLimitProperties.class, JwtProperties.class, CorsProperties.class})
 public class SecurityConfig {
-
-    /** No longer set; still stripped so a client cannot smuggle it to a service that reads it. */
-    static final String USER_ID = "X-User-Id";
-
-    static final String ACCOUNT_ID = "X-Account-Id";
-    static final String USER_ROLE = "X-User-Role";
 
     /** Route orchestrator-websocket in application.yml. */
     static final String WEBSOCKET_PATH = "/ws/**";
@@ -64,22 +58,18 @@ public class SecurityConfig {
                         .permitAll()
                         .pathMatchers("/actuator/health")
                         .permitAll()
-                        // /internal/** is for service-to-service (OpenFeign) calls only
+                        // /internal/** is for service-to-service (OpenFeign) calls only. The OpenFeign clients call
+                        // the service directly (lb://<service>/internal/...), so this path never belongs to a
+                        // public caller. The wildcard form stays for the case where a caller still uses the path
+                        // with the name of the service.
                         .pathMatchers("/internal/**", "/*/internal/**")
                         .denyAll()
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/api/interprovince-fees",
-                                "/api/interprovince-fees/**",
-                                "/catalog-service/api/interprovince-fees",
-                                "/catalog-service/api/interprovince-fees/**")
+                        // The legacy form of a migrated service is not listed here any more: the discovery locator is
+                        // off (D-30, closed 2026-11-07), so a legacy path either answers 308 from
+                        // LegacyPathRedirectFilter (which runs before this chain) or is not routed at all.
+                        .pathMatchers(HttpMethod.GET, "/api/interprovince-fees", "/api/interprovince-fees/**")
                         .permitAll()
-                        .pathMatchers(
-                                HttpMethod.PUT,
-                                "/api/interprovince-fees",
-                                "/api/interprovince-fees/**",
-                                "/catalog-service/api/interprovince-fees",
-                                "/catalog-service/api/interprovince-fees/**")
+                        .pathMatchers(HttpMethod.PUT, "/api/interprovince-fees", "/api/interprovince-fees/**")
                         .hasRole("ADMIN")
                         // Swagger UI and each service's OpenAPI doc
                         .pathMatchers(
@@ -94,37 +84,34 @@ public class SecurityConfig {
                         .pathMatchers(WEBSOCKET_PATH)
                         .permitAll()
                         // identity-service decides itself which auth endpoints need a token (/me)
-                        .pathMatchers("/identity-service/api/auth/**")
+                        .pathMatchers("/api/auth/**")
                         .permitAll()
                         // FR-04: guests browse products before logging in
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/api/products",
-                                "/api/products/**",
-                                "/catalog-service/api/products",
-                                "/catalog-service/api/products/**",
-                                "/order-service/api/reviews/**")
+                        .pathMatchers(HttpMethod.GET, "/api/products", "/api/products/**")
+                        .permitAll()
+                        // FR-14: the list of suppliers that take custom orders is public
+                        // (SupplierController: "Works for a guest too"). The buyer sees
+                        // these shops before signing in, so the gateway must let the
+                        // request through without a token.
+                        .pathMatchers(HttpMethod.GET, "/api/suppliers", "/api/suppliers/**")
+                        .permitAll()
+                        // B-3.2: the public summary of one shop (id, name, province, selling flags).
+                        // The matcher is the exact path, not "/api/vendors/**": the profile
+                        // of a shop stays private to its owner and the admin.
+                        .pathMatchers(HttpMethod.GET, "/api/vendors/*/summary")
                         .permitAll()
                         // BR-25: VNPay calls the IPN server to server and redirects the payer to the return page,
                         // both without our token; payment-service checks vnp_SecureHash instead
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/payment-service/api/payments/vnpay/ipn",
-                                "/payment-service/api/payments/vnpay/return",
-                                "/api/payments/vnpay/ipn",
-                                "/api/payments/vnpay/return")
+                        .pathMatchers(HttpMethod.GET, "/api/payments/vnpay/ipn", "/api/payments/vnpay/return")
                         .permitAll()
                         // AC-26.9: the registration fee is shown before anyone registers
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/vendor-service/api/registration-fee-config",
-                                "/api/registration-fee-config")
+                        .pathMatchers(HttpMethod.GET, "/api/registration-fee-config")
                         .permitAll()
                         // AC-06.6: guests filter by crust and filling; hidden values stay admin only
-                        .pathMatchers(HttpMethod.GET, "/vendor-service/api/cake-attributes", "/api/cake-attributes")
+                        .pathMatchers(HttpMethod.GET, "/api/cake-attributes")
                         .permitAll()
-                        // shop product management (/catalog-service/api/seller/**): any logged-in account;
-                        // catalog-service checks the account owns an approved vendor (D-19: owner is not a role)
+                        // shop product management (/api/vendors/{id}/products/**): any logged-in account;
+                        // vendor-service checks the account owns an approved vendor (D-19: owner is not a role)
                         .anyExchange()
                         .authenticated())
                 // role claim is a single string ("MEMBER"/"ADMIN") -> ROLE_MEMBER / ROLE_ADMIN
@@ -134,9 +121,9 @@ public class SecurityConfig {
 
     /** Same Base64 HS256 key as identity-service (jwt.secret). Only ACCESS tokens pass; refresh tokens are refused. */
     @Bean
-    ReactiveJwtDecoder jwtDecoder(@Value("${jwt.secret}") String secret) {
+    ReactiveJwtDecoder jwtDecoder(JwtProperties jwtProperties) {
         NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder.withSecretKey(
-                        new SecretKeySpec(Base64.getDecoder().decode(secret), "HmacSHA256"))
+                        new SecretKeySpec(Base64.getDecoder().decode(jwtProperties.secret()), "HmacSHA256"))
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
         OAuth2TokenValidator<Jwt> accessOnly = jwt -> "ACCESS".equals(jwt.getClaimAsString("type"))
@@ -147,9 +134,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource(@Value("${moonkage.cors.allowed-origins}") List<String> origins) {
+    CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(origins);
+        cfg.setAllowedOrigins(corsProperties.allowedOrigins());
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         cfg.setMaxAge(Duration.ofHours(1));
@@ -176,13 +163,13 @@ public class SecurityConfig {
         // incoming headers are read-only, so build a fresh copy
         HttpHeaders headers = new HttpHeaders();
         headers.addAll(exchange.getRequest().getHeaders());
-        headers.remove(USER_ID);
-        headers.remove(ACCOUNT_ID);
-        headers.remove(USER_ROLE);
+        headers.remove(GatewayHeader.USER_ID);
+        headers.remove(GatewayHeader.ACCOUNT_ID);
+        headers.remove(GatewayHeader.USER_ROLE);
         if (jwt != null) {
             // one id per person: the account id, the JWT subject
-            headers.set(ACCOUNT_ID, jwt.getSubject());
-            headers.set(USER_ROLE, jwt.getClaimAsString("role"));
+            headers.set(GatewayHeader.ACCOUNT_ID, jwt.getSubject());
+            headers.set(GatewayHeader.USER_ROLE, jwt.getClaimAsString("role"));
         }
         HttpHeaders readOnly = HttpHeaders.readOnlyHttpHeaders(headers);
         ServerHttpRequest request = new ServerHttpRequestDecorator(exchange.getRequest()) {

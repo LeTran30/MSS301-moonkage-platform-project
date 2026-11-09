@@ -3,6 +3,9 @@ import { routes } from '@/shared/config';
 import { Icon } from '@/shared/ui';
 import styles from './Footer.module.css';
 
+/** The year of the copyright line, read once when the app loads. */
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 export function Footer() {
   return (
     <footer className={styles.footer}>
@@ -17,7 +20,8 @@ export function Footer() {
               <span className={styles.brandName}>Moonkage</span>
             </div>
             <p className={styles.tagline}>
-              Sàn thương mại chuyên biệt về Bánh Trung Thu. Kết nối người mua lẻ, khách hàng doanh nghiệp và các nghệ nhân, xưởng làm bánh truyền thống trên toàn quốc.
+              Sàn thương mại chuyên về bánh trung thu. Kết nối người mua lẻ, khách hàng doanh
+              nghiệp và các nghệ nhân, xưởng làm bánh truyền thống trên toàn quốc.
             </p>
             <div className={styles.badges}>
               <span className={styles.verifyBadge}>
@@ -31,7 +35,7 @@ export function Footer() {
 
           {/* Cột Mua hàng */}
           <div className={styles.linkCol}>
-            <h4 className={styles.colTitle}>Mua Bánh</h4>
+            <h4 className={styles.colTitle}>Mua bánh</h4>
             <ul className={styles.linkList}>
               <li>
                 <Link to={routes.base.catalog}>Mua lẻ bánh trung thu</Link>
@@ -53,7 +57,7 @@ export function Footer() {
 
           {/* Cột Kênh người bán */}
           <div className={styles.linkCol}>
-            <h4 className={styles.colTitle}>Dành Cho Người Bán</h4>
+            <h4 className={styles.colTitle}>Dành cho người bán</h4>
             <ul className={styles.linkList}>
               <li>
                 <Link to={routes.base.sellIntro}>Bán hàng trên Moonkage</Link>
@@ -72,16 +76,13 @@ export function Footer() {
 
           {/* Cột Quy chế & Hỗ trợ */}
           <div className={styles.linkCol}>
-            <h4 className={styles.colTitle}>Chính Sách &amp; Vận Hành</h4>
+            <h4 className={styles.colTitle}>Chính sách và vận hành</h4>
             <ul className={styles.linkList}>
               <li>
                 <Link to={routes.base.policy}>Chính sách mua bán &amp; Giữ tiền</Link>
               </li>
               <li>
                 <Link to={routes.base.policy}>Thời hạn khiếu nại &amp; Đổi hoàn</Link>
-              </li>
-              <li>
-                <Link to={routes.system.sitemap}>Bản đồ cấu trúc 73 trang (IA)</Link>
               </li>
               <li>
                 <Link to={routes.admin.overview}>Cổng Quản Trị Hệ Thống</Link>
@@ -91,9 +92,11 @@ export function Footer() {
         </div>
 
         <div className={styles.bottomBar}>
-          <div>© 2026 Moonkage Platform. Xây dựng chuẩn theo Kiến Trúc Thông Tin v1.7.</div>
+          <div>
+            © {COPYRIGHT_YEAR} Moonkage. Sàn bánh trung thu mua lẻ và đặt số lượng lớn.
+          </div>
           <div className={styles.metaFlags}>
-            <span>Mã nguồn: React 19 + TypeScript + CSS Modules (FSD Architecture)</span>
+            <span>Thanh toán an toàn qua VNPay</span>
           </div>
         </div>
       </div>

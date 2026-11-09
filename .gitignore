@@ -81,3 +81,28 @@ ERRORS.md
 
 # ── Local tool config ──
 .mcp.json
+
+# ── Scratch output của script kiểm tra / diff tạm ──
+# các file này do script chạy tay sinh ra, không phải nguồn của repo.
+web/spec-ids-report.txt
+web/spec-lines.json
+web/spec-remaining.json
+web/merge-conflicts.txt
+web/merge-content-changed.txt
+web/noise-list.txt
+web/noise-only-files.txt
+web/content-changed-files.txt
+web/doc/_tmp_img/
+web/tmp-*
+web/scripts/tmp-*
+# Spec debug tạm trong `web/e2e/` — không bao giờ được commit (Playwright đã
+# loại trừ ở `playwright.config.ts`, nhưng gitignore là lớp chặn đầu tiên).
+web/e2e/_tmp*/
+web/e2e/_tmp-*
+web/e2e/tmp-*
+web/preview.err
+web/preview.out
+
+# Local files in docs/: a template holding personal data, and unshared images
+docs/Template.xlsx
+docs/assets/

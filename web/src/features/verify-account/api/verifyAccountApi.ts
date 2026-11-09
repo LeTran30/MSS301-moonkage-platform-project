@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { VerifyAccountDto } from '@/entities/user';
 
 /**
@@ -16,10 +16,10 @@ import type { VerifyAccountDto } from '@/entities/user';
  * The OTP belongs to the e-mail, not to the phone number.
  */
 export async function verifyAccount(email: string, otp: string): Promise<VerifyAccountDto> {
-  if (isDemoMode()) {
-    return { id: 'usr_new', email, phoneNumber: '', verified: true };
-  }
-  const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.VERIFY_ACCOUNT, { email, otp });
+  const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.VERIFY_ACCOUNT, {
+    email,
+    otp,
+  });
   const dto = unwrap<VerifyAccountDto>(res);
   if (!dto) {
     throw new Error('Máy chủ không trả về kết quả xác minh.');
@@ -29,8 +29,5 @@ export async function verifyAccount(email: string, otp: string): Promise<VerifyA
 
 /** Send the verification OTP again (AC-01.2). */
 export async function sendVerifyAccountOtp(email: string): Promise<void> {
-  if (isDemoMode()) {
-    return;
-  }
   await apiClient.post(GATEWAY.IDENTITY.SEND_VERIFY_ACCOUNT_OTP, { email });
 }

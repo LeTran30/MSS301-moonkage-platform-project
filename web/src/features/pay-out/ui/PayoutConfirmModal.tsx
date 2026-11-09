@@ -40,7 +40,7 @@ export function PayoutConfirmModal({
     >
       <div className={styles.modalBody}>
         <p>
-          Hệ thống sẽ ghi nhận lệnh chuyển tiền từ tài khoản Escrow của Moonkage sang tài khoản
+          Hệ thống sẽ ghi nhận lệnh chuyển tiền từ tài khoản ký quỹ của Moonkage sang tài khoản
           ngân hàng của xưởng:
         </p>
         <div className={styles.confirmBox}>

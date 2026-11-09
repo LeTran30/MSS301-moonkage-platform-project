@@ -13,7 +13,14 @@ class PiiCipherTest {
     /** Throw-away test key: Base64 of the bytes 0x01..0x20. */
     static final String TEST_KEY = "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=";
 
-    private final PiiCipher cipher = new PiiCipher(TEST_KEY);
+    /** The properties with only the PII key set; the other keys are not used by the cipher. */
+    private static NfcProperties propertiesWithPiiKey(String base64Key) {
+        NfcProperties properties = new NfcProperties();
+        properties.setPiiKey(base64Key);
+        return properties;
+    }
+
+    private final PiiCipher cipher = new PiiCipher(propertiesWithPiiKey(TEST_KEY));
 
     @Test
     void roundTrip() {
@@ -40,14 +47,14 @@ class PiiCipherTest {
     @Test
     void anotherKeyDoesNotDecrypt() {
         byte[] sealed = cipher.encrypt("079123456789");
-        PiiCipher other = new PiiCipher("ISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0A=");
+        PiiCipher other = new PiiCipher(propertiesWithPiiKey("ISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0A="));
 
         assertThrows(IllegalStateException.class, () -> other.decrypt(sealed));
     }
 
     @Test
     void keyMustBeSetAnd32Bytes() {
-        assertThrows(IllegalStateException.class, () -> new PiiCipher("").encrypt("x"));
-        assertThrows(IllegalStateException.class, () -> new PiiCipher("AQID").encrypt("x"));
+        assertThrows(IllegalStateException.class, () -> new PiiCipher(propertiesWithPiiKey("")).encrypt("x"));
+        assertThrows(IllegalStateException.class, () -> new PiiCipher(propertiesWithPiiKey("AQID")).encrypt("x"));
     }
 }

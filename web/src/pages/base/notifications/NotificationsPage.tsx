@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Button, Tabs, EmptyState } from '@/shared/ui';
+import { Card, Button, Tabs, EmptyState, Icon, type IconName } from '@/shared/ui';
 import { formatDateTime } from '@/shared/utils';
 import {
   notificationApi,
@@ -15,6 +15,14 @@ import styles from './NotificationsPage.module.css';
 
 type NotifTab = 'ALL' | 'ORDER' | 'QUOTE' | 'MAKET' | 'DISPUTE';
 
+/** Icon SVG theo loại thông báo (thay cho emoji gốc). */
+const NOTIF_ICONS: Record<string, IconName> = {
+  ORDER: 'package',
+  QUOTE: 'file',
+  MAKET: 'sparkle',
+  DISPUTE: 'scale',
+};
+
 export function NotificationsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<NotifTab>('ALL');
@@ -28,14 +36,14 @@ export function NotificationsPage() {
   // notifications of the shop (new RFQ, new order, maket revision, disbursement).
   const user = useCurrentUser();
   const isShopOwner = user.role === 'VENDOR' || Boolean(user.vendorId);
-  const heading = isShopOwner ? 'Thông báo cửa hàng (M6.6)' : 'Trung tâm thông báo (M6.6)';
+  const heading = isShopOwner ? 'Thông báo cửa hàng' : 'Trung tâm thông báo';
   const description = isShopOwner
     ? user.vendorName
       ? `Cập nhật của ${user.vendorName}: yêu cầu báo giá mới, đơn hàng vào xưởng, maket cần sửa.`
       : 'Yêu cầu báo giá mới, đơn hàng vào xưởng, maket cần sửa và đợt giải ngân cọc.'
     : 'Cập nhật trạng thái tiến độ đơn hàng, duyệt Maket thiết kế, báo giá mới và phán quyết khiếu nại.';
 
-  const filtered = notifications.filter(n => {
+  const filtered = notifications.filter((n) => {
     if (activeTab === 'ORDER') return n.type === 'ORDER';
     if (activeTab === 'QUOTE') return n.type === 'QUOTE';
     if (activeTab === 'MAKET') return n.type === 'MAKET';
@@ -64,8 +72,8 @@ export function NotificationsPage() {
           <h1 className={styles.title}>{heading}</h1>
           <p className={styles.desc}>{description}</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleMarkAllRead}>
-          ✓ Đánh dấu đã đọc tất cả
+        <Button variant="ghost" size="sm" onClick={handleMarkAllRead} iconLeft="check">
+          Đánh dấu đã đọc tất cả
         </Button>
       </div>
 
@@ -75,7 +83,7 @@ export function NotificationsPage() {
           { id: 'ORDER', label: 'Đơn hàng' },
           { id: 'QUOTE', label: 'Báo giá B2B' },
           { id: 'MAKET', label: 'Duyệt Maket' },
-          { id: 'DISPUTE', label: 'Khiếu nại & Escrow' },
+          { id: 'DISPUTE', label: 'Khiếu nại và ký quỹ' },
         ]}
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as NotifTab)}
@@ -89,7 +97,7 @@ export function NotificationsPage() {
         />
       ) : (
         <div className={styles.list}>
-          {filtered.map(n => (
+          {filtered.map((n) => (
             <Card
               key={n.id}
               className={`${styles.itemCard} ${!n.isRead ? styles.unread : ''}`}
@@ -97,10 +105,7 @@ export function NotificationsPage() {
             >
               <div className={styles.iconWrap}>
                 <span className={styles.icon}>
-                  {n.type === 'ORDER' ? '📦' :
-                   n.type === 'QUOTE' ? '📝' :
-                   n.type === 'MAKET' ? '🎨' :
-                   n.type === 'DISPUTE' ? '⚖️' : '🔔'}
+                  <Icon name={NOTIF_ICONS[n.type] ?? 'bell'} size={20} />
                 </span>
               </div>
 

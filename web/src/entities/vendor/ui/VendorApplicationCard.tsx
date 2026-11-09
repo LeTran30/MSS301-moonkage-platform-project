@@ -1,4 +1,5 @@
 import { Badge, Button, Card } from '@/shared/ui';
+import { formatDate, shortCode } from '@/shared/utils';
 import type { VendorResponseDto } from '../api/vendorDto';
 import { VENDOR_STATUS_LABELS, type VendorStatus } from '../model/vendorStatusLabels';
 import styles from './VendorApplicationCard.module.css';
@@ -11,34 +12,45 @@ interface VendorApplicationCardProps {
   onAttachFeeInvoice?: (vendor: VendorResponseDto) => void;
 }
 
+/** Tên loại hình đơn vị (BR-33). */
+const ENTITY_TYPE_LABELS: Record<NonNullable<VendorResponseDto['entityType']>, string> = {
+  HOUSEHOLD_BUSINESS: 'Hộ kinh doanh',
+  SOLE_PROPRIETORSHIP: 'Doanh nghiệp tư nhân',
+};
+
+/** Màu của từng trạng thái: chờ việc của admin thì vàng, đã xong thì xanh, dừng thì đỏ. */
+const STATUS_TONES: Record<VendorStatus, 'gold' | 'amber' | 'green' | 'red'> = {
+  PENDING: 'gold',
+  NEEDS_INFO: 'amber',
+  APPROVED: 'green',
+  REJECTED: 'red',
+  LOCKED: 'red',
+};
+
 /** Thẻ hồ sơ người bán trong danh sách quản trị (Q2.0). */
-export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: VendorApplicationCardProps) {
+export function VendorApplicationCard({
+  vendor,
+  onReview,
+  onAttachFeeInvoice,
+}: VendorApplicationCardProps) {
+  const status = vendor.status as VendorStatus | undefined;
+
   return (
     <Card className={styles.vendorCard}>
       <div className={styles.cardHeader}>
         <div className={styles.vendorMainInfo}>
           <div>
-            <div className={styles.nameRow}>
-              <h3 className={styles.brandName}>{vendor.businessName || 'Hồ sơ chưa đặt tên'}</h3>
-              {vendor.supplySource === 'SELF_PRODUCED' && (
-                <Badge tone="gold">Nghệ nhân truyền thống</Badge>
-              )}
-            </div>
-            <p className={styles.registeredName}>Mã hồ sơ: {vendor.id}</p>
+            <h3 className={styles.brandName}>{vendor.businessName || 'Hồ sơ chưa đặt tên'}</h3>
+            <p className={styles.registeredName}>
+              Hồ sơ #{shortCode(vendor.id)}
+              {vendor.createdAt ? ` · Nộp ngày ${formatDate(vendor.createdAt)}` : ''}
+            </p>
           </div>
         </div>
 
         <div className={styles.statusCol}>
-          <Badge
-            tone={
-              vendor.status === 'APPROVED'
-                ? 'green'
-                : vendor.status === 'PENDING'
-                  ? 'gold'
-                  : 'red'
-            }
-          >
-            {vendor.status ? VENDOR_STATUS_LABELS[vendor.status as VendorStatus] : 'Chưa rõ'}
+          <Badge tone={status ? STATUS_TONES[status] : 'neutral'}>
+            {status ? VENDOR_STATUS_LABELS[status] : 'Chưa rõ'}
           </Badge>
         </div>
       </div>
@@ -46,12 +58,12 @@ export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: 
       <div className={styles.cardBody}>
         <div className={styles.legalGrid}>
           <div className={styles.legalItem}>
-            <span className={styles.legalLabel}>Mô hình kinh doanh (BR-33):</span>
-            <strong>Đối chiếu trong hồ sơ chi tiết</strong>
+            <span className={styles.legalLabel}>Loại hình:</span>
+            <strong>{vendor.entityType ? ENTITY_TYPE_LABELS[vendor.entityType] : '—'}</strong>
           </div>
 
           <div className={styles.legalItem}>
-            <span className={styles.legalLabel}>Chế độ nhận đơn (BR-21):</span>
+            <span className={styles.legalLabel}>Cách bán:</span>
             <strong>
               {vendor.sellsShop && vendor.acceptsOrders
                 ? 'Bán lẻ & Nhận đặt hàng'
@@ -62,7 +74,7 @@ export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: 
           </div>
 
           <div className={styles.legalItem}>
-            <span className={styles.legalLabel}>Nguồn hàng (AC-26.2):</span>
+            <span className={styles.legalLabel}>Nguồn hàng:</span>
             <strong>
               {vendor.supplySource === 'SELF_PRODUCED'
                 ? 'Tự sản xuất'
@@ -71,21 +83,22 @@ export function VendorApplicationCard({ vendor, onReview, onAttachFeeInvoice }: 
                   : 'Cả hai'}
             </strong>
           </div>
+
+          <div className={styles.legalItem}>
+            <span className={styles.legalLabel}>Phí mở bán:</span>
+            <strong>{vendor.registrationFeePaid ? 'Đã đóng' : 'Chưa đóng'}</strong>
+          </div>
         </div>
       </div>
 
       <div className={styles.cardFooter}>
-        <span className={styles.capacity}>
-          Chủ hồ sơ: <strong>{vendor.ownerAccountId || '—'}</strong>
-        </span>
-
         <div className={styles.btnGroup}>
           <Button variant="secondary" size="sm" onClick={() => onReview(vendor)}>
-            Thẩm định chi tiết &amp; Duyệt
+            {status === 'PENDING' ? 'Thẩm định hồ sơ' : 'Xem hồ sơ'}
           </Button>
-          {onAttachFeeInvoice && (
+          {onAttachFeeInvoice && vendor.registrationFeePaid && (
             <Button variant="ghost" size="sm" onClick={() => onAttachFeeInvoice(vendor)}>
-              Gắn hoá đơn phí (Q-36)
+              Gắn hoá đơn phí
             </Button>
           )}
         </div>

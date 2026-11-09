@@ -14,10 +14,10 @@
 | [payment.md](payment.md) | Thanh toán, hoàn tiền, sổ tiền, giải ngân | payment-service |
 | [orchestrator.md](orchestrator.md) | Thông báo, nhật ký | — |
 | [integration.md](integration.md) | Sự kiện và API nội bộ toàn hệ thống | — |
-| [decisions.md](decisions.md) | Quyết định L-01 → L-18 | — |
+| [decisions.md](decisions.md) | Quyết định L-01 → L-19; ADR kiến trúc D-25 → D-30 | — |
 | [db-review-proposals.md](db-review-proposals.md) | Rà soát database P-01 → P-09, đã chốt và gộp vào V2 | — |
 
-Kế hoạch đưa code về khớp: [api-db-alignment-plan.md](../api-db-alignment-plan.md).
+Kế hoạch đưa code về khớp: [../../archive/2026-10-22-api-db-alignment-plan.md](../../archive/2026-10-22-api-db-alignment-plan.md).
 
 ## Phạm vi và quy ước chung
 

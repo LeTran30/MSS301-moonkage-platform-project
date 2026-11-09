@@ -23,31 +23,25 @@
   justify-content: space-between;
   gap: var(--space-4);
 }
-.actorIndicator {
+.sellerEntry {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
+  min-height: 20px;
 }
-.sparkleIcon {
-  color: var(--color-gold);
-  display: flex;
+.sellerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-gold-hover);
+  font-weight: var(--weight-semibold);
+}
+.sellerLink:hover {
+  text-decoration: underline;
 }
 .topLinks {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-}
-.switchActorBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-primary);
-  font-weight: var(--weight-semibold);
-  transition: opacity var(--duration-fast);
-}
-.switchActorBtn:hover {
-  text-decoration: underline;
 }
 .divider {
   color: var(--color-border-strong);
@@ -60,6 +54,11 @@
 }
 .sitemapLink:hover {
   color: var(--color-text);
+}
+
+/* Kênh người bán không có ô tìm kiếm và menu mua: nhóm nút dồn về bên phải. */
+.actionGroupEnd {
+  margin-left: auto;
 }
 
 /* Main row */
@@ -105,11 +104,11 @@
   color: var(--color-primary);
 }
 .brandTagline {
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   margin-top: 2px;
 }
 
@@ -242,6 +241,7 @@
   align-items: center;
   gap: var(--space-3);
   margin-left: auto;
+  flex: none;
 }
 .iconBtn {
   position: relative;
@@ -265,7 +265,7 @@
   right: -2px;
   background: var(--color-primary);
   color: var(--color-white);
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   width: 18px;
   height: 18px;
@@ -365,12 +365,13 @@
   height: 32px;
   border-radius: 50%;
   background: var(--color-gold-soft);
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   display: grid;
   place-items: center;
 }
 .userName {
-  max-width: 120px;
+  min-width: 0;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -409,10 +410,6 @@
   height: 1px;
   background: var(--color-border);
   margin: var(--space-2) 0;
-}
-.vendorLink {
-  color: var(--color-gold-hover);
-  font-weight: var(--weight-semibold);
 }
 .adminLink {
   color: var(--color-info);
@@ -491,7 +488,7 @@
   height: 44px;
   border-radius: var(--radius-full);
   background: var(--color-gold-soft);
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   display: grid;
   place-items: center;
   flex: none;
@@ -542,7 +539,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--color-text-subtle);
@@ -564,7 +561,224 @@
 
 .themeToggleBtn:hover {
   background: var(--color-surface-2);
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   border-color: var(--color-gold);
   transform: rotate(15deg);
+}
+
+/* Nút mở menu di động — chỉ hiện ở breakpoint `lg` trở xuống. */
+.mobileMenuBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  flex: none;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.mobileMenuBtn:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-gold);
+}
+
+/* Drawer menu di động */
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog, 100);
+  background: rgb(20 14 10 / 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: flex-end;
+  animation: drawerFade 160ms ease;
+}
+.drawerPanel {
+  width: min(320px, 86vw);
+  height: 100%;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: drawerSlide 220ms var(--ease-out);
+}
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.drawerTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+}
+.drawerClose {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.drawerClose:hover {
+  background: var(--color-surface-2);
+}
+.drawerNav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}
+.drawerItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast);
+}
+.drawerItem:hover {
+  background: var(--color-surface-2);
+  color: var(--color-primary);
+}
+.drawerItem svg {
+  flex: none;
+  color: var(--color-gold-text);
+}
+
+@keyframes drawerFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes drawerSlide {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------------------- */
+
+/* Tablet trở xuống: top bar rút gọn, menu ngang chuyển sang drawer. */
+@media (max-width: var(--breakpoint-lg)) {
+  .topInner {
+    gap: var(--space-2);
+  }
+  .navMenu {
+    display: none;
+  }
+  .mobileMenuBtn {
+    display: inline-flex;
+  }
+  .mainInner {
+    gap: var(--space-3);
+  }
+  .searchForm {
+    max-width: 320px;
+  }
+}
+
+/* Tablet nhỏ: ẩn thanh thông tin phụ, thu gọn logo. */
+@media (max-width: var(--breakpoint-md)) {
+  /* Lối vào người bán vẫn hiện (menu di động không có); chỉ ẩn lối tắt. */
+  .topLinks {
+    display: none;
+  }
+  .mainRow {
+    padding: var(--space-2) 0;
+  }
+  .mainInner {
+    gap: var(--space-2);
+  }
+  .brandTagline {
+    display: none;
+  }
+  .brandName {
+    font-size: 1.25rem;
+  }
+  .logoEmblem {
+    width: 38px;
+    height: 38px;
+  }
+  .actionGroup {
+    gap: var(--space-2);
+  }
+  .userName {
+    display: none;
+  }
+  .userTrigger {
+    padding: 4px;
+  }
+  .notifDropdown {
+    width: min(340px, 92vw);
+    right: calc(-1 * var(--space-3));
+  }
+  .userDropdown {
+    width: min(260px, 88vw);
+  }
+}
+
+/* Mobile: ô tìm kiếm xuống hàng riêng, nằm dưới logo + hành động. */
+@media (max-width: var(--breakpoint-sm)) {
+  .mainInner {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+  }
+  .searchForm {
+    order: 10;
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .actionGroup {
+    margin-left: auto;
+  }
+  .provinceGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile: chỉ còn biểu tượng đèn lồng, để nút menu không bị đẩy xuống hàng riêng. */
+@media (max-width: var(--breakpoint-sm)) {
+  .logoText {
+    display: none;
+  }
+  .mainInner {
+    flex-wrap: wrap;
+  }
+}
+
+/* Mobile nhỏ: chỉ còn icon cho các nút hành động. */
+@media (max-width: var(--breakpoint-xs)) {
+  .mainInner {
+    gap: var(--space-1);
+  }
+  .iconBtn,
+  .themeToggleBtn {
+    width: 34px;
+    height: 34px;
+  }
 }

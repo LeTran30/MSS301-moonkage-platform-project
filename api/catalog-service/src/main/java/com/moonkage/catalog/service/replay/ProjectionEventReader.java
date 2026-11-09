@@ -70,6 +70,24 @@ public class ProjectionEventReader {
         return value.asText();
     }
 
+    /**
+     * A string that may be missing altogether, not only null.
+     *
+     * <p>For a field added to the contract after the first snapshots were written: a snapshot published before the
+     * field existed has no such key at all, and refusing it would keep those events pending for ever. A field that is
+     * there but is neither a string nor null is still a broken contract and is refused.
+     */
+    public String optionalText(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        if (!value.isTextual()) {
+            throw new IllegalArgumentException(field + " must be a string or null");
+        }
+        return value.asText();
+    }
+
     public long requireLong(JsonNode node, String field) {
         JsonNode value = node.get(field);
         if (value == null || !value.isIntegralNumber() || !value.canConvertToLong()) {

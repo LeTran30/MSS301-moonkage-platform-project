@@ -29,3 +29,20 @@
   position: sticky;
   top: calc(var(--header-h) + 16px);
 }
+
+/* --- Responsive (audit §3.6) --- */
+@media (max-width: var(--breakpoint-lg)) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  .summaryCol {
+    position: static;
+  }
+}
+
+@media (max-width: var(--breakpoint-md)) {
+  .container {
+    padding: var(--space-5) var(--space-3) var(--space-10);
+  }
+}

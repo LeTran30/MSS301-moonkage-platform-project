@@ -469,7 +469,7 @@ Các service phát sự kiện liên quan đến tiền, trạng thái đơn, t�
 | BR-27 chủ tài khoản là chính chủ (hộ kinh doanh, doanh nghiệp tư nhân) | vendor (nộp, nộp lại hồ sơ) | Gọi `POST /internal/accounts/check`; `matchesAccount = false` thì từ chối nộp |
 | BR-26 công ty có làm việc trực tiếp và thỏa thuận | vendor (lệnh duyệt của quản trị) | Từ chối lệnh duyệt khi `entity_type = công ty` mà `onboarding_meeting` thiếu ngày, quản trị thực hiện, họ tên người đại diện, file thỏa thuận hoặc xác nhận tra cứu |
 | BR-31 phí đăng ký mở bán | vendor tính `can_operate`; catalog (đăng sản phẩm, hiển thị), quotation (yêu cầu trực tiếp, lời mời, báo giá) chặn theo bản sao | `can_operate = đã duyệt và đã đóng phí`. Chưa `can_operate` thì không đăng bán, không nhận yêu cầu, không được mời |
-| BR-25 xác nhận qua IPN | payment | Kiểm checksum, `gateway_txn_ref` tồn tại, số tiền khớp; xử lý lặp lại an toàn nhờ khóa duy nhất trên `gateway_txn_ref` và trạng thái Payment. Return URL chỉ để hiển thị |
+| BR-25 xác nhận qua IPN | payment | Kiểm checksum, `gateway_txn_ref` tồn tại, số tiền khớp; xử lý lặp lại an toàn nhờ khóa duy nhất trên `gateway_txn_ref` và trạng thái Payment. Return URL chỉ để hiển thị; ngoại lệ duy nhất là khi chạy local: VNPay không gọi được IPN về `localhost`, nên bật `vnpay.confirm-on-return` để return URL đã ký được ghi nhận như IPN |
 | BR-28 giữ tồn kho | catalog | Câu lệnh giữ hàng có điều kiện; chốt / trả theo `payment.succeeded` / `payment.failed`; quét reservation quá hạn (mục 4.4) |
 | BR-29 một lần thanh toán, mỗi Shop một đơn | order | Phiên checkout nhóm theo Shop; khi thanh toán thành công tạo N đơn cùng `payment_group_id = checkout_id` trong một transaction |
 | BR-30 phí giao | catalog tính; order và quotation chép vào đơn, báo giá | Mục 4.4. Phí đã chép không đổi khi bảng phí hay phí nội thành đổi (BR-19) |
@@ -684,7 +684,7 @@ Số định danh đầy đủ chỉ đi một chặng: từ trình duyệt qua 
 - **App mobile khi demo:** điện thoại phải gọi được gateway; dùng IP mạng LAN của máy chạy Docker hoặc chính tunnel ở trên.
 - **Migration & Quản lý Schema:** (Cập nhật 2026-10-20, D-22) mỗi service quản schema của mình bằng **Flyway**, file `db/migration/V*.sql` trong service, chạy lúc service khởi động ở mọi môi trường. Hibernate để `ddl-auto: validate`: chỉ kiểm entity khớp DB. Quy ước đặt tên và cách đổi schema: `docs/guides/database.md`.
 - **Dữ liệu mẫu (Seed Data):** (Cập nhật 2026-10-20, D-22)
-  - (Cập nhật 2026-10-29) Backend không tự tạo tài khoản nào lúc khởi động. Quản trị viên `admin@mk.com` nằm trong seed của identity-service, mật khẩu `SEED_PASSWORD` như mọi tài khoản mẫu; môi trường không chạy seed cần quy trình tạo admin riêng ([domain-model-plan.md](../services/identity/domain-model-plan.md#đã-chốt)).
+  - (Cập nhật 2026-10-29) Backend không tự tạo tài khoản nào lúc khởi động. Quản trị viên `admin@mk.com` nằm trong seed của identity-service, mật khẩu `SEED_PASSWORD` như mọi tài khoản mẫu; môi trường không chạy seed cần quy trình tạo admin riêng ([../archive/2026-10-29-identity-domain-model-plan.md](../archive/2026-10-29-identity-domain-model-plan.md#đã-chốt)).
   - Dữ liệu mẫu cho dev nằm trong từng service, file `db/seed/R__seed.sql` (Flyway repeatable migration). Chỉ docker-compose bật nó (`SPRING_FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/seed`); test và production không bật. Không có runner script.
   - Seed dùng **ID cố định** ghi trong sổ ID của `docs/guides/database.md`, nên service khác tham chiếu được mà không phải trích ID lúc chạy. Mọi `INSERT` đều `ON CONFLICT DO NOTHING` (chạy lại an toàn).
   - Riêng hồ sơ NFC (`legal_profiles`) cần khóa PII của môi trường, nên do `NfcProfileSeeder` của identity-service nạp từ `db/seed/nfc-profiles.json`, chỉ khi `APP_SEED_ENABLED=true`.
@@ -712,7 +712,9 @@ moonkage/
 │   │   └── common-storage/      # Thư viện presigned upload/xem file MinIO (không phải service)
 │   │                            # (mỗi service: db/migration = schema Flyway, db/seed = dữ liệu mẫu dev)
 │   ├── infra/
-│   │   └── minio/init.sh        # bucket, lifecycle, user MinIO cho từng service (container minio-init)
+│   │   ├── minio/init.sh        # bucket, lifecycle, user MinIO cho từng service (container minio-init)
+│   │   └── otel/                # cấu hình OTel Collector (container otel-collector, BE-11)
+│   │       └── otel-collector-config.yaml
 │   ├── web/                     # React web frontend
 │   ├── docs/                    # Toàn bộ tài liệu, mục lục ở docs/README.md
 │   ├── docker-compose.yml       # Điều phối container (services, databases, rabbitmq, minio)

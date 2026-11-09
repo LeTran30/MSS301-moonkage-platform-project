@@ -5,18 +5,21 @@ import { vendorCatalogApi } from '../api/vendorCatalogApi';
 import { vendorStore } from './vendorStore';
 
 /**
- * The vendors that take custom orders, loaded from `quotation-service`.
+ * The vendors that take custom orders and deliver to the buyer's province, loaded from `quotation-service`.
  *
- * The entity store keeps the last loaded list so every screen (home, list of
- * suppliers, shop page) reads the same data.
+ * The backend filters suppliers by province, so the list follows the "Giao tới" province of the header. The entity
+ * store keeps the last loaded list so every screen (home, list of suppliers, shop page) reads the same data. A
+ * province no Shop delivers to empties the list instead of keeping the Shops of the previous province.
  */
-export function useVendorCatalog(): { kind: 'loading' | 'loaded' | 'error' } {
-  const state = useQueryData(queryKeys.vendor.catalog(), () => vendorCatalogApi.getVendors());
+export function useVendorCatalog(provinceCode: string): { kind: 'loading' | 'loaded' | 'error' } {
+  const state = useQueryData(queryKeys.vendor.catalog(provinceCode), () =>
+    vendorCatalogApi.getVendors(provinceCode),
+  );
 
   // Dep là `data`, không phải `state` — xem giải thích ở `useProductCatalog`.
   const data = state.kind === 'loaded' ? state.data : null;
   useEffect(() => {
-    if (data && data.length > 0) {
+    if (data) {
       vendorStore.set(data);
     }
   }, [data]);

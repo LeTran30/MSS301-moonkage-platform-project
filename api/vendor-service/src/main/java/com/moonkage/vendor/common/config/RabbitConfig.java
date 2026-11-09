@@ -1,5 +1,6 @@
 package com.moonkage.vendor.common.config;
 
+import com.moonkage.outbox.EventExchange;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -17,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String EVENTS_EXCHANGE = "moonkage.events";
+    public static final String EVENTS_EXCHANGE = EventExchange.NAME;
 
     // FR-26, FR-45, consumed by orchestrator-service (notification to the admins / the owner, AC-45.3)
     public static final String VENDOR_SUBMITTED_ROUTING_KEY = "vendor.submitted";

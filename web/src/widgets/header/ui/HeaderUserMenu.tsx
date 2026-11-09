@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { Icon } from '@/shared/ui';
-import type { User } from '@/entities/user';
+import { sessionApi, type User } from '@/entities/user';
 import styles from './Header.module.css';
 
 interface HeaderUserMenuProps {
   user: User;
+  /** Đang khôi phục phiên: chưa biết người dùng là ai. */
+  restoring?: boolean;
 }
 
 /**
@@ -16,10 +18,11 @@ interface HeaderUserMenuProps {
  * chuyển vào menu để người dùng bàn phím điều hướng được bằng mũi tên; Esc
  * đóng menu và trả tiêu điểm về nút đã mở nó.
  */
-export function HeaderUserMenu({ user }: HeaderUserMenuProps) {
+export function HeaderUserMenu({ user, restoring = false }: HeaderUserMenuProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Đóng menu khi bấm ra ngoài, và trả tiêu điểm về nút mở menu khi Esc.
   useEffect(() => {
@@ -66,7 +69,9 @@ export function HeaderUserMenu({ user }: HeaderUserMenuProps) {
         <div className={styles.userAvatar}>
           <Icon name="user" size={18} />
         </div>
-        <span className={styles.userName}>{user.name}</span>
+        <span className={styles.userName} aria-busy={restoring}>
+          {restoring ? 'Đang tải…' : user.name}
+        </span>
         <Icon name="chevronDown" size={14} />
       </button>
 
@@ -128,53 +133,42 @@ export function HeaderUserMenu({ user }: HeaderUserMenuProps) {
             </Link>
           </div>
 
-          <div className={styles.dropdownDivider} />
-
-          {/* Kênh người bán hoặc Bán hàng trên Moonkage */}
-          <div className={styles.dropdownSection}>
-            {user.vendorId ? (
-              <Link
-                role="menuitem"
-                to={routes.vendor.overview}
-                className={`${styles.dropdownItem} ${styles.vendorLink}`}
-                onClick={() => setOpen(false)}
-              >
-                <Icon name="store" size={16} /> Chuyển sang Kênh người bán
-              </Link>
-            ) : (
-              <Link
-                role="menuitem"
-                to={routes.base.sellIntro}
-                className={`${styles.dropdownItem} ${styles.vendorLink}`}
-                onClick={() => setOpen(false)}
-              >
-                <Icon name="store" size={16} /> Bán hàng trên Moonkage
-              </Link>
-            )}
-
-            {user.role === 'ADMIN' && (
-              <Link
-                role="menuitem"
-                to={routes.admin.overview}
-                className={`${styles.dropdownItem} ${styles.adminLink}`}
-                onClick={() => setOpen(false)}
-              >
-                <Icon name="shield" size={16} /> Khu Quản trị hệ thống
-              </Link>
-            )}
-          </div>
+          {/* Lối vào Kênh người bán nằm ở thanh trên cùng của header. */}
+          {user.role === 'ADMIN' && (
+            <>
+              <div className={styles.dropdownDivider} />
+              <div className={styles.dropdownSection}>
+                <Link
+                  role="menuitem"
+                  to={routes.admin.overview}
+                  className={`${styles.dropdownItem} ${styles.adminLink}`}
+                  onClick={() => setOpen(false)}
+                >
+                  <Icon name="shield" size={16} /> Khu Quản trị hệ thống
+                </Link>
+              </div>
+            </>
+          )}
 
           <div className={styles.dropdownDivider} />
 
           <div className={styles.dropdownSection}>
-            <Link
+            <button
+              type="button"
               role="menuitem"
-              to={routes.auth.login}
               className={styles.dropdownItem}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                // Đăng xuất thật: xoá token và hồ sơ, rồi về trang đăng nhập.
+                // Trước đây mục này chỉ là một liên kết, nên token vẫn còn
+                // trong vault và F5 lại đưa người dùng trở lại khu vực đã bảo vệ.
+                void sessionApi.logout().finally(() => {
+                  navigate(routes.auth.login, { replace: true });
+                });
+              }}
             >
-              <Icon name="logout" size={16} /> Đổi tài khoản / Đăng xuất
-            </Link>
+              <Icon name="logout" size={16} /> Đăng xuất
+            </button>
           </div>
         </div>
       )}

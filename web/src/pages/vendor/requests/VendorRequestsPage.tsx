@@ -1,27 +1,46 @@
 import { useState } from 'react';
-import { Badge, Button, Card, Tabs, toast } from '@/shared/ui';
+import { Badge, Button, Card, Icon, Tabs, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { formatCurrency, formatDate } from '@/shared/utils';
-import { type Quote, type QuoteRequest, useVendorRequestList } from '@/entities/request';
+import {
+  CUSTOM_TYPE_LABELS,
+  REQUEST_STATUS_LABELS,
+  type Quote,
+  type QuoteRequest,
+  requestCode,
+  useVendorRequestList,
+} from '@/entities/request';
 import { useCurrentUser } from '@/entities/user';
-import { useMyVendorId } from '@/entities/vendor';
+import { useOwnVendorId } from '@/entities/vendor';
 import { SubmitQuoteModal } from '@/features/respond-to-quote-request';
 import { useWithdrawQuote } from '@/features/withdraw-quote';
-import { useDeclineInvitation } from '@/features/decline-invitation';
+import { DeclineInvitationModal, useDeclineInvitation } from '@/features/decline-invitation';
 import styles from './VendorRequestsPage.module.css';
 
 type RequestTab = 'OPEN' | 'DIRECT' | 'ALL';
 
+/** The Shop's quote that still stands on a request: sent and not withdrawn, accepted or closed. */
+function liveQuoteOf(req: QuoteRequest): Quote | undefined {
+  return req.quotes.find((q) => q.status === 'SUBMITTED' || q.status === 'ACCEPTED');
+}
+
+/** Requests still taking quotes first, then the newest. */
+function byOpenThenNewest(a: QuoteRequest, b: QuoteRequest): number {
+  const open = Number(b.status === 'OPEN') - Number(a.status === 'OPEN');
+  return open !== 0 ? open : b.createdAt.localeCompare(a.createdAt);
+}
+
 export function VendorRequestsPage() {
-  const [activeTab, setActiveTab] = useState<RequestTab>('OPEN');
+  // "Tất cả" trước: một yêu cầu chỉ định riêng mới không bị giấu sau tab yêu cầu mở.
+  const [activeTab, setActiveTab] = useState<RequestTab>('ALL');
   const [selectedReq, setSelectedReq] = useState<QuoteRequest | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [declining, setDeclining] = useState<QuoteRequest | null>(null);
 
   // FR-36: the requests sent to the caller's vendor. The backend filters them
   // by the vendor of the token.
   const user = useCurrentUser();
-  const myVendorId = useMyVendorId();
-  const vendorId = user.vendorId || (myVendorId.kind === 'loaded' ? myVendorId.data ?? '' : '');
+  const vendorId = useOwnVendorId(user.vendorId);
   const asyncRequests = useVendorRequestList(vendorId);
   const requests = asyncRequests.kind === 'loaded' ? asyncRequests.data : [];
 
@@ -29,11 +48,18 @@ export function VendorRequestsPage() {
   const withdrawQuote = useWithdrawQuote();
   const declineInvitation = useDeclineInvitation();
 
-  const filteredRequests = requests.filter((req) => {
-    if (activeTab === 'OPEN') return req.type === 'OPEN';
-    if (activeTab === 'DIRECT') return req.type === 'DIRECT';
-    return true;
-  });
+  const filteredRequests = requests
+    .filter((req) => {
+      if (activeTab === 'OPEN') return req.type === 'OPEN';
+      if (activeTab === 'DIRECT') return req.type === 'DIRECT';
+      return true;
+    })
+    .sort(byOpenThenNewest);
+  // Chỉ yêu cầu còn nhận báo giá mới là cơ hội; yêu cầu đã chốt hay hết hạn thì không.
+  const openRequests = requests.filter((req) => req.status === 'OPEN');
+  const openCount = (type?: QuoteRequest['type']) =>
+    openRequests.filter((req) => !type || req.type === type).length;
+  const tabLabel = (label: string, count: number) => (count > 0 ? `${label} (${count})` : label);
 
   const handleOpenQuoteModal = (req: QuoteRequest) => {
     setSelectedReq(req);
@@ -46,24 +72,22 @@ export function VendorRequestsPage() {
 
   /** BR-05: the only change to a sent quote is taking it back. */
   const handleWithdrawQuote = (req: QuoteRequest) => {
-    const quote = req.quotes[0];
+    const quote = liveQuoteOf(req);
     if (!quote) return;
     void run(async () => {
       await withdrawQuote(req.id, quote.id);
-      toast.success(`Đã rút báo giá #${quote.id} của yêu cầu #${req.id}.`);
+      toast.success(`Đã rút báo giá của yêu cầu #${requestCode(req.id)}.`);
       asyncRequests.reload();
     });
   };
 
-  /** AC-36.3: the only answer a vendor may give an invitation is declining it. */
-  const handleDeclineInvitation = (req: QuoteRequest) => {
+  /** AC-36.3: the only answer a vendor may give an invitation is declining it, with the reason it chose. */
+  const handleDeclineInvitation = (req: QuoteRequest, declineReason: string) => {
     if (!vendorId) return;
     void run(async () => {
-      await declineInvitation(req.id, vendorId, {
-        status: 'DECLINED',
-        declineReason: 'Xưởng không đủ năng lực đáp ứng số lượng và thời hạn này.',
-      });
-      toast.success(`Đã từ chối lời mời của yêu cầu #${req.id}.`);
+      await declineInvitation(req.id, vendorId, { status: 'DECLINED', declineReason });
+      toast.success(`Đã từ chối yêu cầu #${requestCode(req.id)}.`);
+      setDeclining(null);
       asyncRequests.reload();
     });
   };
@@ -86,22 +110,25 @@ export function VendorRequestsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản lý yêu cầu báo giá (B3.0 - B3.2)</h1>
+          <h1 className={styles.title}>Quản lý yêu cầu báo giá</h1>
           <p className={styles.desc}>
-            Tiếp cận khách hàng doanh nghiệp đặt bánh số lượng lớn. Soạn báo giá cạnh tranh, linh hoạt tỷ lệ cọc và ngày giao.
+            Tiếp cận khách hàng doanh nghiệp đặt bánh số lượng lớn. Soạn báo giá cạnh tranh, linh
+            hoạt tỷ lệ cọc và ngày giao.
           </p>
         </div>
         <div className={styles.badgeHint}>
-          ⚡ Cơ hội doanh số:{' '}
-          <strong>{requests.reduce((sum, r) => sum + r.quantity, 0).toLocaleString()} hộp bánh</strong>
+          <Icon name="package" size={16} /> Cơ hội doanh số:{' '}
+          <strong>
+            {openRequests.reduce((sum, r) => sum + r.quantity, 0).toLocaleString()} hộp bánh
+          </strong>
         </div>
       </div>
 
       <Tabs<RequestTab>
         items={[
-          { id: 'OPEN', label: 'Yêu cầu mở toàn sàn (Flow 2)' },
-          { id: 'DIRECT', label: 'Yêu cầu chỉ định riêng (Flow 3)' },
-          { id: 'ALL', label: 'Tất cả yêu cầu' },
+          { id: 'ALL', label: tabLabel('Tất cả yêu cầu', openCount()) },
+          { id: 'OPEN', label: tabLabel('Yêu cầu mở toàn sàn', openCount('OPEN')) },
+          { id: 'DIRECT', label: tabLabel('Yêu cầu chỉ định riêng', openCount('DIRECT')) },
         ]}
         activeId={activeTab}
         onChange={setActiveTab}
@@ -113,38 +140,61 @@ export function VendorRequestsPage() {
         <div className={styles.list}>
           {filteredRequests.map((req) => {
             const quoteTotal = req.quotes.length || req.quoteCount || 0;
-            const hasQuoted = req.quotes.length > 0;
+            const hasQuoted = liveQuoteOf(req) !== undefined;
+            const isOpen = req.status === 'OPEN';
 
             return (
               <Card key={req.id} className={styles.reqCard}>
                 <div className={styles.cardHeader}>
                   <div className={styles.reqMeta}>
-                    <span className={styles.reqId}>#{req.id}</span>
+                    <span className={styles.reqId}>#{requestCode(req.id)}</span>
                     <Badge tone={req.type === 'DIRECT' ? 'gold' : 'neutral'}>
-                      {req.type === 'DIRECT' ? 'Chỉ định riêng cho xưởng' : 'Đăng công khai toàn sàn'}
+                      {req.type === 'DIRECT'
+                        ? 'Chỉ định riêng cho Shop bạn'
+                        : 'Đăng công khai toàn sàn'}
                     </Badge>
-                    <span className={styles.reqDate}>Hạn nhận hàng: {formatDate(req.deliveryDeadline)}</span>
+                    <span className={styles.reqDate}>
+                      Hạn nhận hàng: {formatDate(req.deliveryDeadline)}
+                    </span>
                   </div>
-                  {hasQuoted && <Badge tone="green">✓ Xưởng đã gửi báo giá</Badge>}
+                  {!isOpen ? (
+                    <Badge tone="neutral">{REQUEST_STATUS_LABELS[req.status]}</Badge>
+                  ) : (
+                    hasQuoted && (
+                      <Badge tone="green">
+                        <Icon name="check" size={13} /> Xưởng đã gửi báo giá
+                      </Badge>
+                    )
+                  )}
                 </div>
 
                 <div className={styles.reqBody}>
                   <div className={styles.reqMain}>
-                    <h3 className={styles.reqTitle}>Đơn hàng {req.quantity} hộp quà doanh nghiệp</h3>
+                    <h3 className={styles.reqTitle}>
+                      Đơn hàng {req.quantity} hộp quà doanh nghiệp
+                    </h3>
                     <div className={styles.specsGrid}>
                       <div className={styles.specItem}>
                         <span className={styles.specLabel}>Số lượng cần:</span>
-                        <strong className={styles.specVal}>{req.quantity.toLocaleString()} hộp</strong>
+                        <strong className={styles.specVal}>
+                          {req.quantity.toLocaleString()} hộp
+                        </strong>
                       </div>
                       <div className={styles.specItem}>
                         <span className={styles.specLabel}>Ngân sách dự kiến:</span>
                         <strong className={styles.specVal}>
-                          {req.budgetPerBox ? `${formatCurrency(req.budgetPerBox)} / hộp` : 'Thương lượng'}
+                          {req.budgetPerBox
+                            ? `${formatCurrency(req.budgetPerBox)} / hộp`
+                            : 'Thương lượng'}
                         </strong>
                       </div>
                       <div className={styles.specItem}>
-                        <span className={styles.specLabel}>Ưa thích vỏ/nhân:</span>
-                        <strong className={styles.specVal}>{req.crustPreference || 'Truyền thống'}</strong>
+                        <span className={styles.specLabel}>Tùy chỉnh kèm theo:</span>
+                        <strong className={styles.specVal}>
+                          {req.customTypes && req.customTypes.length > 0
+                            ? req.customTypes.map((t) => CUSTOM_TYPE_LABELS[t]).join(', ')
+                            : 'Không có'}
+                        </strong>
                       </div>
                       <div className={styles.specItem}>
                         <span className={styles.specLabel}>Giao tại:</span>
@@ -156,12 +206,14 @@ export function VendorRequestsPage() {
 
                     {req.customLogoFileName && (
                       <div className={styles.customLogoTag}>
-                        🏷️ Khách yêu cầu: Đã đính kèm logo {req.customLogoFileName}
+                        <Icon name="tag" size={15} /> Khách yêu cầu: Đã đính kèm logo{' '}
+                        {req.customLogoFileName}
                       </div>
                     )}
 
                     <p className={styles.reqNotes}>
-                      <strong>Yêu cầu đặc biệt:</strong> {req.customRequirements || 'Theo mẫu chuẩn của xưởng'}
+                      <strong>Yêu cầu đặc biệt:</strong>{' '}
+                      {req.customRequirements || 'Khách không nêu yêu cầu riêng'}
                     </p>
                   </div>
 
@@ -169,22 +221,34 @@ export function VendorRequestsPage() {
                     <div className={styles.buyerBox}>
                       <span className={styles.buyerLabel}>Khách hàng:</span>
                       <strong className={styles.buyerName}>{req.buyerName}</strong>
-                      <span className={styles.nfcVerifiedTag}>🛡️ Đã xác thực NFC CCCD</span>
+                      <span className={styles.nfcVerifiedTag}>
+                        <Icon name="shield" size={14} /> Đã xác thực NFC CCCD
+                      </span>
                     </div>
 
                     <div className={styles.responsesCount}>
-                      Đã có <strong>{quoteTotal} xưởng</strong> gửi báo giá
+                      {req.type === 'DIRECT' ? (
+                        'Khách chỉ gửi yêu cầu này cho Shop bạn'
+                      ) : (
+                        <>
+                          Đã có <strong>{quoteTotal} xưởng</strong> gửi báo giá
+                        </>
+                      )}
                     </div>
 
-                    <Button
-                      variant={hasQuoted ? 'secondary' : 'primary'}
-                      size="md"
-                      onClick={() => handleOpenQuoteModal(req)}
-                    >
-                      {hasQuoted ? 'Cập nhật lại báo giá' : '📝 Soạn báo giá ngay'}
-                    </Button>
+                    {isOpen && (
+                      <Button
+                        variant={hasQuoted ? 'secondary' : 'primary'}
+                        size="md"
+                        onClick={() => handleOpenQuoteModal(req)}
+                        iconLeft="pen"
+                      >
+                        {hasQuoted ? 'Gửi bản báo giá mới' : 'Soạn báo giá ngay'}
+                      </Button>
+                    )}
 
-                    {/* BR-05: rút báo giá đã gửi. AC-36.3: từ chối lời mời. */}
+                    {/* : rút báo giá đã gửi. : từ chối lời mời. */}
+                    {isOpen && (
                     <div className={styles.requestActions}>
                       {hasQuoted && (
                         <Button
@@ -196,15 +260,18 @@ export function VendorRequestsPage() {
                           Rút báo giá
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        loading={busy}
-                        onClick={() => handleDeclineInvitation(req)}
-                      >
-                        Từ chối lời mời
-                      </Button>
+                      {!hasQuoted && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          loading={busy}
+                          onClick={() => setDeclining(req)}
+                        >
+                          Từ chối yêu cầu
+                        </Button>
+                      )}
                     </div>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -213,7 +280,17 @@ export function VendorRequestsPage() {
         </div>
       )}
 
-      {/* Modal Soạn báo giá qua Feature (B3.1, B3.2) */}
+      {declining && (
+        <DeclineInvitationModal
+          open
+          requestCode={requestCode(declining.id)}
+          busy={busy}
+          onClose={() => setDeclining(null)}
+          onDecline={(reason) => handleDeclineInvitation(declining, reason)}
+        />
+      )}
+
+      {/* Modal Soạn báo giá qua Feature */}
       <SubmitQuoteModal
         isOpen={quoteModalOpen}
         request={selectedReq}

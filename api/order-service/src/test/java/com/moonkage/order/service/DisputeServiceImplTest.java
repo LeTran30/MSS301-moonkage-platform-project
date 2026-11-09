@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
 
 /** BR-18 and P-02: a dispute and a payout of the same order never pass each other. */
 class DisputeServiceImplTest {
@@ -148,5 +149,36 @@ class DisputeServiceImplTest {
 
     private static OpenDisputeRequest damaged() {
         return new OpenDisputeRequest(DisputeReason.DAMAGED, "Hộp bánh bị móp, bánh vỡ", List.of());
+    }
+    // ----- FR-49, Q5.0: the admin's queue -----
+
+    @Test
+    void onlyAnAdminReadsTheDisputeQueue() {
+        AppException refused = assertThrows(AppException.class, () -> service.list(BUYER, DisputeStatus.OPEN, 0, 20));
+
+        assertEquals(ErrorCode.ACCESS_DENIED, refused.getErrorCode());
+    }
+
+    @Test
+    void theDecidedDisputesComeLatestFirstWithTheirOrder() {
+        order.setVendorName("Bánh Dẻo Chợ Lớn");
+        order.setRecipientName("Phan Quốc Bảo");
+        Dispute decided = new Dispute();
+        decided.setId("dispute-1");
+        decided.setOrder(order);
+        decided.setReason(DisputeReason.DAMAGED);
+        decided.setDescription("Hộp móp");
+        decided.setStatus(DisputeStatus.RESOLVED);
+        when(disputeRepository.findByStatusOrderByResolvedAtDesc(eq(DisputeStatus.RESOLVED), any()))
+                .thenReturn(new PageImpl<>(List.of(decided)));
+
+        var page = service.list(ADMIN, DisputeStatus.RESOLVED, 0, 20);
+
+        assertEquals(1, page.content().size());
+        var row = page.content().get(0);
+        assertEquals(ORDER_ID, row.orderId());
+        assertEquals("Bánh Dẻo Chợ Lớn", row.vendorName());
+        assertEquals("Phan Quốc Bảo", row.recipientName());
+        assertEquals(230_000L, row.orderTotalAmount());
     }
 }

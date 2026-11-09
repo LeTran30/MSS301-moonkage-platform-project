@@ -1,4 +1,5 @@
 import { useCurrentUser } from '@/entities/user';
+import { EditProfileForm } from '@/features/edit-profile';
 import { Badge, Card, Icon } from '@/shared/ui';
 import styles from './ProfilePage.module.css';
 
@@ -10,14 +11,12 @@ export function ProfilePage() {
       <Card padding="lg" className={styles.card}>
         <div className={styles.cardHeader}>
           <Icon name="user" size={20} />
-          <h3>Thông Tin Cá Nhân (M6.5, FR-02, AC-04.12)</h3>
+          <h3>Thông tin cá nhân</h3>
         </div>
 
+        <EditProfileForm />
+
         <div className={styles.infoList}>
-          <div className={styles.infoRow}>
-            <span>Họ và tên:</span>
-            <strong>{user.name}</strong>
-          </div>
           <div className={styles.infoRow}>
             <span>Địa chỉ email:</span>
             <span>{user.email}</span>
@@ -33,8 +32,12 @@ export function ProfilePage() {
             </Badge>
           </div>
           <div className={styles.infoRow}>
-            <span>Số định danh cá nhân đã che (NFR-03):</span>
-            <code>{user.idCardNumberMasked || '0011••••9876'}</code>
+            <span>Số định danh cá nhân đã che:</span>
+            {/*
+              Không có dữ liệu thì nói rõ là chưa có. Trước đây UI tự điền
+              "0011••••9876" — người dùng tưởng đó là số CCCD của họ.
+            */}
+            <code>{user.idCardNumberMasked || 'Chưa có dữ liệu'}</code>
           </div>
           <div className={styles.infoRow}>
             <span>Vai trò tài khoản:</span>

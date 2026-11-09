@@ -161,7 +161,7 @@ Với Java 21, các quy tắc về khái niệm, tập đóng và trạng thái 
 | KN-02 | Tập giá trị đóng dùng enum / sealed | L1 | `enum` + `@Enumerated(EnumType.STRING)`; rẽ nhánh bằng switch expression (`->`) không `default` để compiler kiểm đủ nhánh (Checkstyle `MissingSwitchDefault` không áp cho switch expression); Error Prone `MissingCasesInEnumSwitch` = ERROR. **Đề xuất:** Checkstyle cấm `EnumType.ORDINAL` | — |
 | KN-03 | Mỗi quy tắc nghiệp vụ ở đúng một nơi | L4 (+ L2 đề xuất) | Quy tắc xuyên service theo bảng Design mục 6 (vd phí giao chỉ tính ở catalog, D-14). **Đề xuất:** PMD CPD (`cpd-check`) chặn khối trùng | 0 khối trùng ≥ 100 token trong `src/main` |
 | KN-04 | Chính sách thay đổi được nằm ở cấu hình có kiểm tra | L3 | `@ConfigurationProperties` + `@Validated` (vd `OutboxProperties`, `ProductImageProperties`). Chính sách do quản trị đổi lưu ở database có audit: `RegistrationFeeConfig` (vendor), `InterprovinceFee` (catalog), thời hạn khiếu nại (order, D-13) | — |
-| KN-05 | Comment giải thích tại sao | L4 | coding-rules Phần 4: dẫn mã `FR`/`AC`/`D`; class nặng có file pseudocode ở `docs/services/<service>/classes/<ClassName>.md` (Phần 5) | — |
+| KN-05 | Comment giải thích tại sao | L4 | coding-rules Phần 4: dẫn mã `FR`/`AC`/`D` | — |
 
 ### C2. Ngữ nghĩa lỗi
 

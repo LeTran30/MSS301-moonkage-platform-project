@@ -18,6 +18,11 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
+        <!-- BE-11: the Feign calls get their own span, and the trace context travels in the request headers -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-micrometer</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -40,10 +45,22 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- the public HTTP contract every service answers with (envelope, page, gateway headers) -->
+        <dependency>
+            <groupId>com.moonkage</groupId>
+            <artifactId>common-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- BE-11b: /actuator/prometheus + the shared metric names -->
         <dependency>
             <groupId>com.moonkage</groupId>
             <artifactId>common-observability</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- the shared outbox relay: the service only provides its own outbox rows (common-outbox) -->
+        <dependency>
+            <groupId>com.moonkage</groupId>
+            <artifactId>common-outbox</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

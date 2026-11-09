@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -28,7 +29,7 @@ import reactor.core.publisher.Mono;
             "jwt.secret=dGVzdC1rZXktdGVzdC1rZXktdGVzdC1rZXktdGVzdC1rZXk=",
             "moonkage.cors.allowed-origins=http://localhost:5173"
         })
-@Import({SecurityConfig.class, InterprovinceFeeSecurityTest.Endpoints.class})
+@Import({SecurityConfig.class, LegacyPathRedirectFilter.class, InterprovinceFeeSecurityTest.Endpoints.class})
 class InterprovinceFeeSecurityTest {
     private final WebTestClient client;
 
@@ -42,7 +43,8 @@ class InterprovinceFeeSecurityTest {
 
     @Test
     void allowsPublicReadsAndRequiresAdminForBothWritePaths() {
-        for (String path : new String[] {"/api/interprovince-fees", "/catalog-service/api/interprovince-fees"}) {
+        // The canonical path is the one the security rules are about.
+        for (String path : new String[] {"/api/interprovince-fees"}) {
             client.get().uri(path).exchange().expectStatus().isOk();
             client.put().uri(path).exchange().expectStatus().isUnauthorized();
             when(jwtDecoder.decode("member")).thenReturn(Mono.just(token("member", "MEMBER")));
@@ -62,16 +64,52 @@ class InterprovinceFeeSecurityTest {
         }
     }
 
+    /**
+     * D-30: the legacy path answers a permanent redirect to the canonical one, before the security rules run.
+     *
+     * <p>The redirect comes first on purpose: a caller that still uses the old form is sent to the canonical path,
+     * and the authorization happens there. A {@code 403} on the legacy path would leave the caller stuck on a path
+     * that is going away.
+     */
+    @Test
+    void theLegacyPathsAnswerARedirectToTheCanonicalOnes() {
+        for (String path : new String[] {
+            "/catalog-service/api/interprovince-fees",
+            "/catalog-service/api/products",
+            "/catalog-service/api/products/p1"
+        }) {
+            client.get()
+                    .uri(path)
+                    .exchange()
+                    .expectStatus()
+                    .isEqualTo(HttpStatus.PERMANENT_REDIRECT)
+                    .expectHeader()
+                    .valueEquals(HttpHeaders.LOCATION, path.replace("/catalog-service", ""));
+        }
+    }
+
+    /**
+     * The legacy path of a write that needs the admin role answers the redirect too, so a client that still uses it
+     * is not answered with a {@code 403} on a path that is going away.
+     */
+    @Test
+    void theLegacyWritePathAlsoAnswersTheRedirect() {
+        client.put()
+                .uri("/catalog-service/api/interprovince-fees")
+                .exchange()
+                .expectStatus()
+                .isEqualTo(HttpStatus.PERMANENT_REDIRECT)
+                .expectHeader()
+                .valueEquals(HttpHeaders.LOCATION, "/api/interprovince-fees");
+    }
+
     @Test
     void guestsReadProductsOnBothPathsButNeverReachInternalEndpoints() {
-        for (String path : new String[] {
-            "/api/products", "/api/products/p1", "/catalog-service/api/products", "/catalog-service/api/products/p1"
-        }) {
+        for (String path : new String[] {"/api/products", "/api/products/p1"}) {
             client.get().uri(path).exchange().expectStatus().isOk();
         }
         when(jwtDecoder.decode("admin")).thenReturn(Mono.just(token("admin", "ADMIN")));
-        for (String path :
-                new String[] {"/internal/products/snapshot", "/catalog-service/internal/products/snapshot"}) {
+        for (String path : new String[] {"/internal/products/snapshot"}) {
             client.post().uri(path).exchange().expectStatus().isUnauthorized();
             client.post()
                     .uri(path)
@@ -80,6 +118,17 @@ class InterprovinceFeeSecurityTest {
                     .expectStatus()
                     .isForbidden();
         }
+    }
+
+    /**
+     * B-3.2: the public summary of one Shop is open to guests, but the profile of the Shop keeps its
+     * owner-and-admin check.
+     */
+    @Test
+    void guestsReadTheVendorSummaryButNotThePrivateVendorProfile() {
+        client.get().uri("/api/vendors/v-1/summary").exchange().expectStatus().isOk();
+        // The profile of the Shop is not public: without a token it is refused.
+        client.get().uri("/api/vendors/v-1").exchange().expectStatus().isUnauthorized();
     }
 
     @Test
@@ -144,6 +193,11 @@ class InterprovinceFeeSecurityTest {
 
         @PostMapping({"/internal/products/snapshot", "/catalog-service/internal/products/snapshot"})
         String internal() {
+            return "ok";
+        }
+
+        @GetMapping({"/api/vendors/{vendorId}", "/api/vendors/{vendorId}/summary"})
+        String vendor() {
             return "ok";
         }
     }

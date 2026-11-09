@@ -1,5 +1,5 @@
 import { Icon } from '@/shared/ui';
-import { DOCUMENT_LABELS } from '../model/documentLabels';
+import { DOCUMENT_LABELS } from '@/entities/vendor';
 import type { VendorDocumentKind } from '@/entities/vendor';
 import styles from './vendorSettingsUi.module.css';
 
@@ -12,8 +12,8 @@ interface LegalDocumentsFieldProps {
 /**
  * The documents of the legal profile (AC-27.2).
  *
- * A document that stays as it is keeps its current `objectKey`; a new one is
- * uploaded first and its `tempKey` is sent with the resubmission.
+ * A kind without a new file keeps the document on file; a new one is uploaded
+ * first and only its `tempKey` is sent with the resubmission.
  */
 export function LegalDocumentsField({
   documents,
@@ -34,9 +34,9 @@ export function LegalDocumentsField({
               <span className={styles.uploadName}>{DOCUMENT_LABELS[kind]}</span>
               <span className={styles.uploadState}>
                 {tempKeys[kind]
-                  ? 'Đã tải lên, chờ lưu'
+                  ? 'Tệp mới, chờ nộp lại'
                   : current
-                    ? 'Đã xác minh'
+                    ? 'Đã nộp, giữ nguyên nếu không chọn tệp mới'
                     : 'Chưa có tài liệu'}
               </span>
               <input

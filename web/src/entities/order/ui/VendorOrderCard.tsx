@@ -1,6 +1,9 @@
 import { formatCurrency, formatDate } from '@/shared/utils';
 import { Badge, Button, Card } from '@/shared/ui';
 import type { Order } from '../model/types';
+import { orderStatusLabel } from '../model/orderStatus';
+import { orderCode } from '../model/orderCode';
+import { canSendMaket, nextOrderStatus } from '../api/orderMappers';
 import styles from './VendorOrderCard.module.css';
 
 interface VendorOrderCardProps {
@@ -9,6 +12,8 @@ interface VendorOrderCardProps {
   onUploadMaket: (order: Order) => void;
   /** Gắn hoặc sửa hóa đơn VAT (FR-44). */
   onAttachInvoice: (order: Order) => void;
+  /** Mở trang xử lý đơn để chuyển bước (B2.1, FR-32). */
+  onOpen: (order: Order) => void;
 }
 
 /** Thẻ đơn hàng trong danh sách của gian hàng (B2.0 - B2.2). */
@@ -16,12 +21,14 @@ export function VendorOrderCard({
   order,
   onUploadMaket,
   onAttachInvoice,
+  onOpen,
 }: VendorOrderCardProps) {
+  const needsVendor = nextOrderStatus(order) !== null || canSendMaket(order);
   return (
     <Card className={styles.orderCard}>
       <div className={styles.cardTop}>
         <div className={styles.orderMeta}>
-          <span className={styles.orderId}>#{order.id}</span>
+          <span className={styles.orderId}>#{orderCode(order.id)}</span>
           <span className={styles.orderDate}>{formatDate(order.createdAt)}</span>
           <Badge tone={order.type === 'BULK' ? 'gold' : 'neutral'}>
             {order.type === 'BULK' ? 'Đơn đặt hàng sản xuất' : 'Đơn bán lẻ shop'}
@@ -31,12 +38,10 @@ export function VendorOrderCard({
         <div className={styles.orderStatusBadge}>
           {order.hasDispute ? (
             <Badge tone="red">Đang có khiếu nại (Tạm khóa tiền)</Badge>
-          ) : order.status === 'WAITING_MAKET' ? (
-            <Badge tone="gold">Chờ khách duyệt Maket</Badge>
-          ) : order.status === 'IN_PRODUCTION' ? (
-            <Badge tone="blue">Đang tiến hành sản xuất</Badge>
           ) : (
-            <Badge tone="green">Đã thanh toán / Hoàn tất</Badge>
+            <Badge tone={order.status === 'COMPLETED' ? 'green' : 'gold'}>
+              {orderStatusLabel(order.status)}
+            </Badge>
           )}
         </div>
       </div>
@@ -79,19 +84,33 @@ export function VendorOrderCard({
           {order.type === 'BULK' && (
             <span>
               Cọc đã nhận: <strong>{formatCurrency(order.depositAmount || 0)}</strong>
+              {!order.remainingPaid && (
+                <>
+                  {' '}
+                  · Còn lại: <strong>{formatCurrency(order.remainingAmount || 0)}</strong>
+                </>
+              )}
             </span>
           )}
         </div>
 
         <div className={styles.btnGroup}>
-          {order.type === 'BULK' && (
+          {/* Đơn còn bước để Shop làm thì mời xử lý; đã giao xong thì chỉ còn xem lại */}
+          <Button
+            variant={needsVendor ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => onOpen(order)}
+          >
+            {needsVendor ? 'Xử lý đơn' : 'Xem đơn'}
+          </Button>
+          {canSendMaket(order) && (
             <Button variant="secondary" size="sm" onClick={() => onUploadMaket(order)}>
-              Tải lên Maket
+              {order.status === 'DEPOSITED' ? 'Gửi maket cho khách' : 'Gửi bản maket mới'}
             </Button>
           )}
 
           <Button
-            variant={order.hasInvoice ? 'ghost' : 'primary'}
+            variant={order.hasInvoice ? 'ghost' : 'secondary'}
             size="sm"
             onClick={() => onAttachInvoice(order)}
           >

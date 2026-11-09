@@ -4,7 +4,7 @@
   gap: var(--space-4);
 }
 .summaryTitle {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
 }
 .shopOverview {
@@ -47,7 +47,7 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
 }
 .finalPrice {

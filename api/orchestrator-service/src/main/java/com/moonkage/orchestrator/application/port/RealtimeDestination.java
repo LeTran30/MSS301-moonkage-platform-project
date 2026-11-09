@@ -16,5 +16,8 @@ public final class RealtimeDestination {
     /** Result of each NFC card attempt, matched by the web to the QR it shows (AC-04.5). */
     public static final String NFC = QUEUE_PREFIX + "/nfc";
 
+    /** New messages, reads and typing of the buyer–Shop conversations of the account (order-service chat.*). */
+    public static final String CHAT = QUEUE_PREFIX + "/chat";
+
     private RealtimeDestination() {}
 }

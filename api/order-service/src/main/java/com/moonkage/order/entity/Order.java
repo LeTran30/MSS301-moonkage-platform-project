@@ -44,6 +44,9 @@ public class Order {
     @Column(nullable = false)
     private String vendorId;
 
+    /** The Shop's name on the day of the order; null when vendor-service could not tell. */
+    private String vendorName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderKind kind;

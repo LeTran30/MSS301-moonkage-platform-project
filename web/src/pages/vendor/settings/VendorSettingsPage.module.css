@@ -11,10 +11,10 @@
 }
 
 .title {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-primary-dark);
+  color: var(--color-text);
   margin-bottom: var(--space-1);
 }
 
@@ -24,6 +24,9 @@
 }
 
 .alertSuccess {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   background: color-mix(in srgb, var(--color-success) 12%, transparent);
   color: var(--color-success-ink);
   border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
@@ -55,7 +58,7 @@
   gap: var(--space-3);
 }
 
-@media (max-width: 640px) {
+@media (max-width: var(--breakpoint-md)) {
   .formRow {
     grid-template-columns: 1fr;
   }

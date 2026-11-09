@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, Card } from '@/shared/ui';
+import { Badge, Button, Card, Icon } from '@/shared/ui';
 import { payoutPurposeLabel, type PayoutRequest } from '../model/payoutRequest';
 import styles from './PayoutRequestCard.module.css';
 
@@ -19,7 +19,9 @@ export function PayoutRequestCard({ request, vendorName, onApprove }: PayoutRequ
         <div>
           <span className={styles.poId}>#{request.requestId}</span>
           <h3 className={styles.poVendor}>{vendorName || request.vendorId || 'Shop chưa xác định'}</h3>
-          <span className={styles.poBank}>🏦 Mã đơn liên kết: #{request.orderId}</span>
+          <span className={styles.poBank}>
+            <Icon name="bank" size={14} /> Mã đơn liên kết: #{request.orderId}
+          </span>
         </div>
         <div className={styles.amountCol}>
           <strong className={styles.poAmount}>{formatCurrency(request.amount)}</strong>
@@ -54,13 +56,17 @@ export function PayoutRequestCard({ request, vendorName, onApprove }: PayoutRequ
           <span>Thời gian yêu cầu:</span>
           <span>{request.createdAt ? new Date(request.createdAt).toLocaleString('vi-VN') : '—'}</span>
         </div>
-        {request.reason && <p className={styles.poNote}>📝 Ghi chú: {request.reason}</p>}
+        {request.reason && (
+          <p className={styles.poNote}>
+            <Icon name="pen" size={14} /> Ghi chú: {request.reason}
+          </p>
+        )}
       </div>
 
       <div className={styles.poActions}>
         {request.status === 'PENDING' && (
-          <Button variant="primary" size="sm" onClick={() => onApprove(request)}>
-            ✓ Phê duyệt &amp; Chuyển khoản
+          <Button variant="primary" size="sm" onClick={() => onApprove(request)} iconLeft="check">
+            Phê duyệt &amp; Chuyển khoản
           </Button>
         )}
       </div>

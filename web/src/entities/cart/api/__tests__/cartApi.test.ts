@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { cartApi, mapCartDtoToEntity } from '../cartApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
+import { clearTokens, storeTokens } from '@/shared/api/tokenVault';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
 describe('Cart Entity - cartApi (T-01)', () => {
@@ -9,14 +9,14 @@ describe('Cart Entity - cartApi (T-01)', () => {
     vi.restoreAllMocks();
   });
 
-  it('cartApi.getMine() trả về dữ liệu cartStore khi isDemoMode() = true', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
-    const cart = await cartApi.getMine();
-    expect(cart).toHaveProperty('groups');
+  afterEach(() => {
+    clearTokens();
   });
 
   it('cartApi.getMine() bóc envelope của backend và gửi provinceCode bắt buộc', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
+    // Giỏ là dữ liệu của tài khoản đang đăng nhập: cần token trong vault.
+    storeTokens('access-token-test');
+
     const get = vi.spyOn(apiClient, 'get').mockResolvedValue(
       envelope({
         provinceCode: '01',
@@ -55,5 +55,20 @@ describe('Cart Entity - cartApi (T-01)', () => {
 
   it('mapCartDtoToEntity xử lý giỏ rỗng', () => {
     expect(mapCartDtoToEntity({ groups: [] })).toEqual({ groups: [] });
+  });
+
+  /*
+   * Khách (chưa đăng nhập) không có giỏ. Gọi `GET /api/carts/me` lúc đó chỉ
+   * nhận 401 và làm trang giỏ hiện "Network Error" thay vì trạng thái rỗng —
+   * nên phải bỏ qua request và trả giỏ rỗng ngay.
+   */
+  it('khách chưa đăng nhập thì không gọi API, trả giỏ rỗng', async () => {
+    clearTokens();
+    const get = vi.spyOn(apiClient, 'get');
+
+    const cart = await cartApi.getMine('Hà Nội');
+
+    expect(cart).toEqual({ groups: [] });
+    expect(get).not.toHaveBeenCalled();
   });
 });

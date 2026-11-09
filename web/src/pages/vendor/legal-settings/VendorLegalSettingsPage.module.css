@@ -13,12 +13,17 @@
   gap: 16px;
 }
 .title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0px;
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
 }
 .subtitle {
   color: var(--color-text-muted);
   margin: 4px 0 0;
+}
+.reviewReason {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-gold-soft);
+  border-radius: var(--radius-md);
 }

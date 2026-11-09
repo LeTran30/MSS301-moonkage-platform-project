@@ -1,5 +1,6 @@
 package com.moonkage.vendor.common.exception;
 
+import com.moonkage.api.CommonErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,26 +10,26 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Common
-    INTERNAL_SERVER_ERROR("COMMON_500", HttpStatus.INTERNAL_SERVER_ERROR, "error.common.internal"),
-    INVALID_INPUT("COMMON_400", HttpStatus.BAD_REQUEST, "error.common.invalid_input"),
-    FIELD_REQUIRED("COMMON_400_REQUIRED", HttpStatus.BAD_REQUEST, "error.common.field_required"),
-    TEXT_TOO_LONG("COMMON_400_TOO_LONG", HttpStatus.BAD_REQUEST, "error.common.text_too_long"),
-    MALFORMED_JSON("COMMON_400_JSON", HttpStatus.BAD_REQUEST, "error.common.malformed_json"),
-    PROVINCE_CODE_INVALID("COMMON_400_PROVINCE", HttpStatus.BAD_REQUEST, "error.common.province_code_invalid"),
-    PRICE_INVALID("COMMON_400_PRICE", HttpStatus.BAD_REQUEST, "error.common.price_invalid"),
-    QUANTITY_INVALID("COMMON_400_QUANTITY", HttpStatus.BAD_REQUEST, "error.common.quantity_invalid"),
-    PRICE_TIERS_INVALID("COMMON_400_PRICE_TIERS", HttpStatus.BAD_REQUEST, "error.common.price_tiers_invalid"),
+    INTERNAL_SERVER_ERROR(CommonErrorCode.INTERNAL_SERVER_ERROR),
+    INVALID_INPUT(CommonErrorCode.INVALID_INPUT),
+    FIELD_REQUIRED(CommonErrorCode.FIELD_REQUIRED),
+    TEXT_TOO_LONG(CommonErrorCode.TEXT_TOO_LONG),
+    MALFORMED_JSON(CommonErrorCode.MALFORMED_JSON),
+    PROVINCE_CODE_INVALID(CommonErrorCode.PROVINCE_CODE_INVALID),
+    PRICE_INVALID(CommonErrorCode.PRICE_INVALID),
+    QUANTITY_INVALID(CommonErrorCode.QUANTITY_INVALID),
+    PRICE_TIERS_INVALID(CommonErrorCode.PRICE_TIERS_INVALID),
     /** No X-Account-Id / X-User-Role: the call did not come through the gateway with a token. */
-    UNAUTHENTICATED("COMMON_401", HttpStatus.UNAUTHORIZED, "error.common.unauthenticated"),
-    ACCESS_DENIED("COMMON_403", HttpStatus.FORBIDDEN, "error.common.access_denied"),
-    RESOURCE_NOT_FOUND("COMMON_404", HttpStatus.NOT_FOUND, "error.common.resource_not_found"),
-    METHOD_NOT_ALLOWED("COMMON_405", HttpStatus.METHOD_NOT_ALLOWED, "error.common.method_not_allowed"),
+    UNAUTHENTICATED(CommonErrorCode.UNAUTHENTICATED),
+    ACCESS_DENIED(CommonErrorCode.ACCESS_DENIED),
+    RESOURCE_NOT_FOUND(CommonErrorCode.RESOURCE_NOT_FOUND),
+    METHOD_NOT_ALLOWED(CommonErrorCode.METHOD_NOT_ALLOWED),
     /** A business operation asked of a resource in the wrong status (api-db README, API rule 3). */
-    INVALID_STATE_TRANSITION("COMMON_409", HttpStatus.CONFLICT, "error.common.invalid_state_transition"),
+    INVALID_STATE_TRANSITION(CommonErrorCode.INVALID_STATE_TRANSITION),
     /** An endpoint whose business logic is not written yet (docs/archive/2026-10-26-vendor-completion-plan.md). */
-    NOT_IMPLEMENTED("COMMON_501", HttpStatus.NOT_IMPLEMENTED, "error.common.not_implemented"),
+    NOT_IMPLEMENTED(CommonErrorCode.NOT_IMPLEMENTED),
     /** Another service did not answer, or answered with a server error. */
-    DEPENDENCY_UNAVAILABLE("COMMON_503", HttpStatus.SERVICE_UNAVAILABLE, "error.common.dependency_unavailable"),
+    DEPENDENCY_UNAVAILABLE(CommonErrorCode.DEPENDENCY_UNAVAILABLE),
 
     // Answers of identity-service
     ACCOUNT_NOT_FOUND("ACCOUNT_001", HttpStatus.NOT_FOUND, "error.account.not_found"),
@@ -101,4 +102,16 @@ public enum ErrorCode {
     private final String code;
     private final HttpStatus httpStatus;
     private final String messageKey;
+
+    /**
+     * A common code, taken from the shared list of common-api.
+     *
+     * <p>The code string, the status and the message key of the common failures exist in one place now, so they can no
+     * longer drift apart between the services (audit findings H-02 and H-03).
+     */
+    ErrorCode(CommonErrorCode common) {
+        this.code = common.getCode();
+        this.httpStatus = common.getHttpStatus();
+        this.messageKey = common.getMessageKey();
+    }
 }

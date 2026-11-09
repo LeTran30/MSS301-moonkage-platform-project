@@ -82,6 +82,7 @@
   font-weight: var(--weight-semibold);
   line-height: 1.4;
   margin: 0;
+  text-wrap: pretty;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -99,7 +100,7 @@
   padding-top: var(--space-2);
 }
 .price {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   color: var(--color-primary);
 }
@@ -111,10 +112,11 @@
   color: var(--color-text-muted);
 }
 .starIcon {
-  color: var(--color-gold);
+  color: var(--color-gold-text);
 }
 .sold {
   color: var(--color-text-subtle);
+  white-space: nowrap;
 }
 .actions {
   margin-top: var(--space-3);

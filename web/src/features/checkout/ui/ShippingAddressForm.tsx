@@ -57,7 +57,7 @@ export function ShippingAddressForm({
         label="Tỉnh / Thành phố"
         options={PROVINCE_ITEMS.map((p) => ({ value: p.code, label: p.officialName }))}
         value={provinceCode}
-        onChange={(e) => onProvinceCodeChange(e.target.value)}
+        onChange={(v) => onProvinceCodeChange(v)}
         required
       />
     </Card>

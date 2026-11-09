@@ -1,37 +1,39 @@
 import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { Badge, Icon } from '@/shared/ui';
+import { Icon } from '@/shared/ui';
 import type { User } from '@/entities/user';
+import type { HeaderZone } from '../model/headerZone';
 import styles from './Header.module.css';
 
 interface HeaderTopBarProps {
   user: User;
-  onOpenActorSwitcher: () => void;
+  /** Đang khôi phục phiên: chưa biết người dùng có Shop hay không. */
+  restoring?: boolean;
+  zone: HeaderZone;
 }
 
-/** Thanh trên cùng: chỉ báo nhân vật demo + lối tắt (Ctrl+K, đổi vai, sơ đồ). */
-export function HeaderTopBar({ user, onOpenActorSwitcher }: HeaderTopBarProps) {
-  const roleLabel =
-    user.role === 'VENDOR' ? 'Người bán' : user.role === 'ADMIN' ? 'Quản trị' : 'Người mua';
-
+/**
+ * Thanh trên cùng: lối sang kênh còn lại và các lối tắt (Ctrl+K, chính sách sàn).
+ *
+ * Ở kênh mua sắm: Kênh người bán khi đã có Shop, mở Shop khi chưa có. Ở Kênh người bán: về kênh mua sắm.
+ */
+export function HeaderTopBar({ user, restoring = false, zone }: HeaderTopBarProps) {
   return (
     <div className={styles.topBar}>
       <div className={styles.topInner}>
-        <div className={styles.actorIndicator}>
-          <span className={styles.sparkleIcon}>
-            <Icon name="sparkle" size={13} />
-          </span>
-          <span>
-            Đang thử vai: <strong>{user.name}</strong> ({roleLabel})
-          </span>
-          {user.nfcStatus === 'VERIFIED' ? (
-            <Badge tone="green" size="sm">
-              <Icon name="shield" size={11} /> Đã xác minh NFC
-            </Badge>
+        <div className={styles.sellerEntry}>
+          {zone === 'vendor' ? (
+            <Link to={routes.base.home} className={styles.sellerLink}>
+              <Icon name="arrowLeft" size={14} /> Về kênh mua sắm
+            </Link>
+          ) : restoring ? null : user.vendorId ? (
+            <Link to={routes.vendor.overview} className={styles.sellerLink}>
+              <Icon name="store" size={14} /> Kênh người bán của Shop bạn
+            </Link>
           ) : (
-            <Badge tone="amber" size="sm">
-              Chưa NFC
-            </Badge>
+            <Link to={routes.base.sellIntro} className={styles.sellerLink}>
+              <Icon name="store" size={14} /> Đăng ký bán hàng trên Moonkage
+            </Link>
           )}
         </div>
 
@@ -41,7 +43,11 @@ export function HeaderTopBar({ user, onOpenActorSwitcher }: HeaderTopBarProps) {
             className={styles.cmdKBtn}
             onClick={() => {
               window.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
+                new KeyboardEvent('keydown', {
+                  key: 'k',
+                  ctrlKey: true,
+                  bubbles: true,
+                }),
               );
             }}
             title="Tìm kiếm nhanh & Lệnh (Ctrl+K)"
@@ -51,16 +57,8 @@ export function HeaderTopBar({ user, onOpenActorSwitcher }: HeaderTopBarProps) {
             <kbd className={styles.cmdKShortcut}>⌘K</kbd>
           </button>
           <span className={styles.divider}>|</span>
-          <button
-            type="button"
-            className={styles.switchActorBtn}
-            onClick={onOpenActorSwitcher}
-          >
-            <Icon name="users" size={14} /> Đổi vai test (6 nhân vật IA)
-          </button>
-          <span className={styles.divider}>|</span>
-          <Link to={routes.system.sitemap} className={styles.sitemapLink}>
-            <Icon name="layers" size={14} /> Sơ đồ 73 trang &amp; Luồng
+          <Link to={routes.base.policy} className={styles.sitemapLink}>
+            <Icon name="layers" size={14} /> Chính sách sàn
           </Link>
         </div>
       </div>

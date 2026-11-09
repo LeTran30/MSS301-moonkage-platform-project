@@ -8,8 +8,8 @@ import { useNotificationPush } from '@/entities/notification';
 import { RealtimeProvider } from '@/shared/api/realtime';
 import { queryClient } from '@/shared/api';
 import { subscribeToToken } from '@/shared/api/tokenVault';
-import { isDemoMode } from '@/shared/config';
 import { IdentityBridge } from './IdentityBridge';
+import { SessionBridge } from './SessionBridge';
 
 interface Props {
   children: ReactNode;
@@ -28,7 +28,7 @@ function CatalogBootstrap() {
   const provinceCode = useDeliveryProvinceCode();
   useProductCatalog(provinceCode);
   useTaxonomyCatalog();
-  useVendorCatalog();
+  useVendorCatalog(provinceCode);
   return null;
 }
 
@@ -37,14 +37,13 @@ function CatalogBootstrap() {
  *
  * The token lives in the token vault (module memory, mirrored into
  * sessionStorage), so the provider subscribes to it: the socket opens when a
- * session starts and closes when it ends. A guest, or demo mode (no server),
- * gets no socket: the screens poll.
+ * session starts and closes when it ends. A guest gets no socket: the screens
+ * poll.
  */
 function SessionRealtime({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isDemoMode()) return;
     return subscribeToToken(setToken);
   }, []);
 
@@ -82,6 +81,7 @@ export function AppProviders({ children }: Props) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <SessionBridge />
       <CatalogBootstrap />
       <SessionRealtime>{children}</SessionRealtime>
       <ToastContainer />

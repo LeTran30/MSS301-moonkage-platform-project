@@ -34,8 +34,8 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthShell
-      icon="🔑"
-      title="Quên Mật Khẩu"
+      icon="key"
+      title="Quên mật khẩu"
       subtitle="Nhập email đã đăng ký để nhận mã OTP đặt lại mật khẩu."
     >
       <form onSubmit={handleSubmit} className={authShellStyles.form} noValidate>

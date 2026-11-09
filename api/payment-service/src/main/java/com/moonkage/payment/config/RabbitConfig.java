@@ -1,5 +1,6 @@
 package com.moonkage.payment.config;
 
+import com.moonkage.outbox.EventExchange;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.amqp.core.BindingBuilder;
@@ -17,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String EVENTS_EXCHANGE = "moonkage.events";
+    public static final String EVENTS_EXCHANGE = EventExchange.NAME;
 
     // read by order (CHECKOUT, REMAINDER), quotation (DEPOSIT) and vendor (REGISTRATION_FEE)
     public static final String PAYMENT_SUCCEEDED_ROUTING_KEY = "payment.succeeded";
@@ -34,9 +35,17 @@ public class RabbitConfig {
     public static final String DISPUTE_RESOLVED_ROUTING_KEY = "dispute.resolved";
     private static final List<String> ORDER_ROUTING_KEYS =
             List.of("order.created", "order.status_changed", "order.delivered", "order.received_confirmed");
+
+    /**
+     * Một hàng đợi cho **mọi** sự kiện của đơn.
+     *
+     * <p>Vì sao gộp: `dispute.opened` chỉ có nghĩa khi `order.created` đã tạo
+     * được hàng `order_snapshots`. Ở các hàng đợi riêng, sự kiện được tiêu thụ
+     * song song nên `dispute.opened` có thể tới trước `order.created` — và khi
+     * đó khiếu nại bị bỏ rơi: tiền của đơn không bị khoá lại (BR-18). Một hàng
+     * đợi giữ đúng thứ tự order-service phát ra (outbox phát theo `created_at`).
+     */
     public static final String ORDER_EVENTS_QUEUE = "payment-service.order-events";
-    public static final String DISPUTE_OPENED_QUEUE = "payment-service.dispute-opened";
-    public static final String DISPUTE_RESOLVED_QUEUE = "payment-service.dispute-resolved";
 
     @Bean
     TopicExchange eventsExchange() {
@@ -47,13 +56,11 @@ public class RabbitConfig {
     @Bean
     Declarables orderEventBindings(TopicExchange eventsExchange) {
         Queue orderEvents = QueueBuilder.durable(ORDER_EVENTS_QUEUE).build();
-        Queue disputeOpened = QueueBuilder.durable(DISPUTE_OPENED_QUEUE).build();
-        Queue disputeResolved = QueueBuilder.durable(DISPUTE_RESOLVED_QUEUE).build();
-        List<Declarable> declarables = new ArrayList<>(List.of(orderEvents, disputeOpened, disputeResolved));
+        List<Declarable> declarables = new ArrayList<>(List.of(orderEvents));
         ORDER_ROUTING_KEYS.forEach(key -> declarables.add(
                 BindingBuilder.bind(orderEvents).to(eventsExchange).with(key)));
-        declarables.add(BindingBuilder.bind(disputeOpened).to(eventsExchange).with(DISPUTE_OPENED_ROUTING_KEY));
-        declarables.add(BindingBuilder.bind(disputeResolved).to(eventsExchange).with(DISPUTE_RESOLVED_ROUTING_KEY));
+        declarables.add(BindingBuilder.bind(orderEvents).to(eventsExchange).with(DISPUTE_OPENED_ROUTING_KEY));
+        declarables.add(BindingBuilder.bind(orderEvents).to(eventsExchange).with(DISPUTE_RESOLVED_ROUTING_KEY));
         return new Declarables(declarables);
     }
 

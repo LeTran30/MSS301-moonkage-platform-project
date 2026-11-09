@@ -19,6 +19,9 @@ Schema đã có đơn, maket, tiến độ, khiếu nại, đánh giá. Thiếu 
 | `mockup_versions` **Sửa** | `id`, `order_id`, `version_no`, `object_key`, `uploaded_at`, `review_status` (PENDING_REVIEW, APPROVED, CHANGES_REQUESTED), `review_note`, `reviewed_at` | `(order_id, version_no)` duy nhất; không ghi đè | FR-20, FR-39, BR-15 |
 | `progress_updates`, `progress_update_photos` | `id`, `order_id`, `milestone`, `note`, `created_at`; ảnh `object_key` | Chỉ thêm, không sửa | FR-40 |
 | `reviews` **Sửa** | `id`, `order_id`, `product_id`, `vendor_id`, `buyer_account_id`, `rating` (1–5), `content` | Bỏ `vendor_reply`, `replied_at` (người bán không trả lời); chỉ `kind = BUY_NOW` đã giao | FR-11, BR-32 |
+| `chat_conversations` **Mới** | `id`, `buyer_account_id`, `buyer_name`, `vendor_id`, `vendor_name`, `last_message_at`, `created_at` | Một cuộc cho mỗi cặp khách–shop (`UNIQUE(buyer_account_id, vendor_id)`); tên chép lúc mở cuộc | Chat khách–shop (2026-11-06) |
+| `chat_messages` **Mới** | `seq` (identity, thứ tự trong cuộc), `id`, `conversation_id`, `sender_account_id`, `sender_party` (BUYER, VENDOR), `body` (≤ 2000 ký tự), `attachment_key`, `attachment_name`, `attachment_content_type`, `created_at` | Có chữ hoặc tệp; không sửa, không xóa | Chat khách–shop |
+| `chat_reads` **Mới** | PK `(conversation_id, party)`, `last_read_seq` | Chỉ tăng | Chat khách–shop |
 | `disputes` | `id`, `order_id`, `buyer_account_id`, `reason` (WRONG_ITEM, DAMAGED, LATE_DELIVERY, WRONG_LOGO, OTHER), `description`, `status` (OPEN, RESOLVED), `decision` (FULL_REFUND, PARTIAL_REFUND, REJECTED), `refund_amount`, `decision_reason`, `decided_by`, `resolved_at` | Mỗi đơn tối đa một khiếu nại OPEN | FR-12, FR-49 |
 | `dispute_evidences` | `id`, `dispute_id`, `party` (BUYER, VENDOR), `object_key`, `note` |  | AC-49.1 |
 | `vouchers` (hoãn) | đã có trong code |  | FR-13, FR-50 |
@@ -61,6 +64,10 @@ Schema đã có đơn, maket, tiến độ, khiếu nại, đánh giá. Thiếu 
 | `PATCH /api/orders/{orderId}/dispute` | A | `{decision, refundAmount?, decisionReason}` | AC-49.2 |
 | `POST /api/orders/{orderId}/dispute/evidences` | M, S | Gắn bằng chứng của mỗi bên | AC-49.1 |
 | `GET\|POST /api/orders/{orderId}/reviews` | M | Đánh giá sản phẩm trong đơn mua ngay đã giao | FR-11, BR-32 |
+| `POST /api/chat/conversations` `{vendorId}` | M | "Nhắn shop": mở (hoặc trả lại) cuộc trò chuyện của người gọi với shop; chủ shop không nhắn shop mình | Chat khách–shop |
+| `GET /api/chat/conversations?as=BUYER\|VENDOR` | M | Hộp thư: các shop đã nhắn, hoặc các khách đã nhắn shop của người gọi; kèm tin cuối và số tin chưa đọc | Chat khách–shop |
+| `GET /api/chat/conversations/{id}?before=&size=` | M | Trang tin nhắn (cũ → mới), mốc đã đọc hai bên; chỉ hai bên thấy | Chat khách–shop |
+| `POST /api/chat/conversations/{id}/messages`, `/read`, `/typing` | M | Gửi chữ và/hoặc tệp (`attachmentTempKey` từ `POST /api/orders/uploads`); đánh dấu đã xem; báo đang soạn | Chat khách–shop |
 
 Dispute nằm trong Order vì nó chặn chuyển trạng thái tiền của đơn (BR-18) và mỗi đơn tối đa một khiếu nại mở. Khách xem đánh giá theo sản phẩm qua `GET /api/products/{productId}/reviews`: catalog giữ bản sao đánh giá từ sự kiện `review.created`, vì đường dẫn này thuộc read model Product ở catalog.
 
@@ -85,6 +92,7 @@ Dispute nằm trong Order vì nó chặn chuyển trạng thái tiền của đ�
 - `order.created`, `order.status_changed`, `order.delivered` (kèm `complaintDeadline`), `order.received_confirmed`, `dispute.opened`, `dispute.resolved` → payment, orchestrator
 - `mockup.uploaded`, `mockup.reviewed`, `progress.updated`, `invoice.attached` → orchestrator
 - `review.created` → catalog
+- `chat.message_sent`, `chat.read`, `chat.typing` → orchestrator, gửi thẳng sau commit, không qua outbox (chỉ là gợi ý cho trang đang mở; mất thì trang tự đọc lại); TTL 30 giây
 
 **Nghe**
 
@@ -97,7 +105,8 @@ Dispute nằm trong Order vì nó chặn chuyển trạng thái tiền của đ�
 **API nội bộ**
 
 - Gọi catalog: `POST /internal/products/snapshot` (phí giao)
-- Gọi vendor: `POST /internal/stock/reservations`, `POST /internal/stock/reservations/{checkoutId}/commit`, `DELETE /internal/stock/reservations/{checkoutId}` (xem vendor.md)
+- Gọi identity: `GET /internal/accounts/{accountId}/name` (tên khách cho hộp thư shop)
+- Gọi vendor: `GET /internal/vendors/{vendorId}` (chủ và tên shop, cho chat), `POST /internal/stock/reservations`, `POST /internal/stock/reservations/{checkoutId}/commit`, `DELETE /internal/stock/reservations/{checkoutId}` (xem vendor.md)
 - Gọi payment: `POST /internal/payments` (`CHECKOUT` kèm `allocations[]` theo `order_id` có sẵn, `REMAINDER`), `POST /internal/refunds` (`LATE_PAYMENT`)
 - Cung cấp `POST /internal/orders/{orderId}/payout-lock` cho payment (P-02)
 

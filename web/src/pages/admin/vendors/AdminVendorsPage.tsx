@@ -1,19 +1,26 @@
 import { useState } from 'react';
-import { Tabs, toast, AsyncState } from '@/shared/ui';
+import { Tabs, toast, AsyncState, Icon } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useVendorSearch, type VendorDetailDto, type VendorResponseDto } from '@/entities/vendor';
-import { VendorApplicationCard, type VendorStatus } from '@/entities/vendor';
-import { useLoadVendorDetail, useReviewApplication, VendorReviewModal } from '@/features/review-applications';
+import { VendorApplicationCard, VENDOR_STATUS_LABELS, type VendorStatus } from '@/entities/vendor';
+import {
+  useLoadVendorDetail,
+  useReviewApplication,
+  VendorReviewModal,
+} from '@/features/review-applications';
 import { AttachVendorDocumentModal } from '@/features/attach-vendor-document';
 import styles from './AdminVendorsPage.module.css';
 
-type AdminVendorTab = 'PENDING' | 'APPROVED' | 'ALL';
+type AdminVendorTab = VendorStatus | 'ALL';
+
+/** Q2.0: một tab cho mỗi trạng thái hồ sơ, theo thứ tự việc admin cần làm. */
+const TAB_STATUSES: VendorStatus[] = ['PENDING', 'NEEDS_INFO', 'APPROVED', 'LOCKED', 'REJECTED'];
 
 export function AdminVendorsPage() {
   const [activeTab, setActiveTab] = useState<AdminVendorTab>('PENDING');
   const [selectedVendor, setSelectedVendor] = useState<VendorDetailDto | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  const [reviewReason, setReviewReason] = useState('');
   const [licenseChecked, setLicenseChecked] = useState(false);
   const [registryChecked, setRegistryChecked] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -30,7 +37,7 @@ export function AdminVendorsPage() {
 
   const handleOpenReview = (vendor: VendorResponseDto) => {
     setSelectedVendor(null);
-    setRejectReason('');
+    setReviewReason('');
     setLicenseChecked(false);
     setRegistryChecked(false);
     setReviewModalOpen(true);
@@ -49,7 +56,8 @@ export function AdminVendorsPage() {
       const review = await reviewApplication(selectedVendor.id, {
         decision: 'APPROVE',
         licenseChecked,
-        registryChecked: selectedVendor.entityType === 'SOLE_PROPRIETORSHIP' ? registryChecked : false,
+        registryChecked:
+          selectedVendor.entityType === 'SOLE_PROPRIETORSHIP' ? registryChecked : false,
       });
       if (!review) return;
       setSuccessMsg(`Đã phê duyệt hồ sơ người bán "${selectedVendor.businessName}" thành công!`);
@@ -59,23 +67,23 @@ export function AdminVendorsPage() {
     });
   };
 
-  const handleReject = () => {
+  const handleSendBack = (decision: 'NEEDS_INFO' | 'REJECT') => {
     if (!selectedVendor) return;
-    if (!rejectReason.trim()) {
-      toast.warning('Vui lòng nhập lý do từ chối hồ sơ để người bán bổ sung.');
+    const reason = reviewReason.trim();
+    if (!reason) {
+      toast.warning('Vui lòng nhập lý do để người bán biết cần sửa gì.');
       return;
     }
     void run(async () => {
       // AC-45.2: NEEDS_INFO and REJECT both need a reason the owner reads.
       const review = await reviewApplication(selectedVendor.id, {
-        decision: 'REJECT',
-        reason: rejectReason.trim(),
+        decision,
+        reason,
         licenseChecked,
       });
       if (!review) return;
-      setSuccessMsg(
-        `Đã từ chối hồ sơ "${selectedVendor.businessName}". Lý do: ${rejectReason.trim()}`
-      );
+      const verb = decision === 'NEEDS_INFO' ? 'yêu cầu bổ sung' : 'từ chối';
+      setSuccessMsg(`Đã ${verb} hồ sơ "${selectedVendor.businessName}". Lý do: ${reason}`);
       toast.success('Đã gửi kết quả thẩm định tới người bán.');
       setReviewModalOpen(false);
       listQuery.reload();
@@ -86,28 +94,27 @@ export function AdminVendorsPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản lý &amp; Duyệt hồ sơ người bán (Q2.0, Q2.1)</h1>
+          <h1 className={styles.title}>Quản lý &amp; Duyệt hồ sơ người bán</h1>
           <p className={styles.desc}>
-            Thẩm định tính pháp lý Hộ kinh doanh / DNTN (BR-33), đối chiếu dữ liệu định danh sinh
-            trắc CCCD chip NFC.
+            Thẩm định tính pháp lý Hộ kinh doanh / DNTN, đối chiếu dữ liệu định danh sinh trắc CCCD
+            chip NFC.
           </p>
         </div>
         <div className={styles.ruleBadge}>
-          🛡️ Quy định BR-33: Bắt buộc mô hình HKD hoặc DNTN
+          <Icon name="shield" size={16} /> Quy định : Bắt buộc mô hình HKD hoặc DNTN
         </div>
       </div>
 
       {successMsg && (
         <div className={styles.alertSuccess}>
-          ✓ {successMsg}
+          <Icon name="check" size={16} /> {successMsg}
         </div>
       )}
 
       <Tabs<AdminVendorTab>
         items={[
-          { id: 'PENDING', label: 'Chờ duyệt hồ sơ' },
-          { id: 'APPROVED', label: 'Đang hoạt động' },
-          { id: 'ALL', label: 'Tất cả cơ sở' },
+          ...TAB_STATUSES.map((status) => ({ id: status, label: VENDOR_STATUS_LABELS[status] })),
+          { id: 'ALL' as const, label: 'Tất cả' },
         ]}
         activeId={activeTab}
         onChange={setActiveTab}
@@ -134,24 +141,25 @@ export function AdminVendorsPage() {
         )}
       </AsyncState>
 
-      {/* Modal Review (Q2.1) */}
+      {/* Modal Review */}
       <VendorReviewModal
         open={reviewModalOpen}
         vendor={selectedVendor}
         licenseChecked={licenseChecked}
         registryChecked={registryChecked}
-        rejectReason={rejectReason}
+        reason={reviewReason}
         busy={busy}
         error={error}
         onLicenseCheckedChange={setLicenseChecked}
         onRegistryCheckedChange={setRegistryChecked}
-        onRejectReasonChange={setRejectReason}
+        onReasonChange={setReviewReason}
         onClose={() => setReviewModalOpen(false)}
         onApprove={handleApprove}
-        onReject={handleReject}
+        onRequestInfo={() => handleSendBack('NEEDS_INFO')}
+        onReject={() => handleSendBack('REJECT')}
       />
 
-      {/* Modal gắn hoá đơn phí đăng ký (Q-36, AC-27.6) */}
+      {/* Modal gắn hoá đơn phí đăng ký (Q-36) */}
       <AttachVendorDocumentModal
         open={feeInvoiceVendor !== null}
         vendorId={feeInvoiceVendor?.id ?? null}

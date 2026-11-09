@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Button, Input, Modal } from '@/shared/ui';
+import { Button, Input, Modal, Radio, Textarea } from '@/shared/ui';
 import type { DisputeDecision } from '@/entities/dispute';
 import styles from './DisputeResolutionModal.module.css';
 
@@ -7,6 +7,8 @@ interface DisputeResolutionModalProps {
   open: boolean;
   /** Số tiền Escrow đang giữ = trần hoàn tối đa (AC-49.3). */
   maxRefundAllowed: number;
+  /** Tổng tiền đơn: "Hoàn toàn bộ" hoàn đúng số này (FULL_REFUND). */
+  orderTotal: number;
   decision: DisputeDecision;
   refundAmount: string;
   adminNote: string;
@@ -22,11 +24,12 @@ interface DisputeResolutionModalProps {
 /**
  * Ra phán quyết tranh chấp (Q5.1, Flow 5, FR-49).
  *
- * Quy tắc AC-49.3: số tiền hoàn không được vượt quá số tiền Escrow đang giữ.
+ * Quy tắc AC-49.3: số tiền hoàn không được vượt quá số tiền đang giữ.
  */
 export function DisputeResolutionModal({
   open,
   maxRefundAllowed,
+  orderTotal,
   decision,
   refundAmount,
   adminNote,
@@ -42,7 +45,7 @@ export function DisputeResolutionModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Ra phán quyết phân xử khiếu nại (Q5.1 - FR-49)"
+      title="Ra phán quyết phân xử khiếu nại"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -56,7 +59,7 @@ export function DisputeResolutionModal({
     >
       <div className={styles.modalBody}>
         <div className={styles.escrowSummary}>
-          <span>Số tiền Moonkage đang giữ trong Escrow:</span>
+          <span>Số tiền Moonkage đang giữ:</span>
           <strong>{formatCurrency(maxRefundAllowed)}</strong>
         </div>
 
@@ -66,41 +69,44 @@ export function DisputeResolutionModal({
           </label>
           <div className={styles.radioOptions} role="radiogroup" aria-labelledby="decision-label">
             <label className={styles.radioItem}>
-              <input
-                type="radio"
+              <Radio
                 name="decision"
                 checked={decision === 'PARTIAL_REFUND'}
                 onChange={() => onDecisionChange('PARTIAL_REFUND')}
+                inputClassName={styles.radioInput}
+                aria-label="Hoàn tiền một phần"
               />
               <div>
-                <strong>Hoàn tiền một phần (Được khuyến nghị)</strong>
-                <p>Người mua nhận lại một khoản bồi thường; xưởng nhận phần còn lại.</p>
+                <strong>Hoàn tiền một phần</strong>
+                <p>Người mua nhận lại một khoản bồi thường; Shop nhận phần còn lại.</p>
               </div>
             </label>
 
             <label className={styles.radioItem}>
-              <input
-                type="radio"
+              <Radio
                 name="decision"
                 checked={decision === 'FULL_REFUND'}
                 onChange={() => onDecisionChange('FULL_REFUND')}
+                inputClassName={styles.radioInput}
+                aria-label="Hoàn toàn bộ tiền đơn"
               />
               <div>
-                <strong>Hoàn 100% tiền đang giữ ({formatCurrency(maxRefundAllowed)})</strong>
-                <p>Hàng hư hỏng hoàn toàn không thể sử dụng do lỗi xưởng đóng gói.</p>
+                <strong>Hoàn toàn bộ tiền đơn ({formatCurrency(orderTotal)})</strong>
+                <p>Lỗi thuộc về Shop và hàng không dùng được.</p>
               </div>
             </label>
 
             <label className={styles.radioItem}>
-              <input
-                type="radio"
+              <Radio
                 name="decision"
                 checked={decision === 'REJECTED'}
                 onChange={() => onDecisionChange('REJECTED')}
+                inputClassName={styles.radioInput}
+                aria-label="Bác khiếu nại, giải ngân toàn bộ cho người bán"
               />
               <div>
-                <strong>Bác khiếu nại (Giải ngân toàn bộ cho người bán)</strong>
-                <p>Bằng chứng người mua cung cấp không hợp lệ hoặc lỗi từ người mua.</p>
+                <strong>Bác khiếu nại (tiền về Shop)</strong>
+                <p>Bằng chứng không cho thấy lỗi của Shop.</p>
               </div>
             </label>
           </div>
@@ -115,13 +121,13 @@ export function DisputeResolutionModal({
               id="refund-amount"
               type="number"
               value={refundAmount}
-              min={0}
-              max={maxRefundAllowed}
+              min={1}
+              max={Math.min(maxRefundAllowed, orderTotal - 1)}
               onChange={(e) => onRefundAmountChange(e.target.value)}
-              placeholder="135000"
+              placeholder={`Nhỏ hơn ${formatCurrency(orderTotal)}`}
             />
             <span className={styles.hint}>
-              Xưởng sẽ nhận:{' '}
+              Shop nhận phần còn lại:{' '}
               <strong>
                 {formatCurrency(Math.max(0, maxRefundAllowed - Number(refundAmount)))}
               </strong>
@@ -133,9 +139,8 @@ export function DisputeResolutionModal({
           <label className={styles.label} htmlFor="decision-reason">
             Căn cứ &amp; Lý giải phán quyết (Gửi cả 2 bên) *
           </label>
-          <textarea
+          <Textarea
             id="decision-reason"
-            className={styles.textarea}
             rows={3}
             value={adminNote}
             maxLength={2000}

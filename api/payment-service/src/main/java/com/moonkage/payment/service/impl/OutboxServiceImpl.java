@@ -2,6 +2,7 @@ package com.moonkage.payment.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.moonkage.outbox.OutboxTraceContext;
 import com.moonkage.payment.entity.OutboxEvent;
 import com.moonkage.payment.repository.OutboxEventRepository;
 import com.moonkage.payment.service.OutboxService;
@@ -16,6 +17,7 @@ public class OutboxServiceImpl implements OutboxService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final OutboxTraceContext traceContext;
 
     /** MANDATORY: an event written outside the business transaction would defeat the outbox. */
     @Override
@@ -27,6 +29,6 @@ public class OutboxServiceImpl implements OutboxService {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Event " + eventId + " cannot be serialized", e);
         }
-        outboxEventRepository.save(OutboxEvent.of(eventId, routingKey, payload));
+        outboxEventRepository.save(OutboxEvent.of(eventId, routingKey, payload, traceContext.currentTraceParent()));
     }
 }

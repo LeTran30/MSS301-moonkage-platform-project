@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { queryClient, queryKeys } from '@/shared/api';
 import {
   createVendorProduct,
   replaceVendorProduct,
@@ -10,6 +11,18 @@ import type {
   VendorProductDto,
 } from '@/entities/vendor';
 
+/** A write changed this product: the shop's list and the product must be read again. */
+async function forgetProduct(vendorId: string, productId: string | null | undefined) {
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.vendor.products(vendorId),
+  });
+  if (productId) {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.vendor.product(vendorId, productId),
+    });
+  }
+}
+
 /**
  * The seller creates or replaces a product (FR-29 to FR-33).
  *
@@ -18,14 +31,17 @@ import type {
  */
 export function useSaveProduct() {
   return useCallback(
-    (
+    async (
       vendorId: string,
       productId: string | null,
       payload: SaveVendorProductPayload,
-    ): Promise<VendorProductDto | null> =>
-      productId
-        ? replaceVendorProduct(vendorId, productId, payload)
-        : createVendorProduct(vendorId, payload),
+    ): Promise<VendorProductDto | null> => {
+      const saved = productId
+        ? await replaceVendorProduct(vendorId, productId, payload)
+        : await createVendorProduct(vendorId, payload);
+      await forgetProduct(vendorId, productId ?? saved?.id);
+      return saved;
+    },
     [],
   );
 }
@@ -35,12 +51,15 @@ export function useSaveProduct() {
  */
 export function useChangeProductStatus() {
   return useCallback(
-    (
+    async (
       vendorId: string,
       productId: string,
       payload: UpdateVendorProductPayload,
-    ): Promise<VendorProductDto | null> =>
-      updateVendorProductStatus(vendorId, productId, payload),
+    ): Promise<VendorProductDto | null> => {
+      const changed = await updateVendorProductStatus(vendorId, productId, payload);
+      await forgetProduct(vendorId, productId);
+      return changed;
+    },
     [],
   );
 }

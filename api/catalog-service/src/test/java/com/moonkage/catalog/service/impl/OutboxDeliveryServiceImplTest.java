@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.moonkage.catalog.config.CatalogOutboxProperties;
 import com.moonkage.catalog.entity.OutboxEvent;
 import com.moonkage.catalog.repository.OutboxEventRepository;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -30,7 +31,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 @ExtendWith(MockitoExtension.class)
 class OutboxDeliveryServiceImplTest {
     private static final Instant NOW = Instant.parse("2026-10-26T07:00:00Z");
-    private static final OutboxEvent EVENT = new OutboxEvent("event-1", "interprovince_fee.changed", "{}", 0, NOW);
+    private static final OutboxEvent EVENT =
+            new OutboxEvent("event-1", "interprovince_fee.changed", "{}", 0, NOW, null);
 
     @Mock
     private OutboxEventRepository repository;
@@ -43,7 +45,11 @@ class OutboxDeliveryServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new OutboxDeliveryServiceImpl(
-                repository, rabbitTemplate, new CatalogOutboxProperties(), Clock.fixed(NOW, ZoneOffset.UTC));
+                repository,
+                rabbitTemplate,
+                new CatalogOutboxProperties(),
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                OutboxTraceContext.noop());
     }
 
     @Test
@@ -96,8 +102,8 @@ class OutboxDeliveryServiceImplTest {
         when(repository.lockNextUnpublished()).thenReturn(Optional.of(EVENT));
         var properties = org.mockito.Mockito.mock(CatalogOutboxProperties.class);
         when(properties.getConfirmTimeout()).thenReturn(java.time.Duration.ZERO);
-        service =
-                new OutboxDeliveryServiceImpl(repository, rabbitTemplate, properties, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new OutboxDeliveryServiceImpl(
+                repository, rabbitTemplate, properties, Clock.fixed(NOW, ZoneOffset.UTC), OutboxTraceContext.noop());
         assertThat(service.deliverNext()).isFalse();
         verify(repository).recordFailure(EVENT.id(), NOW);
         verify(repository, never()).markPublished(any(), any());

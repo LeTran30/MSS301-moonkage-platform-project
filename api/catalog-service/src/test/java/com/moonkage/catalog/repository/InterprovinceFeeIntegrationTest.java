@@ -8,6 +8,7 @@ import com.moonkage.catalog.dto.request.SaveInterprovinceFeesRequest;
 import com.moonkage.catalog.entity.Province;
 import com.moonkage.catalog.service.InterprovinceFeeService;
 import com.moonkage.catalog.service.impl.InterprovinceFeeServiceImpl;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
@@ -206,6 +207,12 @@ class InterprovinceFeeIntegrationTest {
         @Bean
         ObjectMapper objectMapper() {
             return new ObjectMapper().findAndRegisterModules();
+        }
+
+        /** The slice does not load the auto-configuration of common-outbox, so the trace context comes by hand. */
+        @Bean
+        OutboxTraceContext outboxTraceContext() {
+            return OutboxTraceContext.noop();
         }
     }
 }

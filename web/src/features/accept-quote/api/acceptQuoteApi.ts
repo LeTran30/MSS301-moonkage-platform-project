@@ -1,6 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import { generateEntityId } from '@/shared/utils';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 import type { AcceptQuoteResponseDto, InvoiceInfoPayload } from '@/entities/request';
 
@@ -26,24 +25,15 @@ export interface AcceptQuotePayload {
 export async function acceptQuote(
   requestId: string,
   quoteId: string,
-  payload?: AcceptQuotePayload
+  payload?: AcceptQuotePayload,
 ): Promise<AcceptQuoteResponseDto> {
   // Funnel chấp nhận báo giá (FR-19). Không ghi `invoiceInfo` — đó là thông
   // tin hóa đơn của người mua (NFR-03).
   trackEvent(ANALYTICS_EVENTS.acceptQuote, { request_id: requestId });
 
-  if (isDemoMode()) {
-    return {
-      acceptanceId: generateEntityId('acc'),
-      status: 'PENDING_PAYMENT',
-      depositAmount: 0,
-      paymentId: generateEntityId('pay'),
-      paymentUrl: `/gateway/vnpay/${generateEntityId('pay')}`,
-    };
-  }
   const res = await apiClient.post<unknown>(
     GATEWAY.QUOTATION.ACCEPT_QUOTE(requestId, quoteId),
-    payload ?? {}
+    payload ?? {},
   );
   const dto = unwrap<AcceptQuoteResponseDto>(res);
   if (!dto) {

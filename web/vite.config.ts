@@ -2,10 +2,11 @@
 import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
+import { breakpointTokensPlugin } from './vite/breakpointTokens.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), breakpointTokensPlugin()],
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, 'src') },
   },
@@ -14,12 +15,27 @@ export default defineConfig({
     // jsdom so the component tests can render real DOM (T-14).
     environment: 'jsdom',
     setupFiles: ['./src/shared/test/setup.ts'],
-    // Thư mục `e2e/` là test Playwright, không phải test Vitest — loại khỏi
-    // `exclude` để `npm test` không cố chạy chúng bằng Vitest.
-    exclude: ['**/node_modules/**', 'e2e/**', 'dist/**'],
+    // Thư mục `e2e/` là test Playwright, không phải test Vitest — `include` bên
+    // dưới chỉ lấy `src/**` và `e2e/__tests__/**`, nên `*.spec.ts` của
+    // Playwright không bị Vitest cố chạy.
+    //
+    // Ngoại lệ: `e2e/__tests__/` là test **thuần** (không cần trình duyệt,
+    // không cần backend) — ví dụ thuật toán ký callback VNPay. Chúng kiểm
+    // phần mà mọi luồng E2E khác dựa vào, nên phải chạy nhanh và chạy mỗi
+    // lần `npm test`.
+    exclude: ['**/node_modules/**', 'dist/**'],
+    include: [
+      'src/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+      'e2e/__tests__/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+    ],
+    // Timeout mặc định của Vitest là 5 s. Trên CI (hoặc khi chạy song song với
+    // Maven) máy có thể chậm, và một test cần ~1,2 s khi chạy riêng sẽ vượt
+    // 5 s khi tải cao ⇒ báo đỏ giả. Nâng lên 15 s để ngưỡng phản ánh lỗi thật
+    // (assertion fail, promise không resolve) chứ không phản ánh tải máy.
+    testTimeout: 15000,
     env: {
       VITE_API_BASE_URL: 'http://gateway.test',
-      VITE_DEMO_MODE: 'true',
+      VITE_MEDIA_BASE_URL: 'http://media.test',
     },
     coverage: {
       provider: 'v8',
@@ -42,12 +58,16 @@ export default defineConfig({
       // chặn — đặt luôn 70% sẽ làm workflow đỏ ngay từ commit đầu tiên và
       // dạy cả đội rằng bỏ qua CI.
       // Mỗi khi thêm test, nâng các con số này lên theo.
-      // Lịch sử: 17/12/18/17 → 18/13/19/18 → 19/14/20/19 (đo được 20,8% lines).
+      // Lịch sử: 17/12/18/17 → 18/13/19/18 → 19/14/20/19 → 23/18/23/23
+      // (đo được 23,6% statements / 24,3% lines vào 05/11/2026).
+      //
+      // Lưu ý: con số dưới đây là sàn chặn hồi quy. Đừng hạ chúng xuống để
+      // "cho CI xanh" — mỗi lần hạ là mất lớp bảo vệ đã có.
       thresholds: {
-        lines: 19,
-        functions: 14,
-        branches: 20,
-        statements: 19,
+        lines: 23,
+        functions: 18,
+        branches: 23,
+        statements: 23,
       },
     },
   },

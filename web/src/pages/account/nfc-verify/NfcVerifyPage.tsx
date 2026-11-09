@@ -4,9 +4,7 @@ import { toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { setNfcVerified, useCurrentUser } from '@/entities/user';
 import {
-  NfcPhoneSimulator,
   NfcSessionCard,
-  NfcVerificationSimulator,
   useGetNfcSession,
   useGetNfcStatus,
   useNfcPush,
@@ -29,10 +27,6 @@ export function NfcVerifyPage() {
   const getNfcStatus = useGetNfcStatus();
 
   const returnUrl = (location.state as NfcLocationState | null)?.returnUrl;
-  const [modalSimulatorOpen, setModalSimulatorOpen] = useState(false);
-
-  // Simulator 5 bước app Moonkage Verify (V1 -> V5 theo Flutter_App_Plan, Flow 6)
-  const [appStep, setAppStep] = useState<number>(user.nfcStatus === 'VERIFIED' ? 5 : 1);
 
   // Phiên xác minh thật: `POST /api/nfc/sessions` -> hiển thị `sessionId` thành QR.
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -63,7 +57,7 @@ export function NfcVerifyPage() {
     setSessionId(session.sessionId);
     setExpiresAt(session.expiresAt);
     setSecondsLeft(
-      Math.max(0, Math.floor((new Date(session.expiresAt).getTime() - Date.now()) / 1000))
+      Math.max(0, Math.floor((new Date(session.expiresAt).getTime() - Date.now()) / 1000)),
     );
   }, [startNfcSession]);
 
@@ -142,34 +136,22 @@ export function NfcVerifyPage() {
     };
   }, [sessionId, isVerified, completeVerification, refreshStatus, getNfcSession]);
 
-  function handleSimulateAppDone() {
-    setNfcVerified();
-    setAppStep(5);
-    window.setTimeout(() => {
-      if (returnUrl) {
-        toast.success('Xác thực NFC thành công! Bạn sẽ được đưa trở lại trang thao tác trước đó.');
-        navigate(returnUrl);
-      }
-    }, 1500);
-  }
-
   const timerLabel = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(
-    secondsLeft % 60
+    secondsLeft % 60,
   ).padStart(2, '0')}`;
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>XÁC MINH DANH TÍNH (M6.4, FLOW 6, FR-04)</div>
-        <h2 className={styles.title}>Xác Thực Thẻ Căn Cước Công Dân Gắn Chip (NFC)</h2>
+        <h2 className={styles.title}>Xác thực căn cước công dân gắn chip (NFC)</h2>
         <p className={styles.lead}>
-          Đảm bảo tính pháp lý khi giao dịch hợp đồng số lượng lớn hoặc đăng ký trở thành người bán trên
-          Moonkage.
+          Đảm bảo tính pháp lý khi giao dịch hợp đồng số lượng lớn hoặc đăng ký trở thành người bán
+          trên Moonkage.
         </p>
       </div>
 
       <div className={styles.grid}>
-        {/* Phần Web: QR Code và hướng dẫn (M6.4) */}
+        {/* Phần Web: QR Code và hướng dẫn */}
         <div className={styles.webSide}>
           <NfcSessionCard
             isVerified={isVerified}
@@ -185,27 +167,8 @@ export function NfcVerifyPage() {
                 toast.info('Đã tạo mã QR xác minh mới.');
               });
             }}
-            onOpenSimulator={() => setModalSimulatorOpen(true)}
-          />
-
-          <NfcVerificationSimulator
-            isOpen={modalSimulatorOpen}
-            onClose={() => setModalSimulatorOpen(false)}
-            onSuccess={() => {
-              setModalSimulatorOpen(false);
-              setAppStep(5);
-              if (returnUrl) navigate(returnUrl);
-            }}
           />
         </div>
-
-        {/* Phần Giả lập Màn hình App Moonkage Verify (V1-V5) */}
-        <NfcPhoneSimulator
-          step={appStep}
-          user={user}
-          onStepChange={setAppStep}
-          onFinish={handleSimulateAppDone}
-        />
       </div>
     </div>
   );

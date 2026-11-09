@@ -1,26 +1,29 @@
 package com.moonkage.order.service.impl;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
 import com.moonkage.order.client.dto.CreatePaymentRequest;
 import com.moonkage.order.client.dto.CreatePaymentResponse;
+import com.moonkage.order.client.dto.VendorView;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
 import com.moonkage.order.dto.event.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.UpdateOrderRequest;
 import com.moonkage.order.dto.response.OrderResponse;
-import com.moonkage.order.dto.response.PageResponse;
 import com.moonkage.order.dto.response.PaymentLinkResponse;
 import com.moonkage.order.dto.response.ProgressUpdateResponse;
 import com.moonkage.order.entity.InvoiceInfo;
 import com.moonkage.order.entity.Order;
 import com.moonkage.order.entity.OrderItem;
 import com.moonkage.order.entity.ProgressUpdate;
+import com.moonkage.order.enums.DisputeStatus;
 import com.moonkage.order.enums.MockupReviewStatus;
 import com.moonkage.order.enums.OrderKind;
 import com.moonkage.order.enums.OrderStatus;
 import com.moonkage.order.exception.AppException;
 import com.moonkage.order.exception.ErrorCode;
+import com.moonkage.order.repository.DisputeRepository;
 import com.moonkage.order.repository.MockupVersionRepository;
 import com.moonkage.order.repository.OrderItemRepository;
 import com.moonkage.order.repository.OrderRepository;
@@ -36,13 +39,19 @@ import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -51,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final DisputeRepository disputeRepository;
     private final MockupVersionRepository mockupVersionRepository;
     private final ProgressUpdateRepository progressUpdateRepository;
     private final InboxService inboxService;
@@ -87,9 +97,16 @@ public class OrderServiceImpl implements OrderService {
             buyerAccountId = caller.accountId();
         }
         PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
-        return PageResponse.from(orderRepository
-                .search(buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable)
-                .map(order -> toResponse(order, List.of())));
+        Page<Order> orders = orderRepository.search(
+                buyerAccountId, vendorId, paymentGroupId, kind, status, missingInvoice, openDispute, pageable);
+        List<String> orderIds = orders.map(Order::getId).toList();
+        Map<String, List<OrderItem>> itemsByOrder = orders.isEmpty()
+                ? Map.of()
+                : orderItemRepository.findByOrderIdIn(orderIds).stream()
+                        .collect(Collectors.groupingBy(item -> item.getOrder().getId()));
+        Set<String> disputed = orders.isEmpty() ? Set.of() : disputeRepository.findOrderIdsWithOpenDispute(orderIds);
+        return PageResponse.from(orders.map(order -> toResponse(
+                order, itemsByOrder.getOrDefault(order.getId(), List.of()), disputed.contains(order.getId()))));
     }
 
     @Override
@@ -181,6 +198,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.DEPOSITED);
         order.setBuyerAccountId(event.buyerAccountId());
         order.setVendorId(event.vendorId());
+        order.setVendorName(vendorNameOf(event.vendorId()));
         order.setQuoteId(event.quoteId());
         order.setAgreementId(event.acceptanceId());
         order.setAgreementHash(event.contentHash());
@@ -230,6 +248,10 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() != OrderStatus.DELIVERED || order.getReceivedConfirmedAt() != null) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
+        // A buy-now order would complete here while the admin has yet to decide who gets the money.
+        if (disputeRepository.existsByOrderIdAndStatus(order.getId(), DisputeStatus.OPEN)) {
+            throw new AppException(ErrorCode.DISPUTE_ALREADY_OPEN);
+        }
         order.setReceivedConfirmedAt(Instant.now());
         if (order.getKind() == OrderKind.BUY_NOW) {
             moveTo(order, OrderStatus.COMPLETED, null, List.of());
@@ -249,6 +271,11 @@ public class OrderServiceImpl implements OrderService {
         }
         if (request.status() != nextStatus(order)) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        // FR-39: uploading the mockup is what moves the order to the buyer's review; a bare status change would
+        // leave the buyer nothing to review.
+        if (request.status() == OrderStatus.AWAITING_MOCKUP_APPROVAL) {
+            throw new AppException(ErrorCode.MOCKUP_REQUIRED);
         }
         if (request.status() == OrderStatus.SHIPPING) {
             if (order.isInterprovince() && !StringUtils.hasText(request.trackingCode())) {
@@ -341,6 +368,16 @@ public class OrderServiceImpl implements OrderService {
         return info;
     }
 
+    /** The Shop's name to keep on a custom order; null when vendor-service cannot answer, the order is made anyway. */
+    private String vendorNameOf(String vendorId) {
+        try {
+            return vendorDirectory.find(vendorId).map(VendorView::businessName).orElse(null);
+        } catch (FeignException e) {
+            log.warn("Name of vendor {} unknown for its custom order: {}", vendorId, e.getMessage());
+            return null;
+        }
+    }
+
     /** A custom line has no catalog product; it is kept under the quote's id. */
     private static OrderItem toItem(Order order, String quoteId, QuoteAcceptedEvent.LinePart line) {
         OrderItem item = new OrderItem();
@@ -353,7 +390,11 @@ public class OrderServiceImpl implements OrderService {
         return item;
     }
 
-    private static OrderResponse toResponse(Order order, List<OrderItem> items) {
+    private OrderResponse toResponse(Order order, List<OrderItem> items) {
+        return toResponse(order, items, disputeRepository.existsByOrderIdAndStatus(order.getId(), DisputeStatus.OPEN));
+    }
+
+    private OrderResponse toResponse(Order order, List<OrderItem> items, boolean disputeOpen) {
         InvoiceInfo invoice = order.getInvoiceInfo();
         return new OrderResponse(
                 order.getId(),
@@ -361,6 +402,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getStatus(),
                 order.getBuyerAccountId(),
                 order.getVendorId(),
+                order.getVendorName(),
                 order.getPaymentGroupId(),
                 order.getQuoteId(),
                 order.getItemsAmount(),
@@ -389,11 +431,13 @@ public class OrderServiceImpl implements OrderService {
                 order.getDeliveredAt(),
                 order.getReceivedConfirmedAt(),
                 order.getComplaintDeadline(),
+                disputeOpen,
                 order.getCreatedAt(),
                 items.stream()
                         .map(i -> new OrderResponse.Item(
                                 i.getProductId(),
                                 i.getProductName(),
+                                fileService.publicUrl(i.getImageKey()),
                                 i.getUnitPrice(),
                                 i.getQuantity(),
                                 i.getSubtotal()))

@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Rich entity rules (docs/services/identity/domain-model-plan.md): an entity keeps its own fields right, so it opens
- * no write path that skips its checks, and it reads the time from the outside.
+ * Rich entity rules (docs/archive/2026-10-29-identity-domain-model-plan.md): an entity keeps its own fields right, so
+ * it opens no write path that skips its checks, and it reads the time from the outside.
  *
  * <p>Rules wrapped in {@link FreezingArchRule} were added while older code still broke them: those violations are
  * recorded in src/test/resources/archunit_store and tolerated, any new one fails. The store shrinks as the code is

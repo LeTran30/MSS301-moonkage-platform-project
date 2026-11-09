@@ -2,7 +2,7 @@ import { Button, Modal, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import { useState } from 'react';
 import { useAttachVendorDocument } from '../model/useAttachVendorDocument';
-import { createUploadLink, uploadFileToLink } from '@/shared/api';
+import { createUploadLink, GATEWAY, uploadFileToLink } from '@/shared/api';
 import styles from './attachVendorDocumentUi.module.css';
 
 interface AttachVendorDocumentModalProps {
@@ -35,12 +35,19 @@ export function AttachVendorDocumentModal({
   async function handleAttach(file: File) {
     if (!vendorId) return;
     await run(async () => {
-      const link = await createUploadLink('VENDOR', file.type || 'application/octet-stream', file.size);
+      const link = await createUploadLink(
+        GATEWAY.VENDOR.UPLOADS,
+        file.type || 'application/octet-stream',
+        file.size,
+      );
       if (!link?.tempKey) {
         throw new Error('Máy chủ không trả về liên kết tải tệp lên.');
       }
       await uploadFileToLink(link, file);
-      await attachDocument(vendorId, { kind: 'FEE_INVOICE', objectKey: link.tempKey });
+      await attachDocument(vendorId, {
+        kind: 'FEE_INVOICE',
+        objectKey: link.tempKey,
+      });
       toast.success(`Đã gắn hoá đơn phí đăng ký cho "${vendorName ?? vendorId}".`);
       setFileName(null);
       onAttached();
@@ -63,8 +70,8 @@ export function AttachVendorDocumentModal({
     >
       <div className={styles.body}>
         <p className={styles.hint}>
-          Hoá đơn phí đăng ký được quản trị gắn sau khi người bán nộp phí thành công
-          (Q-36). Tài liệu được lưu ở kho riêng tư, người bán không tự gắn được.
+          Hoá đơn phí đăng ký được quản trị gắn sau khi người bán nộp phí thành công. Tài
+          liệu được lưu ở kho riêng tư, người bán không tự gắn được.
         </p>
 
         {error && (

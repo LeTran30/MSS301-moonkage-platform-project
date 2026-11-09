@@ -6,12 +6,6 @@
 .header {
   margin-bottom: var(--space-2);
 }
-.eyebrow {
-  font-size: 0.6875rem;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  color: var(--color-gold);
-}
 .title {
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
@@ -31,7 +25,7 @@
   flex-direction: column;
   gap: var(--space-4);
 }
-@media (max-width: 1024px) {
+@media (max-width: var(--breakpoint-lg)) {
   .grid {
     grid-template-columns: 1fr;
   }

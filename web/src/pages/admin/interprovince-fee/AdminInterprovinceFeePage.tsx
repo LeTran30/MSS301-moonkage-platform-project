@@ -3,10 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { routes } from '@/shared/config';
 import { Button, ButtonLink, Card, Breadcrumbs, toast, AsyncState } from '@/shared/ui';
 import { useAction, useAsync } from '@/shared/lib';
-import {
-  interprovinceFeeApi,
-  type InterprovinceFeeTable,
-} from '@/entities/interprovince-fee';
+import { interprovinceFeeApi, type InterprovinceFeeTable } from '@/entities/interprovince-fee';
 import { replaceFeeTable } from '@/features/configure-interprovince-fees';
 
 /**
@@ -60,11 +57,10 @@ export function AdminInterprovinceFeePage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>
-            Biểu Phí Vận Chuyển Liên Tỉnh & Xe Lạnh (Q6.1)
-          </h1>
+          <h1 className={styles.title}>Biểu phí vận chuyển liên tỉnh và xe lạnh</h1>
           <p className={styles.subtitle}>
-            Quy định mức trần cước phí vận chuyển bánh Trung Thu bảo quản đặc biệt giữa các tỉnh thành
+            Quy định mức trần cước phí vận chuyển bánh Trung Thu bảo quản đặc biệt giữa các tỉnh
+            thành
           </p>
         </div>
       </div>

@@ -33,9 +33,9 @@ export function AdminReconciliationPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Đối Soát &amp; Báo Cáo Tài Chính Toàn Sàn (Q4.3)</h1>
+          <h1 className={styles.title}>Đối soát và báo cáo tài chính toàn sàn</h1>
           <p className={styles.subtitle}>
-            Tổng hợp dòng tiền GMV, khoản đã hoàn trả và số dư ký quỹ Escrow đang bảo chứng
+            Tổng hợp dòng tiền GMV, khoản đã hoàn trả và số dư ký quỹ đang bảo chứng
           </p>
         </div>
         <Button
@@ -63,7 +63,7 @@ export function AdminReconciliationPage() {
               <div className={styles.statValueGold}>{formatCurrency(platformFeeEarned)}</div>
             </Card>
             <Card padding="md">
-              <div className={styles.statLabel}>Ký Quỹ Escrow Đang Tạm Giữ</div>
+              <div className={styles.statLabel}>Ký quỹ đang tạm giữ</div>
               <div className={styles.statValueBlue}>{formatCurrency(escrowHolding)}</div>
             </Card>
             <Card padding="md">
@@ -76,4 +76,3 @@ export function AdminReconciliationPage() {
     </div>
   );
 }
-

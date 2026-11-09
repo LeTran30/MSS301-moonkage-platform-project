@@ -1,11 +1,7 @@
 import type { Icon } from '@/shared/ui';
 
 export type CommandCategory =
-  | 'Lối tắt tác vụ'
-  | 'Đổi Persona'
-  | 'Khu vực mua sắm'
-  | 'Kênh xưởng & Quản trị'
-  | 'Sơ đồ & Hướng dẫn';
+  'Lối tắt tác vụ' | 'Khu vực mua sắm' | 'Kênh người bán & Quản trị' | 'Chính sách & Hướng dẫn';
 
 export interface CommandItem {
   id: string;

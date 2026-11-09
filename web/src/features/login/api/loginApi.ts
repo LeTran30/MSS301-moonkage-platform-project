@@ -1,8 +1,7 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
-import { storeTokens, userStore, type User } from '@/entities/user';
 
+import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
+import { mapAccountToUser, mapRole, storeTokens, type User } from '@/entities/user';
 /**
  * The write side of signing in (FR-01).
  *
@@ -19,11 +18,10 @@ import { storeTokens, userStore, type User } from '@/entities/user';
  * interceptor reads them from there.
  */
 export async function login(username: string, password: string): Promise<User> {
-  if (isDemoMode()) {
-    const demo = userStore.get();
-    return { ...demo, phone: username || demo.phone };
-  }
-  const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.LOGIN, { username, password });
+  const res = await apiClient.post<unknown>(GATEWAY.IDENTITY.LOGIN, {
+    username,
+    password,
+  });
   const dto = unwrap<{
     token: string;
     refreshToken: string;
@@ -43,26 +41,5 @@ export async function login(username: string, password: string): Promise<User> {
   // số điện thoại (NFR-03).
   trackEvent(ANALYTICS_EVENTS.login, { role: mapRole(dto.role) });
 
-  return {
-    id: dto.accountId,
-    name: dto.fullName || dto.email || 'Người dùng Moonkage',
-    email: dto.email,
-    phone: dto.phoneNumber,
-    role: mapRole(dto.role),
-    nfcStatus: 'UNVERIFIED',
-  };
-}
-
-/** Map the backend role to the UI role; unknown roles become `BUYER`. */
-function mapRole(role: string | undefined): User['role'] {
-  switch (role?.toUpperCase()) {
-    case 'VENDOR':
-      return 'VENDOR';
-    case 'ADMIN':
-      return 'ADMIN';
-    case 'GUEST':
-      return 'GUEST';
-    default:
-      return 'BUYER';
-  }
+  return mapAccountToUser(dto);
 }

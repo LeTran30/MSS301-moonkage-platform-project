@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.moonkage.vendor.vendor.vo.BankAccountNumber;
+import com.moonkage.vendor.vendor.elements.BankAccountNumber;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;

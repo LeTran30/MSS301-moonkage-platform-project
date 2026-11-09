@@ -28,6 +28,10 @@ public interface VendorClient {
     @DeleteMapping("/stock/reservations/{checkoutId}")
     void release(@PathVariable String checkoutId);
 
+    /** Who owns a vendor (the other side of an order's chat); 404 when there is no such vendor. */
+    @GetMapping("/vendors/{vendorId}")
+    VendorView getVendor(@PathVariable String vendorId);
+
     /** 404 when the account owns no vendor. */
     @GetMapping("/vendors/by-owner/{accountId}")
     VendorView findByOwner(@PathVariable String accountId);

@@ -156,7 +156,7 @@ services:
     restart: "no"
     networks: [moonkage-network]
     entrypoint: ["sh", "/init/init.sh"]
-    volumes: ["./infra/minio/init.sh:/init/init.sh:ro"]
+    volumes: ["./infra/minio/init.sh:/init/init.sh:ro", "./infra/minio/seed:/seed:ro"]
     environment:
       MINIO_INTERNAL_URL: http://minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -192,6 +192,30 @@ services:
       timeout: 5s
       retries: 10
 
+  # ───────────── Tracing (BE-11): the Collector receives the spans, Jaeger stores and shows them ─────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.139.0
+    container_name: moonkage-otel-collector
+    restart: unless-stopped
+    networks: [moonkage-network]
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes: ["./infra/otel/otel-collector-config.yaml:/etc/otel/config.yaml:ro"]
+    # 4318 = OTLP/HTTP (what the services use), 4317 = OTLP/gRPC
+    ports: ["${OTEL_COLLECTOR_OTLP_HTTP_PORT:-4318}:4318", "${OTEL_COLLECTOR_OTLP_GRPC_PORT:-4317}:4317"]
+    # the image has no shell, so the container has no healthcheck; the Collector retries the export
+    # until Jaeger is up, so the order of the startup does not matter
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.71.0
+    container_name: moonkage-jaeger
+    restart: unless-stopped
+    networks: [moonkage-network]
+    environment:
+      # the Collector sends the spans over OTLP/gRPC to 4317
+      COLLECTOR_OTLP_ENABLED: "true"
+    # 16686 = the Jaeger UI (search a trace id), 4317 = OTLP/gRPC (only the Collector talks to it)
+    ports: ["${JAEGER_UI_PORT:-16686}:16686"]
+
   # ───────────── Infrastructure services ─────────────
   discovery-server:
     <<: *app
@@ -213,6 +237,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - JWT_SECRET
       - CORS_ORIGINS
       - GATEWAY_TRUSTED_PROXIES
@@ -220,6 +246,7 @@ services:
     ports: ["8080:8080"]
     depends_on:
       discovery-server: { condition: service_healthy }
+      otel-collector: { condition: service_started }
 
   # ───────────── Business services (no host ports: go through the gateway) ─────────────
   identity-service:
@@ -229,6 +256,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - DB_USERNAME
       - DB_PASSWORD
       - IDENTITY_DB_HOST=identity-db
@@ -264,6 +293,7 @@ services:
       retries: 12
       start_period: 30s
     depends_on:
+      otel-collector: { condition: service_started }
       identity-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
@@ -274,6 +304,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - DB_USERNAME
       - DB_PASSWORD
       - CATALOG_DB_HOST=catalog-db
@@ -296,6 +328,7 @@ services:
       retries: 12
       start_period: 30s
     depends_on:
+      otel-collector: { condition: service_started }
       catalog-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 
@@ -306,6 +339,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - DB_USERNAME
       - DB_PASSWORD
       - QUOTATION_DB_HOST=quotation-db
@@ -325,6 +360,7 @@ services:
       retries: 12
       start_period: 30s
     depends_on:
+      otel-collector: { condition: service_started }
       quotation-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -336,6 +372,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - DB_USERNAME
       - DB_PASSWORD
       - ORDER_DB_HOST=order-db
@@ -364,6 +402,7 @@ services:
       retries: 12
       start_period: 30s
     depends_on:
+      otel-collector: { condition: service_started }
       order-db: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
       minio-init: { condition: service_completed_successfully }
@@ -376,6 +415,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - DB_USERNAME
       - DB_PASSWORD
       - VENDOR_DB_HOST=vendor-db
@@ -409,6 +450,7 @@ services:
       retries: 12
       start_period: 30s
     depends_on:
+      otel-collector: { condition: service_started }
       vendor-db: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
       minio-init: { condition: service_completed_successfully }
@@ -421,6 +463,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - DB_USERNAME
       - DB_PASSWORD
       - PAYMENT_DB_HOST=payment-db
@@ -436,6 +480,7 @@ services:
       - VNPAY_HASH_SECRET
       - VNPAY_PAY_URL
       - VNPAY_RETURN_URL
+      - VNPAY_CONFIRM_ON_RETURN
     # readiness only (no DB/mail checks), so a slow SMTP does not mark the service unhealthy (RT-05)
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:8087/actuator/health/readiness || exit 1"]
@@ -444,6 +489,7 @@ services:
       retries: 12
       start_period: 30s
     depends_on:
+      otel-collector: { condition: service_started }
       payment-db: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
@@ -455,6 +501,8 @@ services:
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
+      # BE-11: the spans go to the Collector, which forwards them to Jaeger
+      - OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
       - DB_USERNAME
       - DB_PASSWORD
       - ORCHESTRATOR_DB_HOST=orchestrator-db
@@ -479,6 +527,7 @@ services:
       retries: 12
       start_period: 30s
     depends_on:
+      otel-collector: { condition: service_started }
       orchestrator-db: { condition: service_healthy }
       discovery-server: { condition: service_healthy }
 

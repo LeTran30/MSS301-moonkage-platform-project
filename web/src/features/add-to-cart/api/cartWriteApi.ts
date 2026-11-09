@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
 
 /**
@@ -20,16 +20,10 @@ export async function addCartItem(item: { productId: string; quantity: number })
     quantity: item.quantity,
   });
 
-  if (isDemoMode()) {
-    return;
-  }
   await apiClient.post(GATEWAY.ORDER.CART_ITEMS, item);
 }
 
 /** Change the quantity of a line. */
 export async function updateCartItem(itemId: string, quantity: number): Promise<void> {
-  if (isDemoMode()) {
-    return;
-  }
   await apiClient.patch(GATEWAY.ORDER.CART_ITEM(itemId), { quantity });
 }

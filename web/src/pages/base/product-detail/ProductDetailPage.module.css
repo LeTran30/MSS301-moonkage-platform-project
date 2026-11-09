@@ -102,7 +102,7 @@
   gap: 4px;
 }
 .starIcon {
-  color: var(--color-gold);
+  color: var(--color-gold-text);
 }
 .reviewCount {
   color: var(--color-text-muted);
@@ -111,9 +111,6 @@
 .soldCount {
   color: var(--color-text-muted);
   font-size: var(--text-xs);
-}
-.metaDivider {
-  color: var(--color-border-strong);
 }
 
 .priceBox {
@@ -248,7 +245,7 @@
   gap: var(--space-3);
 }
 .descTitle {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
 }
 .descText {
@@ -258,7 +255,7 @@
 }
 .specList {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-2);
   margin-top: var(--space-2);
 }
@@ -275,4 +272,46 @@
 .notFound {
   padding: var(--space-16);
   text-align: center;
+}
+
+/* --- Responsive (audit §3.6) --- */
+@media (max-width: var(--breakpoint-lg)) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  .gallery {
+    position: static;
+    max-width: 520px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: var(--breakpoint-md)) {
+  .container {
+    padding: var(--space-4) var(--space-3) var(--space-10);
+  }
+  .actions {
+    grid-template-columns: 1fr;
+  }
+  .customOrderBox {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  .addedAlert {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  .metaRow {
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+  .brandRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
 }

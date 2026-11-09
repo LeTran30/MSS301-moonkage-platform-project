@@ -11,7 +11,11 @@ import { ANALYTICS_EVENTS, trackEvent } from '@/shared/observability';
  * therefore asks the backend instead of trusting the redirect (AC-09.7).
  */
 export type PaymentPollState = {
-  kind: 'idle' | 'pending' | 'succeeded' | 'failed';
+  /**
+   * `unreadable`: the server never answered for this payment within the polls
+   * (no session, no access, network); the screen must not claim it is pending.
+   */
+  kind: 'idle' | 'pending' | 'succeeded' | 'failed' | 'unreadable';
   payment?: PaymentDto | null;
   /** The ids of the orders the payment created, once it succeeded. */
   orderIds: string[];
@@ -29,7 +33,7 @@ const MAX_POLLS = 30;
  */
 export function usePaymentPoll(
   paymentId: string | null,
-  checkoutId: string | null
+  checkoutId: string | null,
 ): PaymentPollState {
   const [state, setState] = useState<PaymentPollState>({
     kind: 'idle',
@@ -61,7 +65,10 @@ export function usePaymentPoll(
 
         if (payment.status === 'SUCCEEDED' || payment.status === 'DUPLICATE') {
           let orderIds: string[] = [];
-          const checkoutIdToRead = checkoutId;
+          // After the VNPay redirect the browser no longer has the checkout id; a
+          // CHECKOUT payment names it in referenceId.
+          const checkoutIdToRead =
+            checkoutId ?? (payment.purpose === 'CHECKOUT' ? (payment.referenceId ?? null) : null);
           if (checkoutIdToRead) {
             const checkout = await orderApi.getCheckout(checkoutIdToRead);
             if (current) orderIds = checkout?.orderIds ?? [];
@@ -86,20 +93,37 @@ export function usePaymentPoll(
 
         if (payment.status === 'FAILED') {
           if (!current) return;
-          setState({ kind: 'failed', payment, orderIds: [], amount: payment.amount });
+          setState({
+            kind: 'failed',
+            payment,
+            orderIds: [],
+            amount: payment.amount,
+          });
           return;
         }
 
         // Still `PENDING`: the IPN has not arrived yet.
         if (!current) return;
-        setState({ kind: 'pending', payment, orderIds: [], amount: payment.amount });
+        setState({
+          kind: 'pending',
+          payment,
+          orderIds: [],
+          amount: payment.amount,
+        });
 
         if (pollsRef.current < MAX_POLLS) {
           window.setTimeout(() => void poll(), POLL_INTERVAL_MS);
         }
       } catch {
         if (!current) return;
-        setState({ kind: 'pending', orderIds: [], amount: 0 });
+        // A read can fail for a moment (network, a service restarting): try
+        // again like a pending payment, and keep what was already known.
+        if (pollsRef.current < MAX_POLLS) {
+          setState((prev) => ({ ...prev, kind: prev.kind === 'idle' ? 'pending' : prev.kind }));
+          window.setTimeout(() => void poll(), POLL_INTERVAL_MS);
+        } else {
+          setState((prev) => ({ ...prev, kind: 'unreadable' }));
+        }
       }
     }
 

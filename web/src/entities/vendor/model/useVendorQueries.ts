@@ -16,6 +16,16 @@ export function useMyVendorId() {
 }
 
 /**
+ * The signed-in seller's shop id: the one the session already knows, else the
+ * one the backend answers; empty while unknown or when the account has no shop.
+ */
+export function useOwnVendorId(sessionVendorId: string | undefined): string {
+  const myVendorId = useMyVendorId();
+  if (sessionVendorId) return sessionVendorId;
+  return myVendorId.kind === 'loaded' ? (myVendorId.data ?? '') : '';
+}
+
+/**
  * The shop of the signed-in seller, with the documents the admin asked for.
  *
  * `vendorId` is the id the backend needs, so the caller resolves it first.
@@ -27,6 +37,16 @@ export function useMyVendorDetail(vendorId: string | null) {
 }
 
 /** One shop as the public sees it. */
+/**
+ * One Shop that takes custom orders, as a buyer sees it (`GET /api/suppliers/{id}`): its minimum, lead time and the
+ * custom work it makes (FR-15). Null when the Shop does not take orders.
+ */
+export function useSupplier(vendorId: string | null) {
+  return useQueryData(queryKeys.vendor.supplier(vendorId), () =>
+    vendorId ? vendorCatalogApi.getVendorById(vendorId) : Promise.resolve(null),
+  );
+}
+
 export function useVendorDetail(vendorId: string | null) {
   return useQueryData(queryKeys.vendor.detail(vendorId), () =>
     vendorId ? vendorCatalogApi.getVendorDetail(vendorId) : Promise.resolve(null),

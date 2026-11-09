@@ -6,12 +6,6 @@
 .header {
   margin-bottom: var(--space-2);
 }
-.eyebrow {
-  font-size: 0.6875rem;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  color: var(--color-gold);
-}
 .title {
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
@@ -66,6 +60,23 @@
   font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
+.evidencePicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+.evidencePicker input[type='file'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .escrowNotice {
   display: flex;
   gap: var(--space-2);
@@ -116,14 +127,6 @@
   padding: var(--space-4);
   border-radius: var(--radius-md);
 }
-.vendorResponseBox {
-  display: flex;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--color-surface-2);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-}
 .decisionBox {
   display: flex;
   gap: var(--space-3);
@@ -132,8 +135,4 @@
   color: var(--color-success);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
-}
-.evidenceList {
-  margin: 0;
-  padding-left: 1.25rem;
 }

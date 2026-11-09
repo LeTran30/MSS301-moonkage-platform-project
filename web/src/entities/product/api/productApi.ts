@@ -1,8 +1,6 @@
 import { apiClient, GATEWAY, unwrap, unwrapList, unwrapPage } from '@/shared/api';
-import { isDemoMode, provinceCodeOf } from '@/shared/config';
-import { MOCK_PRODUCTS } from '../model/productStore';
-import { INITIAL_CRUSTS, INITIAL_FILLINGS } from '../model/types';
-import type { Product, CakeTaxonomyItem } from '../model/types';
+import { provinceCodeOf, provinceNameOf } from '@/shared/config';
+import type { CakeTaxonomyItem, Product } from '../model/types';
 
 /**
  * Wire shape of `com.moonkage.catalog.dto.response.ProductListingResponse`.
@@ -15,6 +13,11 @@ export interface ProductDto {
   id: string;
   vendorId?: string;
   vendorName?: string;
+  /**
+   * The province of the Shop the product belongs to (B-3.1), copied from the vendor
+   * snapshot into the catalogue listing. Two digits, absent when the Shop has none yet.
+   */
+  provinceCode?: string;
   name: string;
   description?: string;
   crustCodes?: string[];
@@ -65,20 +68,32 @@ export function mapProductDtoToEntity(dto: ProductDto): Product {
     id: dto.id,
     name: dto.name,
     vendorId: dto.vendorId || '',
-    vendorName: dto.vendorName || 'Xưởng bánh',
-    brand: dto.brand || 'Moonkage',
+    vendorName: dto.vendorName || '',
+    brand: dto.brand || '',
     price: dto.listPrice ?? 0,
     stock,
-    images: images.length > 0 ? images : ['/images/banh-nuong.jpg'],
+    images,
     description: dto.description || '',
     expiryDate: dto.expiryDate ? formatExpiry(dto.expiryDate) : '',
-    deliveryTag: dto.deliveryLabel === 'GIAO_NOI_THANH' ? 'Giao nội thành' : 'Giao toàn quốc',
-    province: dto.origin || 'Hà Nội',
+    // Catalog `DeliveryLabel` is LOCAL or NATIONWIDE (BR-13).
+    deliveryTag: dto.deliveryLabel === 'LOCAL' ? 'Giao nội thành' : 'Giao toàn quốc',
+    /*
+     * Tỉnh của tiệm bánh (B-3.1): listing của catalogue mang `provinceCode` của
+     * shop. Khi không có, rơi về `origin` cũ để thẻ sản phẩm không mất chỗ hiện
+     * địa điểm.
+     */
+    province: provinceNameOf(dto.provinceCode) || dto.origin || '',
     rating: dto.ratingAvg ?? 0,
     reviewCount: dto.ratingCount ?? 0,
     crusts: (dto.crustCodes ?? []) as Product['crusts'],
     fillings: (dto.fillingCodes ?? []) as Product['fillings'],
     status: dto.status === 'ON_SALE' ? 'ACTIVE' : dto.status === 'REMOVED' ? 'REMOVED' : 'HIDDEN',
+    /*
+     * `ProductListingResponse` không có trường số lượng đã bán. Trước đây
+     * mapper điền `0` và UI hiện "Đã bán 0 hộp" — một con số bịa. Giá trị 0
+     * giờ mang nghĩa "máy chủ không có dữ liệu này", và các màn hình ẩn hẳn
+     * khi giá trị bằng 0.
+     */
     soldCount: 0,
     bulkQuoteThreshold: dto.quoteThreshold ?? undefined,
     minBulkQuantity: dto.quoteThreshold ?? undefined,
@@ -144,11 +159,13 @@ export const productApi = {
    * `provinceCode` is mandatory on the backend (`@RequestParam String provinceCode`),
    * so omitting it answers 400.
    */
-  async getProducts(province?: string, options?: { vendorId?: string; q?: string }): Promise<Product[]> {
-    if (isDemoMode()) {
-      return MOCK_PRODUCTS;
-    }
-    const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
+  async getProducts(
+    province?: string,
+    options?: { vendorId?: string; q?: string },
+  ): Promise<Product[]> {
+    const params = new URLSearchParams({
+      provinceCode: provinceCodeOf(province),
+    });
     if (options?.vendorId) params.set('vendorId', options.vendorId);
     if (options?.q) params.set('q', options.q);
     params.set('size', '100');
@@ -158,11 +175,12 @@ export const productApi = {
   },
 
   async getProductById(id: string, province?: string): Promise<Product | null> {
-    if (isDemoMode()) {
-      return MOCK_PRODUCTS.find((p) => p.id === id) || null;
-    }
-    const params = new URLSearchParams({ provinceCode: provinceCodeOf(province) });
-    const res = await apiClient.get<unknown>(`${GATEWAY.CATALOG.PRODUCT_BY_ID(id)}?${params.toString()}`);
+    const params = new URLSearchParams({
+      provinceCode: provinceCodeOf(province),
+    });
+    const res = await apiClient.get<unknown>(
+      `${GATEWAY.CATALOG.PRODUCT_BY_ID(id)}?${params.toString()}`,
+    );
     // ProductReadController.getProduct trả về MỘT `ProductListingResponse` trong
     // envelope; `unwrapList` trả về mảng rỗng nên chi tiết sản phẩm luôn trống.
     const dto = unwrap<ProductDto>(res);
@@ -176,9 +194,6 @@ export const productApi = {
    * buyer sees every review of the product, not only the ones of one order.
    */
   async getReviews(productId: string): Promise<ProductReview[]> {
-    if (isDemoMode()) {
-      return [];
-    }
     const res = await apiClient.get<unknown>(GATEWAY.CATALOG.PRODUCT_REVIEWS(productId));
     return unwrapPage<ProductReviewDto>(res).map(mapProductReviewDto);
   },
@@ -188,20 +203,20 @@ export const productApi = {
    *
    * Errors are NOT swallowed: a failing call must surface as an `ErrorState` so the user
    * knows the filter list is unreliable instead of seeing a silent default list.
+   *
+   * Kết quả rỗng cũng được trả về nguyên trạng — danh mục vỏ & nhân do quản trị
+   * quản lý (FR-54), nên một danh mục rỗng là dữ liệu thật, không phải lỗi. Không có
+   * danh sách dự phòng trong mã: bộ lọc chỉ hiện những gì backend trả về.
    */
-  async getTaxonomy(): Promise<{ crusts: CakeTaxonomyItem[]; fillings: CakeTaxonomyItem[] }> {
-    if (isDemoMode()) {
-      return { crusts: INITIAL_CRUSTS, fillings: INITIAL_FILLINGS };
-    }
-
+  async getTaxonomy(): Promise<{
+    crusts: CakeTaxonomyItem[];
+    fillings: CakeTaxonomyItem[];
+  }> {
     const res = await apiClient.get<unknown>(`${GATEWAY.CATALOG.CAKE_ATTRIBUTES}`);
     const attributes = unwrapList<CakeAttributeDto>(res).map(mapCakeAttributeDto);
     const crusts = attributes.filter((a) => a.type === 'crust');
     const fillings = attributes.filter((a) => a.type === 'filling');
 
-    return {
-      crusts: crusts.length > 0 ? crusts : INITIAL_CRUSTS,
-      fillings: fillings.length > 0 ? fillings : INITIAL_FILLINGS,
-    };
+    return { crusts, fillings };
   },
 };

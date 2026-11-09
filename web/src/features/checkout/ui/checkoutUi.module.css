@@ -11,7 +11,7 @@
   border-bottom: 1px solid var(--color-border);
 }
 .cardHeader h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
 }
 .inputGrid {
@@ -37,7 +37,7 @@
   margin-bottom: var(--space-1);
 }
 .invoiceToggleTitle h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
 }
 .invoiceToggleDesc {
@@ -70,8 +70,22 @@
   gap: var(--space-3);
   font-size: var(--text-sm);
 }
+.vnpayRadioInput {
+  margin-top: var(--space-1);
+}
 .vnpayRadio p {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin-top: 2px;
+}
+
+/* --- Responsive (audit §3.6) --- */
+@media (max-width: var(--breakpoint-md)) {
+  .inputGrid {
+    grid-template-columns: 1fr;
+  }
+  .invoiceToggleRow {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
 }

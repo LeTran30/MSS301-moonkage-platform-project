@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { mapOrderDtoToEntity, mapOrderKind, mapOrderStatus } from '../orderMappers';
+import {
+  mapOrderDtoToEntity,
+  mapOrderKind,
+  mapOrderStatus,
+  mapProgressUpdateDto,
+} from '../orderMappers';
 import type { OrderDto } from '../orderDto';
 
 describe('Order Entity - orderMappers (T-01)', () => {
@@ -44,5 +49,17 @@ describe('Order Entity - orderMappers (T-01)', () => {
     });
     expect(entity.total).toBe(220000);
     expect(entity.remainingPaid).toBe(true);
+  });
+
+  it('đơn đặt riêng chỉ coi phần còn lại là đã trả khi đơn hoàn tất', () => {
+    const delivered = mapOrderDtoToEntity({ id: 'o', kind: 'CUSTOM_ORDER', status: 'DELIVERED', remainingAmount: 9835000 });
+    const completed = mapOrderDtoToEntity({ id: 'o', kind: 'CUSTOM_ORDER', status: 'COMPLETED', remainingAmount: 9835000 });
+    expect(delivered.remainingPaid).toBe(false);
+    expect(completed.remainingPaid).toBe(true);
+  });
+
+  it('mapProgressUpdateDto đổi mốc của backend sang trạng thái UI', () => {
+    const update = mapProgressUpdateDto({ milestone: 'AWAITING_MOCKUP_APPROVAL', createdAt: '2026-11-07T10:00:00Z' });
+    expect(update.milestone).toBe('WAITING_MAKET');
   });
 });

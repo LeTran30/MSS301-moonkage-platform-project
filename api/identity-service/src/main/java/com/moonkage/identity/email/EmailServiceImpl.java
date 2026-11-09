@@ -3,6 +3,7 @@ package com.moonkage.identity.email;
 import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.common.exception.AppException;
 import com.moonkage.identity.common.exception.ErrorCode;
+import com.moonkage.observability.PiiMasker;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -64,7 +65,12 @@ class EmailServiceImpl implements EmailService {
         try {
             emailNotificationPublisher.publish(event);
         } catch (AmqpException e) {
-            log.error("Failed to publish {} email event to {}: {}", template, email.value(), e.getMessage());
+            // the recipient is masked: the log names the event, not the person (NFR-03)
+            log.error(
+                    "Failed to publish {} email event to {}: {}",
+                    template,
+                    PiiMasker.maskEmail(email.value()),
+                    e.getMessage());
             throw new AppException(ErrorCode.EMAIL_DELIVERY_FAILED, email.value());
         }
     }

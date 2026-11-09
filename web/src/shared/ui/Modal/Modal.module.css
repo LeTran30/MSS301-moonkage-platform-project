@@ -43,7 +43,7 @@
   min-width: 0;
 }
 .title {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
   margin: 0;
@@ -72,6 +72,7 @@
 }
 .footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-3);

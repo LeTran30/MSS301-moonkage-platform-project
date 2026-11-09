@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { toast } from '@/shared/ui';
 import { toggleTheme, getTheme } from '@/shared/lib/theme';
-import { switchDemoActor, DEMO_ACTORS } from '@/entities/user';
 import type { CommandItem } from '../model/commandTypes';
 
 /**
@@ -26,7 +25,9 @@ export function useCommandRegistry(): CommandItem[] {
         shortcut: 'T',
         action: () => {
           toggleTheme();
-          toast.info(`Đã đổi theme: ${getTheme() === 'dark' ? 'Đêm Rằm (Dark)' : 'Trăng Thanh (Light)'}`);
+          toast.info(
+            `Đã đổi theme: ${getTheme() === 'dark' ? 'Đêm Rằm (Dark)' : 'Trăng Thanh (Light)'}`,
+          );
         },
       },
       {
@@ -46,25 +47,7 @@ export function useCommandRegistry(): CommandItem[] {
         action: () => navigate(routes.account.verify),
       },
 
-      // 2. Chuyển đổi Persona Demo
-      ...Object.entries(DEMO_ACTORS).map(
-        ([key, actor]): CommandItem => ({
-          id: `persona-${actor.id}`,
-          title: `Đóng vai: ${actor.name}`,
-          description: `Chuyển quyền sang vai trò ${actor.role}${actor.vendorName ? ` — ${actor.vendorName}` : ''}`,
-          category: 'Đổi Persona',
-          icon: 'user',
-          action: () => {
-            switchDemoActor(key);
-            toast.success(`Đã chuyển vai sang ${actor.name}!`);
-            if (actor.role === 'VENDOR') navigate(routes.vendor.overview);
-            else if (actor.role === 'ADMIN') navigate(routes.admin.overview);
-            else navigate(routes.base.home);
-          },
-        })
-      ),
-
-      // 3. Điều hướng sàn bán lẻ
+      // 2. Điều hướng sàn bán lẻ
       {
         id: 'nav-catalog',
         title: 'Xem danh mục bánh Trung Thu',
@@ -98,36 +81,36 @@ export function useCommandRegistry(): CommandItem[] {
         action: () => navigate(routes.base.cart),
       },
 
-      // 4. Kênh Bán & Quản trị
+      // 3. Kênh Bán & Quản trị
       {
         id: 'nav-vendor-overview',
-        title: 'Kênh Xưởng: Bảng điều khiển kinh doanh',
+        title: 'Kênh người bán: Bảng điều khiển kinh doanh',
         description: 'Theo dõi doanh thu, đơn hàng xưởng và yêu cầu báo giá',
-        category: 'Kênh xưởng & Quản trị',
+        category: 'Kênh người bán & Quản trị',
         icon: 'package',
         action: () => navigate(routes.vendor.overview),
       },
       {
         id: 'nav-vendor-products',
-        title: 'Kênh Xưởng: Quản lý sản phẩm & lô sản xuất',
+        title: 'Kênh người bán: Quản lý sản phẩm & lô sản xuất',
         description: 'Đăng sản phẩm mới, cập nhật giá và tồn kho',
-        category: 'Kênh xưởng & Quản trị',
+        category: 'Kênh người bán & Quản trị',
         icon: 'package',
         action: () => navigate(routes.vendor.products),
       },
       {
         id: 'nav-vendor-requests',
-        title: 'Kênh Xưởng: Yêu cầu báo giá sỉ chờ phản hồi',
+        title: 'Kênh người bán: Yêu cầu báo giá sỉ chờ phản hồi',
         description: 'Xem RFQ từ doanh nghiệp và gửi báo giá cạnh tranh',
-        category: 'Kênh xưởng & Quản trị',
+        category: 'Kênh người bán & Quản trị',
         icon: 'package',
         action: () => navigate(routes.vendor.requests),
       },
       {
         id: 'nav-vendor-money',
-        title: 'Kênh Xưởng: Ví doanh thu & Yêu cầu rút tiền Escrow',
+        title: 'Kênh người bán: Ví doanh thu & Yêu cầu rút tiền Escrow',
         description: 'Theo dõi tiền ký quỹ tạm giữ và yêu cầu giải ngân',
-        category: 'Kênh xưởng & Quản trị',
+        category: 'Kênh người bán & Quản trị',
         icon: 'package',
         action: () => navigate(routes.vendor.money),
       },
@@ -135,7 +118,7 @@ export function useCommandRegistry(): CommandItem[] {
         id: 'nav-admin-overview',
         title: 'Quản Trị: Trung tâm kiểm soát toàn sàn (Admin)',
         description: 'Theo dõi GMV, tỷ lệ tranh chấp, kiểm duyệt xưởng',
-        category: 'Kênh xưởng & Quản trị',
+        category: 'Kênh người bán & Quản trị',
         icon: 'package',
         action: () => navigate(routes.admin.overview),
       },
@@ -143,7 +126,7 @@ export function useCommandRegistry(): CommandItem[] {
         id: 'nav-admin-disputes',
         title: 'Quản Trị: Giải quyết tranh chấp Escrow',
         description: 'Trọng tài xử lý khiếu nại giữa doanh nghiệp và xưởng',
-        category: 'Kênh xưởng & Quản trị',
+        category: 'Kênh người bán & Quản trị',
         icon: 'package',
         action: () => navigate(routes.admin.disputes),
       },
@@ -151,25 +134,17 @@ export function useCommandRegistry(): CommandItem[] {
         id: 'nav-admin-money',
         title: 'Quản Trị: Đối soát tài chính & Phê duyệt giải ngân',
         description: 'Kiểm soát dòng tiền tạm giữ escrow và phí sàn',
-        category: 'Kênh xưởng & Quản trị',
+        category: 'Kênh người bán & Quản trị',
         icon: 'package',
         action: () => navigate(routes.admin.money),
       },
 
-      // 5. Tài liệu & IA
-      {
-        id: 'nav-sitemap',
-        title: 'Sơ đồ cây trang tương tác (Sitemap Tree)',
-        description: 'Xem cấu trúc 40+ màn hình chia theo 4 khu vực phân quyền',
-        category: 'Sơ đồ & Hướng dẫn',
-        icon: 'package',
-        action: () => navigate(routes.system.sitemap),
-      },
+      // 4. Tài liệu & chính sách
       {
         id: 'nav-policy',
         title: 'Chính sách kiểm soát chất lượng & Ký quỹ Escrow',
         description: 'Quy trình bảo vệ thanh toán và tiêu chuẩn NFC chống giả',
-        category: 'Sơ đồ & Hướng dẫn',
+        category: 'Chính sách & Hướng dẫn',
         icon: 'check',
         action: () => navigate(routes.base.policy),
       },

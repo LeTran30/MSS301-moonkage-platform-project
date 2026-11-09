@@ -16,10 +16,10 @@
 }
 
 .title {
-  font-family: var(--font-heading);
+  font-family: var(--font-sans);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-primary-dark);
+  color: var(--color-text);
   margin-bottom: var(--space-1);
 }
 
@@ -44,20 +44,25 @@
 }
 
 .itemCard:hover {
-  transform: translateY(-1px);
-  border-color: var(--color-primary);
+  border-color: var(--color-border-strong);
 }
 
 .unread {
-  background: color-mix(in srgb, var(--color-gold) 4%, transparent);
-  border-left: 3px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
 }
 
 .iconWrap {
   font-size: 24px;
 }
 .icon {
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-zone-soft);
+  color: var(--color-zone);
 }
 
 .body {

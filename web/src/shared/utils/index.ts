@@ -44,6 +44,32 @@ export function maskMiddle(value: string, keepStart = 4, keepEnd = 4): string {
   return `${value.slice(0, keepStart)}${'•'.repeat(value.length - keepStart - keepEnd)}${value.slice(-keepEnd)}`;
 }
 
+/** The 9 subscriber digits identity-service stores and answers (`accounts.phone_number`). */
+const SUBSCRIBER_DIGITS = /^\d{9}$/;
+const NATIONAL_PREFIX = '0';
+
+/**
+ * The number a person dials: "901000001" → "0901000001".
+ *
+ * identity-service answers the subscriber digits without the leading 0, while
+ * the forms accept and the order API expects the national form (`0\d{9}`).
+ */
+export function toNationalPhone(phone: string | null | undefined): string {
+  const value = (phone ?? '').trim();
+  return SUBSCRIBER_DIGITS.test(value) ? NATIONAL_PREFIX + value : value;
+}
+
+/** How many characters of a UUID a person reads on screen. */
+const SHORT_CODE_LENGTH = 8;
+
+/**
+ * The last characters of a UUID, upper case, e.g. `DB865C6E`; the full ID stays in the URL. The end, not the
+ * start: the seed IDs share their first characters and differ in the last ones.
+ */
+export function shortCode(id: string): string {
+  return id.replaceAll('-', '').slice(-SHORT_CODE_LENGTH).toUpperCase();
+}
+
 export function addDays(iso: string, days: number): string {
   const d = new Date(iso);
   d.setDate(d.getDate() + days);

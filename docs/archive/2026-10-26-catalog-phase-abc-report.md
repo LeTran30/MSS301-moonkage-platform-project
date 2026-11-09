@@ -1,6 +1,6 @@
 # Báo cáo Phase A–C — catalog
 
-> **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/services/catalog/implementation-plan.md](../services/catalog/implementation-plan.md).
+> **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/work/plans/catalog-implementation-plan.md](../work/plans/catalog-implementation-plan.md).
 
 Ngày: 26/10/2026. Nhánh `feat/catalog-service`. Không push, merge vào develop/main hoặc deploy. Phase D cần xác nhận riêng của Lê Trần rằng contract đã được nhóm duyệt.
 
@@ -21,7 +21,7 @@ Chỉ dùng dữ liệu catalog đã lưu và contract tối thiểu đã xác n
 
 - B1: batch rebuild rating_count/rating_avg từ reviews của sản phẩm hiện có. Không tái tạo product/vendor đã mất khi raw payload chưa có adapter được duyệt.
 - B2: ProjectionReplayAdapter interface + ReplayCheckpoint placeholder; coordinator quét pending raw, không có adapter production → deferred. Entry service lock raw thật và áp core/kiểm marker đúng key cùng transaction, rollback khi lỗi. Checkpoint không persist, không phải watermark producer; mỗi run mới bắt đầu null.
-- B3: [handoff cho orchestrator](../services/catalog/orchestrator-handoff.md); không sửa service đó, không nhắn owner qua tool.
+- B3: [handoff cho orchestrator](2026-10-27-catalog-orchestrator-handoff.md); không sửa service đó, không nhắn owner qua tool.
 - B4: README, plan §9 và hai pseudocode class đã cập nhật. Full `-o -B -ntp clean verify` **BUILD SUCCESS 18:05:11, 403 pass / 0 fail / 0 error / 0 skip**; catalog 109 (38 full application tests), identity 190, vendor 8 và các module khác như A. Đếm Surefire XML theo đúng 11 module parent POM sau clean; PostgreSQL/RabbitMQ thật, không H2/disable/skip. Spotless/Checkstyle/Error Prone/ArchUnit qua; git diff --check sạch.
 - Commit **local** Phase B: `1cf65c5`. Chỉ sửa catalog và tài liệu; các service khác bằng nguyên base develop đã nhận.
 

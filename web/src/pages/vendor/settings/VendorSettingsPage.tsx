@@ -1,13 +1,18 @@
 import { useState, type FormEvent } from 'react';
-import { Tabs, toast } from '@/shared/ui';
+import { Tabs, toast, Icon } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import {
+  LegalProfileForm,
   VendorConditionsSettingsTab,
-  VendorLegalSettingsTab,
   VendorShippingSettingsTab,
   type VendorSellingMode,
 } from '@/features/edit-vendor-settings';
-import { useMyVendorId, useOrderProfile, useDeliveryAreas } from '@/entities/vendor';
+import {
+  useMyVendorDetail,
+  useMyVendorId,
+  useOrderProfile,
+  useDeliveryAreas,
+} from '@/entities/vendor';
 import { useSaveDeliveryAreas, useSaveOrderProfile } from '@/features/edit-vendor-settings';
 import { routes } from '@/shared/config';
 import { Badge, ButtonLink, Card } from '@/shared/ui';
@@ -33,31 +38,50 @@ export function VendorSettingsPage() {
   const vendorId = myVendorId.kind === 'loaded' ? myVendorId.data : null;
   const orderProfile = useOrderProfile(vendorId ?? '');
   const deliveryAreas = useDeliveryAreas(vendorId);
+  // B6.1 Pháp lý: hồ sơ thật của gian hàng (`GET /api/vendors/{vendorId}`).
+  const vendorDetail = useMyVendorDetail(vendorId);
 
   const saveDeliveryAreas = useSaveDeliveryAreas();
   const saveOrderProfile = useSaveOrderProfile();
 
-  // B6.1 Pháp lý
-  const [businessType, setBusinessType] = useState('HKD'); // HKD or DNTN per BR-33
-  const [businessName, setBusinessName] = useState('Hộ kinh doanh Bánh Cổ Truyền Đông Phương');
-  const [taxCode, setTaxCode] = useState('0201199281');
-  const [representative, setRepresentative] = useState('Bà Phạm Thị Lan');
-  const [representativeCccd] = useState('031182001928');
-  const [address, setAddress] = useState('172 Cầu Đất, Ngô Quyền, Hải Phòng');
+  /*
+   * B6.1 Pháp lý: hồ sơ thật của gian hàng (`GET /api/vendors/{vendorId}`) được
+   * nạp vào form bên dưới, nên trang này không giữ bản sao của các ô pháp lý.
+   */
+  const loadedDetail = vendorDetail.kind === 'loaded' ? vendorDetail.data : null;
 
   // B6.2 Vùng giao hàng — FR-28: vùng giao là danh sách tỉnh.
   const [provinceCodes, setProvinceCodes] = useState<string[]>([]);
 
+  // Nạp vùng giao thật từ máy chủ vào form, một lần duy nhất. Nếu không nạp,
+  // người dùng không thể bỏ chọn một tỉnh đang có (danh sách rỗng sẽ bị thay
+  // bằng danh sách cũ khi hiển thị).
+  const [areasLoaded, setAreasLoaded] = useState(false);
+  const serverAreas = deliveryAreas.kind === 'loaded' ? deliveryAreas.data : null;
+  if (serverAreas && !areasLoaded) {
+    setAreasLoaded(true);
+    setProvinceCodes(serverAreas);
+  }
+
   // B6.3 Điều kiện nhận đặt hàng (BR-21, Flow 3)
   const [sellingMode, setSellingMode] = useState<VendorSellingMode>('BOTH');
-  const [minBulkQuantity, setMinBulkQuantity] = useState('50');
-  const [minLeadTimeDays, setMinLeadTimeDays] = useState('7');
-  const [defaultDepositPercent, setDefaultDepositPercent] = useState('40');
-  const [customBoxService, setCustomBoxService] = useState(true);
+  const [minBulkQuantity, setMinBulkQuantity] = useState('');
+  const [minLeadTimeDays, setMinLeadTimeDays] = useState('');
+
+  // Nạp điều kiện nhận đặt hàng từ hồ sơ nhận đặt hàng trên máy chủ.
+  const [conditionsLoaded, setConditionsLoaded] = useState(false);
+  const loadedProfile = orderProfile.kind === 'loaded' ? orderProfile.data : null;
+  if (loadedProfile && !conditionsLoaded) {
+    setConditionsLoaded(true);
+    setMinBulkQuantity(loadedProfile.minQty ? String(loadedProfile.minQty) : '');
+    setMinLeadTimeDays(
+      loadedProfile.leadTimeDays === undefined ? '' : String(loadedProfile.leadTimeDays),
+    );
+  }
 
   function toggleProvince(code: string) {
     setProvinceCodes((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
     );
   }
 
@@ -88,66 +112,76 @@ export function VendorSettingsPage() {
       // FR-35: the backend replaces the whole order profile; `priceTiers` is
       // required and the deposit rate belongs to the quote, not to the profile,
       // so the tier the seller set here is the one shown to the buyer.
+      //
+      // Bậc giá được giữ nguyên những gì đang có trên máy chủ: form này chỉ
+      // sửa MOQ và thời gian chuẩn bị, nên không được ghi đè bằng `unitPrice: 0`
+      // (đó là một bậc giá bịa, và sẽ xoá bảng giá thật của xưởng).
       await saveOrderProfile(vendorId, {
         minQty: Number(minBulkQuantity) || 0,
         leadTimeDays: Number(minLeadTimeDays) || 0,
-        priceTiers: [{ fromQty: Number(minBulkQuantity) || 1, unitPrice: 0 }],
+        priceTiers:
+          loadedProfile?.priceTiers && loadedProfile.priceTiers.length > 0
+            ? loadedProfile.priceTiers
+            : [{ fromQty: Number(minBulkQuantity) || 1, unitPrice: 0 }],
       });
       setSavedSuccess(true);
       toast.success('Đã lưu điều kiện nhận đơn của gian hàng!');
     });
   }
 
-  const loadedProfile = orderProfile.kind === 'loaded' ? orderProfile.data : null;
-  const loadedAreas = deliveryAreas.kind === 'loaded' ? deliveryAreas.data : [];
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Cài đặt gian hàng (B6.1 - B6.3)</h1>
+          <h1 className={styles.title}>Cài đặt gian hàng</h1>
           <p className={styles.desc}>
-            Thông tin pháp lý Hộ kinh doanh/DNTN (BR-33), vùng phục vụ giao hàng và điều kiện nhận đơn đặt hàng doanh nghiệp.
+            Thông tin pháp lý Hộ kinh doanh/DNTN, vùng phục vụ giao hàng và điều kiện nhận đơn đặt
+            hàng doanh nghiệp.
           </p>
         </div>
       </div>
 
       {savedSuccess && (
         <div className={styles.alertSuccess} role="status">
-          ✓ Đã lưu thay đổi cấu hình gian hàng thành công!
+          <Icon name="check" size={16} /> Đã lưu thay đổi cấu hình gian hàng thành công!
         </div>
       )}
 
       <Tabs
         items={[
-          { id: 'LEGAL', label: '1. Pháp lý & Gian hàng (B6.1)' },
-          { id: 'SHIPPING', label: '2. Vùng giao hàng (B6.2)' },
-          { id: 'CONDITIONS', label: '3. Điều kiện nhận đặt hàng (B6.3)' },
-          { id: 'CAPACITY', label: '4. Lịch công suất (B6.4)' },
+          { id: 'LEGAL', label: '1. Pháp lý & Gian hàng' },
+          { id: 'SHIPPING', label: '2. Vùng giao hàng' },
+          { id: 'CONDITIONS', label: '3. Điều kiện nhận đặt hàng' },
+          { id: 'CAPACITY', label: '4. Lịch công suất' },
         ]}
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as SettingsTab)}
       />
 
       {activeTab === 'LEGAL' && (
-        <VendorLegalSettingsTab
-          businessType={businessType}
-          businessName={businessName}
-          taxCode={taxCode}
-          representative={representative}
-          representativeCccd={representativeCccd}
-          address={address}
-          onBusinessTypeChange={setBusinessType}
-          onBusinessNameChange={setBusinessName}
-          onTaxCodeChange={setTaxCode}
-          onRepresentativeChange={setRepresentative}
-          onAddressChange={setAddress}
-        />
+        /*
+          B6.1 dùng `LegalProfileForm` — form đọc và ghi hồ sơ pháp lý qua
+          `GET/PUT /api/vendors/{vendorId}`. Trước đây tab này dùng một bản sao
+          riêng (`VendorLegalSettingsTab`) chỉ hiển thị dữ liệu giả và nút
+          "Lưu" không hề gọi máy chủ; bản sao đó đã bị gỡ bỏ.
+        */
+        loadedDetail && vendorId ? (
+          <LegalProfileForm
+            key={vendorId}
+            vendorId={vendorId}
+            detail={loadedDetail}
+            onSaved={vendorDetail.reload}
+          />
+        ) : (
+          <Card padding="lg" className={styles.deferredCard}>
+            <p className={styles.desc}>Đang tải hồ sơ pháp lý của gian hàng…</p>
+          </Card>
+        )
       )}
 
       {activeTab === 'SHIPPING' && (
         <VendorShippingSettingsTab
-          provinceCodes={provinceCodes.length > 0 ? provinceCodes : loadedAreas}
+          provinceCodes={provinceCodes}
           onProvinceToggle={toggleProvince}
           onSave={handleShippingSave}
           busy={busy}
@@ -159,13 +193,9 @@ export function VendorSettingsPage() {
           sellingMode={sellingMode}
           minBulkQuantity={minBulkQuantity}
           minLeadTimeDays={minLeadTimeDays}
-          defaultDepositPercent={defaultDepositPercent}
-          customBoxService={customBoxService}
           onSellingModeChange={setSellingMode}
           onMinBulkQuantityChange={setMinBulkQuantity}
           onMinLeadTimeDaysChange={setMinLeadTimeDays}
-          onDefaultDepositPercentChange={setDefaultDepositPercent}
-          onCustomBoxServiceChange={setCustomBoxService}
           onSave={handleConditionsSave}
           busy={busy}
         />
@@ -176,16 +206,16 @@ export function VendorSettingsPage() {
           <div className={styles.deferredHeader}>
             <h2 className={styles.deferredTitle}>Lịch công suất nhận đặt hàng</h2>
             <Badge tone="amber" size="md">
-              Hoãn trong bản demo
+              Chưa có trong phiên bản này
             </Badge>
           </div>
           <p className={styles.desc}>
-            FR-37 (xem công suất còn lại) thuộc nhóm hoãn của bản demo, nên chưa có màn hình khai báo
-            lịch theo tuần. Mã trang B6.4 vẫn được giữ trong bản đồ giao diện.
+            Tính năng xem công suất còn lại thuộc nhóm hoãn của phiên bản này, nên chưa có màn hình
+            khai báo lịch theo tuần.
           </p>
           <div className={styles.deferredActions}>
             <ButtonLink to={routes.vendor.capacity} variant="outline">
-              Mở trang Lịch công suất (B6.4)
+              Mở trang Lịch công suất
             </ButtonLink>
           </div>
         </Card>

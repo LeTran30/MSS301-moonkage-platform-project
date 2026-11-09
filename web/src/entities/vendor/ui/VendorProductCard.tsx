@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, Card } from '@/shared/ui';
+import { Badge, Button, Card, ProductImage } from '@/shared/ui';
 import type { VendorProductDto } from '../api/vendorProductApi';
 import styles from './VendorProductCard.module.css';
 
@@ -10,29 +10,43 @@ interface VendorProductCardProps {
   onToggleVisibility: (product: VendorProductDto) => void;
   /** Mở form sửa sản phẩm (FR-30). */
   onEdit: (product: VendorProductDto) => void;
+  /** The name of a crust or filling code, from the cake taxonomy (FR-54). */
+  attributeName: (code: string) => string;
 }
 
-/** Thẻ sản phẩm trong danh mục của gian hàng (B4.0). */
+const STATUS_BADGE = {
+  ON_SALE: { tone: 'green', label: 'Đang mở bán' },
+  HIDDEN: { tone: 'neutral', label: 'Đang ẩn' },
+  REMOVED: { tone: 'red', label: 'Bị sàn gỡ' },
+} as const;
+
+/**
+ * Thẻ sản phẩm trong danh mục của gian hàng (B4.0).
+ *
+ * Sản phẩm bị quản trị viên gỡ (FR-46) không còn sửa, ẩn hay hiện được
+ * (409 VENDOR_026), nên thẻ chỉ hiện lý do gỡ.
+ */
 export function VendorProductCard({
   product,
   busy,
   onToggleVisibility,
   onEdit,
+  attributeName,
 }: VendorProductCardProps) {
+  const status = product.status ?? 'HIDDEN';
+  const badge = STATUS_BADGE[status];
+  const removed = status === 'REMOVED';
+
   return (
     <Card className={styles.productCard}>
       <div className={styles.cardImageWrap}>
-        <img
-          src={product.images?.[0]?.url || '/images/banh-nuong.jpg'}
+        <ProductImage
+          src={product.images?.[0]?.url}
           alt={product.name ?? ''}
           className={styles.productImg}
-          loading="lazy"
-          decoding="async"
         />
         <div className={styles.statusBadgeWrap}>
-          <Badge tone={product.status === 'ON_SALE' ? 'green' : 'neutral'}>
-            {product.status === 'ON_SALE' ? 'Đang mở bán' : 'Đang ẩn'}
-          </Badge>
+          <Badge tone={badge.tone}>{badge.label}</Badge>
         </div>
       </div>
 
@@ -46,7 +60,7 @@ export function VendorProductCard({
           <span className={styles.tagLabel}>Vỏ:</span>
           {(product.crustCodes ?? []).map((c) => (
             <span key={c} className={styles.tag}>
-              {c}
+              {attributeName(c)}
             </span>
           ))}
         </div>
@@ -55,31 +69,39 @@ export function VendorProductCard({
           <span className={styles.tagLabel}>Nhân:</span>
           {(product.fillingCodes ?? []).map((f) => (
             <span key={f} className={styles.tag}>
-              {f}
+              {attributeName(f)}
             </span>
           ))}
         </div>
 
         <div className={styles.stockInfo}>
           <span>
-            Tồn kho: <strong>{product.stock ?? 0} bánh</strong>
+            Tồn kho: <strong>{product.stock ?? 0} hộp</strong>
           </span>
         </div>
+
+        {removed && (
+          <p className={styles.removedReason}>
+            Lý do gỡ: {product.removedReason || 'Quản trị viên không ghi lý do.'}
+          </p>
+        )}
       </div>
 
-      <div className={styles.cardActions}>
-        <Button
-          variant={product.status === 'ON_SALE' ? 'secondary' : 'primary'}
-          size="sm"
-          loading={busy}
-          onClick={() => onToggleVisibility(product)}
-        >
-          {product.status === 'ON_SALE' ? 'Ẩn sản phẩm' : 'Bật hiển thị'}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => onEdit(product)}>
-          Chỉnh sửa
-        </Button>
-      </div>
+      {!removed && (
+        <div className={styles.cardActions}>
+          <Button
+            variant={status === 'ON_SALE' ? 'secondary' : 'primary'}
+            size="sm"
+            loading={busy}
+            onClick={() => onToggleVisibility(product)}
+          >
+            {status === 'ON_SALE' ? 'Ẩn sản phẩm' : 'Bật hiển thị'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onEdit(product)}>
+            Chỉnh sửa
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }

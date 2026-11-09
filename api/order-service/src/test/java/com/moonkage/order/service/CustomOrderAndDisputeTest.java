@@ -82,6 +82,7 @@ class CustomOrderAndDisputeTest {
         orderService = new OrderServiceImpl(
                 orderRepository,
                 orderItemRepository,
+                disputeRepository,
                 mockupVersionRepository,
                 progressUpdateRepository,
                 inboxService,
@@ -233,6 +234,28 @@ class CustomOrderAndDisputeTest {
 
         verify(disputeRepository).saveAndFlush(any(Dispute.class));
         verify(outboxService).enqueue(anyString(), eq(RabbitConfig.DISPUTE_OPENED_ROUTING_KEY), any());
+    }
+
+    /** The money of an open dispute waits for the admin: the buyer cannot complete the order meanwhile. */
+    @Test
+    void theBuyerCannotConfirmReceiptWhileADisputeIsOpen() {
+        when(disputeRepository.existsByOrderIdAndStatus(ORDER_ID, DisputeStatus.OPEN))
+                .thenReturn(true);
+
+        AppException refused = assertThrows(AppException.class, () -> orderService.update(BUYER, ORDER_ID, received()));
+
+        assertEquals(ErrorCode.DISPUTE_ALREADY_OPEN, refused.getErrorCode());
+        assertEquals(OrderStatus.DELIVERED, order.getStatus());
+        assertNull(order.getReceivedConfirmedAt());
+    }
+
+    @Test
+    void anOrderShowsItsOpenDispute() {
+        when(disputeRepository.existsByOrderIdAndStatus(ORDER_ID, DisputeStatus.OPEN))
+                .thenReturn(true);
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(order));
+
+        assertTrue(orderService.get(BUYER, ORDER_ID).disputeOpen());
     }
 
     /** ux_disputes_one_open_per_order: one open dispute per order. */
@@ -400,6 +423,10 @@ class CustomOrderAndDisputeTest {
         open.setStatus(DisputeStatus.OPEN);
         when(disputeRepository.findFirstByOrderIdOrderByCreatedAtDesc(ORDER_ID)).thenReturn(Optional.of(open));
         return open;
+    }
+
+    private static com.moonkage.order.dto.request.UpdateOrderRequest received() {
+        return new com.moonkage.order.dto.request.UpdateOrderRequest(null, null, null, true, null);
     }
 
     private static com.moonkage.order.dto.request.OpenDisputeRequest damaged() {

@@ -46,6 +46,7 @@ Giữ hàng khóa các dòng `products` của checkout theo thứ tự id (`SELE
 | `GET /api/vendors?ownerAccountId=me` | M | Hồ sơ của mình | FR-27 |
 | `GET /api/vendors?status=` | A | Danh sách hồ sơ chờ duyệt | FR-45 |
 | `GET /api/vendors/{vendorId}` | S, A | Hồ sơ, trạng thái, lý do, `canOperate`; với A thêm kết quả NFC của chủ và cảnh báo | FR-27, AC-45.1 |
+| `GET /api/vendors/{vendorId}/summary` | K, M, S | Tóm tắt công khai của một Shop: `{id, businessName, provinceCode, status, canOperate, sellsShop, acceptsOrders, deliveryAreas}`; không có mã số thuế, địa chỉ, người đại diện, tài khoản ngân hàng, giấy tờ hay ghi chú của admin (B-3.2, NFR-03) | FR-27, B-3.2 |
 | `PUT /api/vendors/{vendorId}` | S | Nộp lại khi NEEDS_INFO hoặc REJECTED | AC-27.2 |
 | `PATCH /api/vendors/{vendorId}` | S | `{localDeliveryFee}` | FR-28 |
 | `PATCH /api/vendors/{vendorId}` | A | `{status: LOCKED, statusReason}` | FR-46 |
@@ -95,7 +96,7 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 **Phát**
 
 - Sự kiện trạng thái (`vendor.*` dưới đây và `product.*`) đi trong envelope `{eventId, schemaVersion: 1, eventType, sourceService, aggregateType (VENDOR, PRODUCT), aggregateId, sourceVersion, occurredAt, data}` theo [contract-proposal.md](https://github.com/LeTran30/MSS301-moonkage-platform-project/blob/feat/catalog-service/docs/services/catalog/contract-proposal.md) (nhánh `feat/catalog-service`) mục 2; `data` là bản chụp đầy đủ, trường null vẫn có mặt.
-- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator. Cùng một `data` là bản chụp đầy đủ của vendor (`sourceVersion` = `vendors.version`, vùng giao, phí giao, hồ sơ nhận đặt hàng kèm mã vỏ và nhân `crustCodes`, `fillingCodes`); bên nghe bỏ bản có `sourceVersion` không lớn hơn bản đang giữ. Khóa chỉ phát `vendor.locked`.
+- `vendor.updated`, `vendor.locked` → catalog, quotation, order, orchestrator. Cùng một `data` là bản chụp đầy đủ của vendor (`sourceVersion` = `vendors.version`, `provinceCode` là tỉnh trụ sở của Shop, vùng giao, phí giao, hồ sơ nhận đặt hàng kèm mã vỏ và nhân `crustCodes`, `fillingCodes`); bên nghe bỏ bản có `sourceVersion` không lớn hơn bản đang giữ. Khóa chỉ phát `vendor.locked`.
 - `product.upserted`, `product.removed` → catalog, order, orchestrator. `product.upserted` mỗi lần sản phẩm đổi, kể cả ẩn và hiện lại: `data` là bản chụp đầy đủ (`imageKeys` là key trong bucket công khai, `priceTiers[{fromQty, unitPrice}]`, `crustCodes`, `fillingCodes`, `resold`, `status`); `sourceVersion` = `products.version`, tăng ở mọi lần ghi kể cả chỉ đổi một bậc giá. Admin gỡ thì chỉ phát `product.removed` với `data` `{productId, vendorId, status: REMOVED}`; bên nghe không cho bản upserted nào sau nó hồi sinh sản phẩm.
 - `vendor.submitted`, `vendor.onboarding_recorded`, `vendor.reviewed`, `vendor.registration_fee_paid`, `registration_fee.changed`, `vendor.bank_account_changed` → orchestrator
 
@@ -107,7 +108,7 @@ Người bán là công ty tạm thời không đăng ký qua hệ thống (BR-3
 
 - Gọi identity: `GET /internal/nfc/status/{accountId}`, `POST /internal/accounts/check`
 - Gọi payment: `POST /internal/payments` (`purpose = REGISTRATION_FEE`)
-- Cung cấp `GET /internal/vendors/by-owner/{accountId}` cho catalog, quotation, order
+- Cung cấp `GET /internal/vendors/by-owner/{accountId}` cho catalog, quotation, order; `GET /internal/vendors/{vendorId}` (chủ shop) cho order (chat)
 - Cung cấp cho order (order điều khiển, vendor không nghe sự kiện thanh toán):
   - `POST /internal/stock/reservations` `{checkoutId, expiresAt, items[{productId, qty}]}` → `{checkoutId, status, expiresAt, items[{productId, vendorId, qty, unitPrice}]}`. Giữ đủ hoặc không giữ gì; thiếu → 409 `VENDOR_032`, mỗi sản phẩm thiếu là một `errors[].field` mang `productId`. Gọi lại cùng `checkoutId` trả kết quả cũ; khác dòng → 409 `VENDOR_033`.
   - `POST /internal/stock/reservations/{checkoutId}/commit` khi `payment.succeeded`: `HELD → COMMITTED`; đã `RELEASED` (IPN trễ) thì lấy hàng lại, không đủ → 409 `VENDOR_032` để order hoàn tiền `LATE_PAYMENT`. Gọi lại trả 200.

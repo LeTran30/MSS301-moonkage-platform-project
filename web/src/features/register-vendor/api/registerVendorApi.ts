@@ -1,5 +1,5 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
+
 import type { SubmitVendorPayload, VendorDetailDto } from '@/entities/vendor';
 
 /**
@@ -12,11 +12,8 @@ import type { SubmitVendorPayload, VendorDetailDto } from '@/entities/vendor';
 
 /** Submit a vendor registration. */
 export async function registerVendor(
-  payload: SubmitVendorPayload
+  payload: SubmitVendorPayload,
 ): Promise<VendorDetailDto | null> {
-  if (isDemoMode()) {
-    return null;
-  }
   const res = await apiClient.post<unknown>(GATEWAY.VENDOR.REGISTER, payload);
   return unwrap<VendorDetailDto>(res);
 }

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { checkoutOrder } from '../checkoutApi';
-import * as envModule from '@/shared/config/env';
 import { apiClient } from '@/shared/api';
 import { envelope } from '@/shared/api/__tests__/envelopeFixtures';
 
@@ -9,21 +8,7 @@ describe('Feature checkout - checkoutApi (FR-08)', () => {
     vi.restoreAllMocks();
   });
 
-  it('checkoutOrder() sinh ID có tiền tố chuẩn khi demo', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(true);
-    const result = await checkoutOrder({
-      recipientName: 'Anh Minh',
-      recipientPhone: '0903123456',
-      provinceCode: '01',
-      addressDetail: '180 Triệu Việt Vương',
-    });
-    expect(result.checkoutId).toMatch(/^chk_/);
-    expect(result.paymentId).toMatch(/^pay_/);
-    expect(result.paymentUrl).toContain('/gateway/vnpay/');
-  });
-
   it('checkoutOrder() trả về paymentUrl và paymentId của backend', async () => {
-    vi.spyOn(envModule, 'isDemoMode').mockReturnValue(false);
     vi.spyOn(apiClient, 'post').mockResolvedValue(
       envelope({
         checkoutId: 'chk-1',

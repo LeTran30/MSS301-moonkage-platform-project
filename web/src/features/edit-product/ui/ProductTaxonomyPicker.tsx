@@ -35,9 +35,7 @@ export function ProductTaxonomyPicker({
   return (
     <>
       <div>
-        <span className={styles.blockLabel}>
-          Phân loại loại vỏ bánh (Taxonomy Crusts - FR-06) *
-        </span>
+        <span className={styles.blockLabel}>Phân loại loại vỏ bánh (Taxonomy Crusts) *</span>
         <div className={styles.chipRow}>
           {crusts
             .filter((c) => c.isActive)
@@ -60,9 +58,7 @@ export function ProductTaxonomyPicker({
       </div>
 
       <div>
-        <span className={styles.blockLabel}>
-          Phân loại vị nhân bánh (Taxonomy Fillings - FR-06) *
-        </span>
+        <span className={styles.blockLabel}>Phân loại vị nhân bánh (Taxonomy Fillings) *</span>
         <div className={styles.chipRow}>
           {fillings
             .filter((f) => f.isActive)

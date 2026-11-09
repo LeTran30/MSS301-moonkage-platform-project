@@ -6,12 +6,6 @@
 .header {
   margin-bottom: var(--space-2);
 }
-.eyebrow {
-  font-size: 0.6875rem;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  color: var(--color-gold);
-}
 .title {
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
@@ -143,4 +137,19 @@
   gap: var(--space-2);
   font-size: var(--text-xs);
   color: var(--color-gold-hover);
+}
+
+/* --- Responsive (audit §3.6) --- */
+@media (max-width: var(--breakpoint-md)) {
+  .bulkPaymentBrief {
+    grid-template-columns: 1fr;
+  }
+  .orderFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  .actionBtns {
+    flex-wrap: wrap;
+  }
 }

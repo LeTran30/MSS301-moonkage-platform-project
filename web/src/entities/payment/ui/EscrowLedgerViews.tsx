@@ -16,8 +16,8 @@ export function EscrowLockedTable({ ledgers, vendorNames }: EscrowLockedTablePro
   return (
     <Card className={styles.escrowDetailCard}>
       <CardHeader
-        title="Sổ theo dõi tiền bị khóa do khiếu nại (Q4.2, FR-49)"
-        description="Quy tắc: Số tiền tối đa có thể hoàn không vượt quá số tiền Moonkage đang giữ (AC-49.3)"
+        title="Sổ theo dõi tiền bị khóa do khiếu nại"
+        description="Quy tắc: Số tiền tối đa có thể hoàn không vượt quá số tiền Moonkage đang giữ"
       />
       <div className={styles.escrowTableWrap}>
         <table className={styles.table}>
@@ -40,7 +40,7 @@ export function EscrowLockedTable({ ledgers, vendorNames }: EscrowLockedTablePro
                   <strong className={styles.redText}>{formatCurrency(l.held ?? 0)}</strong>
                 </td>
                 <td>
-                  <Badge tone="red">Đang khóa Escrow</Badge>
+                  <Badge tone="red">Đang khóa</Badge>
                 </td>
               </tr>
             ))}
@@ -73,8 +73,8 @@ export function EscrowCycleSummary({ ledgers }: EscrowCycleSummaryProps) {
   return (
     <Card className={styles.escrowDetailCard}>
       <CardHeader
-        title="Lịch đối soát tự động (Q4.3)"
-        description="Chu kỳ đối soát định kỳ. Moonkage không thu hoa hồng (BR-10) — số tiền Shop nhận là toàn bộ số tiền giữ."
+        title="Lịch đối soát tự động"
+        description="Chu kỳ đối soát định kỳ. Moonkage không thu hoa hồng — số tiền Shop nhận là toàn bộ số tiền giữ."
       />
       <div className={styles.cycleInfo}>
         <p>

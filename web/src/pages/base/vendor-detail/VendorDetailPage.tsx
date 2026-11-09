@@ -1,35 +1,65 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { routes } from '@/shared/config';
+import { provinceNameOf, routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
-import { Badge, ButtonLink, Card, Icon, Tabs } from '@/shared/ui';
-import { useVendor } from '@/entities/vendor';
+import { AsyncState, Badge, ButtonLink, Card, EmptyState, Icon, ProductImage, Tabs } from '@/shared/ui';
+import { useCurrentUser } from '@/entities/user';
+import { useSupplier, type Vendor } from '@/entities/vendor';
+import { CUSTOM_TYPE_LABELS, toCustomTypes } from '@/entities/request';
 import { ProductCard, useProducts } from '@/entities/product';
 import styles from './VendorDetailPage.module.css';
 
+/**
+ * M3.3: one Shop's page, its ready-made products and its terms for custom orders, in two tabs.
+ *
+ * The Shop is read on its own (`GET /api/suppliers/{id}`), so a shared link opens without waiting for the list of
+ * Shops, and the page says it is loading instead of "not found" meanwhile.
+ */
 export function VendorDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const vendor = useVendor(id || 'ven_hoa');
-  const products = useProducts().filter((p) => p.vendorId === (id || 'ven_hoa') && p.status === 'ACTIVE');
+  const asyncVendor = useSupplier(id || null);
 
-  // IA Note M3.3: Gộp "trang Shop" và "hồ sơ nhận đặt hàng" vào một trang hai tab
-  // Tab "Hàng có sẵn" chỉ khi có Shop (sellingMode != CUSTOM_ORDER)
-  // Tab "Nhận đặt hàng" chỉ khi nhận đặt hàng (sellingMode != RETAIL_SHOP)
-  const hasShop = vendor?.sellingMode === 'RETAIL_SHOP' || vendor?.sellingMode === 'BOTH';
-  const acceptsCustom = vendor?.sellingMode === 'CUSTOM_ORDER' || vendor?.sellingMode === 'BOTH';
+  return (
+    <div className={styles.container}>
+      <AsyncState
+        state={asyncVendor}
+        onRetry={asyncVendor.reload}
+        loadingMessage="Đang tải hồ sơ đơn vị..."
+      >
+        {(vendor) =>
+          vendor ? (
+            <VendorProfile vendor={vendor} />
+          ) : (
+            <EmptyState
+              title="Không tìm thấy đơn vị cung cấp"
+              description="Đơn vị không tồn tại hoặc đang tạm ngừng nhận đặt hàng."
+              action={
+                <ButtonLink to={routes.base.vendors} variant="primary">
+                  Về danh sách đơn vị
+                </ButtonLink>
+              }
+            />
+          )
+        }
+      </AsyncState>
+    </div>
+  );
+}
 
+function VendorProfile({ vendor }: { vendor: Vendor }) {
+  const user = useCurrentUser();
+  const products = useProducts().filter((p) => p.vendorId === vendor.id && p.status === 'ACTIVE');
+
+  // Tab "Hàng có sẵn" chỉ khi có Shop, tab "Nhận đặt hàng" chỉ khi nhận đặt hàng (IA M3.3).
+  const hasShop = vendor.sellingMode === 'RETAIL_SHOP' || vendor.sellingMode === 'BOTH';
+  const acceptsCustom = vendor.sellingMode === 'CUSTOM_ORDER' || vendor.sellingMode === 'BOTH';
   const [activeTab, setActiveTab] = useState<string>(acceptsCustom && !hasShop ? 'custom' : 'shop');
 
-  if (!vendor) {
-    return (
-      <div className={styles.notFound}>
-        <h2>Không tìm thấy đơn vị cung cấp</h2>
-        <ButtonLink to={routes.base.vendors} variant="primary">
-          Về danh sách đơn vị
-        </ButtonLink>
-      </div>
-    );
-  }
+  const customTypes = toCustomTypes(vendor.supportedCustomOptions);
+  const deliveryNames = vendor.deliveryProvinces.map((code) => provinceNameOf(code) || code);
+  const priceTiers = vendor.bulkSamplePriceTiers ?? [];
+  // Tên pháp lý và MST chỉ hiện khi máy chủ thật sự trả về, không để "MST:" trống.
+  const showLegalLine = Boolean(vendor.taxCode) || (vendor.legalName && vendor.legalName !== vendor.name);
 
   const tabItems = [
     ...(hasShop ? [{ id: 'shop', label: `Hàng có sẵn tại Shop (${products.length})` }] : []),
@@ -37,12 +67,19 @@ export function VendorDetailPage() {
   ];
 
   return (
-    <div className={styles.container}>
-      {/* Banner & Profile Header (M3.3, FR-14, AC-34.1) */}
+    <>
       <div className={styles.profileHeader}>
-        <div className={styles.bannerWrap}>
-          <img src={vendor.bannerImage || '/images/xuong.jpg'} alt={vendor.name} className={styles.banner}  loading="lazy" decoding="async" />
-        </div>
+        {/* Chưa có ảnh bìa thì không chừa một khung trống chiếm nửa màn hình. */}
+        {vendor.bannerImage && (
+          <div className={styles.bannerWrap}>
+            <ProductImage
+              src={vendor.bannerImage}
+              alt={vendor.name}
+              className={styles.banner}
+              fallbackIcon="factory"
+            />
+          </div>
+        )}
 
         <div className={styles.headerInfo}>
           <div className={styles.vendorIdentity}>
@@ -51,18 +88,36 @@ export function VendorDetailPage() {
                 {vendor.sellingMode === 'CUSTOM_ORDER'
                   ? 'Chỉ nhận đặt hàng'
                   : vendor.sellingMode === 'BOTH'
-                  ? 'Có Shop & Nhận đặt'
-                  : 'Có hàng sẵn'}
+                    ? 'Có Shop & Nhận đặt'
+                    : 'Có hàng sẵn'}
               </Badge>
               <Badge tone="neutral">Nguồn: {vendor.sourceType}</Badge>
             </div>
             <h1 className={styles.vendorName}>{vendor.name}</h1>
-            <p className={styles.legalName}>{vendor.legalName} · MST: {vendor.taxCode}</p>
+            {showLegalLine && (
+              <p className={styles.legalName}>
+                {vendor.legalName}
+                {vendor.taxCode ? ` · MST: ${vendor.taxCode}` : ''}
+              </p>
+            )}
+            {vendor.introduction && <p className={styles.legalName}>{vendor.introduction}</p>}
           </div>
 
           <div className={styles.headerActions}>
-            {acceptsCustom && (
-              <ButtonLink to={routes.base.vendorRequest(vendor.id)} variant="primary" iconLeft="sparkle">
+            {user.vendorId !== vendor.id && (
+              <ButtonLink
+                to={routes.account.messagesWithShop(vendor.id)}
+                variant="outline"
+                iconLeft="message"
+              >
+                Nhắn shop
+              </ButtonLink>
+            )}
+            {acceptsCustom && user.vendorId !== vendor.id && (
+              <ButtonLink
+                to={routes.base.vendorRequest(vendor.id)}
+                variant="primary"
+              >
                 Gửi yêu cầu báo giá riêng
               </ButtonLink>
             )}
@@ -70,32 +125,42 @@ export function VendorDetailPage() {
         </div>
       </div>
 
-      {/* Thông số giới thiệu nhanh */}
       <div className={styles.metaCards}>
         <Card padding="sm" className={styles.metaCard}>
           <Icon name="mapPin" size={18} />
           <div>
             <div className={styles.metaLabel}>Địa chỉ xưởng:</div>
-            <div className={styles.metaVal}>{vendor.address}, {vendor.province}</div>
+            <div className={styles.metaVal}>
+              {/* Địa chỉ có thể trống nếu hồ sơ người bán chưa điền — không ghép dấu phẩy lơ lửng. */}
+              {vendor.address
+                ? `${vendor.address}, ${vendor.province}`
+                : vendor.province || 'Chưa cập nhật'}
+            </div>
           </div>
         </Card>
-        <Card padding="sm" className={styles.metaCard}>
-          <Icon name="star" size={18} />
-          <div>
-            <div className={styles.metaLabel}>Uy tín:</div>
-            <div className={styles.metaVal}>{vendor.rating} sao ({vendor.reviewCount} đánh giá)</div>
-          </div>
-        </Card>
+        {/* Chưa có điểm đánh giá của người bán thì ẩn hẳn, không hiện "0 sao". */}
+        {(vendor.rating > 0 || vendor.reviewCount > 0) && (
+          <Card padding="sm" className={styles.metaCard}>
+            <Icon name="star" size={18} />
+            <div>
+              <div className={styles.metaLabel}>Uy tín:</div>
+              <div className={styles.metaVal}>
+                {vendor.rating} sao ({vendor.reviewCount} đánh giá)
+              </div>
+            </div>
+          </Card>
+        )}
         <Card padding="sm" className={styles.metaCard}>
           <Icon name="truck" size={18} />
           <div>
-            <div className={styles.metaLabel}>Vùng giao hàng:</div>
-            <div className={styles.metaVal}>{vendor.deliveryProvinces.join(', ')}</div>
+            <div className={styles.metaLabel}>Nhận giao đơn đặt hàng tới:</div>
+            <div className={styles.metaVal}>
+              {deliveryNames.length > 0 ? deliveryNames.join(', ') : 'Chưa khai báo'}
+            </div>
           </div>
         </Card>
       </div>
 
-      {/* Tabs: Hàng có sẵn vs Nhận đặt hàng (M3.3) */}
       <div className={styles.tabsWrap}>
         <Tabs items={tabItems} activeId={activeTab} onChange={setActiveTab} />
       </div>
@@ -120,51 +185,77 @@ export function VendorDetailPage() {
         <div className={styles.customTabContent}>
           <div className={styles.customGrid}>
             <Card padding="md" className={styles.customCard}>
-              <h3 className={styles.cardHeading}>Điều kiện nhận đặt số lượng lớn (B6.3, US-35)</h3>
+              <h3 className={styles.cardHeading}>Điều kiện nhận đặt số lượng lớn</h3>
               <div className={styles.conditionList}>
                 <div className={styles.condRow}>
                   <span>Số lượng đặt tối thiểu:</span>
-                  <strong>{vendor.bulkMinQuantity || 20} hộp</strong>
+                  <strong>
+                    {vendor.bulkMinQuantity ? `${vendor.bulkMinQuantity} hộp` : 'Chưa khai báo'}
+                  </strong>
                 </div>
                 <div className={styles.condRow}>
                   <span>Thời gian sản xuất &amp; chuẩn bị:</span>
-                  <strong>{vendor.bulkLeadTimeDays || 5} ngày</strong>
+                  <strong>
+                    {vendor.bulkLeadTimeDays ? `${vendor.bulkLeadTimeDays} ngày` : 'Chưa khai báo'}
+                  </strong>
                 </div>
                 <div className={styles.condRow}>
                   <span>Quy cách tùy chỉnh hỗ trợ:</span>
-                  <div className={styles.optionsWrap}>
-                    {vendor.supportedCustomOptions?.map((opt) => (
-                      <Badge key={opt} tone="gold" size="sm">
-                        {opt}
-                      </Badge>
-                    ))}
-                  </div>
+                  {customTypes.length > 0 ? (
+                    <div className={styles.optionsWrap}>
+                      {customTypes.map((type) => (
+                        <Badge key={type} tone="gold" size="sm">
+                          {CUSTOM_TYPE_LABELS[type]}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <strong>Không nhận tùy chỉnh</strong>
+                  )}
                 </div>
               </div>
             </Card>
 
             <Card padding="md" className={styles.customCard}>
-              <h3 className={styles.cardHeading}>Bậc giá tham khảo (AC-14.2)</h3>
-              <p className={styles.tierNote}>* Báo giá chính xác sẽ phụ thuộc vào vị nhân, bao bì và ngày giao hàng.</p>
-              <div className={styles.tierTable}>
-                {vendor.bulkSamplePriceTiers?.map((tier) => (
-                  <div key={tier.min} className={styles.tierRow}>
-                    <span>Từ {tier.min} – {tier.max} hộp:</span>
-                    <strong>{formatCurrency(tier.price)} / hộp</strong>
+              <h3 className={styles.cardHeading}>Bậc giá tham khảo</h3>
+              {priceTiers.length > 0 ? (
+                <>
+                  <p className={styles.tierNote}>
+                    * Báo giá chính xác sẽ phụ thuộc vào vị nhân, bao bì và ngày giao hàng.
+                  </p>
+                  <div className={styles.tierTable}>
+                    {priceTiers.map((tier) => (
+                      <div key={tier.min} className={styles.tierRow}>
+                        <span>Từ {tier.min} hộp:</span>
+                        <strong>{formatCurrency(tier.price)} / hộp</strong>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              ) : (
+                <p className={styles.tierNote}>
+                  Đơn vị chưa công bố bảng giá tham khảo. Giá chính xác có trong báo giá đơn vị gửi
+                  lại cho yêu cầu của bạn.
+                </p>
+              )}
 
-              <div className={styles.customCta}>
-                <ButtonLink to={routes.base.vendorRequest(vendor.id)} variant="gold" size="lg" block iconRight="arrowRight">
-                  Gửi yêu cầu báo giá cho xưởng này (M3.4)
-                </ButtonLink>
-              </div>
+              {user.vendorId !== vendor.id && (
+                <div className={styles.customCta}>
+                  <ButtonLink
+                    to={routes.base.vendorRequest(vendor.id)}
+                    variant="gold"
+                    size="lg"
+                    block
+                    iconRight="arrowRight"
+                  >
+                    Gửi yêu cầu báo giá cho đơn vị này
+                  </ButtonLink>
+                </div>
+              )}
             </Card>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
-

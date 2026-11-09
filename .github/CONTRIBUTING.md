@@ -73,12 +73,13 @@ Hook kiểm tra file trên đĩa, không chỉ phần đã stage; dùng `git add
 | Kiểm tra toàn bộ API (như CI `code-quality.yml`) | `cd api && ./mvnw verify` |
 | Format lại code Java | `cd api && ./mvnw spotless:apply` |
 | Chỉ chạy Checkstyle | `cd api && ./mvnw checkstyle:check` |
-| Kiểm tra web (như CI `web-quality.yml`) | `cd web && npm run lint -- --deny-warnings && npm run build` |
-| Mobile (chưa có hook hay CI) | `cd mobile && flutter analyze` |
+| Kiểm tra web đầy đủ (như CI `web-quality.yml`) | `cd web && npm run check` |
+| Kiểm tra web nhanh (không build, không test) | `cd web && npm run lint -- --deny-warnings && npm run build` |
+| Chặn mã đặc tả lọt ra giao diện | `cd web && node scripts/check-no-spec-ids.mjs` |
 
 `./mvnw verify` chạy từ rẻ đến đắt: `validate` (Spotless, Checkstyle, vài giây) → `compile` (javac + Error Prone) → `test` (unit test, ArchUnit). Không tự format Java thủ công; chạy `spotless:apply` rồi `git add` lại.
 
-**Web** chặn: oxlint (plugin react, typescript, oxc; không cho warning), `tsc -b` (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`), build Vite.
+**Web** chặn: oxlint (plugin react, typescript, oxc; không cho warning), `tsc -b` (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`), build Vite, gate mã đặc tả (`check-no-spec-ids.mjs`), kiểm tra CSS Module, test Vitest và ngân sách bundle. Lệnh gộp: `npm run check`.
 
 **API**: Spotless, Checkstyle, Error Prone, ArchUnit, JUnit. Từng luật chặn gì và ngưỡng bao nhiêu: [`code-quality-rules.md`](../docs/conventions/code-quality-rules.md) Phần A3, B, D.
 

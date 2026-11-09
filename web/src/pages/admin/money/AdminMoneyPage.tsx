@@ -6,7 +6,8 @@ import {
   EscrowCycleSummary,
   EscrowLockedTable,
   PayoutRequestCard,
-  toPayoutRequest,  useDisbursementRequests,
+  toPayoutRequest,
+  useDisbursementRequests,
   type PayoutRequest,
 } from '@/entities/payment';
 import { useVendorSearch } from '@/entities/vendor';
@@ -41,11 +42,11 @@ export function AdminMoneyPage() {
     (asyncVendors.kind === 'loaded' ? asyncVendors.data : []).map((v) => [
       v.id,
       v.businessName ?? v.id,
-    ])
+    ]),
   );
 
   const requests: PayoutRequest[] = data.requests.map((d) =>
-    toPayoutRequest(d, vendorNames.get(d.ledger.vendorId ?? '') ?? '')
+    toPayoutRequest(d, vendorNames.get(d.ledger.vendorId ?? '') ?? ''),
   );
 
   const totalHeld = ledgers.reduce((acc, l) => acc + (l.held ?? 0), 0);
@@ -68,11 +69,9 @@ export function AdminMoneyPage() {
   const handleApprovePayout = () => {
     if (!selectedPayout) return;
     void run(async () => {
-      const reviewed = await approveDisbursement(
-        selectedPayout.orderId,
-        selectedPayout.requestId,
-        { status: 'APPROVED' }
-      );
+      const reviewed = await approveDisbursement(selectedPayout.orderId, selectedPayout.requestId, {
+        status: 'APPROVED',
+      });
       if (!reviewed) {
         toast.info('Yêu cầu giải ngân đã được ghi nhận. Vui lòng kiểm tra lại danh sách.');
         setConfirmModalOpen(false);
@@ -83,7 +82,7 @@ export function AdminMoneyPage() {
       toast.success(
         `Đã duyệt chi giải ngân ${formatCurrency(selectedPayout.amount)} cho ${
           vendorNames.get(selectedPayout.vendorId) ?? selectedPayout.vendorId
-        }!`
+        }!`,
       );
       setConfirmModalOpen(false);
       asyncLedgers.reload();
@@ -94,10 +93,10 @@ export function AdminMoneyPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Quản trị dòng tiền Escrow &amp; Giải ngân (Q4.1 - Q4.3)</h1>
+          <h1 className={styles.title}>Dòng tiền ký quỹ và giải ngân</h1>
           <p className={styles.desc}>
-            Duyệt lệnh giải ngân tiền cọc (Q4.1), thực thi khóa tiền khi có khiếu nại (Q4.2) và
-            quản lý chu kỳ đối soát (Q4.3).
+            Duyệt lệnh giải ngân tiền cọc, thực thi khóa tiền khi có khiếu nại và quản lý chu kỳ đối
+            soát.
           </p>
         </div>
       </div>
@@ -111,7 +110,7 @@ export function AdminMoneyPage() {
       {/* Escrow Mechanism Highlights */}
       <div className={styles.statsGrid}>
         <Card className={styles.statCard}>
-          <span className={styles.statLabel}>Tổng tiền trong quỹ Escrow sàn</span>
+          <span className={styles.statLabel}>Tổng tiền ký quỹ của sàn</span>
           <strong className={styles.statVal}>{formatCurrency(totalHeld)}</strong>
           <span className={styles.statSub}>Được bảo chứng tại tài khoản trung gian</span>
         </Card>
@@ -127,7 +126,7 @@ export function AdminMoneyPage() {
         </Card>
 
         <Card className={styles.statCard}>
-          <span className={styles.statLabel}>Số tiền đóng băng do khiếu nại (Q4.2)</span>
+          <span className={styles.statLabel}>Số tiền đóng băng do khiếu nại</span>
           <strong className={`${styles.statVal} ${styles.redText}`}>
             {formatCurrency(totalLocked)}
           </strong>
@@ -137,9 +136,9 @@ export function AdminMoneyPage() {
 
       <Tabs<AdminMoneyTab>
         items={[
-          { id: 'PAYOUTS', label: 'Lệnh duyệt giải ngân (Q4.1)' },
-          { id: 'ESCROW', label: 'Số dư đóng băng khiếu nại (Q4.2)' },
-          { id: 'CYCLES', label: 'Chu kỳ đối soát tuần (Q4.3)' },
+          { id: 'PAYOUTS', label: 'Lệnh duyệt giải ngân' },
+          { id: 'ESCROW', label: 'Số dư đóng băng khiếu nại' },
+          { id: 'CYCLES', label: 'Chu kỳ đối soát tuần' },
         ]}
         activeId={activeTab}
         onChange={setActiveTab}
@@ -174,17 +173,15 @@ export function AdminMoneyPage() {
         </AsyncState>
       )}
 
-      {activeTab === 'ESCROW' && (
-        <EscrowLockedTable ledgers={ledgers} vendorNames={vendorNames} />
-      )}
+      {activeTab === 'ESCROW' && <EscrowLockedTable ledgers={ledgers} vendorNames={vendorNames} />}
 
       {activeTab === 'CYCLES' && <EscrowCycleSummary ledgers={ledgers} />}
 
-      {/* Modal Confirm Payout (Q4.1) */}
+      {/* Modal Confirm Payout */}
       <PayoutConfirmModal
         open={confirmModalOpen}
         request={selectedPayout}
-        vendorName={selectedPayout ? vendorNames.get(selectedPayout.vendorId) ?? '' : ''}
+        vendorName={selectedPayout ? (vendorNames.get(selectedPayout.vendorId) ?? '') : ''}
         busy={busy}
         onClose={() => setConfirmModalOpen(false)}
         onSubmit={handleApprovePayout}

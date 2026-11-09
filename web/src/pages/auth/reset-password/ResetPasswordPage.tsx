@@ -14,7 +14,11 @@ export function ResetPasswordPage() {
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [errors, setErrors] = useState<{ otp?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{
+    otp?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const { busy, run } = useAction();
   const resetPassword = useResetPassword();
 
@@ -26,8 +30,7 @@ export function ResetPasswordPage() {
     }
     const otpError = otp.trim() ? null : 'Vui lòng nhập mã OTP đã nhận qua email.';
     const passwordError = validators.password(newPassword);
-    const confirmError =
-      newPassword !== confirmPassword ? 'Mật khẩu nhập lại không khớp!' : null;
+    const confirmError = newPassword !== confirmPassword ? 'Mật khẩu nhập lại không khớp!' : null;
 
     setErrors({
       otp: otpError ?? undefined,
@@ -49,8 +52,8 @@ export function ResetPasswordPage() {
 
   return (
     <AuthShell
-      icon="🛡️"
-      title="Đặt Lại Mật Khẩu"
+      icon="shield"
+      title="Đặt lại mật khẩu"
       subtitle={
         <>
           Nhập mã OTP đã nhận qua email <strong>{email || 'của bạn'}</strong> cùng mật khẩu mới.
@@ -106,7 +109,8 @@ export function ResetPasswordPage() {
             error={errors.confirmPassword}
             onChange={(e) => {
               setConfirmPassword(e.target.value);
-              if (errors.confirmPassword) setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+              if (errors.confirmPassword)
+                setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
             }}
             required
           />

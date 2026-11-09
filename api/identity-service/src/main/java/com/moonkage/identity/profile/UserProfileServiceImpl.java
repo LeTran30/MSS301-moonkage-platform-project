@@ -26,6 +26,16 @@ class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     @Transactional
+    public AccountResponse updateFullName(String accountId, String fullName) {
+        UserProfile profile = userProfileRepository
+                .findById(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_PROFILE_NOT_FOUND));
+        profile.setFullName(fullName);
+        return UserProfileMapper.toAccountResponse(accountService.getAccount(accountId), fullName);
+    }
+
+    @Override
+    @Transactional
     public void createProfile(String accountId, String fullName) {
         userProfileRepository.save(
                 UserProfile.builder().accountId(accountId).fullName(fullName).build());

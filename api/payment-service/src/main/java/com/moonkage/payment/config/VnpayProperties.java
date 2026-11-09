@@ -25,8 +25,25 @@ public class VnpayProperties {
     /** merchant_webapi: refunds (AC-49.3). */
     private String apiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
 
+    /**
+     * How long a refund call to VNPay may take before it is given up on.
+     *
+     * <p>Vì sao cần: the refund call runs inside a scheduled sweep. A call with no deadline can hold its
+     * thread forever, and with it every other scheduled task that shares the thread — including the outbox
+     * relay, so the domain events of the orders stop moving. Bounded, a slow gateway becomes one failed
+     * refund waiting for an admin (AC-49.3) instead of a stalled service.
+     */
+    private Duration refundTimeout = Duration.ofSeconds(10);
+
     /** Web page VNPay sends the payer back to; it only shows the result (BR-25). */
     private String returnUrl;
+
+    /**
+     * Local runs only: VNPay cannot reach an IPN URL on localhost, so the signed return query, forwarded by the web
+     * result page, is recorded the way an IPN is. Off everywhere VNPay can call the IPN, which stays the only proof
+     * of payment there (BR-25).
+     */
+    private boolean confirmOnReturn;
 
     /** Used when the root that creates a payment gives no deadline (P-01: order and quotation always give one). */
     private Duration defaultLifetime = Duration.ofMinutes(15);

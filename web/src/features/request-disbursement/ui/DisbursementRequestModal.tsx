@@ -1,4 +1,4 @@
-import { Button, Input, Modal } from '@/shared/ui';
+import { Button, Input, Modal, Select } from '@/shared/ui';
 import { formatCurrency } from '@/shared/utils';
 import {
   DISBURSEMENT_PURPOSES,
@@ -75,31 +75,32 @@ export function DisbursementRequestModal({
         </p>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>Đơn hàng cần giải ngân *</label>
-          <select
-            className={styles.select}
+          <Select
+            label="Đơn hàng cần giải ngân"
+            required
+            placeholder="— Chọn đơn hàng —"
+            options={payableLedgers.map((l) => ({
+              value: l.orderId,
+              label: `#${l.orderId} · ${formatCurrency(l.toReceive ?? 0)}`,
+            }))}
             value={orderId}
-            onChange={(e) => {
-              const next = payableLedgers.find((l) => l.orderId === e.target.value);
-              onOrderIdChange(e.target.value, String(next?.toReceive ?? 0));
+            onChange={(v) => {
+              const next = payableLedgers.find((l) => l.orderId === v);
+              onOrderIdChange(v, String(next?.toReceive ?? 0));
             }}
-          >
-            <option value="">— Chọn đơn hàng —</option>
-            {payableLedgers.map((l) => (
-              <option key={l.orderId} value={l.orderId}>
-                #{l.orderId} · {formatCurrency(l.toReceive ?? 0)}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>Số tiền muốn rút (VNĐ) *</label>
+          <label className={styles.label} htmlFor="disbursement-amount">
+            Số tiền muốn rút (VNĐ) *
+          </label>
           <Input
+            id="disbursement-amount"
             type="number"
             value={amount}
             onChange={(e) => onAmountChange(e.target.value)}
-            placeholder="Nhập số tiền..."
+            placeholder="Ví dụ: 500000"
           />
           <span className={styles.inputHint}>
             Tối đa có thể rút: <strong>{formatCurrency(totalAvailable)}</strong>
@@ -107,18 +108,13 @@ export function DisbursementRequestModal({
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>Mục đích sử dụng tiền *</label>
-          <select
-            className={styles.select}
+          <Select
+            label="Mục đích sử dụng tiền"
+            required
+            options={DISBURSEMENT_PURPOSES.map((p) => ({ value: p, label: payoutPurposeLabel(p) }))}
             value={purpose}
-            onChange={(e) => onPurposeChange(e.target.value as DisbursementPurpose)}
-          >
-            {DISBURSEMENT_PURPOSES.map((p) => (
-              <option key={p} value={p}>
-                {payoutPurposeLabel(p)}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => onPurposeChange(v as DisbursementPurpose)}
+          />
           <span className={styles.inputHint}>
             Nền tảng xét duyệt và chỉ giải ngân đúng số tiền cần, không vượt quá số tiền cọc đang giữ.
           </span>

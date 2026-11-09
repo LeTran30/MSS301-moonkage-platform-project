@@ -13,25 +13,39 @@ function renderPage() {
   return render(
     <MemoryRouter>
       <AdminVouchersPage />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
 describe('AdminVouchersPage — màn hình hoãn', () => {
-  it('có tiêu đề nêu rõ mã trang Q6.3', () => {
+  it('có tiêu đề nói rõ tính năng', () => {
     renderPage();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Q6\.3/);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Voucher/i);
   });
 
-  it('gắn nhãn "Hoãn trong bản demo"', () => {
+  it('không để lộ mã trang trong giao diện', () => {
     renderPage();
-    expect(screen.getByText(/Hoãn trong bản demo/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).not.toHaveTextContent(/Q6\.3/);
   });
 
-  it('giải thích vì sao chưa có chức năng (FR-13, FR-50)', () => {
+  it('gắn nhãn "Chưa có trong phiên bản này"', () => {
     renderPage();
-    expect(screen.getByText(/FR-13/)).toBeInTheDocument();
-    expect(screen.getByText(/FR-50/)).toBeInTheDocument();
+    expect(screen.getByText(/Chưa có trong phiên bản này/i)).toBeInTheDocument();
+  });
+
+  it('giải thích rõ tình trạng tính năng mà không lộ mã đặc tả', () => {
+    renderPage();
+    expect(screen.getByText(/Tính năng đang được phát triển/i)).toBeInTheDocument();
+    expect(screen.queryByText(/FR-13/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/FR-50/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/BR-32/)).not.toBeInTheDocument();
+  });
+
+  it('không nhắc tới đặc tả nghiệp vụ hay endpoint trong nội dung hiển thị', () => {
+    renderPage();
+    expect(screen.queryByText(/requirements\.md/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/VoucherController/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/GET\/POST \/api\/vouchers/)).not.toBeInTheDocument();
   });
 
   it('không render bảng dữ liệu voucher (chưa có API)', () => {

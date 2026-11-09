@@ -70,7 +70,7 @@ export function VendorMoneyPage() {
       setWithdrawModalOpen(false);
       if (created) {
         toast.success(
-          `Đã gửi yêu cầu giải ngân ${formatCurrency(amount)} cho đơn #${withdrawOrderId}. Ban quản trị sẽ duyệt.`
+          `Đã gửi yêu cầu giải ngân ${formatCurrency(amount)} cho đơn #${withdrawOrderId}. Ban quản trị sẽ duyệt.`,
         );
       } else {
         toast.info('Yêu cầu giải ngân đã được ghi nhận. Vui lòng kiểm tra lại lịch sử.');
@@ -83,9 +83,9 @@ export function VendorMoneyPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Đối soát &amp; Dòng tiền (B5.1, B5.2)</h1>
+          <h1 className={styles.title}>Đối soát &amp; Dòng tiền</h1>
           <p className={styles.desc}>
-            Theo dõi doanh thu bán lẻ, nhận giải ngân tiền cọc theo tiến độ và quản lý số dư ký quỹ Escrow.
+            Theo dõi doanh thu bán lẻ, nhận giải ngân tiền cọc theo tiến độ và quản lý số dư ký quỹ.
           </p>
         </div>
         <Button variant="primary" iconLeft="wallet" onClick={() => openWithdraw()}>
@@ -93,18 +93,18 @@ export function VendorMoneyPage() {
         </Button>
       </div>
 
-      {/* Thống kê dòng tiền (FR-43) */}
+      {/* Thống kê dòng tiền */}
       <div className={styles.statsGrid}>
         <Card className={styles.statCard}>
           <span className={styles.statLabel}>Số dư khả dụng để rút</span>
           <strong className={`${styles.statValue} ${styles.green}`}>
             {formatCurrency(totalAvailable)}
           </strong>
-          <span className={styles.statSub}>Không tính phí sàn — Moonkage không thu hoa hồng (BR-10)</span>
+          <span className={styles.statSub}>Không tính phí sàn — Moonkage không thu hoa hồng</span>
         </Card>
 
         <Card className={styles.statCard}>
-          <span className={styles.statLabel}>Đang tạm khóa khiếu nại (FR-49)</span>
+          <span className={styles.statLabel}>Đang tạm khóa khiếu nại</span>
           <strong className={`${styles.statValue} ${styles.red}`}>
             {formatCurrency(totalLocked)}
           </strong>
@@ -120,16 +120,17 @@ export function VendorMoneyPage() {
 
       <div className={styles.escrowNotice}>
         <Icon name="shield" size={18} />{' '}
-        <strong>Cơ chế Escrow bảo vệ người bán &amp; người mua (FR-49):</strong> Tiền thanh toán của người mua
-        được Moonkage giữ an toàn. Với đơn đặt hàng doanh nghiệp, tiền cọc được giải ngân khi khách duyệt Maket;
-        tiền còn lại được giải ngân sau khi giao hàng thành công và hết hạn khiếu nại (48h).
+        <strong>Cơ chế ký quỹ bảo vệ người bán &amp; người mua:</strong> Tiền thanh toán của người
+        mua được Moonkage giữ an toàn. Với đơn đặt hàng doanh nghiệp, tiền cọc được giải ngân khi
+        khách duyệt Maket; tiền còn lại được giải ngân sau khi giao hàng thành công và hết hạn khiếu
+        nại (48h).
       </div>
 
       <Tabs<MoneyTab>
         items={[
           { id: 'ALL', label: 'Tất cả khoản thu' },
-          { id: 'RETAIL', label: 'Bán lẻ (B5.1)' },
-          { id: 'BULK', label: 'Giải ngân cọc sản xuất (B5.2)' },
+          { id: 'RETAIL', label: 'Bán lẻ' },
+          { id: 'BULK', label: 'Giải ngân cọc sản xuất' },
           { id: 'LOCKED', label: 'Đang khóa khiếu nại' },
         ]}
         activeId={activeTab}

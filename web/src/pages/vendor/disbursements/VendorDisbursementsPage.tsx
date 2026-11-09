@@ -2,7 +2,17 @@ import styles from './VendorDisbursementsPage.module.css';
 import { useState } from 'react';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, Card, Input, Breadcrumbs, AsyncState, EmptyState, toast } from '@/shared/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  Select,
+  Breadcrumbs,
+  AsyncState,
+  EmptyState,
+  toast,
+} from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import {
   DISBURSEMENT_PURPOSES,
@@ -33,7 +43,8 @@ export function VendorDisbursementsPage() {
   const payableLedgers = ledgers.filter((l) => l.payable);
   const availableBalance = ledgers.reduce((acc, l) => acc + (l.toReceive ?? 0), 0);
 
-  function handleRequestDisbursement(e: React.FormEvent) {    e.preventDefault();
+  function handleRequestDisbursement(e: React.FormEvent) {
+    e.preventDefault();
     if (!orderId) {
       toast.error('Vui lòng chọn đơn hàng cần giải ngân.');
       return;
@@ -49,7 +60,7 @@ export function VendorDisbursementsPage() {
       });
       if (created) {
         toast.success(
-          `Đã tạo yêu cầu rút ${formatCurrency(amount)}! Ban quản trị sẽ duyệt lệnh trong 2-4 giờ.`
+          `Đã tạo yêu cầu rút ${formatCurrency(amount)}! Ban quản trị sẽ duyệt lệnh trong 2-4 giờ.`,
         );
         setOrderId('');
         setAmount(0);
@@ -64,15 +75,15 @@ export function VendorDisbursementsPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Ví & Tài chính', to: routes.vendor.money },
-          { label: 'Yêu cầu giải ngân Escrow' },
+          { label: 'Yêu cầu giải ngân' },
         ]}
       />
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Giải Ngân Tiền Ký Quỹ Escrow (B5.2)</h1>
+          <h1 className={styles.title}>Giải ngân tiền ký quỹ</h1>
           <p className={styles.subtitle}>
             Rút tiền doanh thu từ các đơn hàng đã được người mua xác nhận hoàn tất
           </p>
@@ -81,7 +92,7 @@ export function VendorDisbursementsPage() {
 
       <div className={styles.gridTwo}>
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Tạo Lệnh Rút Tiền Về Tài Khoản</h2>
+          <h2 className={styles.sectionTitle}>Tạo lệnh rút tiền về tài khoản</h2>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Số dư khả dụng có thể rút ngay:</span>
             <div className={styles.statValue}>{formatCurrency(availableBalance)}</div>
@@ -89,29 +100,31 @@ export function VendorDisbursementsPage() {
 
           <form onSubmit={handleRequestDisbursement} className={styles.cardBody}>
             <div>
-              <label className={styles.label}>Đơn hàng cần giải ngân *</label>
-              <select
-                className={styles.select}
+              <Select
+                label="Đơn hàng cần giải ngân"
+                required
+                placeholder="— Chọn đơn hàng —"
+                options={payableLedgers.map((l) => ({
+                  value: l.orderId,
+                  label: `#${l.orderId} · ${formatCurrency(l.toReceive ?? 0)}`,
+                }))}
                 value={orderId}
-                onChange={(e) => {
-                  setOrderId(e.target.value);
-                  const next = ledgers.find((l) => l.orderId === e.target.value);
+                onChange={(v) => {
+                  setOrderId(v);
+                  const next = ledgers.find((l) => l.orderId === v);
                   setAmount(next?.toReceive ?? 0);
                 }}
-              >
-                <option value="">— Chọn đơn hàng —</option>
-                {payableLedgers.map((l) => (
-                  <option key={l.orderId} value={l.orderId}>
-                    #{l.orderId} · {formatCurrency(l.toReceive ?? 0)}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div>
-              <label className={styles.label}>Số tiền muốn giải ngân (VNĐ) *</label>
+              <label className={styles.label} htmlFor="vendor-disbursement-amount">
+                Số tiền muốn giải ngân (VNĐ) *
+              </label>
               <Input
+                id="vendor-disbursement-amount"
                 type="number"
+                placeholder="Ví dụ: 500000"
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
                 max={availableBalance}
@@ -121,18 +134,13 @@ export function VendorDisbursementsPage() {
             </div>
 
             <div>
-              <label className={styles.label}>Mục đích sử dụng tiền *</label>
-              <select
-                className={styles.select}
+              <Select
+                label="Mục đích sử dụng tiền"
+                required
+                options={DISBURSEMENT_PURPOSES.map((p) => ({ value: p, label: payoutPurposeLabel(p) }))}
                 value={purpose}
-                onChange={(e) => setPurpose(e.target.value as DisbursementPurpose)}
-              >
-                {DISBURSEMENT_PURPOSES.map((p) => (
-                  <option key={p} value={p}>
-                    {payoutPurposeLabel(p)}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setPurpose(v as DisbursementPurpose)}
+              />
             </div>
 
             {error && (
@@ -141,14 +149,19 @@ export function VendorDisbursementsPage() {
               </p>
             )}
 
-            <Button type="submit" variant="primary" loading={busy} className={styles.fullWidthButton}>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={busy}
+              className={styles.fullWidthButton}
+            >
               Xác Nhận Tạo Lệnh Giải Ngân
             </Button>
           </form>
         </Card>
 
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Lịch Sử Lệnh Rút Gần Đây</h2>
+          <h2 className={styles.sectionTitle}>Lệnh rút gần đây</h2>
           <AsyncState
             state={asyncLedgers}
             onRetry={asyncLedgers.reload}
@@ -202,4 +215,3 @@ export function VendorDisbursementsPage() {
     </div>
   );
 }
-

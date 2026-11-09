@@ -19,8 +19,8 @@ if grep -qE '^api/.*(\.java|pom\.xml)$' <<<"$staged"; then
   fi
 fi
 
-# Web: only when a .ts / .tsx / .js / .jsx file is staged
-if grep -qE '^web/.*\.(ts|tsx|js|jsx)$' <<<"$staged"; then
+# Web: only when a .ts / .tsx / .js / .jsx / .css file is staged
+if grep -qE '^web/.*\.(ts|tsx|js|jsx|css)$' <<<"$staged"; then
   cd "$root/web"
   if [ ! -d node_modules ]; then
     echo "✖ Commit blocked: web/node_modules missing. Run: cd web && npm ci"
@@ -30,6 +30,32 @@ if grep -qE '^web/.*\.(ts|tsx|js|jsx)$' <<<"$staged"; then
   if ! npx oxlint --deny-warnings || ! npx tsc -b; then
     echo ""
     echo "✖ Commit blocked. Fix the web errors reported above."
+    exit 1
+  fi
+
+  # Spec IDs (FR-06, M6.1.3, FLOW 5…) are internal requirement codes; they must
+  # never reach the rendered UI. Fast enough to run on every commit.
+  echo "▶ Checking for spec IDs in user-facing strings..."
+  if ! node scripts/check-no-spec-ids.mjs; then
+    echo ""
+    echo "✖ Commit blocked. Move the requirement code into a comment next to the string."
+    exit 1
+  fi
+
+  # WCAG AA contrast cho token màu chủ đạo + ranh giới tầng FSD + CSS mồ côi.
+  echo "▶ Checking color contrast (WCAG AA), FSD layer boundaries and orphan CSS..."
+  if ! node scripts/check-contrast.mjs || ! node scripts/check-fsd-layers.mjs || ! node scripts/check-orphan-css.mjs; then
+    echo ""
+    echo "✖ Commit blocked. Fix the contrast, layer-boundary or orphan-CSS errors reported above."
+    exit 1
+  fi
+
+  # CSS Module có lưới nhiều cột / bảng rộng / width cố định mà không có
+  # @media thì vỡ trên màn hình hẹp. Chặn ngay tại chỗ để không tái phát.
+  echo "▶ Checking responsive CSS (media queries for breakable layouts)..."
+  if ! node scripts/check-responsive.mjs; then
+    echo ""
+    echo "✖ Commit blocked. Add a @media query (or an ALLOWLIST entry) as reported above."
     exit 1
   fi
 fi

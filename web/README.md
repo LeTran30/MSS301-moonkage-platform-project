@@ -10,13 +10,13 @@ Moonkage là giải pháp nền tảng kết nối trực tiếp các nghệ nh�
 
 ### Điểm nhấn kiến trúc & công nghệ
 - **Frontend Architecture**: Feature-Sliced Design (FSD 2.0) phân tầng nghiêm ngặt (`app`, `pages`, `widgets`, `features`, `entities`, `shared`).
-- **Design System "Đêm Rằm"**: Tông màu chủ đạo Đỏ Rượu (`#7B1824`), Vàng Trăng Rằm (`#D4A017`), Dạ Kim Khuya kết hợp hệ thống CSS Tokens hai chế độ Light / Dark (`Trăng Thanh` & `Đêm Rằm`).
+- **Design System "Đêm Rằm"**: Tông màu chủ đạo Đỏ Rượu (`--color-primary`), Vàng Trăng Rằm (`--color-gold`) kết hợp hệ thống CSS Tokens hai chế độ Light / Dark (`Trăng Thanh` & `Đêm Rằm`). Mọi màu đều đi qua token — không có hex hardcode trong CSS Module.
 - **Core Rules**:
   - **L1 (AsyncState)**: Xử lý 4 trạng thái bất đồng bộ (Loading, Error, Empty, Loaded) nhất quán.
   - **L2 (Design System)**: 100% dùng token CSS và CSS Modules, không phụ thuộc Tailwind hay UI lib nặng.
   - **L3 (Id Generation)**: Chuẩn hóa định danh tạm thời qua `generateEntityId` có tiền tố và UUID có cấu trúc (thay thế hoàn toàn `Math.random` / `Date.now`).
   - **L4 (Write Actions)**: Mọi thao tác ghi bọc qua `useAction` chống double-click và quản lý trạng thái bận.
-  - **L5 (Explicit Demo Mode)**: Demo mode là tính năng kích hoạt có chủ đích (`VITE_DEMO_MODE=true`). Khi tắt demo, API ném lỗi mạng để giao diện hiển thị `ErrorState` thay vì nuốt lỗi âm thầm.
+  - **L5 (Real API Only)**: Không có mock, không có demo mode. Mọi màn hình đọc và ghi qua API Gateway thật; khi API lỗi, giao diện hiển thị `ErrorState` thay vì nuốt lỗi âm thầm.
   - **L6 (Pages Không Gọi API)**: Tầng `pages/` không bao giờ gọi `*Api.*` hay `useAsync` trực tiếp. Mọi lần đọc dữ liệu đi qua entity query hook (`useOrderList`, `useVendorSearch`, ...), mọi lần ghi đi qua feature mutation hook (`useLogin`, `useCheckout`, ...).
   - **L7 (Public API)**: Chỉ import qua `index.ts` của slice; không import sâu, không import ngang tầng, không có vòng phụ thuộc.
 
@@ -37,13 +37,13 @@ src/
 │   ├── account/          # M6.0 - M6.6 (Dashboard, Đơn hàng, Yêu cầu báo giá, NFC CCCD, Thông báo)
 │   ├── vendor/           # B1.0 - B6.4 (Kênh người bán, Đơn hàng, Maket, Báo giá, Sản phẩm, Tài chính)
 │   ├── admin/            # Q1.0 - Q6.4 (Bàn làm việc Admin, Duyệt xưởng, Kiểm duyệt, Ký quỹ Escrow, Cấu hình)
-│   └── system/           # Sitemap tương tác 73 màn hình (IA) và Flow 1-7
+│   └── system/           # Trang lỗi cấu hình, trang không tìm thấy
 ├── widgets/              # Header, Footer, Sidebar, CommandPalette
 ├── features/             # Hành động nghiệp vụ: login, register, checkout, accept-quote,
 │                         #   add-to-cart, respond-to-quote-request, verify-nfc, pay-remainder...
 ├── entities/             # Data models & API mappers (product, order, cart, request, vendor, user, dispute)
 └── shared/               # Shared UI, API Gateway, Lib hooks, Config, Utils
-    ├── api/              # Axios instance, Gateway endpoints, executeWithDemoMode
+    ├── api/              # Axios instance, Gateway endpoints
     ├── config/           # Routes taxonomy, Env configuration, Observability config
     ├── lib/              # useAsync, useAction, validators, themeStore
     ├── observability/    # Sentry, Analytics (GA4), Core Web Vitals
@@ -68,8 +68,8 @@ src/
 ## ⚙️ Thiết Lập Môi Trường & Khởi Chạy
 
 ### Yêu cầu tiên quyết
-- Node.js >= 18.0
-- npm >= 9.0
+- Node.js >= 24 (khớp với CI và `playwright.config.ts`)
+- npm >= 10
 
 ### Cài đặt dependencies
 ```bash
@@ -78,9 +78,6 @@ npm install
 
 ### Các biến môi trường (`.env`)
 ```bash
-# Bật/tắt chế độ Demo dữ liệu tĩnh (mặc định: false)
-VITE_DEMO_MODE=false
-
 # Địa chỉ API Gateway backend
 VITE_API_BASE_URL=https://api.moonkage.vn
 
@@ -93,9 +90,6 @@ VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```bash
 # Chạy với API Backend thật
 npm run dev
-
-# Chạy chế độ Demo độc lạp với đầy đủ kịch bản mẫu
-npm run dev:demo
 ```
 
 ---
@@ -110,7 +104,7 @@ Cả ba lớp đều **opt-in** và **không gửi PII** (NFR-03):
 | **Analytics (GA4)** | `VITE_GA_MEASUREMENT_ID` | 16 sự kiện nghiệp vụ để dựng funnel. Cookieless (`client_storage: 'none'`). |
 | **Core Web Vitals** | tự động | LCP/INP/CLS/FCP/TTFB — chỉ ghi chỉ số **vượt ngưỡng "tốt"**, gửi sang Sentry. |
 
-> Không có DSN/measurement ID → **không một request nào đi ra ngoài**; chế độ demo cũng vậy.
+> Không có DSN/measurement ID → **không một request nào đi ra ngoài**.
 
 ---
 
@@ -123,26 +117,44 @@ npm run check
 ```
 Lệnh trên thực hiện tuần tự:
 1. **`oxlint`**: Linter siêu tốc đảm bảo 0 cảnh báo, 0 lỗi TypeScript/React Compiler.
-2. **`tsc -b`**: Kiểm tra toàn vẹn kiểu dữ liệu tĩnh.
-3. **`vitest run`**: **76 file kiểm thử với 292 unit tests** bao phủ:
+2. **`check-css-modules.mjs`**: chặn class dùng trong TSX mà thiếu trong stylesheet (và ngược lại) — lỗi thị giác âm thầm.
+3. **`check-no-spec-ids.mjs`**: chặn mã đặc tả (`FR-06`, `M6.1.3`, `FLOW 5`…) lọt vào chuỗi hiển thị. Mã chỉ được nằm trong comment nguồn.
+4. **`tsc -b`**: Kiểm tra toàn vẹn kiểu dữ liệu tĩnh.
+5. **`vitest run`**: **84 file kiểm thử** bao phủ:
    - Cơ chế ký quỹ và trần hoàn tiền Escrow (`disputeEscrow.test.ts`).
    - Bộ lọc đa diện Vỏ & Nhân bánh (`taxonomyFilter.test.ts`).
-   - Tách giỏ hàng đa xưởng (`cartStore.test.ts`).
+   - Tách giỏ hàng đa xưởng (`cartApi.test.ts`).
    - Đổi theme và đồng bộ localStorage (`themeStore.test.ts`).
    - Nhận diện trạng thái rỗng tự động AsyncState (`AsyncState.test.ts`).
    - Sinh ID an toàn truy vết (`generateEntityId.test.ts`).
-   - Cơ chế không nuốt lỗi API trong Demo mode (`demo.test.ts`).
    - **Observability** (23 test): Sentry opt-in, analytics chặn PII, Web Vitals.
    - Các API Entities & Mapper DTO (`productApi`, `orderApi`, `cartApi`).
-4. **`vite build`**: Đóng gói bundle tối ưu (Code splitting theo Route, FSD slice).
+   - **Listbox tự dựng** (`Select.test.tsx`): placeholder, bàn phím, `aria-activedescendant`, optgroup.
+6. **`vite build`**: Đóng gói bundle tối ưu (Code splitting theo Route, FSD slice).
    Sau đó `check-bundle-size.mjs` chặn hồi quy ngân sách (tổng ≤ 1.100 kB).
 
-Ngoài ra còn **53 test E2E** (Playwright) phủ đủ **7/7 Flow** nghiệp vụ:
+Ngoài ra còn **105 test E2E** (Playwright) phủ đủ **8/8 Flow** nghiệp vụ, chạy trên bản build thật (`vite preview`) với API Gateway thật:
 
 ```bash
-npm run e2e          # 53 test Playwright trên Chromium
+npm run e2e          # 105 test Playwright trên Chromium
 npm run check:all    # check + e2e
 ```
+
+Bộ E2E hiện chia như sau:
+
+| File | Flow | Nội dung |
+| --- | --- | --- |
+| `e2e/flow-01-browse-catalog.spec.ts` | F1 | Duyệt danh mục, giỏ hàng, checkout, thanh toán VNPay, vòng đời đơn, đánh giá |
+| `e2e/flow-02-quote-request.spec.ts` | F2 | Yêu cầu báo giá mở, báo giá, chấp nhận, đặt cọc, đơn đặt riêng, sổ tiền |
+| `e2e/flow-03-direct-request.spec.ts` | F3 | Yêu cầu báo giá riêng (mời đúng một Shop) |
+| `e2e/flow-04-register-vendor.spec.ts` | F4 | Đăng ký Shop, định danh NFC, giấy tờ, duyệt hồ sơ, phí mở bán |
+| `e2e/flow-05-disputes.spec.ts` | F5 | Khiếu nại, phân xử, hoàn tiền một phần, sổ tiền |
+| `e2e/flow-06-nfc-verify.spec.ts` | F6 | Xác minh NFC bằng JWE thật, từ chối thẻ, khoá xác minh |
+| `e2e/flow-07-vendor-products.spec.ts` | F7 | Quản lý sản phẩm, ảnh, vỏ/nhân, khoá lạc quan, ẩn/gỡ |
+| `e2e/flow-08-chat.spec.ts` | F8 | Nhắn shop, dấu đã đọc, tệp đính kèm, chặn người ngoài |
+
+Phần trợ giúp dùng chung nằm ở `e2e/helpers.ts`, `e2e/payment.ts`, `e2e/vnpay.ts`,
+`e2e/nfc.ts`, `e2e/storage.ts`, `e2e/accounts.ts` và `e2e/env.ts`.
 
 Và hai kiểm tra cấu trúc chạy tay:
 ```bash
@@ -154,5 +166,4 @@ npx madge --circular --extensions ts,tsx src   # không có vòng phụ thuộc
 ---
 
 ## 🎨 Theme & Phím Tắt Tiện Ích
-- **`Ctrl + K`** hoặc **`Cmd + K`**: Mở **Command Palette** để tìm nhanh màn hình, chuyển vai người dùng (Khách, Doanh nghiệp, Nghệ nhân, Admin) hoặc đổi theme sáng / tối.
-- **Sơ đồ giao diện tương tác**: Truy cập `/so-do-giao-dien` để theo dõi tiến độ và kiểm thử trực quan tất cả 73 màn hình IA và 7 Flow nghiệp vụ.
+- **`Ctrl + K`** hoặc **`Cmd + K`**: Mở **Command Palette** để tìm nhanh màn hình hoặc đổi theme sáng / tối.

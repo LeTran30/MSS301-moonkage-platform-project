@@ -45,7 +45,7 @@
 .lg {
   --btn-h: var(--control-h-lg);
   padding: 0 var(--space-8);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
 }
 .block {
   width: 100%;
@@ -56,55 +56,21 @@
 }
 
 .primary {
-  background: var(--gradient-ember);
+  background: var(--color-primary);
   color: var(--color-on-primary);
-  box-shadow: 0 6px 18px -8px rgb(179 38 30 / 0.7), inset 0 1px 0 rgb(255 255 255 / 0.18);
-  overflow: hidden;
-}
-.primary::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-white) 25%, transparent), transparent);
-  transform: skewX(-20deg);
-  transition: none;
-}
-.primary:hover:not(:disabled)::after {
-  left: 140%;
-  transition: left 0.65s ease-in-out;
 }
 .primary:hover:not(:disabled) {
-  box-shadow: 0 10px 26px -10px rgb(179 38 30 / 0.85), inset 0 1px 0 rgb(255 255 255 / 0.22);
-  transform: translateY(-2px);
+  background: var(--color-primary-hover);
 }
 
+/* kept for callers that still ask for it; a quieter fill than primary, not a second primary */
 .gold {
-  background: var(--gradient-gold);
-  color: var(--color-gold-ink);
-  box-shadow: 0 6px 18px -8px rgb(184 134 43 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.35);
-  overflow: hidden;
-}
-.gold::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-white) 40%, transparent), transparent);
-  transform: skewX(-20deg);
-  transition: none;
-}
-.gold:hover:not(:disabled)::after {
-  left: 140%;
-  transition: left 0.65s ease-in-out;
+  background: var(--color-gold-soft);
+  color: var(--color-gold-text);
+  border-color: color-mix(in srgb, var(--color-gold) 45%, transparent);
 }
 .gold:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 26px -10px rgb(184 134 43 / 0.9), inset 0 1px 0 rgb(255 255 255 / 0.4);
+  background: color-mix(in srgb, var(--color-gold) 25%, var(--color-gold-soft));
 }
 
 .secondary,
@@ -112,7 +78,6 @@
   background: var(--color-surface);
   color: var(--color-text);
   border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-xs);
 }
 .secondary:hover:not(:disabled),
 .outline:hover:not(:disabled) {

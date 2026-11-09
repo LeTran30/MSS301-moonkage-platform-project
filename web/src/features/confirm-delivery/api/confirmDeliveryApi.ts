@@ -1,6 +1,6 @@
 import { apiClient, GATEWAY, unwrap } from '@/shared/api';
-import { isDemoMode } from '@/shared/config';
-import { orderStore, type Order } from '@/entities/order';
+
+import { type Order } from '@/entities/order';
 import { mapOrderDtoToEntity, type OrderDto } from '@/entities/order';
 
 /**
@@ -15,15 +15,6 @@ import { mapOrderDtoToEntity, type OrderDto } from '@/entities/order';
  * FR-11: the buyer confirms the reception of a delivered order.
  */
 export async function confirmOrderReceived(orderId: string): Promise<Order> {
-  if (isDemoMode()) {
-    const current = orderStore.get().find((o) => o.id === orderId);
-    if (current) {
-      orderStore.set((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: 'COMPLETED' } : o))
-      );
-    }
-    return current as Order;
-  }
   const res = await apiClient.patch<unknown>(GATEWAY.ORDER.ORDER_UPDATE(orderId), {
     receivedConfirmed: true,
   });

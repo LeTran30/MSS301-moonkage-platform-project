@@ -1,5 +1,6 @@
 package com.moonkage.payment.service.impl;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.payment.config.RabbitConfig;
 import com.moonkage.payment.config.VnpayProperties;
@@ -8,7 +9,6 @@ import com.moonkage.payment.dto.event.PaymentSucceededEvent;
 import com.moonkage.payment.dto.request.CreatePaymentRequest;
 import com.moonkage.payment.dto.request.CreatePaymentRequest.AllocationRequest;
 import com.moonkage.payment.dto.response.CreatePaymentResponse;
-import com.moonkage.payment.dto.response.PageResponse;
 import com.moonkage.payment.dto.response.PaymentResponse;
 import com.moonkage.payment.dto.response.VnpayIpnResponse;
 import com.moonkage.payment.entity.Payment;
@@ -151,10 +151,14 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public PaymentResponse readReturn(Map<String, String> callback) {
         if (!vnpayGateway.isAuthentic(callback)) {
             throw new AppException(ErrorCode.GATEWAY_SIGNATURE_INVALID);
+        }
+        if (vnpayProperties.isConfirmOnReturn()) {
+            // same signed fields as the IPN; recording twice changes nothing (ALREADY_CONFIRMED)
+            VnpayIpnResponse recorded = handleIpn(callback);
+            log.info("VNPay return {} recorded as IPN: {}", callback.get(VnpayGateway.TXN_REF), recorded.rspCode());
         }
         return paymentRepository
                 .findByGatewayTxnRef(callback.get(VnpayGateway.TXN_REF))

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { routes } from '@/shared/config';
-import { Badge, ButtonLink, Card, Icon } from '@/shared/ui';
+import { Badge, ButtonLink, Card, Icon, ProductImage } from '@/shared/ui';
 import { useVendors } from '@/entities/vendor';
 import styles from './VendorsListPage.module.css';
 
@@ -10,18 +10,19 @@ export function VendorsListPage() {
 
   const filteredVendors = vendors.filter((v) => {
     if (filterMode === 'CUSTOM_ONLY') return v.sellingMode === 'CUSTOM_ORDER';
-    if (filterMode === 'SHOP_ONLY') return v.sellingMode === 'RETAIL_SHOP' || v.sellingMode === 'BOTH';
+    if (filterMode === 'SHOP_ONLY')
+      return v.sellingMode === 'RETAIL_SHOP' || v.sellingMode === 'BOTH';
     return true;
   });
 
   return (
     <div className={styles.container}>
-      {/* Header (M3.2, FR-14, AC-14.3) */}
+      {/* Header */}
       <div className={styles.header}>
-        <div className={styles.eyebrow}>DANH SÁCH ĐƠN VỊ CUNG CẤP (M3.2, FLOW 3)</div>
-        <h1 className={styles.title}>Nghệ Nhân, Xưởng Bánh &amp; Tiệm Gia Truyền</h1>
+        <h1 className={styles.title}>Nghệ nhân, xưởng bánh và tiệm gia truyền</h1>
         <p className={styles.lead}>
-          Bao gồm cả các nghệ nhân chỉ nhận sản xuất hợp đồng (nhãn "Chỉ nhận đặt hàng") và các tiệm có bán lẻ sẵn.
+          Bao gồm cả các nghệ nhân chỉ nhận sản xuất hợp đồng (nhãn "Chỉ nhận đặt hàng") và các tiệm
+          có bán lẻ sẵn.
         </p>
       </div>
 
@@ -56,14 +57,19 @@ export function VendorsListPage() {
         {filteredVendors.map((vendor) => (
           <Card key={vendor.id} padding="none" interactive className={styles.vendorCard}>
             <div className={styles.bannerWrap}>
-              <img src={vendor.bannerImage || '/images/xuong.jpg'} alt={vendor.name} className={styles.banner}  loading="lazy" decoding="async" />
+              <ProductImage
+                src={vendor.bannerImage}
+                alt={vendor.name}
+                className={styles.banner}
+                fallbackIcon="factory"
+              />
               <div className={styles.badgesWrap}>
                 <Badge tone={vendor.sellingMode === 'CUSTOM_ORDER' ? 'gold' : 'green'} size="sm">
                   {vendor.sellingMode === 'CUSTOM_ORDER'
                     ? 'Chỉ nhận đặt hàng'
                     : vendor.sellingMode === 'BOTH'
-                    ? 'Có hàng sẵn & Nhận đặt'
-                    : 'Có hàng sẵn'}
+                      ? 'Có hàng sẵn & Nhận đặt'
+                      : 'Có hàng sẵn'}
                 </Badge>
                 <Badge tone="neutral" size="sm">
                   Nguồn: {vendor.sourceType}
@@ -74,9 +80,22 @@ export function VendorsListPage() {
             <div className={styles.cardBody}>
               <h3 className={styles.vendorName}>{vendor.name}</h3>
               <div className={styles.metaRow}>
-                <span><Icon name="mapPin" size={13} /> {vendor.province}</span>
-                <span>•</span>
-                <span><Icon name="star" size={13} className={styles.star} /> {vendor.rating} ({vendor.reviewCount} đánh giá)</span>
+                <span>
+                  <Icon name="mapPin" size={13} /> {vendor.province}
+                </span>
+                {/*
+                  `quotation-service` chưa trả điểm đánh giá của người bán: thiếu
+                  dữ liệu thì ẩn hẳn, không hiện "0 sao (0 đánh giá)".
+                */}
+                {(vendor.rating > 0 || vendor.reviewCount > 0) && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      <Icon name="star" size={13} className={styles.star} /> {vendor.rating} (
+                      {vendor.reviewCount} đánh giá)
+                    </span>
+                  </>
+                )}
               </div>
 
               <p className={styles.intro}>{vendor.introduction}</p>
@@ -99,7 +118,12 @@ export function VendorsListPage() {
                   Xem chi tiết xưởng
                 </ButtonLink>
                 {vendor.sellingMode !== 'RETAIL_SHOP' && (
-                  <ButtonLink to={routes.base.vendorRequest(vendor.id)} variant="primary" size="sm" block>
+                  <ButtonLink
+                    to={routes.base.vendorRequest(vendor.id)}
+                    variant="primary"
+                    size="sm"
+                    block
+                  >
                     Gửi yêu cầu riêng
                   </ButtonLink>
                 )}
@@ -111,4 +135,3 @@ export function VendorsListPage() {
     </div>
   );
 }
-

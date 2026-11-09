@@ -13,12 +13,6 @@
   gap: var(--space-2);
   flex-wrap: wrap;
 }
-.eyebrow {
-  font-size: 0.6875rem;
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.08em;
-  color: var(--color-gold);
-}
 .title {
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
@@ -43,7 +37,7 @@
   height: 72px;
   border-radius: var(--radius-full);
   background: var(--color-gold-soft);
-  color: var(--color-gold);
+  color: var(--color-gold-text);
   display: grid;
   place-items: center;
 }
@@ -78,7 +72,7 @@
   color: var(--color-gold-hover);
 }
 .actionCardHeader h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   margin: 0;
 }
@@ -99,7 +93,7 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-4);
 }
 .statBox {
@@ -108,7 +102,7 @@
   gap: var(--space-4);
 }
 .statIcon {
-  color: var(--color-gold);
+  color: var(--color-gold-text);
 }
 .statNum {
   font-family: var(--font-display);
@@ -134,7 +128,7 @@
   padding-bottom: var(--space-2);
 }
 .ordersCardHeader h3 {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-bold);
   margin: 0;
 }
@@ -171,4 +165,23 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+/* --- Responsive (audit §3.6) --- */
+@media (max-width: var(--breakpoint-md)) {
+  .header {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .orderRow {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .orderLeft {
+    width: auto;
+  }
+  .orderRight {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }

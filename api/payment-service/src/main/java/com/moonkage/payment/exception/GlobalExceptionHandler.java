@@ -1,29 +1,29 @@
 package com.moonkage.payment.exception;
 
-import feign.FeignException;
+import com.moonkage.api.ApiResponse;
+import com.moonkage.api.CommonExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/** Turns every error into {@link ApiResponse} with {@code data = null}. */
+/**
+ * Turns every error into {@link ApiResponse} with {@code data = null}.
+ *
+ * <p>The advice is registered here, not only in the shared boundary: {@code @RestControllerAdvice} is not inherited,
+ * so a subclass without the annotation would never be asked for its own handlers.
+ */
 @Slf4j
 @RestControllerAdvice
-@RequiredArgsConstructor
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends CommonExceptionHandler {
 
-    private final MessageSource messageSource;
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        super(messageSource);
+    }
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex, HttpServletRequest request) {
@@ -31,48 +31,6 @@ public class GlobalExceptionHandler {
         String message = localize(ec, ex.getArgs());
         log.warn("Business Exception: code={}, message={}", ec.getCode(), message);
         return build(ec, message, null, request);
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(
-            MethodArgumentNotValidException ex, HttpServletRequest request) {
-        List<ApiResponse.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> new ApiResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
-                .toList();
-        return build(ErrorCode.INVALID_INPUT, localize(ErrorCode.INVALID_INPUT, null), fieldErrors, request);
-    }
-
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
-    public ResponseEntity<ApiResponse<Void>> handleUnreadable(Exception ex, HttpServletRequest request) {
-        return build(ErrorCode.MALFORMED_JSON, request);
-    }
-
-    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
-    public ResponseEntity<ApiResponse<Void>> handleNoResource(Exception ex, HttpServletRequest request) {
-        return build(ErrorCode.RESOURCE_NOT_FOUND, request);
-    }
-
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
-            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
-        return build(ErrorCode.METHOD_NOT_ALLOWED, request);
-    }
-
-    /** A Feign call that the service did not turn into an AppException: the other service is down or failed. */
-    @ExceptionHandler(FeignException.class)
-    public ResponseEntity<ApiResponse<Void>> handleFeign(FeignException ex, HttpServletRequest request) {
-        log.error("Call to another service failed: status={}, {}", ex.status(), ex.getMessage());
-        return build(ErrorCode.DEPENDENCY_UNAVAILABLE, request);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUncaughtException(Exception ex, HttpServletRequest request) {
-        log.error("Unhandled Exception: ", ex);
-        return build(ErrorCode.INTERNAL_SERVER_ERROR, request);
-    }
-
-    private ResponseEntity<ApiResponse<Void>> build(ErrorCode errorCode, HttpServletRequest request) {
-        return build(errorCode, localize(errorCode, null), null, request);
     }
 
     private ResponseEntity<ApiResponse<Void>> build(
