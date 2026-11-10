@@ -64,6 +64,9 @@ public enum ErrorCode {
     STATS_RANGE_INVALID("ORDER_009", HttpStatus.BAD_REQUEST, "error.order.stats_range_invalid"),
     /** FR-39: an order waits for the buyer's review only once the Shop sent a mockup, so sending it is the step. */
     MOCKUP_REQUIRED("ORDER_010", HttpStatus.CONFLICT, "error.order.mockup_required"),
+    // Q-01: the buyer is told why the Shop refused the order
+    REJECT_REASON_REQUIRED("ORDER_011", HttpStatus.BAD_REQUEST, "error.order.reject_reason_required"),
+    WALLET_INSUFFICIENT("ORDER_012", HttpStatus.CONFLICT, "error.order.wallet_insufficient"),
 
     // Disputes (FR-12, FR-49, BR-18, P-02)
     DISPUTE_NOT_FOUND("DISPUTE_001", HttpStatus.NOT_FOUND, "error.dispute.not_found"),

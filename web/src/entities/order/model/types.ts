@@ -1,6 +1,7 @@
 // IA Sheet 7.1 & Bảng tính:
 // Trạng thái đơn mua lẻ (5 bước): Đã thanh toán -> Người bán xác nhận -> Đang giao -> Đã giao -> Hoàn tất
-export type RetailOrderStatus = 'PAID' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'COMPLETED';
+// REJECTED: Shop từ chối đơn đã thanh toán; tiền của đơn về ví người mua (Q-01).
+export type RetailOrderStatus = 'PAID' | 'CONFIRMED' | 'SHIPPING' | 'DELIVERED' | 'COMPLETED' | 'REJECTED';
 
 // Trạng thái đơn đặt hàng số lượng lớn (6 bước): Đã cọc -> Chờ duyệt maket (bỏ khi không custom) -> Đang sản xuất -> Sẵn sàng giao -> Đã giao -> Hoàn tất
 export type BulkOrderStatus =

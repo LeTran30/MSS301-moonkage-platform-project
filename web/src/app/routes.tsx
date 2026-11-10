@@ -75,6 +75,7 @@ const AddressFormPage = page(() => import('@/pages/account/address-form'), 'Addr
 const NfcVerifyPage = page(() => import('@/pages/account/nfc-verify'), 'NfcVerifyPage');
 const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage');
 const MessagesPage = page(() => import('@/pages/account/messages'), 'MessagesPage');
+const WalletPage = page(() => import('@/pages/account/wallet'), 'WalletPage');
 
 // Gateway Pages
 
@@ -217,6 +218,7 @@ const ROUTE_TABLE = [
           { path: 'xac-minh', element: withSuspense(NfcVerifyPage) },
           { path: 'thong-tin', element: withSuspense(ProfilePage) },
           { path: 'tin-nhan', element: withSuspense(MessagesPage) },
+          { path: 'vi', element: withSuspense(WalletPage) },
         ],
       },
     ],

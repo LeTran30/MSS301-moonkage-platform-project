@@ -174,6 +174,7 @@ public class OrderServiceImpl implements OrderService {
                             caller.accountId(),
                             order.getRemainingAmount(),
                             null,
+                            null,
                             null));
             return new PaymentLinkResponse(payment.paymentId(), payment.paymentUrl());
         } catch (FeignException.Conflict e) {
@@ -269,6 +270,10 @@ public class OrderServiceImpl implements OrderService {
                 .isPresent()) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
         }
+        if (request.status() == OrderStatus.REJECTED) {
+            reject(order, request.note());
+            return;
+        }
         if (request.status() != nextStatus(order)) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
@@ -307,6 +312,21 @@ public class OrderServiceImpl implements OrderService {
                         ? RabbitConfig.ORDER_DELIVERED_ROUTING_KEY
                         : RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY,
                 order);
+    }
+
+    /**
+     * Q-01: the Shop refuses a paid buy-now order it has not confirmed yet, with a reason the buyer sees.
+     * payment-service reads order.status_changed and returns the order's money to the buyer's wallet.
+     */
+    private void reject(Order order, String reason) {
+        if (order.getKind() != OrderKind.BUY_NOW || order.getStatus() != OrderStatus.PAID) {
+            throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        if (!StringUtils.hasText(reason)) {
+            throw new AppException(ErrorCode.REJECT_REASON_REQUIRED);
+        }
+        moveTo(order, OrderStatus.REJECTED, reason, List.of());
+        orderEvents.announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
     }
 
     /** The one status the vendor may move the order to, null when none (7.1 Order.status). */

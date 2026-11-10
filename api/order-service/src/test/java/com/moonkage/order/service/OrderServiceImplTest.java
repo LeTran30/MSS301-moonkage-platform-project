@@ -140,6 +140,50 @@ class OrderServiceImplTest {
         assertEquals(OrderStatus.PAID, order.getStatus());
     }
 
+    /** Q-01: the Shop refuses a paid order with a reason; payment-service refunds it from order.status_changed. */
+    @Test
+    void theShopRejectsAPaidOrderWithAReason() {
+        service.update(OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Hết hàng", null, null));
+
+        assertEquals(OrderStatus.REJECTED, order.getStatus());
+        verify(progressUpdateRepository).save(any());
+        verify(orderEvents).announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
+    }
+
+    @Test
+    void aRejectionNeedsAReason() {
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(
+                        OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, " ", null, null)));
+
+        assertEquals(ErrorCode.REJECT_REASON_REQUIRED, error.getErrorCode());
+        assertEquals(OrderStatus.PAID, order.getStatus());
+    }
+
+    @Test
+    void aConfirmedOrderCanNoLongerBeRejected() {
+        order.setStatus(OrderStatus.CONFIRMED);
+
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(
+                        OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Hết hàng", null, null)));
+
+        assertEquals(ErrorCode.INVALID_STATE_TRANSITION, error.getErrorCode());
+        verify(orderEvents, never()).announce(any(), any());
+    }
+
+    @Test
+    void onlyTheOwnerOfTheShopRejectsTheOrder() {
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(
+                        BUYER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "x", null, null)));
+
+        assertEquals(ErrorCode.ACCESS_DENIED, error.getErrorCode());
+    }
+
     @Test
     void onlyTheOwnerOfTheShopMovesTheOrder() {
         AppException error = assertThrows(

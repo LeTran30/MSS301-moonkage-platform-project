@@ -18,6 +18,7 @@ import java.util.List;
  * @param expiresAt the payer must pay before this (P-01); null takes the default lifetime
  * @param allocations CHECKOUT only: the share of each order, ids issued with the checkout (BR-29). DEPOSIT and
  *     REMAINDER go wholly to one order, REGISTRATION_FEE to none, so they send none
+ * @param method {@link #WALLET} pays from the payer's wallet at once (Q-01); null or anything else goes to VNPay
  */
 public record CreatePaymentRequest(
         @NotNull PaymentPurpose purpose,
@@ -25,7 +26,14 @@ public record CreatePaymentRequest(
         @NotBlank @Size(max = 36) String payerAccountId,
         @Positive long amount,
         Instant expiresAt,
-        @Valid List<AllocationRequest> allocations) {
+        @Valid List<AllocationRequest> allocations,
+        @Size(max = 10) String method) {
+
+    public static final String WALLET = "WALLET";
+
+    public boolean paidFromWallet() {
+        return WALLET.equals(method);
+    }
 
     /** @param amount whole VND of the order's share */
     public record AllocationRequest(

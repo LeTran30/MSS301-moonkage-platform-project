@@ -43,6 +43,7 @@ export const routes = {
     addressNew: '/tai-khoan/dia-chi/moi',
     verify: '/tai-khoan/xac-minh', // M6.4
     profile: '/tai-khoan/thong-tin', // M6.5
+    wallet: '/tai-khoan/vi', // Ví người mua (Q-01)
     messages: '/tai-khoan/tin-nhan', // Nhắn tin với shop
     messagesWithShop: (vendorId: string) =>
       `/tai-khoan/tin-nhan?shop=${encodeURIComponent(vendorId)}`,

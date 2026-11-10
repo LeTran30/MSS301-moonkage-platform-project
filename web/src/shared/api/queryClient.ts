@@ -57,6 +57,10 @@ export const queryKeys = {
     queue: (status: 'OPEN' | 'RESOLVED') => ['dispute', 'queue', status] as const,
     byOrder: (orderId: string) => ['dispute', 'by-order', orderId] as const,
   },
+  wallet: {
+    /** The logged-in buyer's wallet (Q-01). */
+    mine: () => ['wallet', 'mine'] as const,
+  },
   refund: {
     /** The refunds the gateway refused, which an admin settles by hand (AC-49.3). */
     manual: () => ['refund', 'manual'] as const,

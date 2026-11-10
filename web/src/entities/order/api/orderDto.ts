@@ -58,7 +58,7 @@ export interface OrderDto {
 
 /**
  * Backend `OrderStatus` is `PAID | CONFIRMED | SHIPPING | DEPOSITED |
- * AWAITING_MOCKUP_APPROVAL | IN_PRODUCTION | READY_TO_SHIP | DELIVERED | COMPLETED`.
+ * AWAITING_MOCKUP_APPROVAL | IN_PRODUCTION | READY_TO_SHIP | DELIVERED | COMPLETED | REJECTED`.
  */
 export type BackendOrderStatus =
   | 'PAID'
@@ -69,7 +69,8 @@ export type BackendOrderStatus =
   | 'IN_PRODUCTION'
   | 'READY_TO_SHIP'
   | 'DELIVERED'
-  | 'COMPLETED';
+  | 'COMPLETED'
+  | 'REJECTED';
 
 /** The UI order status set (retail + bulk). */
 export type UiOrderStatus = Order['status'];
@@ -80,7 +81,8 @@ export type UiOrderStatus = Order['status'];
 export interface CheckoutResponse {
   checkoutId: string;
   paymentId: string;
-  paymentUrl: string;
+  /** The VNPay page; null when the checkout was paid from the wallet (Q-01). */
+  paymentUrl: string | null;
   totalAmount: number;
   expiresAt: string;
 }
@@ -117,6 +119,8 @@ export interface CreateCheckoutPayload {
     address: string;
     email: string;
   };
+  /** WALLET pays from the buyer's wallet at once (Q-01); left out = VNPay. */
+  paymentMethod?: 'VNPAY' | 'WALLET';
 }
 
 /**

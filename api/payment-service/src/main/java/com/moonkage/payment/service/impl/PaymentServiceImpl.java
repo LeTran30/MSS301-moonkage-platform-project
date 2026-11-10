@@ -26,6 +26,7 @@ import com.moonkage.payment.service.LedgerService;
 import com.moonkage.payment.service.OutboxService;
 import com.moonkage.payment.service.PaymentService;
 import com.moonkage.payment.service.RefundService;
+import com.moonkage.payment.service.WalletService;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +57,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final VnpayProperties vnpayProperties;
     private final TransactionTemplate transactionTemplate;
     private final MoneyMetrics moneyMetrics;
+    private final WalletService walletService;
 
     @Override
     @Transactional
@@ -72,6 +74,9 @@ public class PaymentServiceImpl implements PaymentService {
             throw new AppException(ErrorCode.PAYMENT_ALREADY_PAID);
         }
 
+        if (request.paidFromWallet()) {
+            return payFromWallet(request, idempotencyKey, shares, expiresAt);
+        }
         if (!vnpayProperties.isConfigured()) {
             throw new AppException(ErrorCode.GATEWAY_NOT_CONFIGURED);
         }
@@ -102,6 +107,31 @@ public class PaymentServiceImpl implements PaymentService {
         String payUrl = vnpayGateway.payUrl(
                 txnRef, request.amount(), "Moonkage " + request.purpose() + " " + txnRef, createdAt, expiresAt);
         return new CreatePaymentResponse(paymentId, payUrl);
+    }
+
+    /**
+     * Q-01: no gateway. The wallet is debited and the payment succeeds in the same transaction, so it is announced
+     * like a VNPay payment (payment.succeeded) and the orders are created the same way. No link: paymentUrl is null.
+     */
+    private CreatePaymentResponse payFromWallet(
+            CreatePaymentRequest request, String idempotencyKey, List<AllocationRequest> shares, Instant expiresAt) {
+        Payment payment = new Payment();
+        payment.setPurpose(request.purpose());
+        payment.setReferenceId(request.referenceId());
+        payment.setPayerAccountId(request.payerAccountId());
+        payment.setAmount(request.amount());
+        payment.setMethod(CreatePaymentRequest.WALLET);
+        // unique like a gateway reference; nothing outside ever sends it back
+        payment.setGatewayTxnRef("WALLET" + UUID.randomUUID().toString().replace("-", ""));
+        payment.setIdempotencyKey(idempotencyKey);
+        payment.setStatus(PaymentStatus.PENDING);
+        payment.setExpiresAt(expiresAt);
+        Payment saved = paymentRepository.saveAndFlush(payment);
+        shares.forEach(share ->
+                allocationRepository.save(new PaymentAllocation(saved.getId(), share.orderId(), share.amount())));
+        walletService.pay(request.payerAccountId(), request.amount(), saved.getId());
+        recordPaid(saved);
+        return new CreatePaymentResponse(saved.getId(), null);
     }
 
     /**

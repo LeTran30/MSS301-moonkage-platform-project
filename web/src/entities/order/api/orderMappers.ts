@@ -17,6 +17,7 @@ const STATUS_MAP: Record<string, UiOrderStatus> = {
   READY_TO_SHIP: 'READY_TO_SHIP',
   DELIVERED: 'DELIVERED',
   COMPLETED: 'COMPLETED',
+  REJECTED: 'REJECTED',
 };
 
 /** Map a backend status to the UI status; unknown statuses fall back to `PAID`. */

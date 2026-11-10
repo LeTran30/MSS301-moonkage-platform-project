@@ -6,6 +6,7 @@ import com.moonkage.identity.kyc.LegalProfileService;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
 import com.moonkage.identity.kyc.dto.response.CheckIdNumberResponse;
 import com.moonkage.identity.profile.UserProfileService;
+import com.moonkage.identity.profile.dto.AccountContactResponse;
 import com.moonkage.identity.profile.dto.AccountNameResponse;
 import com.moonkage.identity.profile.dto.UpdateProfileRequest;
 import com.moonkage.identity.security.CurrentUser;
@@ -50,6 +51,14 @@ public class AccountController {
     @GetMapping("/internal/accounts/{accountId}/name")
     public ResponseEntity<AccountNameResponse> getName(@PathVariable String accountId) {
         return ResponseEntity.ok(new AccountNameResponse(accountId, userProfileService.getFullName(accountId)));
+    }
+
+    /** Name and email of an account, for services that email it (payment-service). 404 when unknown. */
+    @Hidden
+    @GetMapping("/internal/accounts/{accountId}/contact")
+    public ResponseEntity<AccountContactResponse> getContact(@PathVariable String accountId) {
+        AccountResponse account = userProfileService.getMyAccount(accountId);
+        return ResponseEntity.ok(new AccountContactResponse(accountId, account.fullName(), account.email()));
     }
 
     /**

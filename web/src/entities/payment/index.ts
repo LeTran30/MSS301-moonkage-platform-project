@@ -13,6 +13,9 @@ export { refundApi } from './api/refundApi';
 export type { ManualRefundDto } from './api/refundApi';
 export { useDisbursementRequests, useDisbursements, useLedgerList } from './model/useLedgerQueries';
 export { useManualRefunds } from './model/useRefundQueries';
+export { walletApi } from './api/walletApi';
+export type { WalletDto, WalletEntryDto } from './api/walletApi';
+export { useMyWallet } from './model/useWalletQueries';
 export {
   payoutPurposeLabel,
   toPayoutRequest,

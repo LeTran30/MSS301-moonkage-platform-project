@@ -184,6 +184,8 @@ export const GATEWAY = {
     // RefundController: @RequestMapping("/api/refunds") — các khoản hoàn cần xử lý tay (AC-49.3).
     REFUNDS: '/api/refunds',
     REFUND_BY_ID: (refundId: string) => `/api/refunds/${refundId}`,
+    // WalletController: @GetMapping("/me") — số dư và lịch sử ví của người mua (Q-01).
+    WALLET_ME: '/api/wallets/me',
   },
 
   // 7. Logistics & WebSocket Realtime (InterprovinceFeeController, STOMP)

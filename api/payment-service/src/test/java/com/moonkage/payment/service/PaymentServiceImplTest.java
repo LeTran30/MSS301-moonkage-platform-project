@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -58,6 +59,7 @@ class PaymentServiceImplTest {
     private final LedgerService ledgerService = mock(LedgerService.class);
     private final RefundService refundService = mock(RefundService.class);
     private final OutboxService outboxService = mock(OutboxService.class);
+    private final WalletService walletService = mock(WalletService.class);
 
     private final VnpayProperties properties = new VnpayProperties();
     private PaymentServiceImpl service;
@@ -77,7 +79,8 @@ class PaymentServiceImplTest {
                 new VnpayGateway(properties),
                 properties,
                 new TransactionTemplate(mock(PlatformTransactionManager.class)),
-                new MoneyMetrics(new SimpleMeterRegistry()));
+                new MoneyMetrics(new SimpleMeterRegistry()),
+                walletService);
 
         payment = new Payment();
         payment.setId(PAYMENT_ID);
@@ -228,6 +231,7 @@ class PaymentServiceImplTest {
                 "buyer-1",
                 75_000L,
                 Instant.now().plus(10, ChronoUnit.MINUTES),
+                null,
                 null);
 
         String url = service.create(deposit, "acceptance-1").paymentUrl();
@@ -290,6 +294,43 @@ class PaymentServiceImplTest {
     }
 
     @Test
+    void aWalletCheckoutIsPaidAtOnceWithoutTheGateway() {
+        properties.setHashSecret(null);
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(call -> {
+            Payment saved = call.getArgument(0);
+            saved.setId(PAYMENT_ID);
+            return saved;
+        });
+
+        CreatePaymentResponse answer = service.create(walletCheckout(), "checkout-1");
+
+        assertEquals(PAYMENT_ID, answer.paymentId());
+        assertEquals(null, answer.paymentUrl());
+        verify(walletService).pay("buyer-1", AMOUNT, PAYMENT_ID);
+        verify(ledgerService).collect("order-1", 100_000L, PAYMENT_ID);
+        verify(ledgerService).collect("order-2", 150_000L, PAYMENT_ID);
+        verify(outboxService).enqueue(anyString(), eq(RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY), any());
+    }
+
+    @Test
+    void aShortWalletPaysNothing() {
+        when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(call -> {
+            Payment saved = call.getArgument(0);
+            saved.setId(PAYMENT_ID);
+            return saved;
+        });
+        doThrow(new AppException(ErrorCode.WALLET_INSUFFICIENT))
+                .when(walletService)
+                .pay(anyString(), anyLong(), anyString());
+
+        AppException error = assertThrows(AppException.class, () -> service.create(walletCheckout(), "checkout-1"));
+
+        assertEquals(ErrorCode.WALLET_INSUFFICIENT, error.getErrorCode());
+        verify(ledgerService, never()).collect(anyString(), anyLong(), anyString());
+        verify(outboxService, never()).enqueue(anyString(), anyString(), any());
+    }
+
+    @Test
     void anAlreadyPaidReferenceIsNotPaidAgain() {
         when(paymentRepository.existsByPurposeAndReferenceIdAndStatus(
                         eq(PaymentPurpose.CHECKOUT), anyString(), eq(PaymentStatus.SUCCEEDED)))
@@ -327,11 +368,24 @@ class PaymentServiceImplTest {
                 "buyer-1",
                 amount,
                 Instant.now().plus(10, ChronoUnit.MINUTES),
+                null,
                 null);
     }
 
+    private static CreatePaymentRequest walletCheckout() {
+        return new CreatePaymentRequest(
+                PaymentPurpose.CHECKOUT,
+                "checkout-1",
+                "buyer-1",
+                AMOUNT,
+                null,
+                List.of(new AllocationRequest("order-1", 100_000L), new AllocationRequest("order-2", 150_000L)),
+                CreatePaymentRequest.WALLET);
+    }
+
     private static CreatePaymentRequest checkout(List<AllocationRequest> allocations) {
-        return new CreatePaymentRequest(PaymentPurpose.CHECKOUT, "checkout-1", "buyer-1", AMOUNT, null, allocations);
+        return new CreatePaymentRequest(
+                PaymentPurpose.CHECKOUT, "checkout-1", "buyer-1", AMOUNT, null, allocations, null);
     }
 
     /** An IPN as VNPay sends it, signed with the test secret. */

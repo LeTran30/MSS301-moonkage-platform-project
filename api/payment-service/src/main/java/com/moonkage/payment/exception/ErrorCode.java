@@ -52,7 +52,10 @@ public enum ErrorCode {
     ALREADY_PAID_OUT("LEDGER_008", HttpStatus.CONFLICT, "error.ledger.already_paid_out"),
 
     // Refunds (AC-49.3)
-    REFUND_NOT_FOUND("REFUND_001", HttpStatus.NOT_FOUND, "error.refund.not_found");
+    REFUND_NOT_FOUND("REFUND_001", HttpStatus.NOT_FOUND, "error.refund.not_found"),
+
+    // Wallets (Q-01)
+    WALLET_INSUFFICIENT("WALLET_001", HttpStatus.CONFLICT, "error.wallet.insufficient");
 
     private final String code;
     private final HttpStatus httpStatus;

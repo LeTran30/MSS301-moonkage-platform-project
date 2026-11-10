@@ -60,7 +60,7 @@ class CheckoutServiceImplTest {
 
     private static final CurrentUserInfo BUYER = new CurrentUserInfo("buyer-1", Role.MEMBER);
     private static final CreateCheckoutRequest ADDRESS =
-            new CreateCheckoutRequest("Anh Minh", "0901234567", "79", "12 Lê Lợi", null);
+            new CreateCheckoutRequest("Anh Minh", "0901234567", "79", "12 Lê Lợi", null, null);
 
     private final CheckoutRepository checkoutRepository = mock(CheckoutRepository.class);
     private final CheckoutGroupRepository groupRepository = mock(CheckoutGroupRepository.class);
