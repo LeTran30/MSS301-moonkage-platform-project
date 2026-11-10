@@ -24,6 +24,7 @@ import com.moonkage.payment.enums.LedgerEntryKind;
 import com.moonkage.payment.enums.PaymentStatus;
 import com.moonkage.payment.enums.RefundReason;
 import com.moonkage.payment.enums.RefundStatus;
+import com.moonkage.payment.enums.WalletEntryReason;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
 import com.moonkage.payment.gateway.VnpayRefundClient;
@@ -67,6 +68,8 @@ class RefundServiceImplTest {
     private final OrderSnapshotRepository snapshotRepository = mock(OrderSnapshotRepository.class);
     private final OutboxService outboxService = mock(OutboxService.class);
     private final VnpayRefundClient refundClient = mock(VnpayRefundClient.class);
+    private final WalletService walletService = mock(WalletService.class);
+    private final WalletNotifier walletNotifier = mock(WalletNotifier.class);
 
     private RefundServiceImpl service;
     private Ledger ledger;
@@ -83,7 +86,9 @@ class RefundServiceImplTest {
                 ledgerService,
                 outboxService,
                 refundClient,
-                new TransactionTemplate(mock(PlatformTransactionManager.class)));
+                new TransactionTemplate(mock(PlatformTransactionManager.class)),
+                walletService,
+                walletNotifier);
 
         ledger = new Ledger();
         ledger.setOrderId(ORDER_ID);
@@ -200,6 +205,24 @@ class RefundServiceImplTest {
     }
 
     // ----- sending the refund to the gateway -----
+
+    /** Q-01: a payment made from the wallet has no gateway transaction; its refund goes back to the wallet. */
+    @Test
+    void aRefundOfAWalletPaymentGoesBackToTheWallet() {
+        Refund refund = pendingDisputeRefund(1_000_000L);
+        Payment payment = paymentRepository.findById(PAYMENT_ID).orElseThrow();
+        payment.setMethod("WALLET");
+        payment.setPayerAccountId("buyer-1");
+
+        service.processPending();
+
+        assertEquals(RefundStatus.SUCCEEDED, refund.getStatus());
+        verify(walletService).credit("buyer-1", WalletEntryReason.REFUND, 1_000_000L, refund.getId());
+        verify(refundClient, never()).refund(anyString(), any(), any(), anyLong(), anyLong(), anyString());
+        assertEquals(2_000_000L, ledger.getHeld());
+        assertEquals(1_000_000L, ledger.getRefunded());
+        verify(walletNotifier).notify(eq("buyer-1"), anyString(), anyString(), eq(1_000_000L));
+    }
 
     @Test
     void aRefundTheGatewayAcceptsMovesTheLedgerAndIsAnnounced() {

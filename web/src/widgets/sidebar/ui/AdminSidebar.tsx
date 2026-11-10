@@ -51,6 +51,11 @@ export function AdminSidebarContent({ onNavigate, showHeader = true }: Props = {
       icon: 'creditCard',
     },
     {
+      title: 'Rút tiền từ ví',
+      path: routes.admin.withdrawals,
+      icon: 'wallet',
+    },
+    {
       title: 'Đối soát sàn',
       path: routes.admin.reconciliation,
       icon: 'receipt',

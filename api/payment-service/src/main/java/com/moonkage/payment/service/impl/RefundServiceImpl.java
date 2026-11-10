@@ -3,6 +3,7 @@ package com.moonkage.payment.service.impl;
 import com.moonkage.api.PageResponse;
 import com.moonkage.payment.config.RabbitConfig;
 import com.moonkage.payment.dto.event.MoneyEvent;
+import com.moonkage.payment.dto.request.CreatePaymentRequest;
 import com.moonkage.payment.dto.request.RefundRequest;
 import com.moonkage.payment.dto.response.RefundResponse;
 import com.moonkage.payment.entity.LedgerEntry;
@@ -13,6 +14,7 @@ import com.moonkage.payment.enums.LedgerEntryKind;
 import com.moonkage.payment.enums.PaymentStatus;
 import com.moonkage.payment.enums.RefundReason;
 import com.moonkage.payment.enums.RefundStatus;
+import com.moonkage.payment.enums.WalletEntryReason;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
 import com.moonkage.payment.gateway.VnpayRefundClient;
@@ -25,6 +27,8 @@ import com.moonkage.payment.security.CurrentUserInfo;
 import com.moonkage.payment.service.LedgerService;
 import com.moonkage.payment.service.OutboxService;
 import com.moonkage.payment.service.RefundService;
+import com.moonkage.payment.service.WalletNotifier;
+import com.moonkage.payment.service.WalletService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -53,6 +57,8 @@ public class RefundServiceImpl implements RefundService {
     private final OutboxService outboxService;
     private final VnpayRefundClient refundClient;
     private final TransactionTemplate transactionTemplate;
+    private final WalletService walletService;
+    private final WalletNotifier walletNotifier;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
@@ -175,6 +181,10 @@ public class RefundServiceImpl implements RefundService {
             fail(refund, "Số hoàn vượt số nền tảng đang giữ của đơn (Q-01)");
             return;
         }
+        if (CreatePaymentRequest.WALLET.equals(payment.getMethod())) {
+            refundToWallet(refund, payment);
+            return;
+        }
         RefundResult result = refundClient.refund(
                 payment.getGatewayTxnRef(),
                 payment.getGatewayTxnNo(),
@@ -190,6 +200,24 @@ public class RefundServiceImpl implements RefundService {
         refund.setStatus(RefundStatus.SUCCEEDED);
         book(refund, null);
         announce(RabbitConfig.REFUND_COMPLETED_ROUTING_KEY, refund, null);
+    }
+
+    /** Q-01: money paid from the wallet goes back to the wallet; there is no gateway transaction to refund. */
+    private void refundToWallet(Refund refund, Payment payment) {
+        walletService.credit(payment.getPayerAccountId(), WalletEntryReason.REFUND, refund.getAmount(), refund.getId());
+        refund.setGatewayRefundRef(CreatePaymentRequest.WALLET);
+        refund.setStatus(RefundStatus.SUCCEEDED);
+        book(refund, null);
+        announce(RabbitConfig.REFUND_COMPLETED_ROUTING_KEY, refund, null);
+        String message = refund.getOrderId() == null
+                ? "Khoản thanh toán bằng ví đã được hoàn lại vào ví Moonkage của bạn."
+                : "Tiền hoàn của đơn #" + WalletServiceImpl.orderCode(refund.getOrderId())
+                        + " đã được trả về ví Moonkage của bạn.";
+        walletNotifier.notify(
+                payment.getPayerAccountId(),
+                "Đã hoàn " + WalletNotifier.money(refund.getAmount()) + " vào ví",
+                message,
+                refund.getAmount());
     }
 
     private void fail(Refund refund, String error) {

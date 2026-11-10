@@ -4,6 +4,7 @@ import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.Quantity;
 import com.moonkage.vendor.product.dto.request.ReserveStockRequest;
+import com.moonkage.vendor.product.dto.request.ReturnStockRequest;
 import com.moonkage.vendor.product.dto.response.StockReservationResponse;
 import com.moonkage.vendor.vendor.VendorService;
 import com.moonkage.vendor.vendor.VendorView;
@@ -33,6 +34,7 @@ class StockServiceImpl implements StockService {
     private static final String FIELD_EXPIRES_AT = "expiresAt";
 
     private final StockReservationRepository reservationRepository;
+    private final StockReturnRepository returnRepository;
     private final ProductRepository productRepository;
     private final VendorService vendorService;
     private final ProductSnapshotPublisher snapshotPublisher;
@@ -78,6 +80,32 @@ class StockServiceImpl implements StockService {
             announce(retaken.keySet().stream().map(lines.products()::get).toList());
         }
         return toResponse(lines.reservations(), lines.products());
+    }
+
+    @Override
+    @Transactional
+    public void returnOrder(ReturnStockRequest request) {
+        if (returnRepository.existsById(request.orderId())) {
+            return;
+        }
+        Lines lines = lock(request.checkoutId());
+        if (lines.status() != ReservationStatus.COMMITTED) {
+            throw new AppException(ErrorCode.RESERVATION_NOT_FOUND);
+        }
+        Map<String, Quantity> sold = toQuantities(lines.reservations());
+        Map<String, Quantity> back = toWanted(request.items());
+        boolean fits = back.entrySet().stream()
+                .allMatch(item -> sold.containsKey(item.getKey())
+                        && item.getValue().value() <= sold.get(item.getKey()).value());
+        if (!fits) {
+            throw new AppException(ErrorCode.RESERVATION_MISMATCH);
+        }
+        back.forEach((productId, qty) -> lines.products().get(productId).returnStock(qty.value()));
+        returnRepository.save(StockReturn.builder()
+                .orderId(request.orderId())
+                .checkoutId(request.checkoutId())
+                .build());
+        announce(back.keySet().stream().map(lines.products()::get).toList());
     }
 
     @Override

@@ -92,7 +92,9 @@ class MoneyFlowTest {
                 ledgerService,
                 outboxService,
                 refundClient,
-                tx);
+                tx,
+                mock(WalletService.class),
+                mock(WalletNotifier.class));
         reconciliation = new ReconciliationServiceImpl(
                 ledgerRepository,
                 ledgerEntryRepository,

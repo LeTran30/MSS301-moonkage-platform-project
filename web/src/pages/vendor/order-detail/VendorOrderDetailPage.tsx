@@ -93,8 +93,11 @@ export function VendorOrderDetailPage() {
   const advanceStatus = nextStatus === 'WAITING_MAKET' ? null : nextStatus;
   const waitsForApproval = order?.status === 'WAITING_MAKET' && latestMaket?.status !== 'APPROVED';
   const needsTracking = Boolean(order?.interprovince && nextStatus === 'SHIPPING');
-  // Q-01: a paid buy-now order the Shop has not confirmed yet may be refused; its money goes to the buyer's wallet.
-  const canReject = order?.type === 'RETAIL' && order.status === 'PAID';
+  // Q-01: a paid buy-now order not confirmed yet, or a custom order before work starts, may be refused; its money
+  // goes to the buyer's wallet. A custom order whose deposit was partly paid out is refused by the server (dispute).
+  const canReject =
+    (order?.type === 'RETAIL' && order.status === 'PAID') ||
+    (order?.type === 'BULK' && order.status === 'DEPOSITED');
 
   function handleSendMaket() {
     if (!order) return;
@@ -430,7 +433,11 @@ export function VendorOrderDetailPage() {
         open={rejectOpen}
         onClose={() => setRejectOpen(false)}
         title={`Từ chối đơn #${orderCode(order.id)}`}
-        description="Người mua được hoàn toàn bộ tiền của đơn này vào ví Moonkage. Các đơn của shop khác trong cùng lần thanh toán không bị ảnh hưởng."
+        description={
+          order.type === 'BULK'
+            ? 'Người mua được hoàn toàn bộ tiền cọc vào ví Moonkage. Chỉ từ chối được khi shop chưa nhận hay xin giải ngân phần nào của tiền cọc.'
+            : 'Người mua được hoàn toàn bộ tiền của đơn này vào ví Moonkage. Hàng của đơn được trả lại kho. Các đơn của shop khác trong cùng lần thanh toán không bị ảnh hưởng.'
+        }
         footer={
           <>
             <Button variant="ghost" onClick={() => setRejectOpen(false)}>

@@ -3,8 +3,11 @@ package com.moonkage.order.service.impl;
 import com.moonkage.api.PageResponse;
 import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
+import com.moonkage.order.client.VendorClient;
 import com.moonkage.order.client.dto.CreatePaymentRequest;
 import com.moonkage.order.client.dto.CreatePaymentResponse;
+import com.moonkage.order.client.dto.ReserveStockRequest;
+import com.moonkage.order.client.dto.ReturnStockRequest;
 import com.moonkage.order.client.dto.VendorView;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
@@ -67,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderEventPublisher orderEvents;
     private final VendorDirectory vendorDirectory;
     private final PaymentClient paymentClient;
+    private final VendorClient vendorClient;
     private final OrderProperties properties;
     private final EntityManager entityManager;
     private final OrderFileService fileService;
@@ -319,14 +323,43 @@ public class OrderServiceImpl implements OrderService {
      * payment-service reads order.status_changed and returns the order's money to the buyer's wallet.
      */
     private void reject(Order order, String reason) {
-        if (order.getKind() != OrderKind.BUY_NOW || order.getStatus() != OrderStatus.PAID) {
+        boolean buyNow = order.getKind() == OrderKind.BUY_NOW && order.getStatus() == OrderStatus.PAID;
+        boolean custom = order.getKind() == OrderKind.CUSTOM_ORDER && order.getStatus() == OrderStatus.DEPOSITED;
+        if (!buyNow && !custom) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
         }
         if (!StringUtils.hasText(reason)) {
             throw new AppException(ErrorCode.REJECT_REASON_REQUIRED);
         }
+        // a Shop that already took part of the deposit settles through a dispute, not a full refund
+        if (custom && !paymentClient.ledgerState(order.getId()).untouched()) {
+            throw new AppException(ErrorCode.REJECT_AFTER_DISBURSEMENT);
+        }
         moveTo(order, OrderStatus.REJECTED, reason, List.of());
         orderEvents.announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
+        if (buyNow) {
+            returnStock(order);
+        }
+    }
+
+    /**
+     * Last, so a failure above leaves the stock alone; vendor-service does it once per order. An order without a
+     * committed reservation (seed data, an order older than reservations) has no stock to give back: the rejection
+     * still goes through. Any other failure rolls the rejection back, so the Shop can try again.
+     */
+    private void returnStock(Order order) {
+        try {
+            vendorClient.returnStock(new ReturnStockRequest(
+                    order.getId(),
+                    order.getPaymentGroupId(),
+                    orderItemRepository.findByOrderId(order.getId()).stream()
+                            .map(item -> new ReserveStockRequest.Item(item.getProductId(), item.getQuantity()))
+                            .toList()));
+        } catch (FeignException.NotFound e) {
+            log.warn(
+                    "Order {} was rejected without returning stock: its checkout has no committed reservation",
+                    order.getId());
+        }
     }
 
     /** The one status the vendor may move the order to, null when none (7.1 Order.status). */

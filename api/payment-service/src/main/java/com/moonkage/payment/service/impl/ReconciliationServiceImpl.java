@@ -9,6 +9,7 @@ import com.moonkage.payment.dto.request.ReviewDisbursementRequest;
 import com.moonkage.payment.dto.response.DisbursementResponse;
 import com.moonkage.payment.dto.response.LedgerEntryResponse;
 import com.moonkage.payment.dto.response.LedgerResponse;
+import com.moonkage.payment.dto.response.LedgerStateResponse;
 import com.moonkage.payment.dto.response.PayoutResponse;
 import com.moonkage.payment.dto.response.RefundResponse;
 import com.moonkage.payment.entity.DisbursementRequest;
@@ -313,5 +314,15 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                 d.getReason(),
                 d.getCreatedAt(),
                 d.getDecidedAt());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LedgerStateResponse state(String orderId) {
+        long pending = disbursementRepository.sumAmountByOrderIdAndStatus(orderId, DisbursementStatus.PENDING);
+        return ledgerRepository
+                .findByOrderId(orderId)
+                .map(l -> new LedgerStateResponse(orderId, l.getHeld(), l.getDisbursed(), l.getPaidOut(), pending))
+                .orElseGet(() -> new LedgerStateResponse(orderId, 0, 0, 0, pending));
     }
 }

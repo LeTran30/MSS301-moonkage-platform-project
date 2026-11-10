@@ -1,11 +1,6 @@
 package com.moonkage.payment.service.impl;
 
 import com.moonkage.api.PageResponse;
-import com.moonkage.payment.client.IdentityClient;
-import com.moonkage.payment.client.dto.AccountContact;
-import com.moonkage.payment.config.RabbitConfig;
-import com.moonkage.payment.dto.event.EmailNotificationEvent;
-import com.moonkage.payment.dto.event.InAppNotificationEvent;
 import com.moonkage.payment.dto.response.WalletResponse;
 import com.moonkage.payment.entity.Ledger;
 import com.moonkage.payment.entity.Wallet;
@@ -18,12 +13,9 @@ import com.moonkage.payment.repository.LedgerRepository;
 import com.moonkage.payment.repository.WalletEntryRepository;
 import com.moonkage.payment.repository.WalletRepository;
 import com.moonkage.payment.service.LedgerService;
-import com.moonkage.payment.service.OutboxService;
+import com.moonkage.payment.service.WalletNotifier;
 import com.moonkage.payment.service.WalletService;
-import java.text.NumberFormat;
 import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -38,15 +30,12 @@ public class WalletServiceImpl implements WalletService {
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final int ORDER_CODE_LENGTH = 8;
-    /** The buyer's wallet page on the web (routes.account.wallet). */
-    private static final String WALLET_URL = "/tai-khoan/vi";
 
     private final WalletRepository walletRepository;
     private final WalletEntryRepository entryRepository;
     private final LedgerRepository ledgerRepository;
     private final LedgerService ledgerService;
-    private final OutboxService outboxService;
-    private final IdentityClient identityClient;
+    private final WalletNotifier notifier;
 
     @Override
     @Transactional(readOnly = true)
@@ -70,18 +59,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void pay(String accountId, long amount, String paymentId) {
-        Wallet wallet = walletRepository
-                .findForUpdateByAccountId(accountId)
-                .filter(w -> w.getBalance() >= amount)
-                .orElseThrow(() -> new AppException(ErrorCode.WALLET_INSUFFICIENT));
-        wallet.setBalance(wallet.getBalance() - amount);
-        entryRepository.save(WalletEntry.builder()
-                .accountId(accountId)
-                .kind(WalletEntryKind.DEBIT)
-                .reason(WalletEntryReason.PAYMENT)
-                .amount(amount)
-                .referenceId(paymentId)
-                .build());
+        debit(accountId, WalletEntryReason.PAYMENT, amount, paymentId);
     }
 
     @Override
@@ -98,63 +76,70 @@ public class WalletServiceImpl implements WalletService {
             log.warn("Order {} was rejected but the platform holds nothing of it; no wallet refund", orderId);
             return;
         }
-        Wallet wallet = walletRepository
-                .findForUpdateByAccountId(buyerAccountId)
-                .orElseGet(() -> walletRepository.save(
-                        Wallet.builder().accountId(buyerAccountId).build()));
-        wallet.setBalance(wallet.getBalance() + held);
-        WalletEntry credit = entryRepository.save(WalletEntry.builder()
-                .accountId(buyerAccountId)
-                .kind(WalletEntryKind.CREDIT)
-                .reason(WalletEntryReason.ORDER_REJECTED)
-                .amount(held)
-                .referenceId(orderId)
-                .build());
+        WalletEntry credit =
+                save(buyerAccountId, WalletEntryKind.CREDIT, WalletEntryReason.ORDER_REJECTED, held, orderId);
         // the order's escrow goes down by the same amount, so the money is never counted twice (NFR-09)
         ledgerService.refund(orderId, held, credit.getId(), null);
-        notifyRefund(orderId, buyerAccountId, held);
+        String code = orderCode(orderId);
+        notifier.notify(
+                buyerAccountId,
+                "Đã hoàn " + WalletNotifier.money(held) + " vào ví",
+                "Shop đã từ chối đơn #" + code + ". Toàn bộ tiền của đơn đã được hoàn vào ví Moonkage của bạn.",
+                held);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void credit(String accountId, WalletEntryReason reason, long amount, String referenceId) {
+        if (entryRepository.existsByReasonAndReferenceId(reason, referenceId)) {
+            return;
+        }
+        save(accountId, WalletEntryKind.CREDIT, reason, amount, referenceId);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void debit(String accountId, WalletEntryReason reason, long amount, String referenceId) {
+        Wallet wallet = walletRepository
+                .findForUpdateByAccountId(accountId)
+                .filter(w -> w.getBalance() >= amount)
+                .orElseThrow(() -> new AppException(ErrorCode.WALLET_INSUFFICIENT));
+        wallet.setBalance(wallet.getBalance() - amount);
+        entryRepository.save(entry(accountId, WalletEntryKind.DEBIT, reason, amount, referenceId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long totalBalance() {
+        return walletRepository.totalBalance();
+    }
+
+    /** A credit, opening the wallet on first use. */
+    private WalletEntry save(
+            String accountId, WalletEntryKind kind, WalletEntryReason reason, long amount, String referenceId) {
+        Wallet wallet = walletRepository
+                .findForUpdateByAccountId(accountId)
+                .orElseGet(() -> walletRepository.save(
+                        Wallet.builder().accountId(accountId).build()));
+        wallet.setBalance(wallet.getBalance() + amount);
+        return entryRepository.save(entry(accountId, kind, reason, amount, referenceId));
+    }
+
+    private static WalletEntry entry(
+            String accountId, WalletEntryKind kind, WalletEntryReason reason, long amount, String referenceId) {
+        return WalletEntry.builder()
+                .accountId(accountId)
+                .kind(kind)
+                .reason(reason)
+                .amount(amount)
+                .referenceId(referenceId)
+                .build();
     }
 
     /** The order as the web shows it (shortCode in web/src/shared/utils): last characters of the id, upper case. */
-    private static String orderCode(String orderId) {
+    static String orderCode(String orderId) {
         String compact = orderId.replace("-", "");
         return compact.substring(Math.max(0, compact.length() - ORDER_CODE_LENGTH))
                 .toUpperCase(Locale.ROOT);
-    }
-
-    /** In-app always; email only when identity-service answers, so a lookup failure never blocks the refund. */
-    private void notifyRefund(String orderId, String buyerAccountId, long amount) {
-        String money = NumberFormat.getIntegerInstance(Locale.of("vi", "VN")).format(amount) + " ₫";
-        String code = orderCode(orderId);
-        InAppNotificationEvent inApp = new InAppNotificationEvent(
-                UUID.randomUUID().toString(),
-                buyerAccountId,
-                // the web knows ORDER, QUOTE, MAKET, DISPUTE and SYSTEM; a refund belongs with the order
-                "ORDER",
-                "Đã hoàn " + money + " vào ví",
-                "Shop đã từ chối đơn #" + code + ". Số tiền " + money + " đã được hoàn vào ví Moonkage của bạn.",
-                WALLET_URL);
-        outboxService.enqueue(inApp.eventId(), RabbitConfig.INAPP_WALLET_ROUTING_KEY, inApp);
-
-        AccountContact contact;
-        try {
-            contact = identityClient.contact(buyerAccountId);
-        } catch (RuntimeException e) {
-            log.warn("No email for the wallet refund of order {}: {}", orderId, e.getMessage());
-            return;
-        }
-        if (contact == null || contact.email() == null) {
-            return;
-        }
-        EmailNotificationEvent email = new EmailNotificationEvent(
-                UUID.randomUUID().toString(),
-                contact.email(),
-                "Moonkage: đã hoàn " + money + " vào ví của bạn",
-                "WALLET_REFUND",
-                Map.of(
-                        "userName", contact.fullName() == null ? "Quý khách" : contact.fullName(),
-                        "orderCode", code,
-                        "amount", money));
-        outboxService.enqueue(email.eventId(), RabbitConfig.EMAIL_WALLET_ROUTING_KEY, email);
     }
 }

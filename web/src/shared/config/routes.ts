@@ -77,6 +77,7 @@ export const routes = {
     money: '/quan-tri/tien', // Q4.0
     disbursements: '/quan-tri/tien/giai-ngan', // Q4.1
     payouts: '/quan-tri/tien/chuyen-tien', // Q4.2
+    withdrawals: '/quan-tri/tien/rut-tien', // Rút tiền từ ví người mua (Q-01)
     reconciliation: '/quan-tri/tien/doi-soat', // Q4.3
     disputes: '/quan-tri/khieu-nai', // Q5.0
     config: '/quan-tri/cau-hinh', // Q6.0

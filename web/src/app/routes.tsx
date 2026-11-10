@@ -136,6 +136,10 @@ const AdminDisbursementsPage = page(
   'AdminDisbursementsPage',
 );
 const AdminPayoutsPage = page(() => import('@/pages/admin/payouts'), 'AdminPayoutsPage');
+const AdminWithdrawalsPage = page(
+  () => import('@/pages/admin/withdrawals'),
+  'AdminWithdrawalsPage',
+);
 const AdminReconciliationPage = page(
   () => import('@/pages/admin/reconciliation'),
   'AdminReconciliationPage',
@@ -293,6 +297,7 @@ const ROUTE_TABLE = [
       { path: 'tien', element: withSuspense(AdminMoneyPage) },
       { path: 'tien/giai-ngan', element: withSuspense(AdminDisbursementsPage) },
       { path: 'tien/chuyen-tien', element: withSuspense(AdminPayoutsPage) },
+      { path: 'tien/rut-tien', element: withSuspense(AdminWithdrawalsPage) },
       { path: 'tien/doi-soat', element: withSuspense(AdminReconciliationPage) },
       { path: 'khieu-nai', element: withSuspense(AdminDisputesPage) },
       { path: 'cau-hinh', element: withSuspense(AdminConfigPage) },

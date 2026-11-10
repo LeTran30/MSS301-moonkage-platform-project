@@ -16,16 +16,15 @@
 <body>
 <div class="email-container">
   <div class="header">
-    <h1>Tiền đã về ví của bạn</h1>
+    <h1 th:text="${heading}">Ví Moonkage</h1>
   </div>
   <div class="content">
     <p>Xin chào <strong th:text="${userName}">Quý khách</strong>,</p>
-    <p>Shop đã từ chối đơn hàng của bạn, nên số tiền của đơn này đã được hoàn vào ví Moonkage.</p>
+    <p th:text="${message}">Ví của bạn vừa có thay đổi.</p>
     <div class="order-box">
-      <p><strong>Mã đơn hàng:</strong> #<span th:text="${orderCode}">ABCD1234</span></p>
-      <p><strong>Số tiền hoàn:</strong> <span th:text="${amount}">0 ₫</span></p>
+      <p><strong>Số tiền:</strong> <span th:text="${amount}">0 ₫</span></p>
     </div>
-    <p>Bạn có thể dùng số dư này để thanh toán đơn tiếp theo. Các đơn của shop khác trong cùng lần thanh toán vẫn được xử lý bình thường.</p>
+    <p>Xem số dư và lịch sử giao dịch trong mục "Ví của tôi" trên Moonkage.</p>
   </div>
   <div class="footer">
     <p>Cảm ơn bạn đã đồng hành cùng MoonKage – Marketplace quà Trung thu.</p>

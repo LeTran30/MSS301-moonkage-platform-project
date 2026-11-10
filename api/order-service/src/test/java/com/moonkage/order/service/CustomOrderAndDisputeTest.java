@@ -89,6 +89,7 @@ class CustomOrderAndDisputeTest {
                 orderEvents,
                 vendorDirectory,
                 mock(com.moonkage.order.client.PaymentClient.class),
+                mock(com.moonkage.order.client.VendorClient.class),
                 new com.moonkage.order.config.OrderProperties(),
                 entityManager,
                 mock(OrderFileService.class),

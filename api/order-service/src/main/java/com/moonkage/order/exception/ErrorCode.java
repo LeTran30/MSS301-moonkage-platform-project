@@ -67,6 +67,7 @@ public enum ErrorCode {
     // Q-01: the buyer is told why the Shop refused the order
     REJECT_REASON_REQUIRED("ORDER_011", HttpStatus.BAD_REQUEST, "error.order.reject_reason_required"),
     WALLET_INSUFFICIENT("ORDER_012", HttpStatus.CONFLICT, "error.order.wallet_insufficient"),
+    REJECT_AFTER_DISBURSEMENT("ORDER_013", HttpStatus.CONFLICT, "error.order.reject_after_disbursement"),
 
     // Disputes (FR-12, FR-49, BR-18, P-02)
     DISPUTE_NOT_FOUND("DISPUTE_001", HttpStatus.NOT_FOUND, "error.dispute.not_found"),

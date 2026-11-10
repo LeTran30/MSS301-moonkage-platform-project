@@ -148,7 +148,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
 
 | Câu hỏi | Giá trị tạm cho demo |
 |---|---|
-| Q-01 Hủy sau khi cọc | Không có chức năng hủy riêng; mọi trường hợp đi qua khiếu nại (FR-12) và quản trị quyết định hoàn tiền (FR-49) |
+| Q-01 Hủy sau khi cọc | Shop được từ chối đơn mua ngay đã thanh toán (trước khi xác nhận) và đơn đặt hàng còn ở "đã cọc" nếu chưa nhận hay xin giải ngân phần nào của tiền cọc; tiền của đúng đơn đó về **ví Moonkage** của người mua, hàng của đơn mua ngay trả lại kho. Người mua dùng ví để thanh toán hoặc rút về ngân hàng (quản trị viên chuyển khoản tay, báo qua email). Các trường hợp khác vẫn đi qua khiếu nại (FR-12) và quản trị quyết định hoàn tiền (FR-49) |
 | Q-10 Thời hạn khiếu nại, giữ tiền | 3 ngày sau khi giao với đơn nội thành; 7 ngày với đơn liên tỉnh và đơn đặt hàng |
 | Q-11 Tiêu chuẩn đóng gói "toàn quốc" | Người bán tự đánh dấu xác nhận đạt chuẩn khi chọn nhãn; quản trị gỡ nếu vi phạm (BR-24) |
 | Q-12 Đơn vị vùng giao | Tỉnh / thành phố |
@@ -563,7 +563,7 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
   - **AC-32.1** — *Given* có đơn mới, *When* người bán mở danh sách, *Then* thấy đơn kèm địa chỉ giao và thông tin xuất hóa đơn doanh nghiệp nếu có.
   - **AC-32.2** — *Given* một đơn, *When* người bán chuyển trạng thái, *Then* chỉ đi theo thứ tự: xác nhận → đang giao → đã giao.
   - **AC-32.3** — *Given* đơn liên tỉnh, *When* chuyển sang đang giao, *Then* bắt buộc có mã vận đơn của hãng vận chuyển.
-- **Trường hợp đặc biệt / lỗi:** Người bán không xác nhận được đơn (hết hàng thực tế) → hủy và hoàn tiền: chưa quyết (Q-01).
+- **Trường hợp đặc biệt / lỗi:** Người bán không xác nhận được đơn (hết hàng thực tế) → người bán từ chối đơn kèm lý do; tiền của đơn về ví người mua, hàng trả lại kho, đơn của shop khác trong cùng lượt thanh toán không bị ảnh hưởng (Q-01).
 - **Phụ thuộc:** FR-10, Q-18.
 
 > FR-33, FR-34 thuộc Nhóm 6 – Shop nhưng được thêm sau nên mang số mới; giữ nguyên số cũ để không lệch tham chiếu.
@@ -1110,7 +1110,7 @@ Bản ngữ cảnh chưa đặt con số cho phần lớn NFR. Các giá trị g
 
 | ID | Câu hỏi | Người cần trả lời | Trạng thái |
 |---|---|---|---|
-| Q-01 | Người mua hủy sau khi cọc, hoặc người bán không giao được: ai mất gì? Trạng thái hủy của từng loại đơn? Hoàn tiền khi cọc đã giải ngân một phần? | | Mở |
+| Q-01 | Người mua hủy sau khi cọc, hoặc người bán không giao được: ai mất gì? Trạng thái hủy của từng loại đơn? Hoàn tiền khi cọc đã giải ngân một phần? | Nhóm | Một phần: người bán từ chối đơn trước khi làm → tiền về ví người mua (xem bảng giá trị tạm). Người mua tự hủy và hoàn khi cọc đã giải ngân vẫn mở |
 | Q-02 | Giải ngân cọc theo báo cáo mục đích (hiện tại) hay theo mốc tiến độ? | | Mở |
 | Q-03 | Chuyển quyền làm chủ người bán khi chủ rời đi? | | Mở |
 | Q-04 | Người bán xuất được loại hóa đơn nào; người mua có lọc theo đó được không? | | Mở |

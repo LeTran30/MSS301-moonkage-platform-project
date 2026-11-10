@@ -14,8 +14,21 @@ export type { ManualRefundDto } from './api/refundApi';
 export { useDisbursementRequests, useDisbursements, useLedgerList } from './model/useLedgerQueries';
 export { useManualRefunds } from './model/useRefundQueries';
 export { walletApi } from './api/walletApi';
-export type { WalletDto, WalletEntryDto } from './api/walletApi';
-export { useMyWallet } from './model/useWalletQueries';
+export type {
+  BankDto,
+  WalletDto,
+  WalletEntryDto,
+  WalletSummaryDto,
+  WithdrawalDto,
+  WithdrawalStatus,
+} from './api/walletApi';
+export {
+  useBanks,
+  useMyWallet,
+  useMyWithdrawals,
+  useWalletSummary,
+  useWithdrawals,
+} from './model/useWalletQueries';
 export {
   payoutPurposeLabel,
   toPayoutRequest,

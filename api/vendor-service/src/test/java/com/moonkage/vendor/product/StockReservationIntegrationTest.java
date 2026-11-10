@@ -358,6 +358,57 @@ class StockReservationIntegrationTest {
         return objectMapper.readTree(response).get("data").get("id").asText();
     }
 
+    // ─── a Shop rejects a paid order (Q-01) ───
+
+    @Test
+    void aRejectedOrderPutsItsPiecesBackOnceAndLeavesTheOtherShopAlone() throws Exception {
+        String ours = createProduct(10);
+        String theirs = createProduct(10);
+        String checkoutId = newId();
+        reserve(checkoutId, Map.of(ours, 3, theirs, 2));
+        commit(checkoutId).andExpect(status().isOk());
+        String orderId = newId();
+
+        returnStock(orderId, checkoutId, Map.of(ours, 3)).andExpect(status().isNoContent());
+        returnStock(orderId, checkoutId, Map.of(ours, 3)).andExpect(status().isNoContent());
+
+        assertEquals(10, stockOf(ours));
+        assertEquals(8, stockOf(theirs));
+        assertEquals("COMMITTED", statusOf(checkoutId));
+        assertEquals(10, lastProductData(ours).get("stock").asInt());
+    }
+
+    @Test
+    void onlyWhatTheCheckoutSoldComesBack() throws Exception {
+        String product = createProduct(10);
+        String other = createProduct(10);
+        String checkoutId = newId();
+        reserve(checkoutId, Map.of(product, 3));
+
+        returnStock(newId(), checkoutId, Map.of(product, 3))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("VENDOR_031"));
+        commit(checkoutId);
+        returnStock(newId(), checkoutId, Map.of(product, 4))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_033"));
+        returnStock(newId(), checkoutId, Map.of(other, 1))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_033"));
+        assertEquals(7, stockOf(product));
+        assertEquals(10, stockOf(other));
+    }
+
+    private ResultActions returnStock(String orderId, String checkoutId, Map<String, Integer> items) throws Exception {
+        ObjectNode body =
+                objectMapper.createObjectNode().put("orderId", orderId).put("checkoutId", checkoutId);
+        items.forEach((productId, qty) -> body.withArray("items")
+                .add(objectMapper.createObjectNode().put("productId", productId).put("qty", qty)));
+        return mvc.perform(post(RESERVATIONS + "/returns")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()));
+    }
+
     private ObjectNode reserveBody(String checkoutId, Map<String, Integer> items) {
         ObjectNode body = objectMapper
                 .createObjectNode()

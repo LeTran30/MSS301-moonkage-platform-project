@@ -6,6 +6,7 @@ import com.moonkage.payment.dto.request.ReviewDisbursementRequest;
 import com.moonkage.payment.dto.response.DisbursementResponse;
 import com.moonkage.payment.dto.response.LedgerEntryResponse;
 import com.moonkage.payment.dto.response.LedgerResponse;
+import com.moonkage.payment.dto.response.LedgerStateResponse;
 import com.moonkage.payment.dto.response.PayoutResponse;
 import com.moonkage.payment.dto.response.RefundResponse;
 import com.moonkage.payment.security.CurrentUserInfo;
@@ -44,4 +45,7 @@ public interface ReconciliationService {
      * (P-02). Refused while a refund or a disbursement request of the order is pending.
      */
     PayoutResponse payout(CurrentUserInfo caller, String orderId);
+
+    /** Internal: what of an order's money is held, gone to the vendor or asked for; zeros without a ledger. */
+    LedgerStateResponse state(String orderId);
 }
