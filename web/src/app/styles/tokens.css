@@ -45,6 +45,9 @@
 
   /* Màu phụ trợ — module CSS dùng token, không hardcode hex ở nơi khác (§6) */
   --color-white: #ffffff;
+  /* QR: dark modules on a light quiet zone in both themes, or phone scanners miss it */
+  --color-qr-module: #1a120c;
+  --color-qr-quiet: #ffffff;
   --color-text-on-dark: #f4ead9;
   --color-gold-ink: #2a1a06;
   --color-success-ink: #1b5e20;
@@ -206,6 +209,9 @@
     --shadow-md: 0 10px 30px -10px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.3);
     --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7);
     --color-white: #ffffff;
+    /* unchanged on purpose: a QR stays dark on light */
+    --color-qr-module: #1a120c;
+    --color-qr-quiet: #ffffff;
     --color-text-on-dark: #f4ead9;
     --color-gold-ink: #1a0f0b;
     --color-success-ink: #74c58f;
@@ -216,6 +222,9 @@
     --color-night-1: #18110b;
     --color-night-2: #120d09;
     --color-white: #ffffff;
+    /* unchanged on purpose: a QR stays dark on light */
+    --color-qr-module: #1a120c;
+    --color-qr-quiet: #ffffff;
   --color-text-on-dark: #f4ead9;
   --color-gold-ink: #1a0f0b;
   --color-success-ink: #74c58f;

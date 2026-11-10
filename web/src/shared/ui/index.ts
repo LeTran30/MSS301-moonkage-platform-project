@@ -28,6 +28,7 @@ export type { SkeletonProps } from './Skeleton';
 export { Breadcrumbs } from './Breadcrumbs';
 export type { BreadcrumbItem, BreadcrumbsProps } from './Breadcrumbs';
 export { PageLoader } from './PageLoader/PageLoader';
+export { QrCode } from './QrCode/QrCode';
 export { ProductImage } from './ProductImage/ProductImage';
 export type { ProductImageProps } from './ProductImage/ProductImage';
 export { StarRating } from './StarRating/StarRating';
