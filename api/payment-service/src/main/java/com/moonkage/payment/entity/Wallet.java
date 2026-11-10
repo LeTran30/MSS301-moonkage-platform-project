@@ -34,9 +34,8 @@ public class Wallet {
     @UpdateTimestamp
     private Instant updatedAt;
 
-    public static Wallet open(String accountId) {
-        Wallet wallet = new Wallet();
-        wallet.accountId = accountId;
-        return wallet;
+    /** A new, empty wallet of the account. */
+    public Wallet(String accountId) {
+        this.accountId = accountId;
     }
 }

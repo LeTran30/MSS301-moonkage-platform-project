@@ -49,15 +49,14 @@ public class WalletEntry {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
-    public static WalletEntry of(
+    /** The only way to fill an entry: every field at once, nothing changes afterwards. */
+    public WalletEntry(
             String accountId, WalletEntryKind kind, WalletEntryReason reason, long amount, String referenceId) {
-        WalletEntry entry = new WalletEntry();
-        entry.id = UUID.randomUUID().toString();
-        entry.accountId = accountId;
-        entry.kind = kind;
-        entry.reason = reason;
-        entry.amount = amount;
-        entry.referenceId = referenceId;
-        return entry;
+        this.id = UUID.randomUUID().toString();
+        this.accountId = accountId;
+        this.kind = kind;
+        this.reason = reason;
+        this.amount = amount;
+        this.referenceId = referenceId;
     }
 }

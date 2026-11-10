@@ -76,7 +76,7 @@ public class WalletServiceImpl implements WalletService {
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_INSUFFICIENT));
         wallet.setBalance(wallet.getBalance() - amount);
         entryRepository.save(
-                WalletEntry.of(accountId, WalletEntryKind.DEBIT, WalletEntryReason.PAYMENT, amount, paymentId));
+                new WalletEntry(accountId, WalletEntryKind.DEBIT, WalletEntryReason.PAYMENT, amount, paymentId));
     }
 
     @Override
@@ -95,9 +95,9 @@ public class WalletServiceImpl implements WalletService {
         }
         Wallet wallet = walletRepository
                 .findForUpdateByAccountId(buyerAccountId)
-                .orElseGet(() -> walletRepository.save(Wallet.open(buyerAccountId)));
+                .orElseGet(() -> walletRepository.save(new Wallet(buyerAccountId)));
         wallet.setBalance(wallet.getBalance() + held);
-        WalletEntry credit = entryRepository.save(WalletEntry.of(
+        WalletEntry credit = entryRepository.save(new WalletEntry(
                 buyerAccountId, WalletEntryKind.CREDIT, WalletEntryReason.ORDER_REJECTED, held, orderId));
         // the order's escrow goes down by the same amount, so the money is never counted twice (NFR-09)
         ledgerService.refund(orderId, held, credit.getId(), null);
