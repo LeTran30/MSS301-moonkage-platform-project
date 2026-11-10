@@ -752,7 +752,8 @@ Phạm vi demo là phần nhóm cam kết chạy được khi bảo vệ. FR kh�
   - **AC-48.1** — *Given* đơn được người mua xác nhận đã nhận hàng hoặc hết thời hạn khiếu nại mà không có khiếu nại mở, *When* hệ thống xét, *Then* đơn đủ điều kiện chuyển tiền.
   - **AC-48.2** — *Given* đơn liên tỉnh, *When* tính thời hạn giữ tiền, *Then* thời hạn dài hơn đơn nội thành.
   - **AC-48.3** — *Given* đơn đủ điều kiện, *When* chuyển tiền, *Then* số chuyển = tổng tiền (gồm phí giao) − số đã giải ngân − số đã hoàn.
-  - **AC-48.4** — *Given* hệ thống đã liệt kê các đơn đủ điều kiện, *When* quản trị bấm duyệt chuyển tiền cho một đơn, *Then* hệ thống ghi sổ `paid_out`, đơn chuyển sang hoàn tất về tiền và người bán được thông báo; không phát sinh giao dịch ngân hàng thật (A-12).
+  - **AC-48.4** — *Given* đơn đã hoàn tất (người mua xác nhận đã nhận hàng, hoặc hệ thống tự xác nhận khi hết thời hạn khiếu nại; đơn đặt hàng thì đã trả phần còn lại), *When* hệ thống xét (mỗi phút), *Then* toàn bộ tiền nền tảng đang giữ của đơn chuyển vào **ví Moonkage của chủ shop** (không thu hoa hồng), sổ ghi `paid_out` và người bán được thông báo. Đơn còn hoàn tiền hoặc giải ngân đang chờ thì đợi quản trị viên xử lý xong. Chủ shop rút tiền từ ví về ngân hàng; quản trị viên chuyển khoản tay rồi xác nhận (A-12).
+  - **AC-48.6** — *Given* người mua (hoặc hệ thống) đã xác nhận nhận hàng, *When* người mua mở khiếu nại, *Then* hệ thống từ chối vì tiền đã về người bán.
   - **AC-48.5** — *Given* đơn có khiếu nại đang mở, *When* quản trị bấm chuyển tiền, *Then* hệ thống chặn (BR-18).
 - **Trường hợp đặc biệt / lỗi:** Chuyển tiền do quản trị bấm duyệt, không tự động (A-12, Q-27 đã chốt). Con số thời hạn: Q-10.
 - **Phụ thuộc:** FR-11, FR-12.

@@ -202,9 +202,12 @@ export function OrderDetailPage() {
                   Đã nhận hàng
                 </Button>
               )}
-              <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
-                Báo vấn đề với đơn
-              </ButtonLink>
+              {/* Xác nhận nhận hàng (người mua hoặc hệ thống) là hết quyền khiếu nại: tiền đã về ví shop. */}
+              {!order.receivedConfirmed && (
+                <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
+                  Báo vấn đề với đơn
+                </ButtonLink>
+              )}
             </>
           )}
         </div>

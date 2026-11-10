@@ -31,6 +31,10 @@ function entryText(entry: WalletEntryDto) {
       return 'Rút tiền về ngân hàng';
     case 'WITHDRAWAL_RETURNED':
       return 'Trả lại tiền: yêu cầu rút tiền bị từ chối';
+    case 'SALE':
+      return `Tiền bán hàng: đơn #${orderCode(entry.referenceId)} đã hoàn tất`;
+    case 'DISBURSEMENT':
+      return 'Giải ngân tiền cọc đơn đặt hàng';
   }
 }
 
@@ -72,8 +76,8 @@ export function WalletPage() {
       <div>
         <h1 className={styles.title}>Ví của tôi</h1>
         <p className={styles.lead}>
-          Khi shop từ chối đơn đã thanh toán, tiền của đơn đó được hoàn vào đây. Bạn có thể dùng
-          số dư để thanh toán đơn tiếp theo hoặc rút về tài khoản ngân hàng.
+          Tiền hoàn khi shop từ chối đơn, và với chủ shop là tiền của đơn đã hoàn tất, đều về
+          đây. Dùng số dư để thanh toán đơn tiếp theo hoặc rút về tài khoản ngân hàng.
         </p>
       </div>
 

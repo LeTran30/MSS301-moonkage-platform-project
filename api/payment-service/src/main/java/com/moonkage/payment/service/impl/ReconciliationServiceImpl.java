@@ -18,6 +18,7 @@ import com.moonkage.payment.entity.OrderSnapshot;
 import com.moonkage.payment.entity.Payout;
 import com.moonkage.payment.enums.DisbursementStatus;
 import com.moonkage.payment.enums.RefundStatus;
+import com.moonkage.payment.enums.WalletEntryReason;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
 import com.moonkage.payment.repository.DisbursementRequestRepository;
@@ -32,21 +33,29 @@ import com.moonkage.payment.service.OutboxService;
 import com.moonkage.payment.service.ReconciliationService;
 import com.moonkage.payment.service.RefundService;
 import com.moonkage.payment.service.VendorDirectory;
+import com.moonkage.payment.service.WalletNotifier;
+import com.moonkage.payment.service.WalletService;
 import feign.FeignException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReconciliationServiceImpl implements ReconciliationService {
+
+    private static final int AUTO_PAYOUT_BATCH = 100;
+    /** Who approved an automatic payout (payouts.approved_by, ledger_entries.actor_account_id). */
+    private static final String SYSTEM_ACTOR = "SYSTEM";
 
     private static final int MAX_PAGE_SIZE = 100;
     private static final String CUSTOM_ORDER = "CUSTOM_ORDER";
@@ -63,6 +72,8 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     private final VendorDirectory vendorDirectory;
     private final OrderClient orderClient;
     private final TransactionTemplate transactionTemplate;
+    private final WalletService walletService;
+    private final WalletNotifier walletNotifier;
 
     @Override
     @Transactional(readOnly = true)
@@ -172,6 +183,14 @@ public class ReconciliationServiceImpl implements ReconciliationService {
             // LEDGER_002 when the deposit held no longer covers it (AC-48.2)
             ledgerService.disburse(orderId, approved, requestId, caller.accountId());
             disbursement.setApprovedAmount(approved);
+            String owner = vendorDirectory.ownerAccountId(disbursement.getVendorId());
+            walletService.credit(owner, WalletEntryReason.DISBURSEMENT, approved, requestId);
+            walletNotifier.notify(
+                    owner,
+                    "Đã giải ngân " + WalletNotifier.money(approved) + " vào ví shop",
+                    "Yêu cầu giải ngân tiền cọc đơn #" + WalletServiceImpl.orderCode(orderId)
+                            + " đã được duyệt. Tiền đã vào ví Moonkage của bạn.",
+                    approved);
         }
         disbursement.setStatus(request.status());
         disbursement.setDecidedBy(caller.accountId());
@@ -191,6 +210,29 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     @Override
     public PayoutResponse payout(CurrentUserInfo caller, String orderId) {
         requireAdmin(caller);
+        return pay(orderId, caller.accountId());
+    }
+
+    @Override
+    public int payOutCompleted() {
+        List<String> due = ledgerRepository.findCompletedNotPaidOut(PageRequest.of(0, AUTO_PAYOUT_BATCH));
+        int paid = 0;
+        for (String orderId : due) {
+            try {
+                pay(orderId, SYSTEM_ACTOR);
+                paid++;
+            } catch (AppException e) {
+                // a refund or an advance still pending, or a dispute: the admin settles it, then the next sweep pays
+                log.info("Order {} not paid out yet: {}", orderId, e.getErrorCode());
+            } catch (RuntimeException e) {
+                log.warn("Paying out order {} failed, next sweep retries: {}", orderId, e.getMessage());
+            }
+        }
+        return paid;
+    }
+
+    /** FR-48: what the platform holds of the order goes to the Shop owner's wallet, once (P-02 lock first). */
+    private PayoutResponse pay(String orderId, String actor) {
         Boolean ready = transactionTemplate.execute(status -> {
             if (ledgerRepository.findByOrderId(orderId).isEmpty()) {
                 throw new AppException(ErrorCode.LEDGER_NOT_FOUND);
@@ -221,11 +263,19 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                     .orderId(orderId)
                     .vendorId(ledger.getVendorId())
                     .amount(amount)
-                    .approvedBy(caller.accountId())
+                    .approvedBy(actor)
                     .build();
             payoutRepository.saveAndFlush(payout);
             if (amount > 0) {
-                ledgerService.payout(orderId, amount, payout.getId(), caller.accountId());
+                ledgerService.payout(orderId, amount, payout.getId(), actor);
+                String owner = vendorDirectory.ownerAccountId(ledger.getVendorId());
+                walletService.credit(owner, WalletEntryReason.SALE, amount, orderId);
+                walletNotifier.notify(
+                        owner,
+                        "Đơn #" + WalletServiceImpl.orderCode(orderId) + " đã hoàn tất: +"
+                                + WalletNotifier.money(amount),
+                        "Người mua đã nhận hàng. Toàn bộ tiền của đơn đã được chuyển vào ví Moonkage của shop.",
+                        amount);
             }
             announce(
                     RabbitConfig.PAYOUT_COMPLETED_ROUTING_KEY,
@@ -235,7 +285,7 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                     amount,
                     "COMPLETED",
                     null,
-                    caller.accountId());
+                    actor);
             return new PayoutResponse(payout.getId(), orderId, ledger.getVendorId(), amount, payout.getCreatedAt());
         });
     }

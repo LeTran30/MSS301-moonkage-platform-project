@@ -59,6 +59,9 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
+    private static final int AUTO_CONFIRM_BATCH = 100;
+    private static final String AUTO_CONFIRM_NOTE = "Hệ thống tự xác nhận đã nhận hàng vì hết thời hạn khiếu nại";
+
     private static final int MAX_PAGE_SIZE = 100;
 
     private final OrderRepository orderRepository;
@@ -257,9 +260,23 @@ public class OrderServiceImpl implements OrderService {
         if (disputeRepository.existsByOrderIdAndStatus(order.getId(), DisputeStatus.OPEN)) {
             throw new AppException(ErrorCode.DISPUTE_ALREADY_OPEN);
         }
+        markReceived(order, null);
+    }
+
+    @Override
+    @Transactional
+    public int confirmOverdue() {
+        List<Order> overdue = orderRepository.findForUpdateUnconfirmedPastDeadline(
+                Instant.now(), PageRequest.of(0, AUTO_CONFIRM_BATCH));
+        overdue.forEach(order -> markReceived(order, AUTO_CONFIRM_NOTE));
+        return overdue.size();
+    }
+
+    /** Received: a buy-now order completes (payment-service then pays the Shop); a custom order awaits the rest. */
+    private void markReceived(Order order, String note) {
         order.setReceivedConfirmedAt(Instant.now());
         if (order.getKind() == OrderKind.BUY_NOW) {
-            moveTo(order, OrderStatus.COMPLETED, null, List.of());
+            moveTo(order, OrderStatus.COMPLETED, note, List.of());
         } else {
             entityManager.flush();
         }

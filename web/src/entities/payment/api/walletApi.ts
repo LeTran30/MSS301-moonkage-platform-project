@@ -8,8 +8,16 @@ export interface WalletEntryDto {
    * ORDER_REJECTED: a Shop refused a paid order (reference = orderId).
    * PAYMENT: a checkout paid from the wallet. REFUND: a refund of a wallet payment.
    * WITHDRAWAL / WITHDRAWAL_RETURNED: money sent to the bank, or given back when refused.
+   * SALE: a completed order paid to its Shop owner (reference = orderId). DISBURSEMENT: an approved deposit advance.
    */
-  reason: 'ORDER_REJECTED' | 'PAYMENT' | 'REFUND' | 'WITHDRAWAL' | 'WITHDRAWAL_RETURNED';
+  reason:
+    | 'ORDER_REJECTED'
+    | 'PAYMENT'
+    | 'REFUND'
+    | 'WITHDRAWAL'
+    | 'WITHDRAWAL_RETURNED'
+    | 'SALE'
+    | 'DISBURSEMENT';
   amount: number;
   referenceId: string;
   createdAt: string;

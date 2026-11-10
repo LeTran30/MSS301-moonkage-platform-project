@@ -12,4 +12,8 @@ public interface VendorClient {
     /** 404 when the account owns no vendor. */
     @GetMapping("/vendors/by-owner/{accountId}")
     VendorView findByOwner(@PathVariable String accountId);
+
+    /** The vendor, with the account that owns it: whose wallet a payout goes to. */
+    @GetMapping("/vendors/{vendorId}")
+    VendorView get(@PathVariable String vendorId);
 }

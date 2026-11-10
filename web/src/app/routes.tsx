@@ -263,6 +263,8 @@ const ROUTE_TABLE = [
         path: 'tien/giai-ngan',
         element: withSuspense(VendorDisbursementsPage),
       },
+      // Ví của chủ shop là ví của tài khoản: cùng trang với người mua.
+      { path: 'vi', element: withSuspense(WalletPage) },
       { path: 'cai-dat', element: withSuspense(VendorSettingsPage) },
       {
         path: 'cai-dat/phap-ly',

@@ -63,6 +63,7 @@ export const routes = {
     reconciliation: '/kenh-ban/tien/doi-soat', // B5.1
     disbursements: '/kenh-ban/tien/giai-ngan', // B5.2
     messages: '/kenh-ban/tin-nhan', // Hộp thư khách hỏi shop
+    wallet: '/kenh-ban/vi', // Ví shop: tiền đơn hoàn tất, giải ngân cọc, rút về ngân hàng
     settings: '/kenh-ban/cai-dat', // B6.0
     legal: '/kenh-ban/cai-dat/phap-ly', // B6.1
     zones: '/kenh-ban/cai-dat/vung-giao', // B6.2

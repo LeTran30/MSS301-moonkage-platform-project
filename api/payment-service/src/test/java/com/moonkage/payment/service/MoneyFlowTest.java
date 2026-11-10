@@ -107,7 +107,9 @@ class MoneyFlowTest {
                 outboxService,
                 vendorDirectory,
                 orderClient,
-                tx);
+                tx,
+                mock(WalletService.class),
+                mock(WalletNotifier.class));
         ledger = new Ledger();
         ledger.setOrderId(ORDER_ID);
         ledger.setVendorId(VENDOR_ID);

@@ -193,6 +193,32 @@ class OrderServiceImplTest {
         verify(orderEvents).announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
     }
 
+    /** FR-11, AC-48.1: a delivered order nobody confirmed is confirmed by the system after its complaint window. */
+    @Test
+    void theSystemConfirmsAnOverdueDeliveredOrder() {
+        order.setStatus(OrderStatus.DELIVERED);
+        when(orderRepository.findForUpdateUnconfirmedPastDeadline(any(), any())).thenReturn(List.of(order));
+
+        assertEquals(1, service.confirmOverdue());
+
+        assertEquals(OrderStatus.COMPLETED, order.getStatus());
+        assertNotNull(order.getReceivedConfirmedAt());
+        verify(orderEvents).announce(RabbitConfig.ORDER_RECEIVED_CONFIRMED_ROUTING_KEY, order);
+    }
+
+    /** A custom order is only received: it completes when its remainder is paid. */
+    @Test
+    void anOverdueCustomOrderIsReceivedButNotCompleted() {
+        order.setKind(OrderKind.CUSTOM_ORDER);
+        order.setStatus(OrderStatus.DELIVERED);
+        when(orderRepository.findForUpdateUnconfirmedPastDeadline(any(), any())).thenReturn(List.of(order));
+
+        service.confirmOverdue();
+
+        assertEquals(OrderStatus.DELIVERED, order.getStatus());
+        assertNotNull(order.getReceivedConfirmedAt());
+    }
+
     @Test
     void aCustomOrderIsRejectedBeforeWorkWhileTheShopTookNoneOfTheDeposit() {
         order.setKind(OrderKind.CUSTOM_ORDER);

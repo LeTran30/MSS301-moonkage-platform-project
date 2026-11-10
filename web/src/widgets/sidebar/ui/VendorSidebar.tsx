@@ -63,9 +63,14 @@ export function VendorSidebarContent({
       condition: hasShop, // Ẩn khi không có Shop (IA)
     },
     {
-      title: 'Dòng tiền & Giải ngân',
-      path: routes.vendor.disbursements,
+      title: 'Ví shop',
+      path: routes.vendor.wallet,
       icon: 'wallet',
+    },
+    {
+      title: 'Giải ngân tiền cọc',
+      path: routes.vendor.disbursements,
+      icon: 'creditCard',
     },
     {
       title: 'Đối soát tài khoản',

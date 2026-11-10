@@ -11,5 +11,9 @@ public enum WalletEntryReason {
     /** Money sent to the buyer's bank; debit when asked, reference = withdrawalId. */
     WITHDRAWAL,
     /** An admin refused the withdrawal; credit, reference = withdrawalId. */
-    WITHDRAWAL_RETURNED
+    WITHDRAWAL_RETURNED,
+    /** A completed order paid out to its Shop owner; credit, reference = orderId (FR-48). */
+    SALE,
+    /** An approved advance of a custom order's deposit; credit, reference = disbursement request id (FR-47). */
+    DISBURSEMENT
 }

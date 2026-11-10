@@ -98,8 +98,8 @@ export function VendorDisbursementsPage() {
         <div>
           <h1 className={styles.title}>Giải ngân tiền cọc</h1>
           <p className={styles.subtitle}>
-            Xin nhận trước một phần tiền cọc của đơn đặt hàng để mua nguyên liệu, in ấn. Tiền
-            của đơn mua lẻ không cần xin: ban quản trị chuyển cho shop khi hết hạn khiếu nại.
+            Xin nhận trước một phần tiền cọc của đơn đặt hàng để mua nguyên liệu, in ấn; khi được
+            duyệt, tiền vào Ví shop. Tiền của đơn đã hoàn tất tự vào Ví shop, không cần xin.
           </p>
         </div>
       </div>

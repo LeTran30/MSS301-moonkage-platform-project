@@ -52,7 +52,9 @@ public class DisputeServiceImpl implements DisputeService {
         // the row lock is the one payout-lock takes: a dispute and a payout never pass each other (P-02)
         Order order = orderAccess.forBuyer(caller, orderId);
         Instant now = Instant.now();
+        // confirming receipt (by the buyer or by the system) closes complaints: the money then goes to the Shop
         if (order.getDeliveredAt() == null
+                || order.getReceivedConfirmedAt() != null
                 || order.getComplaintDeadline() == null
                 || now.isAfter(order.getComplaintDeadline())) {
             throw new AppException(ErrorCode.COMPLAINT_WINDOW_CLOSED);

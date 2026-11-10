@@ -61,6 +61,8 @@ export type Order = {
   interprovince?: boolean;
   deliveredAt?: string;
   disputeDeadline?: string; // hạn khiếu nại máy chủ tính khi đơn giao (Q-10)
+  // Đã xác nhận nhận hàng (người mua, hoặc hệ thống khi hết hạn khiếu nại): hết quyền khiếu nại, tiền về ví shop.
+  receivedConfirmed?: boolean;
   hasDispute?: boolean;
   disputeId?: string;
   hasInvoice?: boolean;

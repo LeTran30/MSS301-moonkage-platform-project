@@ -281,6 +281,16 @@ class CustomOrderAndDisputeTest {
         assertEquals(ErrorCode.COMPLAINT_WINDOW_CLOSED, error.getErrorCode());
     }
 
+    /** Confirming receipt closes complaints: the money of the order then goes to the Shop. */
+    @Test
+    void noDisputeOnceTheBuyerConfirmedReceipt() {
+        order.setReceivedConfirmedAt(Instant.now().minusSeconds(60));
+
+        AppException error = assertThrows(AppException.class, () -> disputeService.open(BUYER, ORDER_ID, damaged()));
+
+        assertEquals(ErrorCode.COMPLAINT_WINDOW_CLOSED, error.getErrorCode());
+    }
+
     /** AC-12.2: a complaint before the order was delivered is refused. */
     @Test
     void noDisputeBeforeTheOrderWasDelivered() {
