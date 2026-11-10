@@ -1,7 +1,7 @@
 import styles from './VendorDisbursementsPage.module.css';
 import { useState } from 'react';
 import { routes } from '@/shared/config';
-import { formatCurrency } from '@/shared/utils';
+import { formatCurrency, formatDateTime } from '@/shared/utils';
 import {
   Badge,
   Button,
@@ -17,7 +17,7 @@ import { useAction } from '@/shared/lib';
 import {
   DISBURSEMENT_PURPOSES,
   payoutPurposeLabel,
-  useLedgerList,
+  useDisbursementRequests,
   type DisbursementPurpose,
 } from '@/entities/payment';
 import { orderCode } from '@/entities/order';
@@ -30,6 +30,12 @@ import { useRequestDisbursement } from '@/features/request-disbursement';
  * The money of every order comes from `GET /api/ledgers?vendorId=...`; the
  * request is `POST /api/ledgers/{orderId}/disbursements`.
  */
+const STATUS: Record<string, { tone: 'gold' | 'green' | 'red'; label: string }> = {
+  PENDING: { tone: 'gold', label: 'Chờ duyệt' },
+  APPROVED: { tone: 'green', label: 'Đã duyệt' },
+  REJECTED: { tone: 'red', label: 'Bị từ chối' },
+};
+
 export function VendorDisbursementsPage() {
   const user = useCurrentUser();
   const [orderId, setOrderId] = useState('');
@@ -37,10 +43,11 @@ export function VendorDisbursementsPage() {
   const [purpose, setPurpose] = useState<DisbursementPurpose>('MATERIALS');
   const { busy, run, error } = useAction();
 
-  const asyncLedgers = useLedgerList({ vendorId: user.vendorId });
+  const asyncLedgers = useDisbursementRequests({ vendorId: user.vendorId });
   const requestDisbursement = useRequestDisbursement();
 
-  const ledgers = asyncLedgers.kind === 'loaded' ? asyncLedgers.data : [];
+  const ledgers = asyncLedgers.kind === 'loaded' ? asyncLedgers.data.ledgers : [];
+  const requests = asyncLedgers.kind === 'loaded' ? asyncLedgers.data.requests : [];
   // FR-47: only the deposit of a custom order not paid out yet can be advanced; the server refuses the rest.
   // Buy-now money is not asked for here: the admin pays it out once the complaint window closes.
   const depositLedgers = ledgers.filter(
@@ -163,6 +170,7 @@ export function VendorDisbursementsPage() {
               type="submit"
               variant="primary"
               loading={busy}
+              disabled={depositLedgers.length === 0}
               className={styles.fullWidthButton}
             >
               Gửi yêu cầu giải ngân
@@ -171,52 +179,45 @@ export function VendorDisbursementsPage() {
         </Card>
 
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Lệnh rút gần đây</h2>
+          <h2 className={styles.sectionTitle}>Yêu cầu giải ngân đã gửi</h2>
           <AsyncState
             state={asyncLedgers}
             onRetry={asyncLedgers.reload}
-            loadingMessage="Đang tải lịch sử giải ngân..."
-            isEmpty={() => ledgers.length === 0}
+            loadingMessage="Đang tải yêu cầu giải ngân..."
+            isEmpty={() => requests.length === 0}
             empty={
               <EmptyState
                 icon="wallet"
-                title="Chưa có lệnh giải ngân nào"
-                description="Các đơn hàng đủ điều kiện sẽ hiện ở đây để Shop gửi yêu cầu rút tiền."
+                title="Chưa gửi yêu cầu giải ngân nào"
+                description="Tiền của đơn mua lẻ xem ở mục Đối soát tài khoản; ban quản trị chuyển khi hết hạn khiếu nại."
               />
             }
           >
             {() => (
               <div className={styles.stack}>
-                {ledgers.map((l) => (
-                  <div key={l.orderId} className={styles.keyValueRow}>
-                    <div>
-                      <div className={styles.keyValueLabel}>#{l.orderId}</div>
-                      <div className={styles.statLabel}>
-                        {l.expectedPayoutDate || 'Chưa có ngày chi'}
+                {[...requests]
+                  .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+                  .map((r) => (
+                    <div key={r.requestId} className={styles.keyValueRow}>
+                      <div>
+                        <div className={styles.keyValueLabel}>
+                          Đơn #{orderCode(r.ledger.orderId)} · {payoutPurposeLabel(r.purpose ?? '')}
+                        </div>
+                        <div className={styles.statLabel}>
+                          {r.createdAt ? formatDateTime(r.createdAt) : ''}
+                          {r.status === 'REJECTED' && r.reason ? ` · Lý do: ${r.reason}` : ''}
+                        </div>
+                      </div>
+                      <div className={styles.rightText}>
+                        <div className={styles.moneyText}>
+                          {formatCurrency(r.approvedAmount ?? r.amount ?? 0)}
+                        </div>
+                        <Badge tone={STATUS[r.status ?? 'PENDING']?.tone ?? 'neutral'} size="sm">
+                          {STATUS[r.status ?? 'PENDING']?.label ?? r.status}
+                        </Badge>
                       </div>
                     </div>
-                    <div className={styles.rightText}>
-                      <div className={styles.moneyText}>{formatCurrency(l.toReceive ?? 0)}</div>
-                      {l.paidOut ? (
-                        <Badge tone="green" size="sm">
-                          Đã hoàn tất
-                        </Badge>
-                      ) : l.disputeOpen ? (
-                        <Badge tone="red" size="sm">
-                          Khóa khiếu nại
-                        </Badge>
-                      ) : l.payable ? (
-                        <Badge tone="blue" size="sm">
-                          Đủ điều kiện rút
-                        </Badge>
-                      ) : (
-                        <Badge tone="neutral" size="sm">
-                          Chờ người mua xác nhận
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </AsyncState>
