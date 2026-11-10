@@ -14,7 +14,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-zone);
+  color: var(--color-text);
   margin-bottom: var(--space-1);
 }
 .desc {
@@ -34,16 +34,4 @@
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   font-weight: 600;
-}
-.alertSuccess {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  background: color-mix(in srgb, var(--color-success) 12%, transparent);
-  color: var(--color-success-ink);
-  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-weight: 500;
 }

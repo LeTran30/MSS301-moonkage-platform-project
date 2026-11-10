@@ -15,6 +15,7 @@ Thư viện lo phần **phát sự kiện** của mẫu transactional outbox: se
 - Khi gửi hỏng, dừng lô và thử lại từ sự kiện đó ở lần chạy sau — thứ tự sự kiện được giữ.
 - Ghi số sự kiện "đã ghi nhưng chưa phát" vào gauge dùng chung `outbox.events.unpublished` (BE-11b) — dấu hiệu sớm nhất cho biết relay đang kẹt.
 - Cung cấp tên exchange dùng chung để mọi service khai báo cùng một broker topic.
+- Mang **trace context** của request qua hàng đợi (BE-11): dòng outbox nhớ header W3C `traceparent`, và relay khôi phục nó trước khi phát, để span của lúc phát là con của trace đã sinh ra sự kiện.
 
 **Không có trách nhiệm**
 
@@ -47,9 +48,10 @@ Package gốc `com.moonkage.outbox`.
 |---|---|---|
 | `OutboxRelay` | lớp | Bean `@Scheduled` đọc lô sự kiện chưa phát, phát lên RabbitMQ, đánh dấu đã phát sau publisher confirm. Lỗi `AmqpException` thì tăng `attempts` và dừng lô. |
 | `OutboxEventSource` | interface | Bốn thao tác relay cần từ bảng outbox của service: `findUnpublished(Pageable)`, `countUnpublished()`, `markPublished(String, Instant)`, `incrementAttempts(String)`. Service hiện thực trên repository của chính nó. |
-| `OutboxEventRow` | record | Ảnh chụp chỉ-đọc của một dòng outbox: `id` (gửi kèm làm AMQP message id), `routingKey`, `payload` (JSON đúng như đi trên dây), `attempts`. |
+| `OutboxEventRow` | record | Ảnh chụp chỉ-đọc của một dòng outbox: `id` (gửi kèm làm AMQP message id), `routingKey`, `payload` (JSON đúng như đi trên dây), `attempts`, `traceParent` (header W3C của request đã ghi dòng, `null` nếu không có trace nào). |
 | `OutboxProperties` | `@ConfigurationProperties("outbox")` | Cấu hình relay: `exchange`, `batchSize`, `confirmTimeout`. |
 | `OutboxAutoConfiguration` | `@AutoConfiguration` | Đăng ký bean `OutboxRelay` khi service có `OutboxEventSource` và khi `outbox.enabled` không bị tắt. |
+| `OutboxTraceContext` | lớp | Đọc và ghi header W3C `traceparent` để mang trace của request qua hàng đợi (BE-11). |
 | `EventExchange` | lớp final (hằng) | Tên topic exchange dùng chung: `NAME = "moonkage.events"`. |
 
 ### Auto-configuration đóng góp
@@ -63,6 +65,28 @@ com.moonkage.outbox.OutboxAutoConfiguration
 Điều kiện đăng ký: `@ConditionalOnClass(RabbitTemplate.class)`, `@ConditionalOnBean(OutboxEventSource.class)`, `@ConditionalOnMissingBean`, `@ConditionalOnProperty(prefix = "outbox", name = "enabled", havingValue = "true", matchIfMissing = true)`, và `@EnableConfigurationProperties(OutboxProperties.class)`.
 
 Auto-configuration khai báo `@AutoConfiguration(after = ObservabilityAutoConfiguration.class)` — nó phải đứng sau auto-configuration metric của `common-observability`, nếu không `MeterRegistry` chưa tồn tại lúc kiểm tra điều kiện.
+
+### Trace context qua hàng đợi (BE-11)
+
+Outbox cắt đứt mối giữa "request đã ghi dòng" và "lúc relay phát nó": dòng có thể nằm vài giây trong bảng, và by then request đã đi. Không có cơ chế này thì consumer sẽ tự mở một trace riêng, và trace của khách sẽ dừng ở service đã ghi sự kiện.
+
+`OutboxTraceContext` làm đúng việc đó bằng header W3C `traceparent` — cùng định dạng mà HTTP và AMQP đã dùng:
+
+| Hàm | Việc |
+|---|---|
+| `currentTraceParent()` | Header của request đang chạy, hoặc `null` khi không có gì được trace (service tắt tracing, hay sự kiện ghi ngoài request). |
+| `restore(String)` | Làm header đã lưu thành trace hiện tại, trả về scope phải đóng khi phát xong. Header hỏng thì trả `Scope.NOOP` — sự kiện vẫn được phát, chỉ mất chỗ của nó trong trace. |
+| `noop()` | Context không mang trace nào (service tắt tracing, unit test). |
+
+Dòng outbox lưu header này ở cột `trace_parent` (migration `V2026_11_07_1000__outbox_trace_parent.sql` của từng service). `OutboxRelay` khôi phục nó quanh lệnh phát:
+
+```java
+try (var scope = traceContext.restore(event.traceParent())) {
+    // ... rabbitTemplate.convertAndSend(...)
+}
+```
+
+Span của lúc phát vì thế là **con** của trace đã sinh ra sự kiện, và consumer đọc header `traceparent` trong message AMQP nên tiếp tục đúng trace đó.
 
 ## Ai đang dùng
 

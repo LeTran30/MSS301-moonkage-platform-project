@@ -113,12 +113,19 @@ export function VendorProductFormPage() {
         toast.error('Máy chủ không trả về khóa ảnh. Vui lòng thử lại.');
         return;
       }
-      setImages((prev) => [...prev, { key }]);
+      // Xem trước bằng chính file trong máy: ảnh tạm chưa có đường dẫn đọc từ kho.
+      setImages((prev) => [...prev, { key, url: URL.createObjectURL(file) }]);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Không tải được ảnh lên.');
     } finally {
       setUploading(false);
     }
+  }
+
+  function removeImage(key: string) {
+    const removed = images.find((image) => image.key === key);
+    if (removed?.url?.startsWith('blob:')) URL.revokeObjectURL(removed.url);
+    setImages((prev) => prev.filter((image) => image.key !== key));
   }
 
   /** The first rule the form breaks, in the order the fields appear; null when it can be sent. */
@@ -130,8 +137,8 @@ export function VendorProductFormPage() {
       return 'Bánh bán lại cần ghi rõ thương hiệu và xuất xứ.';
     }
     if (!expiryDate) return 'Vui lòng chọn hạn sử dụng.';
-    if (selectedCrusts.length === 0) return ': Sản phẩm bắt buộc gắn ít nhất 1 loại Vỏ bánh.';
-    if (selectedFillings.length === 0) return ': Sản phẩm bắt buộc gắn ít nhất 1 loại Nhân bánh.';
+    if (selectedCrusts.length === 0) return 'Sản phẩm cần gắn ít nhất 1 loại vỏ bánh.';
+    if (selectedFillings.length === 0) return 'Sản phẩm cần gắn ít nhất 1 loại nhân bánh.';
     if (images.length === 0) return `Sản phẩm cần ít nhất 1 ảnh (tối đa ${MAX_PRODUCT_IMAGES}).`;
     if (!description.trim()) return 'Vui lòng nhập mô tả sản phẩm.';
     return null;
@@ -186,7 +193,7 @@ export function VendorProductFormPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Quản lý sản phẩm', to: routes.vendor.products },
           { label: isEdit ? 'Chỉnh sửa sản phẩm' : 'Đăng sản phẩm mới' },
         ]}
@@ -194,7 +201,7 @@ export function VendorProductFormPage() {
 
       <div className={styles.header}>
         <h1 className={styles.title}>
-          {isEdit ? `Cập nhật: ${existing?.name ?? ''}` : 'Đăng Sản Phẩm Bánh Trung Thu Mới'}
+          {isEdit ? `Cập nhật: ${existing?.name ?? ''}` : 'Đăng sản phẩm mới'}
         </h1>
       </div>
 
@@ -247,7 +254,7 @@ export function VendorProductFormPage() {
             images={images}
             uploading={uploading}
             onUpload={(file) => void handleUploadImage(file)}
-            onRemove={(key) => setImages((prev) => prev.filter((image) => image.key !== key))}
+            onRemove={removeImage}
           />
 
           <ProductDeliveryDescription

@@ -11,8 +11,8 @@
 
 /* Gradients: darker, less saturated so the surfaces stay readable. */
 :root[data-theme='dark'] {
-  --gradient-gold: linear-gradient(135deg, #e0bf80 0%, #c39746 55%, #a57725 100%);
-  --gradient-ember: linear-gradient(135deg, #b03a28 0%, #8d1f19 50%, #5c120e 100%);
+  --gradient-gold: #b68a3a;
+  --gradient-ember: #8d1f19;
   --gradient-night: linear-gradient(160deg, #1a1009 0%, #0b0705 100%);
   --gradient-lacquer: linear-gradient(135deg, #2a0e0c 0%, #180706 50%, #0b0302 100%);
   --gradient-moon: radial-gradient(circle at 50% 50%, #fff0c4 0%, #f0c05f 45%, #c4841f 85%, #8a5810 100%);
@@ -20,9 +20,9 @@
 
 /* Glows: dimmer in dark mode; the light values are tuned for a white page. */
 :root[data-theme='dark'] {
-  --glow-moon: 0 0 60px 20px color-mix(in srgb, var(--color-gold-bright) 22%, transparent);
-  --glow-gold: 0 0 24px -2px color-mix(in srgb, var(--color-gold-bright) 28%, transparent);
-  --glow-lantern: 0 8px 30px rgba(216, 69, 47, 0.24);
+  --glow-moon: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --glow-gold: 0 4px 12px -6px rgba(0, 0, 0, 0.45);
+  --glow-lantern: 0 4px 12px -6px rgba(0, 0, 0, 0.45);
 }
 
 /* The gold accent gets its own bright variant in dark mode. */
@@ -40,14 +40,14 @@
 /* The same for the automatic dark mode (no explicit data-theme). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --gradient-gold: linear-gradient(135deg, #e0bf80 0%, #c39746 55%, #a57725 100%);
-    --gradient-ember: linear-gradient(135deg, #b03a28 0%, #8d1f19 50%, #5c120e 100%);
+    --gradient-gold: #b68a3a;
+    --gradient-ember: #8d1f19;
     --gradient-night: linear-gradient(160deg, #1a1009 0%, #0b0705 100%);
     --gradient-lacquer: linear-gradient(135deg, #2a0e0c 0%, #180706 50%, #0b0302 100%);
     --gradient-moon: radial-gradient(circle at 50% 50%, #fff0c4 0%, #f0c05f 45%, #c4841f 85%, #8a5810 100%);
-    --glow-moon: 0 0 60px 20px color-mix(in srgb, var(--color-gold-bright) 22%, transparent);
-    --glow-gold: 0 0 24px -2px color-mix(in srgb, var(--color-gold-bright) 28%, transparent);
-    --glow-lantern: 0 8px 30px rgba(216, 69, 47, 0.24);
+    --glow-moon: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    --glow-gold: 0 4px 12px -6px rgba(0, 0, 0, 0.45);
+    --glow-lantern: 0 4px 12px -6px rgba(0, 0, 0, 0.45);
     --color-gold-bright: #f2ce8a;
     --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-sm: 0 2px 6px rgb(0 0 0 / 0.45), 0 1px 2px rgb(0 0 0 / 0.3);

@@ -140,10 +140,6 @@ const AdminReconciliationPage = page(
   'AdminReconciliationPage',
 );
 const AdminDisputesPage = page(() => import('@/pages/admin/disputes'), 'AdminDisputesPage');
-const AdminDisputeDetailPage = page(
-  () => import('@/pages/admin/dispute-detail'),
-  'AdminDisputeDetailPage',
-);
 const AdminConfigPage = page(() => import('@/pages/admin/config'), 'AdminConfigPage');
 const AdminInterprovinceFeePage = page(
   () => import('@/pages/admin/interprovince-fee'),
@@ -297,7 +293,6 @@ const ROUTE_TABLE = [
       { path: 'tien/chuyen-tien', element: withSuspense(AdminPayoutsPage) },
       { path: 'tien/doi-soat', element: withSuspense(AdminReconciliationPage) },
       { path: 'khieu-nai', element: withSuspense(AdminDisputesPage) },
-      { path: 'khieu-nai/:id', element: withSuspense(AdminDisputeDetailPage) },
       { path: 'cau-hinh', element: withSuspense(AdminConfigPage) },
       {
         path: 'cau-hinh/phi-lien-tinh',

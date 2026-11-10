@@ -4,7 +4,7 @@
 
 Thư viện lo phần "upload file" của hệ thống: client POST thẳng file lên MinIO bằng presigned policy, rồi service sở hữu kiểm file và chuyển nó sang vị trí chính. Không có service nào đẩy byte file qua mình ở bước tải lên.
 
-- Mô tả đầy đủ class chính: [classes/ObjectStorage.md](classes/ObjectStorage.md).
+- Mô tả đầy đủ class chính: [../../archive/2026-11-08-class-docs/common-storage/ObjectStorage.md](../../archive/2026-11-08-class-docs/common-storage/ObjectStorage.md).
 - Quyết định kiến trúc liên quan: Software Design mục 8 (File) và NFR-03; quy ước đặt tên object nằm ở [../../architecture/api-db/README.md](../../architecture/api-db/README.md).
 
 ## Trách nhiệm

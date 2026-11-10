@@ -1,7 +1,13 @@
 import { apiClient, GATEWAY, unwrap, unwrapList } from '@/shared/api';
 import { provinceCodeOf, provinceNameOf } from '@/shared/config';
 import { type Vendor } from '../model/vendorStore';
-import type { OrderProfileDto, SupplierDto, VendorDetailDto, VendorResponseDto } from './vendorDto';
+import type {
+  OrderProfileDto,
+  SupplierDto,
+  VendorDetailDto,
+  VendorResponseDto,
+  VendorSummaryDto,
+} from './vendorDto';
 
 /**
  * `SupplierResponse.refPriceTiers` là chuỗi JSON thô (`@JsonRawValue`), ví dụ
@@ -158,6 +164,18 @@ export const vendorCatalogApi = {
     // SupplierController.getSupplier trả về MỘT `SupplierResponse` trong envelope.
     const dto = unwrap<SupplierDto>(res);
     return dto ? mapSupplierToVendor(dto) : null;
+  },
+
+  /**
+   * The public summary of one Shop (B-3.2).
+   *
+   * `GET /api/vendors/{vendorId}/summary` is open to guests, so a buyer can see
+   * the province of the Shop they are looking at without being its owner. It
+   * carries only the safe fields, never the private profile.
+   */
+  async getVendorSummary(id: string): Promise<VendorSummaryDto | null> {
+    const res = await apiClient.get<unknown>(GATEWAY.VENDOR.SUMMARY(id));
+    return unwrap<VendorSummaryDto>(res);
   },
 
   /**

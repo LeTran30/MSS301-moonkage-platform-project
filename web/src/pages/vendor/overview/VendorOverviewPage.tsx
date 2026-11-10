@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
 import { Badge, Button, ButtonLink, Card, Icon, toast } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
+import { openPaymentPage, useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
 import {
   canSendMaket,
@@ -13,7 +13,7 @@ import {
   type Order,
 } from '@/entities/order';
 import { useVendorRequestList } from '@/entities/request';
-import { useMyVendorDetail, useMyVendorId } from '@/entities/vendor';
+import { useMyVendorDetail, useMyVendorId, VENDOR_STATUS_LABELS } from '@/entities/vendor';
 import { usePayVendorFee } from '@/features/pay-vendor-fee';
 import styles from './VendorOverviewPage.module.css';
 
@@ -36,22 +36,24 @@ export function VendorOverviewPage() {
   const asyncVendorId = useMyVendorId();
   const vendorId = asyncVendorId.kind === 'loaded' ? asyncVendorId.data : undefined;
   const asyncProfile = useMyVendorDetail(vendorId ?? null);
-
-  // FR-32: đơn của chính Shop — `GET /api/orders?vendorId=...`.
-  const asyncOrders = useOrderList({ vendorId });
-
-  // FR-36: the requests sent to the Shop, with the Shop's own quotes.
-  const asyncRequests = useVendorRequestList(vendorId ?? null);
-  const requests = asyncRequests.kind === 'loaded' ? asyncRequests.data : [];
-
   const vendor = asyncProfile.kind === 'loaded' ? asyncProfile.data : null;
-  const orders: Order[] = asyncOrders.kind === 'loaded' ? asyncOrders.data : [];
-
-  const payVendorFee = usePayVendorFee(vendorId ?? '');
 
   // FR-27 Note: Trước khi mở bán: chỉ hiện trạng thái hồ sơ và nộp phí (B1.1)
   const isApproved = vendor?.status === 'APPROVED';
   const isFeePaid = Boolean(vendor?.registrationFeePaidAt);
+  // Chưa mở bán thì chưa có đơn hay yêu cầu nào: không gọi hai API đó.
+  const canOperate = Boolean(vendor?.canOperate) && Boolean(vendorId);
+
+  // FR-32: đơn của chính Shop — `GET /api/orders?vendorId=...`.
+  const asyncOrders = useOrderList({ vendorId, enabled: canOperate });
+
+  // FR-36: the requests sent to the Shop, with the Shop's own quotes.
+  const asyncRequests = useVendorRequestList(canOperate ? (vendorId ?? null) : null);
+  const requests = asyncRequests.kind === 'loaded' ? asyncRequests.data : [];
+
+  const orders: Order[] = asyncOrders.kind === 'loaded' ? asyncOrders.data : [];
+
+  const payVendorFee = usePayVendorFee(vendorId ?? '');
 
   const handlePayOpeningFee = () => {
     void run(async () => {
@@ -64,7 +66,9 @@ export function VendorOverviewPage() {
       }
       const link = await payVendorFee();
       if (link?.paymentUrl) {
-        window.open(link.paymentUrl, '_blank', 'noopener,noreferrer');
+        // Cùng tab: phiên đăng nhập nằm trong sessionStorage của tab này, nên
+        // trang kết quả VNPay trả về vẫn biết người bán là ai.
+        openPaymentPage(link.paymentUrl);
         return;
       }
       toast.info('Không lấy được liên kết thanh toán. Vui lòng thử lại.');
@@ -92,13 +96,13 @@ export function VendorOverviewPage() {
           <div className={styles.preLaunchIcon}>
             <Icon name="store" size={40} />
           </div>
-          <h2>Hồ Sơ Cửa Hàng &amp; Phí Mở Bán</h2>
+          <h2>Hồ sơ cửa hàng và phí mở bán</h2>
           <p>
-            Trạng thái xét duyệt hồ sơ:{' '}
+            Trạng thái hồ sơ:{' '}
             {/* Trạng thái đọc từ máy chủ; khi chưa tải xong thì không hiện một
                 trạng thái bịa. */}
             <Badge tone={isApproved ? 'green' : 'amber'}>
-              {vendor?.status ?? 'Đang tải…'}
+              {vendor?.status ? VENDOR_STATUS_LABELS[vendor.status] : 'Đang tải…'}
             </Badge>
           </p>
 
@@ -108,7 +112,7 @@ export function VendorOverviewPage() {
             <div className={styles.feeActionBox}>
               <p>
                 Hồ sơ của bạn đã được <strong>Quản trị viên phê duyệt</strong>! Vui lòng nộp phí mở
-                bán niêm yết để bắt đầu đăng sản phẩm và tiếp nhận đơn hàng.
+                bán để bắt đầu đăng sản phẩm và tiếp nhận đơn hàng.
               </p>
               <Button
                 variant="primary"
@@ -122,11 +126,43 @@ export function VendorOverviewPage() {
             </div>
           )}
 
-          {!isApproved && (
+          {vendor?.status === 'PENDING' && (
             <div className={styles.waitingNotice}>
               <Icon name="clock" size={20} />
               <span>
-                Đội vận hành sàn Moonkage đang tiến hành đối chiếu CCCD và Giấy ĐKKD của đơn vị bạn.
+                Đội vận hành sàn Moonkage đang đối chiếu CCCD và Giấy ĐKKD của đơn vị bạn.
+              </span>
+            </div>
+          )}
+
+          {(vendor?.status === 'NEEDS_INFO' || vendor?.status === 'REJECTED') && (
+            <div className={styles.feeActionBox}>
+              <p>
+                {vendor.status === 'NEEDS_INFO'
+                  ? 'Đội vận hành cần bạn bổ sung hồ sơ.'
+                  : 'Hồ sơ chưa được duyệt.'}
+                {vendor.statusReason && (
+                  <>
+                    {' '}
+                    <strong>Ghi chú:</strong> {vendor.statusReason}
+                  </>
+                )}
+              </p>
+              <ButtonLink
+                to={routes.vendor.legal}
+                variant="primary"
+                iconRight="arrowRight"
+              >
+                Sửa và nộp lại hồ sơ
+              </ButtonLink>
+            </div>
+          )}
+
+          {vendor?.status === 'LOCKED' && (
+            <div className={styles.waitingNotice}>
+              <Icon name="shield" size={20} />
+              <span>
+                Gian hàng đang bị khoá.{vendor.statusReason ? ` Lý do: ${vendor.statusReason}` : ''}
               </span>
             </div>
           )}
@@ -152,7 +188,6 @@ export function VendorOverviewPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <div className={styles.eyebrow}>KÊNH BÁN HÀNG · TỔNG QUAN</div>
           <h1 className={styles.title}>
             {vendor?.businessName || user.vendorName || 'Gian hàng của tôi'}
           </h1>
@@ -171,8 +206,7 @@ export function VendorOverviewPage() {
       {/* Khối "Việc cần làm" */}
       <Card padding="md" tone="gold" className={styles.actionCard}>
         <div className={styles.actionCardHeader}>
-          <Icon name="sparkle" size={18} />
-          <h3>Khối &quot;Việc cần làm hôm nay&quot;</h3>
+          <h3>Việc cần làm hôm nay</h3>
         </div>
         <div className={styles.actionList}>
           {pendingOrders.length > 0 && (
@@ -185,6 +219,9 @@ export function VendorOverviewPage() {
                 Xử lý đơn ngay
               </ButtonLink>
             </div>
+          )}
+          {pendingOrders.length === 0 && pendingRequests.length === 0 && (
+            <p className={styles.lead}>Chưa có việc nào cần làm.</p>
           )}
           {pendingRequests.length > 0 && (
             <div className={styles.actionItem}>

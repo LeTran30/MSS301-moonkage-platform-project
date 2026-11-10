@@ -23,22 +23,15 @@ export function VendorCompanyInfoStep({
   return (
     <div className={styles.stepContent}>
       <h3>Bước 2: Thông tin đơn vị &amp; Chủ hộ kinh doanh</h3>
-      <div className={styles.grid2}>
-        <Input
-          label="Tên thương hiệu / Tên Shop hiển thị"
-          value={form.shopName}
-          error={errors.shopName}
-          onChange={(e) => onChange({ shopName: e.target.value })}
-          required
-        />
-        <Input
-          label="Tên đầy đủ trên Giấy phép ĐKKD"
-          value={form.legalName}
-          error={errors.legalName}
-          onChange={(e) => onChange({ legalName: e.target.value })}
-          required
-        />
-      </div>
+      <Input
+        label="Tên đơn vị kinh doanh"
+        hint="Ghi đúng như trên giấy chứng nhận đăng ký. Người mua thấy tên này trên Shop."
+        placeholder="Ví dụ: Hộ kinh doanh Bánh Quê"
+        value={form.legalName}
+        error={errors.legalName}
+        onChange={(e) => onChange({ legalName: e.target.value })}
+        required
+      />
       <div className={styles.grid2}>
         <Input
           label="Mã số thuế"
@@ -75,13 +68,17 @@ export function VendorCompanyInfoStep({
           value={form.representativeName}
           error={errors.representativeName}
           onChange={(e) => onChange({ representativeName: e.target.value })}
+          hint="Viết không dấu, đúng như trên CCCD (VD: NGUYEN THI LAN)"
           required
         />
         <Input
-          label="Số CCCD đã che (hoặc đầy đủ)"
+          label="Số CCCD của chủ hộ / chủ doanh nghiệp"
           value={form.idCardNumber}
           error={errors.idCardNumber}
           onChange={(e) => onChange({ idCardNumber: e.target.value })}
+          hint="Đủ 12 số, trùng với CCCD bạn đã xác minh NFC"
+          inputMode="numeric"
+          autoComplete="off"
           required
         />
       </div>

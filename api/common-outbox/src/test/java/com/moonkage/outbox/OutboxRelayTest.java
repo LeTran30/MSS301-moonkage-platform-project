@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.moonkage.observability.OutboxMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.tracing.Tracer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -48,6 +49,7 @@ class OutboxRelayTest {
                 eventSource,
                 rabbitTemplate,
                 new OutboxMetrics(new SimpleMeterRegistry()),
+                new OutboxTraceContext(Tracer.NOOP),
                 EXCHANGE,
                 100,
                 Duration.ofSeconds(5));

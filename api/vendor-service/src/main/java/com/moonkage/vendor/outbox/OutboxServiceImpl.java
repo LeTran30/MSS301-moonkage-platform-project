@@ -2,6 +2,7 @@ package com.moonkage.vendor.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ class OutboxServiceImpl implements OutboxService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final OutboxTraceContext traceContext;
 
     @Value("${spring.application.name}")
     private String sourceService;
@@ -34,6 +36,7 @@ class OutboxServiceImpl implements OutboxService {
                 .id(eventId)
                 .routingKey(routingKey)
                 .payload(payload)
+                .traceParent(traceContext.currentTraceParent())
                 .build());
     }
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { AsyncState, Badge, Button, Icon, Modal, Textarea, toast } from '@/shared/ui';
 import { formatCurrency } from '@/shared/utils';
 import { useAction } from '@/shared/lib';
+import { useTaxonomy } from '@/entities/product';
 import { useChangeProductStatus } from '@/features/edit-product';
 import { usePlatformProducts, type AdminProductRow } from '@/features/moderate-products';
 import styles from './AdminProductsPage.module.css';
@@ -12,11 +13,13 @@ export function AdminProductsPage() {
   const [activeTab, setActiveTab] = useState<AdminProductTab>('ALL');
   const [selectedProduct, setSelectedProduct] = useState<AdminProductRow | null>(null);
   const [takeDownModalOpen, setTakeDownModalOpen] = useState(false);
-  const [takeDownReason, setTakeDownReason] = useState(
-    'Vi phạm quy định thông tin nguyên liệu hoặc nhãn hiệu chưa được cấp phép.'
-  );
+  // Lý do do quản trị viên tự viết cho từng sản phẩm; Shop đọc nó trên thẻ sản phẩm.
+  const [takeDownReason, setTakeDownReason] = useState('');
   const { busy, run, error } = useAction();
   const changeProductStatus = useChangeProductStatus();
+  const { crusts, fillings } = useTaxonomy();
+  const attributeName = (code: string) =>
+    [...crusts, ...fillings].find((item) => item.code === code)?.name ?? code;
 
   /**
    * FR-46: quản trị viên gỡ sản phẩm vi phạm vĩnh viễn (REMOVED, kèm lý do).
@@ -38,6 +41,7 @@ export function AdminProductsPage() {
 
   const handleOpenTakeDown = (p: AdminProductRow) => {
     setSelectedProduct(p);
+    setTakeDownReason('');
     setTakeDownModalOpen(true);
   };
 
@@ -59,26 +63,14 @@ export function AdminProductsPage() {
     });
   };
 
-  const handleRestore = (p: AdminProductRow) => {
-    void run(async () => {
-      // Không thể khôi phục sản phẩm đã REMOVED (BR-24); chỉ mở lại sản phẩm HIDDEN.
-      if (p.status === 'REMOVED') {
-        toast.warning('Sản phẩm đã bị gỡ vĩnh viễn nên không thể khôi phục.');
-        return;
-      }
-      await changeProductStatus(p.vendorId ?? '', p.id, { status: 'ON_SALE' });
-      toast.success(`Đã khôi phục mở bán cho sản phẩm "${p.name}".`);
-      listQuery.reload();
-    });
-  };
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Kiểm duyệt sản phẩm toàn sàn</h1>
           <p className={styles.desc}>
-            Giám sát danh mục bánh trung thu niêm yết, kiểm tra tiêu chuẩn phân loại Vỏ &amp; Nhân, gỡ bỏ sản phẩm vi phạm.
+            Giám sát danh mục bánh trung thu niêm yết, kiểm tra tiêu chuẩn phân loại Vỏ &amp; Nhân,
+            gỡ bỏ sản phẩm vi phạm.
           </p>
         </div>
       </div>
@@ -90,8 +82,8 @@ export function AdminProductsPage() {
       )}
 
       <div className={styles.ruleNotice}>
-        <Icon name="info" size={16} /> Gỡ bỏ sản phẩm là trạng thái <strong>REMOVED</strong> có lý do, không phải
-        xóa vĩnh viễn — dữ liệu đối soát và lịch sử đơn hàng vẫn giữ nguyên.
+        <Icon name="info" size={16} /> Gỡ bỏ sản phẩm là trạng thái <strong>REMOVED</strong> có lý
+        do, không phải xóa vĩnh viễn — dữ liệu đối soát và lịch sử đơn hàng vẫn giữ nguyên.
       </div>
 
       <AsyncState
@@ -106,7 +98,10 @@ export function AdminProductsPage() {
             <div className={styles.tabRow}>
               {(
                 [
-                  { id: 'ALL', label: `Tất cả sản phẩm (${listQuery.kind === 'loaded' ? listQuery.data.length : 0})` },
+                  {
+                    id: 'ALL',
+                    label: `Tất cả sản phẩm (${listQuery.kind === 'loaded' ? listQuery.data.length : 0})`,
+                  },
                   { id: 'ACTIVE', label: 'Đang hiển thị bán' },
                   { id: 'FLAGGED', label: 'Bị gỡ / Tạm dừng' },
                 ] as Array<{ id: AdminProductTab; label: string }>
@@ -150,7 +145,9 @@ export function AdminProductsPage() {
                           />
                           <div>
                             <strong className={styles.prodName}>{p.name}</strong>
-                            <span className={styles.prodSlug}>Hạn sử dụng: {p.expiryDate ?? '—'}</span>
+                            <span className={styles.prodSlug}>
+                              Hạn sử dụng: {p.expiryDate ?? '—'}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -163,30 +160,48 @@ export function AdminProductsPage() {
                       <td>
                         <div className={styles.chipList}>
                           {(p.crustCodes ?? []).map((c) => (
-                            <span key={c} className={styles.chip}>{c}</span>
+                            <span key={c} className={styles.chip}>
+                              {attributeName(c)}
+                            </span>
                           ))}
                         </div>
                       </td>
                       <td>
                         <div className={styles.chipList}>
                           {(p.fillingCodes ?? []).map((f) => (
-                            <span key={f} className={styles.chip}>{f}</span>
+                            <span key={f} className={styles.chip}>
+                              {attributeName(f)}
+                            </span>
                           ))}
                         </div>
                       </td>
                       <td>
-                        <Badge tone={p.status === 'ON_SALE' ? 'green' : 'red'}>
-                          {p.status === 'ON_SALE' ? 'Đang mở bán' : p.status === 'HIDDEN' ? 'Đang ẩn' : 'Đã bị gỡ'}
+                        <Badge
+                          tone={
+                            p.status === 'ON_SALE'
+                              ? 'green'
+                              : p.status === 'HIDDEN'
+                                ? 'neutral'
+                                : 'red'
+                          }
+                        >
+                          {p.status === 'ON_SALE'
+                            ? 'Đang mở bán'
+                            : p.status === 'HIDDEN'
+                              ? 'Đang ẩn'
+                              : 'Đã bị gỡ'}
                         </Badge>
                       </td>
                       <td>
-                        {p.status === 'ON_SALE' ? (
+                        {/* FR-46: quản trị viên chỉ gỡ; bật hay ẩn là việc của chủ Shop
+                            (FR-34), và sản phẩm đã gỡ không mở lại được (BR-24). */}
+                        {p.status === 'REMOVED' ? (
+                          <span className={styles.removedReason}>
+                            {p.removedReason || 'Không ghi lý do'}
+                          </span>
+                        ) : (
                           <Button variant="danger" size="sm" onClick={() => handleOpenTakeDown(p)}>
                             Gỡ bỏ
-                          </Button>
-                        ) : (
-                          <Button variant="secondary" size="sm" loading={busy} onClick={() => handleRestore(p)}>
-                            Khôi phục
                           </Button>
                         )}
                       </td>
@@ -206,15 +221,20 @@ export function AdminProductsPage() {
         title={`Gỡ sản phẩm vi phạm: ${selectedProduct?.name ?? ''}`}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setTakeDownModalOpen(false)}>Hủy</Button>
-            <Button variant="danger" loading={busy} onClick={handleConfirmTakeDown}>Xác nhận gỡ sản phẩm</Button>
+            <Button variant="ghost" onClick={() => setTakeDownModalOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="danger" loading={busy} onClick={handleConfirmTakeDown}>
+              Xác nhận gỡ sản phẩm
+            </Button>
           </>
         }
       >
         <div className={styles.modalBody}>
           <p className={styles.modalSub}>
-            Sản phẩm bị gỡ sẽ ngay lập tức biến mất khỏi trang chủ và kết quả tìm kiếm.
-            Một thông báo lý do sẽ được gửi tự động tới gian hàng <strong>{selectedProduct?.vendorName}</strong>.
+            Sản phẩm bị gỡ sẽ ngay lập tức biến mất khỏi trang chủ và kết quả tìm kiếm. Một thông
+            báo lý do sẽ được gửi tự động tới gian hàng{' '}
+            <strong>{selectedProduct?.vendorName}</strong>.
           </p>
 
           <Textarea

@@ -16,12 +16,15 @@ export function useOrderList(options?: {
   vendorId?: string | null;
   openDispute?: boolean;
   status?: string;
+  /** `false` thì không gọi API (ví dụ Shop chưa mở bán thì chưa có đơn). */
+  enabled?: boolean;
 }) {
   const vendorId = options?.vendorId ?? null;
   const openDispute = options?.openDispute ?? false;
   const status = options?.status;
   return useQueryData(queryKeys.order.list(vendorId, openDispute, status), () =>
     orderApi.getOrders({ vendorId: vendorId ?? undefined, openDispute, status }),
+    { enabled: options?.enabled },
   );
 }
 

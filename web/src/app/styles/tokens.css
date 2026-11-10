@@ -45,6 +45,9 @@
 
   /* Màu phụ trợ — module CSS dùng token, không hardcode hex ở nơi khác (§6) */
   --color-white: #ffffff;
+  /* QR: dark modules on a light quiet zone in both themes, or phone scanners miss it */
+  --color-qr-module: #1a120c;
+  --color-qr-quiet: #ffffff;
   --color-text-on-dark: #f4ead9;
   --color-gold-ink: #2a1a06;
   --color-success-ink: #1b5e20;
@@ -67,9 +70,12 @@
   --color-green: var(--color-success);
   --color-red: var(--color-danger);
 
-  /* Gradient & Theme Patterns */
-  --gradient-gold: linear-gradient(135deg, #e9c27a 0%, #cfa544 55%, #b8862b 100%);
-  --gradient-ember: linear-gradient(135deg, #d8452f 0%, #b3261e 50%, #7d1712 100%);
+  /*
+   * Theme patterns. Gold and ember used to be gradients with glows; they are now flat colors, so every
+   * surface still using these tokens renders a plain fill (the gradient-and-glow look read as template UI).
+   */
+  --gradient-gold: #c99a3e;
+  --gradient-ember: #b3261e;
   --gradient-night: linear-gradient(160deg, #2a1810 0%, #160d08 100%);
   --gradient-paper: radial-gradient(1200px 600px at 85% -10%, rgb(226 178 92 / 0.18), transparent 60%),
     radial-gradient(900px 500px at -10% 10%, rgb(179 38 30 / 0.08), transparent 60%);
@@ -77,13 +83,14 @@
   --gradient-lacquer: linear-gradient(135deg, #3d1411 0%, #240c0b 50%, #120504 100%);
 
   /* Glow Effects */
-  --glow-moon: 0 0 60px 20px rgba(245, 187, 86, 0.35);
-  --glow-gold: 0 0 24px -2px rgba(226, 178, 92, 0.4);
-  --glow-lantern: 0 8px 30px rgba(216, 69, 47, 0.35);
+  --glow-moon: 0 8px 24px -12px rgba(120, 72, 20, 0.35);
+  --glow-gold: 0 4px 12px -6px rgba(120, 72, 20, 0.3);
+  --glow-lantern: 0 4px 12px -6px rgba(125, 23, 18, 0.35);
 
   /* Typography */
   --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  /* one family: Be Vietnam Pro carries Vietnamese diacritics cleanly at display sizes */
+  --font-display: var(--font-sans);
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-heading: var(--font-display);
   --text-xs: 0.75rem;
@@ -128,7 +135,9 @@
   --control-h-lg: 50px;
 
   /* Breakpoint chuẩn — dùng cho media query trong toàn bộ dự án.
-     Giá trị tính bằng px để khớp với `min-width` trong `@media`. */
+     Giá trị tính bằng px để khớp với `min-width` trong `@media`.
+     `xs` thêm cho màn hình rất hẹp (header chỉ còn icon nút). */
+  --breakpoint-xs: 400px;
   --breakpoint-sm: 480px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
@@ -200,6 +209,9 @@
     --shadow-md: 0 10px 30px -10px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.3);
     --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7);
     --color-white: #ffffff;
+    /* unchanged on purpose: a QR stays dark on light */
+    --color-qr-module: #1a120c;
+    --color-qr-quiet: #ffffff;
     --color-text-on-dark: #f4ead9;
     --color-gold-ink: #1a0f0b;
     --color-success-ink: #74c58f;
@@ -210,6 +222,9 @@
     --color-night-1: #18110b;
     --color-night-2: #120d09;
     --color-white: #ffffff;
+    /* unchanged on purpose: a QR stays dark on light */
+    --color-qr-module: #1a120c;
+    --color-qr-quiet: #ffffff;
   --color-text-on-dark: #f4ead9;
   --color-gold-ink: #1a0f0b;
   --color-success-ink: #74c58f;

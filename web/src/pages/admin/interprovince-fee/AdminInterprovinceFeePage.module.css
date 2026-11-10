@@ -22,12 +22,23 @@
 .form {
   max-width: 900px;
 }
+/* Bảng 34 tỉnh: rộng hơn màn hình điện thoại nên cuộn ngang.
+   Trên điện thoại KHÔNG giới hạn chiều cao — nếu vừa cuộn ngang vừa cuộn
+   dọc thì con trỏ chuột lướt theo chiều ngang làm trang nhảy dọc, và người
+   dùng không biết còn bao nhiêu dòng phía dưới (audit 2.3). */
 .tableWrap {
-  max-height: 480px;
   overflow-x: auto;
-  overflow-y: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+}
+
+/* Từ tablet trở lên màn hình đủ cao: giới hạn chiều cao để bảng không đẩy
+   nút lưu xuống dưới màn hình. */
+@media (min-width: var(--breakpoint-md)) {
+  .tableWrap {
+    max-height: 480px;
+    overflow-y: auto;
+  }
 }
 .table {
   width: 100%;

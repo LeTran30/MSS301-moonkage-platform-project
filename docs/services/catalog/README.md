@@ -2,11 +2,11 @@
 
 ## Trạng thái 02/11/2026
 
-Contract v1 đã duyệt; Phase D xong phần adapter, `acceptsOrders`, tìm kiếm/facets, root route gateway và `review.created` theo envelope. Catalog chỉ còn phía đọc: không ghi sản phẩm, không gọi MinIO hay Feign. Chi tiết trong [implementation-plan](implementation-plan.md#02112026-acceptsorders-tìm-kiếm-bỏ-writer-cũ-review-envelope). Các mục bên dưới là lịch sử.
+Contract v1 đã duyệt; Phase D xong phần adapter, `acceptsOrders`, tìm kiếm/facets, root route gateway và `review.created` theo envelope. Catalog chỉ còn phía đọc: không ghi sản phẩm, không gọi MinIO hay Feign. Chi tiết trong [implementation-plan](../../work/plans/catalog-implementation-plan.md#02112026-acceptsorders-tìm-kiếm-bỏ-writer-cũ-review-envelope). Các mục bên dưới là lịch sử.
 
 ## Trạng thái 26/10/2026
 
-[Kế hoạch C0–C5](implementation-plan.md) là bản phân chia scope sau khi đối chiếu IA và hai bộ wireframe. **C1** đã push riêng (`3cbb1ff`). Snapshot C2 đã commit **local** `1e160ae`, merge develop local `3227fed` theo master prompt Phase A–C. C2 còn chờ contract producer, chưa hoàn thành consumer nghiệp vụ/full replay. Không push, merge vào develop/main hoặc deploy; Phase D chờ xác nhận nhóm duyệt contract.
+[Kế hoạch C0–C5](../../work/plans/catalog-implementation-plan.md) là bản phân chia scope sau khi đối chiếu IA và hai bộ wireframe. **C1** đã push riêng (`3cbb1ff`). Snapshot C2 đã commit **local** `1e160ae`, merge develop local `3227fed` theo master prompt Phase A–C. C2 còn chờ contract producer, chưa hoàn thành consumer nghiệp vụ/full replay. Không push, merge vào develop/main hoặc deploy; Phase D chờ xác nhận nhóm duyệt contract.
 
 Runtime mặc định chỉ scan entity `ProductListing` @Immutable và repository chỉ đọc của view V2.
 
@@ -51,7 +51,7 @@ Migration mới `V2026_10_26_1500__catalog_projection_recovery.sql` chỉ thêm 
 
 Full replay/rebuild vẫn thiếu contract và nguồn feed/checkpoint được producer duyệt. Chỉ inbox raw không chứng minh lịch sử đủ; không parse các field business chưa chốt để “rebuild” tùy ý. Test adapter chỉ là fixture kiểm transaction, không là contract hoặc nguồn replay production.
 
-Ghi chú cho owner orchestrator: [orchestrator-handoff.md](orchestrator-handoff.md). Chưa sửa orchestrator và chưa nghiệm thu audit E2E.
+Ghi chú cho owner orchestrator: [../../archive/2026-10-27-catalog-orchestrator-handoff.md](../../archive/2026-10-27-catalog-orchestrator-handoff.md). Chưa sửa orchestrator và chưa nghiệm thu audit E2E.
 
 Verify Phase B: full clean verify **403 pass / 0 fail / 0 error / 0 skip**; catalog 109, gồm 38 full application tests PG/Rabbit thật. Phase A sau merge có 393 tests; B thêm 10 recovery tests. Chi tiết/cách đếm trong [báo cáo A–C](../../archive/2026-10-26-catalog-phase-abc-report.md). Kết quả 371/99 bên dưới là lịch sử trước merge develop.
 
@@ -132,12 +132,12 @@ Từ thư mục `api`, chạy Maven wrapper theo convention:
 
 Các test DB **C1** là JDBC slice. **C2** bổ sung CatalogProjectionIntegrationTest là full SpringBootTest với HTTP server, PostgreSQL/RabbitMQ thật và `ddl-auto: validate`; kiểm default JPA metamodel chỉ ProductListing, không legacy tables/repos/storage bean. Bao gồm text[]/jsonb/pg_trgm/view, @Immutable dirty flush, upgrade/backfill migration, cạnh tranh version/reviews/eventId, inbox retry/DLQ và hai consumer đồng thời. Input row nội bộ không được gọi là producer contract test.
 
-Tests C1 cũ giữ nguyên cơ chế skip khi thiếu Docker; full integration suite C2 **báo lỗi khi thiếu Docker**, không silently skip để kết luận startup. Không dùng H2 hoặc disable test. Kết quả bản cuối và cách đếm được ghi ở [kế hoạch](implementation-plan.md), tách riêng lần lỗi hạ tầng với lần xác minh thành công.
+Tests C1 cũ giữ nguyên cơ chế skip khi thiếu Docker; full integration suite C2 **báo lỗi khi thiếu Docker**, không silently skip để kết luận startup. Không dùng H2 hoặc disable test. Kết quả bản cuối và cách đếm được ghi ở [kế hoạch](../../work/plans/catalog-implementation-plan.md), tách riêng lần lỗi hạ tầng với lần xác minh thành công.
 
 Bản cuối 26/10/2026: `clean verify` toàn backend **BUILD SUCCESS, 371 pass / 0 fail / 0 error / 0 skip**; catalog **99 tests**, gồm 28 full application C2 và 11 test ảnh legacy giữ nguyên. Đếm Surefire XML theo đúng 11 module parent POM sau clean. Spotless/Checkstyle/Error Prone/ArchUnit và `git diff --check` qua. Startup đã xác minh với DB V2 trên Testcontainers, chưa deploy hoặc nghiệm thu event producer/consumer nghiệp vụ E2E.
 
-Pseudocode: [InterprovinceFeeServiceImpl](classes/InterprovinceFeeServiceImpl.md), [OutboxDeliveryServiceImpl](classes/OutboxDeliveryServiceImpl.md).
+Pseudocode: [InterprovinceFeeServiceImpl](../../archive/2026-11-08-class-docs/catalog/InterprovinceFeeServiceImpl.md), [OutboxDeliveryServiceImpl](../../archive/2026-11-08-class-docs/catalog/OutboxDeliveryServiceImpl.md).
 
-Pseudocode C2: [CatalogProjectionServiceImpl](classes/CatalogProjectionServiceImpl.md), [JdbcCatalogProjectionRepository](classes/JdbcCatalogProjectionRepository.md), [ProjectionInboxServiceImpl](classes/ProjectionInboxServiceImpl.md), [ProductReadServiceImpl](classes/ProductReadServiceImpl.md).
+Pseudocode C2: [CatalogProjectionServiceImpl](../../archive/2026-11-08-class-docs/catalog/CatalogProjectionServiceImpl.md), [JdbcCatalogProjectionRepository](../../archive/2026-11-08-class-docs/catalog/JdbcCatalogProjectionRepository.md), [ProjectionInboxServiceImpl](../../archive/2026-11-08-class-docs/catalog/ProjectionInboxServiceImpl.md), [ProductReadServiceImpl](../../archive/2026-11-08-class-docs/catalog/ProductReadServiceImpl.md).
 
-Pseudocode recovery B: [ProjectionRecoveryServiceImpl](classes/ProjectionRecoveryServiceImpl.md), [ProjectionReplayEntryServiceImpl](classes/ProjectionReplayEntryServiceImpl.md).
+Pseudocode recovery B: [ProjectionRecoveryServiceImpl](../../archive/2026-11-08-class-docs/catalog/ProjectionRecoveryServiceImpl.md), [ProjectionReplayEntryServiceImpl](../../archive/2026-11-08-class-docs/catalog/ProjectionReplayEntryServiceImpl.md).

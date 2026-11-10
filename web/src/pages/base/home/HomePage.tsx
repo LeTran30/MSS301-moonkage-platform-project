@@ -14,13 +14,7 @@ export function HomePage() {
       <section className={styles.heroSection}>
         <div className={styles.heroContainer}>
           <div className={styles.heroContent}>
-            <div className={styles.heroBadge}>
-              <Icon name="sparkle" size={14} /> MÙA TRĂNG RẰM 2026 · VỊ TRUYỀN THỐNG &amp; HIỆN ĐẠI
-            </div>
-            <h1 className={styles.heroTitle}>
-              Thưởng thức tinh hoa <br />
-              <span className={styles.heroAccent}>Bánh Trung Thu</span> thủ công
-            </h1>
+            <h1 className={styles.heroTitle}>Thưởng thức tinh hoa bánh trung thu thủ công</h1>
             <p className={styles.heroLead}>
               Moonkage kết nối trực tiếp bạn với các nghệ nhân bánh phố cổ, xưởng bánh gia truyền và xưởng sản xuất hộp quà doanh nghiệp in logo riêng.
             </p>
@@ -29,27 +23,11 @@ export function HomePage() {
               <ButtonLink to={routes.base.catalog} variant="primary" size="lg" iconRight="arrowRight">
                 Mua lẻ cho gia đình
               </ButtonLink>
-              <ButtonLink to={routes.base.bulk} variant="gold" size="lg" iconLeft="package">
-                Đặt số lượng lớn (Doanh nghiệp)
+              <ButtonLink to={routes.base.bulk} variant="secondary" size="lg">
+                Đặt số lượng lớn cho doanh nghiệp
               </ButtonLink>
             </div>
 
-            <div className={styles.heroStats}>
-              <div className={styles.statItem}>
-                <span className={styles.statNum}>100%</span>
-                <span className={styles.statLabel}>Bánh tươi mới nướng</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statItem}>
-                <span className={styles.statNum}>NFC</span>
-                <span className={styles.statLabel}>Định danh an toàn</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statItem}>
-                <span className={styles.statNum}>VNPay</span>
-                <span className={styles.statLabel}>Giữ tiền đảm bảo</span>
-              </div>
-            </div>
           </div>
 
           <div className={styles.heroMedia}>
@@ -59,11 +37,6 @@ export function HomePage() {
                 alt="Bánh trung thu Moonkage"
                 className={styles.heroImage}
               />
-              {/* Con dấu triện đỏ son Moonkage */}
-              <div className={styles.sealStamp} title="Bảo chứng thủ công Moonkage">
-                <span className={styles.sealText}>MOONKAGE</span>
-                <span className={styles.sealSub}>NGUYỆT ĐOÀN VIÊN</span>
-              </div>
             </div>
           </div>
         </div>
@@ -72,12 +45,8 @@ export function HomePage() {
       {/* Entry Choice Banner: Mua lẻ vs Đặt số lượng lớn (BR-01, M3.0) */}
       <section className={styles.choiceSection}>
         <div className={styles.choiceGrid}>
-          <Card padding="lg" interactive className={styles.choiceCard}>
-            <div className={styles.choiceIcon}>
-              <Icon name="cake" size={32} />
-            </div>
+          <Card padding="lg" className={styles.choiceCard}>
             <div className={styles.choiceText}>
-              <Badge tone="red" size="sm">CÁCH 1: MUA LẺ</Badge>
               <h2 className={styles.choiceTitle}>Mua vài hộp thưởng thức &amp; biếu tặng</h2>
               <p className={styles.choiceDesc}>
                 Chọn từng vị bánh yêu thích, lọc theo nhân và vỏ, giỏ hàng tự tách theo từng tiệm, thanh toán nhanh nhận trong ngày.
@@ -88,17 +57,13 @@ export function HomePage() {
             </div>
           </Card>
 
-          <Card padding="lg" interactive tone="gold" className={styles.choiceCard}>
-            <div className={styles.choiceIconGold}>
-              <Icon name="factory" size={32} />
-            </div>
+          <Card padding="lg" className={styles.choiceCard}>
             <div className={styles.choiceText}>
-              <Badge tone="gold" size="sm">CÁCH 2: SỐ LƯỢNG LỚN</Badge>
               <h2 className={styles.choiceTitle}>Yêu cầu báo giá in logo doanh nghiệp</h2>
               <p className={styles.choiceDesc}>
                 Gửi 1 yêu cầu để nhiều xưởng cạnh tranh báo giá, duyệt maket thiết kế trực tuyến, thanh toán cọc an toàn giữ qua sàn.
               </p>
-              <ButtonLink to={routes.base.quoteRequestNew} variant="gold" iconRight="arrowRight">
+              <ButtonLink to={routes.base.quoteRequestNew} variant="secondary" iconRight="chevronRight">
                 Tạo yêu cầu báo giá ngay
               </ButtonLink>
             </div>
@@ -110,7 +75,6 @@ export function HomePage() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
-            <span className={styles.sectionEyebrow}>SẢN PHẨM NỔI BẬT</span>
             <h2 className={styles.sectionTitle}>Bánh ngon được yêu thích nhất</h2>
           </div>
           <ButtonLink to={routes.base.catalog} variant="ghost" iconRight="chevronRight">
@@ -129,7 +93,6 @@ export function HomePage() {
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
-            <span className={styles.sectionEyebrow}>ĐƠN VỊ CUNG CẤP &amp; XƯỞNG BÁNH</span>
             <h2 className={styles.sectionTitle}>Các hiệu bánh và xưởng làm bánh tiêu biểu</h2>
           </div>
           <ButtonLink to={routes.base.vendors} variant="ghost" iconRight="chevronRight">
@@ -147,7 +110,7 @@ export function HomePage() {
                     {v.sellingMode === 'CUSTOM_ORDER'
                       ? 'Chỉ nhận đặt hàng'
                       : v.sellingMode === 'BOTH'
-                      ? 'Có Shop & Nhận đặt'
+                      ? 'Có hàng sẵn & Nhận đặt'
                       : 'Có hàng sẵn'}
                   </Badge>
                 </div>
@@ -172,9 +135,9 @@ export function HomePage() {
                 <p className={styles.vendorIntro}>{v.introduction}</p>
 
                 {v.bulkMinQuantity && (
-                  <div className={styles.vendorBulkInfo}>
-                    <Icon name="sparkle" size={14} /> Nhận đặt từ <strong>{v.bulkMinQuantity} hộp</strong> · Chuẩn bị trong {v.bulkLeadTimeDays} ngày
-                  </div>
+                  <p className={styles.vendorBulkInfo}>
+                    Nhận đặt từ <strong>{v.bulkMinQuantity} hộp</strong>, chuẩn bị trong {v.bulkLeadTimeDays} ngày
+                  </p>
                 )}
 
                 <div className={styles.vendorActionRow}>

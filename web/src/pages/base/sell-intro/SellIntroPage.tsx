@@ -1,20 +1,25 @@
 import { routes } from '@/shared/config';
 import { ButtonLink, Card, Icon } from '@/shared/ui';
+import { formatCurrency } from '@/shared/utils';
+import { useRegistrationFeeConfig } from '@/entities/vendor';
 import styles from './SellIntroPage.module.css';
 
+/** M7.0 — giới thiệu bán hàng: lợi ích, điều kiện (BR-23, BR-27, BR-33) và phí mở bán (BR-31). */
 export function SellIntroPage() {
+  // Mức phí đọc từ máy chủ (FR-53); chưa tải xong thì không hiện con số.
+  const asyncFee = useRegistrationFeeConfig();
+  const feeAmount = asyncFee.kind === 'loaded' ? (asyncFee.data?.amount ?? null) : null;
+
   return (
     <div className={styles.container}>
       <div className={styles.hero}>
         <div className={styles.heroContent}>
-          <span className={styles.eyebrow}>HỢP TÁC KINH DOANH</span>
           <h1 className={styles.title}>
-            Đưa Hương Vị Bánh Trung Thu Của Bạn Đến Hàng Triệu Khách Hàng
+            Đưa bánh trung thu của bạn tới thêm nhiều khách hàng
           </h1>
           <p className={styles.lead}>
-            Moonkage cung cấp nền tảng số chuyên nghiệp cho các tiệm bánh gia truyền và xưởng sản
-            xuất: nhận đơn mua lẻ hàng ngày và nhận hợp đồng quà tặng số lượng lớn từ các tập đoàn
-            lớn.
+            Mở Shop để bán hộp bánh có sẵn, hoặc nhận đặt hàng số lượng lớn qua báo giá. Bạn chọn
+            một hoặc cả hai cách bán khi khai hồ sơ.
           </p>
           <div className={styles.actions}>
             <ButtonLink
@@ -51,19 +56,49 @@ export function SellIntroPage() {
           <Icon name="factory" size={28} className={styles.benefitIcon} />
           <h3>Hợp đồng số lượng lớn</h3>
           <p>
-            Nhận các yêu cầu báo giá doanh nghiệp từ 20 đến 10.000 hộp, gửi maket duyệt trực tuyến,
-            nhận cọc bảo đảm.
+            Nhận yêu cầu đặt hàng, gửi báo giá và maket để người mua duyệt, nhận tiền cọc trước khi
+            sản xuất.
           </p>
         </Card>
         <Card padding="md" className={styles.benefitCard}>
           <Icon name="shield" size={28} className={styles.benefitIcon} />
-          <h3>Bảo chứng thanh toán</h3>
+          <h3>Thanh toán qua sàn</h3>
           <p>
-            Sàn giữ tiền ký quỹ qua VNPay, tự động giải ngân theo từng mốc nguyên liệu và bàn giao
-            sản phẩm.
+            Người mua trả qua VNPay, Moonkage giữ tiền đến khi đơn hoàn tất. Bạn xin giải ngân một
+            phần tiền cọc để mua nguyên liệu, đội vận hành duyệt.
           </p>
         </Card>
       </div>
+
+      <div className={styles.grid}>
+        <Card padding="md" className={styles.benefitCard}>
+          <h3>Ai đăng ký được</h3>
+          <p>
+            Hộ kinh doanh và doanh nghiệp tư nhân. Tài khoản nộp hồ sơ phải đã xác minh CCCD bằng
+            NFC, và là chính chủ hộ / chủ doanh nghiệp ghi trên giấy chứng nhận đăng ký.
+          </p>
+        </Card>
+        <Card padding="md" className={styles.benefitCard}>
+          <h3>Cần chuẩn bị</h3>
+          <p>
+            Mã số thuế, địa chỉ trụ sở, giấy chứng nhận đăng ký kinh doanh, giấy tờ an toàn thực
+            phẩm và tài khoản ngân hàng nhận tiền.
+          </p>
+        </Card>
+        <Card padding="md" className={styles.benefitCard}>
+          <h3>Phí mở bán</h3>
+          <p>
+            {feeAmount === null ? 'Phí mở bán' : `${formatCurrency(feeAmount)} (mức hiện hành)`},
+            đóng một lần sau khi hồ sơ được duyệt. Không thu phí khi nộp hồ sơ.
+          </p>
+        </Card>
+      </div>
+
+      <p className={styles.companyNote}>
+        Bạn đại diện cho công ty TNHH, công ty cổ phần hoặc công ty hợp danh? Khối công ty chưa
+        đăng ký trực tuyến được; vui lòng liên hệ trực tiếp đội vận hành Moonkage để làm việc và ký
+        thỏa thuận hợp tác.
+      </p>
     </div>
   );
 }

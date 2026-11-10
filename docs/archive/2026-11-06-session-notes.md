@@ -2,7 +2,7 @@
 
 > **Lưu trữ.** Tài liệu lịch sử, không cập nhật nữa và có thể đã khác code hiện tại. Hiện trạng: [docs/README.md](../README.md).
 >
-> Chi tiết phát hiện và backlog: [architecture/codebase-conformance-review.md](../architecture/codebase-conformance-review.md).
+> Chi tiết phát hiện và backlog: [work/reviews/codebase-conformance-review.md](../work/reviews/codebase-conformance-review.md).
 > Chuẩn áp dụng: [architecture/architecture-standards.md](../architecture/architecture-standards.md).
 
 ---
@@ -140,11 +140,11 @@ Tất cả nối vào `npm run check`, `.githooks/pre-commit` **và** CI. Ngoài
 | File | Nội dung |
 |---|---|
 | `docs/architecture/architecture-standards.md` | Chuẩn kiến trúc bắt buộc: 10 chương, mỗi luật có **Mức độ bắt buộc** · **Lý do** · **Ví dụ đúng/sai** (trích từ code thật) |
-| `docs/architecture/codebase-conformance-review.md` | Rà soát code thực tế: 33 phát hiện (3 Blocker, 10 High, 13 Medium, 7 Low) + backlog P0/P1/P2; **33/33 đã đóng** |
+| `docs/work/reviews/codebase-conformance-review.md` | Rà soát code thực tế: 33 phát hiện (3 Blocker, 10 High, 13 Medium, 7 Low) + backlog P0/P1/P2; **33/33 đã đóng** |
 
 ### Tài liệu sửa (10)
 
-`docs/README.md` (bản đồ tài liệu, bảng "Cố ý không có README"), `docs/architecture/api-db/README.md`, `docs/architecture/api-db/decisions.md` (ADR D-25 → D-30, D-30 khớp 308), `docs/guides/database.md` (sổ ID), `docs/services/identity/README.md` (role `MEMBER`/`ADMIN` theo D-19), 4 README service mới (`orchestrator`, `order`, `payment`, `common-storage`), script `docs/scripts/check-class-docs.mjs`.
+`docs/README.md` (bản đồ tài liệu, bảng "Cố ý không có README"), `docs/architecture/api-db/README.md`, `docs/architecture/api-db/decisions.md` (ADR D-25 → D-30, D-30 khớp 308), `docs/guides/database.md` (sổ ID), `docs/services/identity/README.md` (role `MEMBER`/`ADMIN` theo D-19), 4 README service mới (`orchestrator`, `order`, `payment`, `common-storage`), script `docs/archive/2026-11-08-class-docs/check-class-docs.mjs`.
 
 ### CI
 
@@ -188,7 +188,7 @@ cd api && ./mvnw -B -ntp clean verify    # 15/15 module, 926 test, 0 fail
 cd web && npm run check                   # 8 gate + tsc + vitest + build + bundle budget
 cd web && npm run e2e                     # 45 pass / 5 skip (cần docker compose up -d)
 node web/scripts/wait-for-backend.mjs     # backend thật sẵn sàng
-node docs/scripts/check-class-docs.mjs    # tài liệu class khớp mã nguồn
+node docs/archive/2026-11-08-class-docs/check-class-docs.mjs    # tài liệu class khớp mã nguồn
 ```
 
 CI tương ứng: `code-quality.yml` (`verify`), `web-quality.yml` (`verify`), `docs-links.yml` (`links`), `pr-conventions.yml` (`check`).

@@ -55,6 +55,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      # `openapi-typescript` needs TypeScript 5 (it uses the `ts.factory` JS
+      # API), while the web app itself is on TypeScript 7 — so the generator
+      # lives in its own package (`web/codegen/`) with its own lockfile.
+      - name: Install API type generator
+        run: npm ci --prefix codegen
+
       - name: Lint (oxlint)
         run: npm run lint -- --deny-warnings
 
@@ -67,6 +73,12 @@ jobs:
       # no @media at all will break the moment the viewport gets narrow.
       - name: Responsive CSS check
         run: node scripts/check-responsive.mjs
+
+      # Every design token (color, radius, spacing, breakpoint) must be used
+      # through `var(--…)` — a raw hex or a raw px in a @media condition is a
+      # value that silently drifts from the design system.
+      - name: Design token check
+        run: node scripts/check-design-tokens.mjs
 
       # Spec IDs (FR-06, M6.1.3, FLOW 5…) must never reach the rendered UI:
       # they are internal requirement codes, meaningless to end users.
@@ -137,14 +149,53 @@ jobs:
           #   PII_ENC_KEY_V1      AES-256 key that locks the ID number
           #   ID_HASH_PEPPER_V1  pepper of the ID fingerprint
           #   BANK_ACCOUNT_ENC_*  AES-256-GCM key of the vendor bank account
+          #   VNPAY_*             merchant code + HMAC secret of the payment gateway
+          #
+          # Vì sao khoá RSA được sinh ra **trước** rồi mới đưa vào `sed`:
+          # giá trị khoá chứa ký tự `/` và `&`, mà `/` là dấu phân cách của `sed`
+          # và `&` là "phần khớp được" trong phần thay thế — đặt trực tiếp giá
+          # trị vào `-e "s|...|...|"` sẽ hỏng lệnh hoặc ra sai giá trị. Ở đây khoá
+          # sinh ra trước, đưa vào biến, rồi `sed` chép nguyên văn giá trị đó.
+          #
+          # Vì sao dấu `|` trong `s|...|...|` phải escape: `sed` dùng `|` làm
+          # dấu phân cách, nên `\|` mới là dấu phân cách thật sự. Bỏ escape thì
+          # `sed` hiểu sai và **không** thay dòng — `.env` ra file nhưng
+          # `NFC_TRANSPORT_PRIVATE_KEY_V1` vẫn rỗng, và mọi luồng NFC đỏ với
+          # lý do "thiếu khoá" (đúng như đã xảy ra ở CI).
+          NFC_KEY=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null \
+            | sed -n '/BEGIN/,/END/p' | tr -d '\n' \
+            | sed 's/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----//g')
+          # Merchant VNPay: giá trị thật của từng người đăng ký sandbox nằm trong
+          # `.env` cục bộ; ở CI chỉ cần một giá trị **hợp lệ về hình thức** để
+          # payment-service dựng được link thanh toán và ký được callback (thanh
+          # toán thật không diễn ra ở CI — E2E tự ký IPN, xem `web/e2e/vnpay.ts`).
+          # Thiếu hai biến này thì payment-service trả `PAYMENT_005`
+          # (`GATEWAY_NOT_CONFIGURED`) và mọi luồng có thanh toán đỏ với 503.
+          VNPAY_TMN_CODE=73ZZ3A9R
+          VNPAY_HASH_SECRET=2B9UZNGT962LGDZXBR1LMNXMTUPJ34LV
           sed \
             -e "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -base64 48)|" \
-            -e "s|^NFC_TRANSPORT_PRIVATE_KEY_V1=.*|NFC_TRANSPORT_PRIVATE_KEY_V1=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null \| sed -n '/BEGIN/,/END/p' \| tr -d '\n' \| sed 's/-----BEGIN PRIVATE KEY-----\|-----END PRIVATE KEY-----//g')|" \
+            -e "s|^NFC_TRANSPORT_PRIVATE_KEY_V1=.*|NFC_TRANSPORT_PRIVATE_KEY_V1=${NFC_KEY}|" \
             -e "s|^PII_ENC_KEY_V1=.*|PII_ENC_KEY_V1=$(openssl rand -base64 32)|" \
             -e "s|^ID_HASH_PEPPER_V1=.*|ID_HASH_PEPPER_V1=$(openssl rand -base64 32)|" \
             -e "s|^BANK_ACCOUNT_ENC_KEY_V1=.*|BANK_ACCOUNT_ENC_KEY_V1=$(openssl rand -base64 32)|" \
+            -e "s|^VNPAY_TMN_CODE=.*|VNPAY_TMN_CODE=${VNPAY_TMN_CODE}|" \
+            -e "s|^VNPAY_HASH_SECRET=.*|VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}|" \
             .env.example > .env
-          grep -cE '^[A-Z_]+=.{8,}' .env
+          # Cổng chặn: mọi bí mật mà backend cần phải có giá trị thật trong
+          # `.env`, và giá trị phải đủ dài. Nếu thiếu, backend vẫn khởi động
+          # được nhưng mọi luồng dùng bí mật đó sẽ đỏ — lỗi hạ tầng đẹp lên
+          # như lỗi sản phẩm. Ở đây thì dừng ngay, kèm thông điệp rõ ràng.
+          for key in JWT_SECRET NFC_TRANSPORT_PRIVATE_KEY_V1 PII_ENC_KEY_V1 \
+                     ID_HASH_PEPPER_V1 BANK_ACCOUNT_ENC_KEY_V1 VNPAY_TMN_CODE \
+                     VNPAY_HASH_SECRET; do
+            value=$(grep -E "^${key}=" .env | head -1 | cut -d= -f2-)
+            if [ "${#value}" -lt 8 ]; then
+              echo "::error::${key} thiếu hoặc quá ngắn trong .env của CI"
+              exit 1
+            fi
+          done
+          echo "OK: mọi bí mật trong .env của CI đều có giá trị."
 
       - name: Start the backend stack
         working-directory: .
@@ -175,6 +226,16 @@ jobs:
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
+
+      # The generated TypeScript types are the machine-checked copy of the API
+      # contract. If the backend changed an endpoint and nobody regenerated
+      # them, the committed types are stale — that is exactly the drift this
+      # gate is meant to catch, so regenerate and fail on any diff.
+      - name: API types up to date
+        run: |
+          npm run generate:api-types
+          git diff --exit-code -- src/shared/api/generated/ \
+            || (echo "::error::Type API đã lệch — chạy 'npm run generate:api-types' rồi commit." && exit 1)
 
       - name: E2E tests (Playwright)
         run: npm run e2e

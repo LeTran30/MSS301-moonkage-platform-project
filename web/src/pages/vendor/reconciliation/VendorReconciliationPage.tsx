@@ -51,7 +51,7 @@ export function VendorReconciliationPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Ví & Tài chính', to: routes.vendor.money },
           { label: 'Lịch sử đối soát' },
         ]}
@@ -59,7 +59,7 @@ export function VendorReconciliationPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Lịch Sử Đối Soát Doanh Thu</h1>
+          <h1 className={styles.title}>Lịch sử đối soát doanh thu</h1>
           <p className={styles.subtitle}>
             Đối soát tự động mỗi 15 ngày — Minh bạch số tiền giữ ký quỹ và số tiền đã hoàn trả
           </p>

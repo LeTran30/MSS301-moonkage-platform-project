@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.moonkage.identity.common.config.RabbitConfig;
 import com.moonkage.identity.kyc.NfcVerificationEvent;
+import com.moonkage.outbox.OutboxTraceContext;
+import io.micrometer.tracing.Tracer;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -24,7 +26,8 @@ class OutboxServiceImplTest {
                 .findAndAddModules()
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .build();
-        OutboxServiceImpl service = new OutboxServiceImpl(repository, objectMapper);
+        OutboxServiceImpl service =
+                new OutboxServiceImpl(repository, objectMapper, new OutboxTraceContext(Tracer.NOOP));
         NfcVerificationEvent event = NfcVerificationEvent.verified(
                 "acc-1", "session-1", "********6789", Instant.parse("2026-10-19T03:00:00Z"));
 

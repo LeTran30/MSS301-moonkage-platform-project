@@ -17,15 +17,16 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
     public void save(OutboxEvent event) {
         jdbcTemplate.update(
                 """
-                INSERT INTO outbox_events (id, routing_key, payload, attempts, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO outbox_events (id, routing_key, payload, attempts, created_at, updated_at, trace_parent)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 event.id(),
                 event.routingKey(),
                 event.payload(),
                 event.attempts(),
                 Timestamp.from(event.createdAt()),
-                Timestamp.from(event.createdAt()));
+                Timestamp.from(event.createdAt()),
+                event.traceParent());
     }
 
     @Override
@@ -33,7 +34,7 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
         return jdbcTemplate
                 .query(
                         """
-                SELECT id, routing_key, payload, attempts, created_at FROM outbox_events
+                SELECT id, routing_key, payload, attempts, created_at, trace_parent FROM outbox_events
                 WHERE published_at IS NULL ORDER BY created_at, id LIMIT 1 FOR UPDATE SKIP LOCKED
                 """,
                         (row, index) -> new OutboxEvent(
@@ -41,7 +42,8 @@ public class JdbcOutboxEventRepository implements OutboxEventRepository {
                                 row.getString("routing_key"),
                                 row.getString("payload"),
                                 row.getInt("attempts"),
-                                row.getTimestamp("created_at").toInstant()))
+                                row.getTimestamp("created_at").toInstant(),
+                                row.getString("trace_parent")))
                 .stream()
                 .findFirst();
     }

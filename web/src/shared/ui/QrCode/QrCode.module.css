@@ -1,0 +1,11 @@
+.qr {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.quiet {
+  fill: var(--color-qr-quiet);
+}
+.module {
+  fill: var(--color-qr-module);
+}

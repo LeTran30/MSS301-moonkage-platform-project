@@ -242,7 +242,7 @@ export function RequestComparePage() {
 
                 {quote.note && (
                   <div className={styles.quoteNote}>
-                    <Icon name="sparkle" size={14} /> <strong>Ghi chú xưởng:</strong> {quote.note}
+                    <Icon name="info" size={14} /> <strong>Ghi chú xưởng:</strong> {quote.note}
                   </div>
                 )}
 

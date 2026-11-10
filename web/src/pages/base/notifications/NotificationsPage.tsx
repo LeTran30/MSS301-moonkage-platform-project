@@ -27,14 +27,13 @@ export function NotificationsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<NotifTab>('ALL');
   const notifications = useNotifications();
-  // The socket pushes new notifications; this reads back the ones the browser
-  // missed (a reload, a closed tab) — BE-04b.
-  useNotificationInbox();
-
   // IA M6.6 serves both audiences: "Người mua, Chủ người bán". The inbox belongs
   // to the signed-in account, so a shop owner opens the same screen and reads the
   // notifications of the shop (new RFQ, new order, maket revision, disbursement).
   const user = useCurrentUser();
+  // The socket pushes new notifications; opening the page reads the inbox again
+  // for the ones the browser missed (BE-04b).
+  useNotificationInbox(user.id);
   const isShopOwner = user.role === 'VENDOR' || Boolean(user.vendorId);
   const heading = isShopOwner ? 'Thông báo cửa hàng' : 'Trung tâm thông báo';
   const description = isShopOwner
@@ -83,7 +82,7 @@ export function NotificationsPage() {
           { id: 'ORDER', label: 'Đơn hàng' },
           { id: 'QUOTE', label: 'Báo giá B2B' },
           { id: 'MAKET', label: 'Duyệt Maket' },
-          { id: 'DISPUTE', label: 'Khiếu nại & Escrow' },
+          { id: 'DISPUTE', label: 'Khiếu nại và ký quỹ' },
         ]}
         activeId={activeTab}
         onChange={(id) => setActiveTab(id as NotifTab)}

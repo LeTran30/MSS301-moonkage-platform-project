@@ -241,6 +241,7 @@
   align-items: center;
   gap: var(--space-3);
   margin-left: auto;
+  flex: none;
 }
 .iconBtn {
   position: relative;
@@ -369,7 +370,8 @@
   place-items: center;
 }
 .userName {
-  max-width: 120px;
+  min-width: 0;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -682,7 +684,7 @@
    --------------------------------------------------------------------------- */
 
 /* Tablet trở xuống: top bar rút gọn, menu ngang chuyển sang drawer. */
-@media (max-width: 1024px) {
+@media (max-width: var(--breakpoint-lg)) {
   .topInner {
     gap: var(--space-2);
   }
@@ -701,7 +703,7 @@
 }
 
 /* Tablet nhỏ: ẩn thanh thông tin phụ, thu gọn logo. */
-@media (max-width: 768px) {
+@media (max-width: var(--breakpoint-md)) {
   /* Lối vào người bán vẫn hiện (menu di động không có); chỉ ẩn lối tắt. */
   .topLinks {
     display: none;
@@ -741,7 +743,7 @@
 }
 
 /* Mobile: ô tìm kiếm xuống hàng riêng, nằm dưới logo + hành động. */
-@media (max-width: 560px) {
+@media (max-width: var(--breakpoint-sm)) {
   .mainInner {
     flex-wrap: wrap;
     row-gap: var(--space-2);
@@ -759,8 +761,18 @@
   }
 }
 
+/* Mobile: chỉ còn biểu tượng đèn lồng, để nút menu không bị đẩy xuống hàng riêng. */
+@media (max-width: var(--breakpoint-sm)) {
+  .logoText {
+    display: none;
+  }
+  .mainInner {
+    flex-wrap: wrap;
+  }
+}
+
 /* Mobile nhỏ: chỉ còn icon cho các nút hành động. */
-@media (max-width: 400px) {
+@media (max-width: var(--breakpoint-xs)) {
   .mainInner {
     gap: var(--space-1);
   }
@@ -769,4 +781,10 @@
     width: 34px;
     height: 34px;
   }
+}
+.notifEmpty {
+  padding: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
 }

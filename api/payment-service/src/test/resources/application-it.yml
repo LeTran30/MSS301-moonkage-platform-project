@@ -17,3 +17,10 @@ RABBITMQ_HOST: localhost
 RABBITMQ_PORT: 5672
 RABBITMQ_USERNAME: test
 RABBITMQ_PASSWORD: test
+
+# BE-11: no collector in the tests, so the spans are not exported anywhere
+management:
+  otlp:
+    tracing:
+      export:
+        enabled: false

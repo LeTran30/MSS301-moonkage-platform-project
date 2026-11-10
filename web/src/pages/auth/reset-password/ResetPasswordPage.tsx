@@ -53,7 +53,7 @@ export function ResetPasswordPage() {
   return (
     <AuthShell
       icon="shield"
-      title="Đặt Lại Mật Khẩu"
+      title="Đặt lại mật khẩu"
       subtitle={
         <>
           Nhập mã OTP đã nhận qua email <strong>{email || 'của bạn'}</strong> cùng mật khẩu mới.

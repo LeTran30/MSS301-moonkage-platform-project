@@ -1,10 +1,12 @@
 package com.moonkage.order.service;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.order.dto.request.EvidenceRequest;
 import com.moonkage.order.dto.request.OpenDisputeRequest;
 import com.moonkage.order.dto.request.ResolveDisputeRequest;
 import com.moonkage.order.dto.response.DisputeResponse;
 import com.moonkage.order.dto.response.PayoutLockResponse;
+import com.moonkage.order.enums.DisputeStatus;
 import com.moonkage.order.security.CurrentUserInfo;
 
 /**
@@ -21,6 +23,11 @@ public interface DisputeService {
 
     /** AC-49.1: buyer, vendor owner and admin see the latest dispute of the order with both parties' evidence. */
     DisputeResponse get(CurrentUserInfo caller, String orderId);
+
+    /**
+     * FR-49, Q5.0: the admin's queue. OPEN oldest first (the longest wait on top), RESOLVED latest decision first.
+     */
+    PageResponse<DisputeResponse> list(CurrentUserInfo caller, DisputeStatus status, int page, int size);
 
     /** The buyer or the vendor owner adds evidence while the dispute is open (AC-49.1). */
     DisputeResponse addEvidence(CurrentUserInfo caller, String orderId, EvidenceRequest request);

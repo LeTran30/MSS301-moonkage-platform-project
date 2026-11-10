@@ -5,7 +5,6 @@ import com.moonkage.vendor.vendor.SupplySource;
 import com.moonkage.vendor.vendor.VendorConstant;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
@@ -17,6 +16,8 @@ import java.util.List;
  * {@link #toString()} leaves them out.
  *
  * @param entityType HOUSEHOLD_BUSINESS or SOLE_PROPRIETORSHIP; a company is refused with its own message (BR-33)
+ * @param documents the first submission sends one of each kind the owner provides; a resubmission sends only the
+ *     kinds it replaces, and every kind left out keeps the document the vendor has (AC-27.2)
  */
 public record SubmitVendorRequest(
         @NotBlank(message = "{validation.required}")
@@ -47,7 +48,12 @@ public record SubmitVendorRequest(
         @Size(max = VendorConstant.TEXT_MAX_LENGTH, message = "{validation.too_long}")
         String bankAccountHolder,
 
-        @NotEmpty(message = "{validation.required}") List<@Valid @NotNull Document> documents) {
+        List<@Valid @NotNull Document> documents) {
+
+    /** No list means no document is sent: a resubmission that keeps every document it has. */
+    public SubmitVendorRequest {
+        documents = documents == null ? List.of() : documents;
+    }
 
     private static final String HIDDEN = "***";
 

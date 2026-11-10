@@ -85,33 +85,21 @@
 }
 
 /* Tone Variants */
-.toneSuccess {
-  border-left: 4px solid var(--color-success);
-}
 .toneSuccess .iconWrapper {
   background: var(--color-success-soft);
   color: var(--color-success);
 }
 
-.toneError {
-  border-left: 4px solid var(--color-danger);
-}
 .toneError .iconWrapper {
   background: var(--color-danger-soft);
   color: var(--color-danger);
 }
 
-.toneWarning {
-  border-left: 4px solid var(--color-warning);
-}
 .toneWarning .iconWrapper {
   background: var(--color-warning-soft);
   color: var(--color-warning);
 }
 
-.toneInfo {
-  border-left: 4px solid var(--color-info);
-}
 .toneInfo .iconWrapper {
   background: var(--color-info-soft);
   color: var(--color-info);
@@ -150,7 +138,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: var(--breakpoint-md)) {
   .toastContainer {
     bottom: 16px;
     right: 16px;

@@ -4,10 +4,10 @@ name: Docs links
 
 on:
   pull_request:
-    paths: ['**/*.md', 'api/**/*.java', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '.github/workflows/docs-links.yml']
   push:
     branches: [main, develop]
-    paths: ['**/*.md', 'api/**/*.java', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '.github/workflows/docs-links.yml']
 
 jobs:
   links:
@@ -21,7 +21,3 @@ jobs:
           args: --offline --no-progress --exclude-path node_modules './**/*.md'
           fail: true
 
-      # Tài liệu class nặng là tài liệu sinh tay: class bị đổi tên hoặc xoá thì
-      # tài liệu phải được sửa theo (docs/README.md, quy tắc 9).
-      - name: Check class docs match source
-        run: node docs/scripts/check-class-docs.mjs

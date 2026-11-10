@@ -1,5 +1,6 @@
 package com.moonkage.order.service.impl;
 
+import com.moonkage.api.PageResponse;
 import com.moonkage.order.config.RabbitConfig;
 import com.moonkage.order.dto.event.DisputeEvent;
 import com.moonkage.order.dto.request.EvidenceRequest;
@@ -27,12 +28,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class DisputeServiceImpl implements DisputeService {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final DisputeRepository disputeRepository;
     private final DisputeEvidenceRepository evidenceRepository;
@@ -80,6 +85,19 @@ public class DisputeServiceImpl implements DisputeService {
                 .findFirstByOrderIdOrderByCreatedAtDesc(orderId)
                 .map(this::toResponse)
                 .orElseThrow(() -> new AppException(ErrorCode.DISPUTE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<DisputeResponse> list(CurrentUserInfo caller, DisputeStatus status, int page, int size) {
+        if (!caller.isAdmin()) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
+        Page<Dispute> disputes = status == DisputeStatus.RESOLVED
+                ? disputeRepository.findByStatusOrderByResolvedAtDesc(status, pageable)
+                : disputeRepository.findByStatusOrderByCreatedAtAsc(status, pageable);
+        return PageResponse.from(disputes.map(this::toResponse));
     }
 
     @Override
@@ -179,9 +197,13 @@ public class DisputeServiceImpl implements DisputeService {
                         .map(e -> new DisputeResponse.Evidence(
                                 e.getParty(), fileService.downloadUrl(e.getObjectKey()), e.getNote(), e.getCreatedAt()))
                         .toList();
+        Order order = dispute.getOrder();
         return new DisputeResponse(
                 dispute.getId(),
-                dispute.getOrder().getId(),
+                order.getId(),
+                order.getVendorName(),
+                order.getRecipientName(),
+                order.getTotalAmount(),
                 dispute.getReason(),
                 dispute.getDescription(),
                 dispute.getStatus(),

@@ -15,6 +15,7 @@ import com.moonkage.catalog.messaging.InterprovinceFeeChangedEvent;
 import com.moonkage.catalog.repository.InterprovinceFeeRepository;
 import com.moonkage.catalog.repository.OutboxEventRepository;
 import com.moonkage.catalog.service.InterprovinceFeeService;
+import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ public class InterprovinceFeeServiceImpl implements InterprovinceFeeService {
     private final OutboxEventRepository outboxRepository;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final OutboxTraceContext traceContext;
 
     @Override
     @Transactional
@@ -53,7 +55,8 @@ public class InterprovinceFeeServiceImpl implements InterprovinceFeeService {
                 new InterprovinceFeeChangedEvent(UUID.randomUUID().toString(), accountId, at, before, after);
         String payload = serialize(event);
         feeRepository.saveFees(fees);
-        outboxRepository.save(new OutboxEvent(event.eventId(), CHANGED_ROUTING_KEY, payload, 0, at));
+        outboxRepository.save(new OutboxEvent(
+                event.eventId(), CHANGED_ROUTING_KEY, payload, 0, at, traceContext.currentTraceParent()));
         return after;
     }
 

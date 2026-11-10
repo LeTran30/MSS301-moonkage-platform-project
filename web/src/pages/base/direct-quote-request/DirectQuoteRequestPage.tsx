@@ -173,7 +173,6 @@ function DirectQuoteRequestForm({ vendor }: { vendor: Vendor }) {
   return (
     <>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>GỬI YÊU CẦU TRỰC TIẾP</div>
         <h1 className={styles.title}>Gửi yêu cầu đặt hàng riêng cho {vendor.name}</h1>
         <p className={styles.lead}>
           Chỉ đơn vị này nhận được yêu cầu. Đơn vị gửi lại báo giá, bạn xem và chấp nhận trong mục Yêu cầu báo

@@ -22,7 +22,7 @@ export function VendorCapacityPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Cài đặt bán hàng', to: routes.vendor.settings },
           { label: 'Lịch công suất' },
         ]}
@@ -30,7 +30,7 @@ export function VendorCapacityPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Lịch Công Suất Của Gian Hàng</h1>
+          <h1 className={styles.title}>Lịch công suất của gian hàng</h1>
           <p className={styles.subtitle}>
             Số hộp bánh Trung Thu xưởng nhận được mỗi tuần, để người mua biết trước khi gửi yêu cầu.
           </p>

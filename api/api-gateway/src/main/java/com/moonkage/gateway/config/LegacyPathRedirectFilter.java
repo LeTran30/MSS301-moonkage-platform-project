@@ -69,10 +69,12 @@ public class LegacyPathRedirectFilter implements WebFilter {
             // quotation-service: the canonical routes are /api/quote-requests/** and /api/suppliers/**.
             new Redirect("/quotation-service/api/quote-requests", "/api/quote-requests"),
             new Redirect("/quotation-service/api/suppliers", "/api/suppliers"),
-            // order-service: the canonical routes are /api/carts/**, /api/checkouts/** and /api/orders/**.
+            // order-service: the canonical routes are /api/carts/**, /api/checkouts/**, /api/orders/** and
+            // /api/chat/**.
             new Redirect("/order-service/api/carts", "/api/carts"),
             new Redirect("/order-service/api/checkouts", "/api/checkouts"),
             new Redirect("/order-service/api/orders", "/api/orders"),
+            new Redirect("/order-service/api/chat", "/api/chat"),
             // payment-service: the canonical routes are /api/payments/**, /api/ledgers/** and /api/refunds/**.
             new Redirect("/payment-service/api/payments", "/api/payments"),
             new Redirect("/payment-service/api/ledgers", "/api/ledgers"),

@@ -97,7 +97,7 @@ export function VendorRequestDetailPage() {
     <div className={styles.container}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Yêu cầu báo giá sỉ (RFQ)', to: routes.vendor.requests },
           { label: `Yêu cầu #${requestCode(req.id)}` },
         ]}
@@ -105,7 +105,7 @@ export function VendorRequestDetailPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Chi Tiết RFQ #{requestCode(req.id)}</h1>
+          <h1 className={styles.title}>Chi tiết yêu cầu báo giá #{requestCode(req.id)}</h1>
           <p className={styles.subtitle}>Người đặt: {req.buyerName}</p>
         </div>
         <Badge tone="gold" size="md">
@@ -115,7 +115,7 @@ export function VendorRequestDetailPage() {
 
       <div className={styles.grid}>
         <Card padding="lg" className={styles.card}>
-          <h2 className={styles.cardTitle}>Yêu Cầu Từ Doanh Nghiệp</h2>
+          <h2 className={styles.cardTitle}>Yêu cầu từ doanh nghiệp</h2>
           <div className={styles.specList}>
             <div className={styles.specRow}>
               <span>Mục tiêu:</span>
@@ -163,7 +163,7 @@ export function VendorRequestDetailPage() {
         </Card>
 
         <Card padding="lg" className={styles.card}>
-          <h2 className={styles.cardTitle}>Gửi Báo Giá Chào Hàng Cạnh Tranh</h2>
+          <h2 className={styles.cardTitle}>Gửi báo giá</h2>
           <form onSubmit={handleSubmitQuote} className={styles.form}>
             <Input
               label="Đơn giá đề xuất (VNĐ / hộp) *"

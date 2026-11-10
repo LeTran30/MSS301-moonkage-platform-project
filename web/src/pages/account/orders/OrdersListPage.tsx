@@ -21,7 +21,6 @@ export function OrdersListPage() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.eyebrow}>ĐƠN HÀNG CỦA TÔI</div>
         <h2 className={styles.title}>Danh sách đơn hàng</h2>
         <p className={styles.lead}>
           Theo dõi tiến độ giao bánh, duyệt bản thiết kế in logo và yêu cầu hỗ trợ khiếu nại.
@@ -98,10 +97,11 @@ export function OrdersListPage() {
                   {order.status === 'DELIVERED' && (
                     <ButtonLink
                       to={routes.account.orderDispute(order.id)}
-                      variant="danger"
+                      variant={order.hasDispute ? 'outline' : 'danger'}
                       size="sm"
                     >
-                      <Icon name="alert" size={14} /> Báo vấn đề với đơn
+                      <Icon name="alert" size={14} />{' '}
+                      {order.hasDispute ? 'Xem khiếu nại' : 'Báo vấn đề với đơn'}
                     </ButtonLink>
                   )}
                   <ButtonLink to={routes.account.order(order.id)} variant="primary" size="sm">
@@ -150,7 +150,7 @@ export function OrdersListPage() {
 
               {order.vendorName && (
                 <div className={styles.shopRow}>
-                  <Icon name="store" size={14} /> Xưởng thực hiện: <strong>{order.vendorName}</strong>
+                  <Icon name="store" size={14} /> Shop: <strong>{order.vendorName}</strong>
                 </div>
               )}
 
@@ -192,7 +192,7 @@ export function OrdersListPage() {
 
               <div className={styles.orderFooter}>
                 <div className={styles.bulkNotice}>
-                  <Icon name="sparkle" size={16} />
+                  <Icon name="palette" size={16} />
                   <span>
                     Xưởng đã tải lên maket hộp. Vui lòng xem và duyệt để bắt đầu đúc bánh.
                   </span>

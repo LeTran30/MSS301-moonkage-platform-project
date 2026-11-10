@@ -35,5 +35,5 @@ export async function resolveDispute(
   if (!dto) {
     throw new Error('Máy chủ không trả về phán quyết.');
   }
-  return mapDisputeDtoToEntity(dto, orderId);
+  return mapDisputeDtoToEntity(dto);
 }

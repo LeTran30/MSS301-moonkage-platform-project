@@ -19,21 +19,6 @@
   color: var(--color-text-muted);
   margin: 4px 0 0;
 }
-.gridTwo {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-}
-.planHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.planTitle {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  margin: 0px;
-}
 .planPrice {
   font-size: var(--text-3xl);
   font-weight: 800;
@@ -50,9 +35,6 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   line-height: 1.8;
-}
-.planButton {
-  margin-top: auto;
 }
 .totalRow {
   display: flex;
@@ -77,7 +59,8 @@
   flex-direction: column;
   gap: 16px;
 }
-.planCardActive {
-  border: 2px solid var(--color-gold);
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
 }
-

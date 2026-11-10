@@ -58,28 +58,18 @@ public class SecurityConfig {
                         .permitAll()
                         .pathMatchers("/actuator/health")
                         .permitAll()
-                        // /internal/** is for service-to-service (OpenFeign) calls only
+                        // /internal/** is for service-to-service (OpenFeign) calls only. The OpenFeign clients call
+                        // the service directly (lb://<service>/internal/...), so this path never belongs to a
+                        // public caller. The wildcard form stays for the case where a caller still uses the path
+                        // with the name of the service.
                         .pathMatchers("/internal/**", "/*/internal/**")
                         .denyAll()
-                        // The legacy form of a migrated service is listed here next to the canonical one for the
-                        // migration window of D-30. In practice the caller never reaches these rules for it:
-                        // LegacyPathRedirectFilter answers 308 before this chain, so the old path leads to the
-                        // canonical one and the authorization happens there. The entries are kept until the
-                        // locator is turned off, because a caller that still uses the old form must not be
-                        // refused a read it is allowed to make.
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/api/interprovince-fees",
-                                "/api/interprovince-fees/**",
-                                "/catalog-service/api/interprovince-fees",
-                                "/catalog-service/api/interprovince-fees/**")
+                        // The legacy form of a migrated service is not listed here any more: the discovery locator is
+                        // off (D-30, closed 2026-11-07), so a legacy path either answers 308 from
+                        // LegacyPathRedirectFilter (which runs before this chain) or is not routed at all.
+                        .pathMatchers(HttpMethod.GET, "/api/interprovince-fees", "/api/interprovince-fees/**")
                         .permitAll()
-                        .pathMatchers(
-                                HttpMethod.PUT,
-                                "/api/interprovince-fees",
-                                "/api/interprovince-fees/**",
-                                "/catalog-service/api/interprovince-fees",
-                                "/catalog-service/api/interprovince-fees/**")
+                        .pathMatchers(HttpMethod.PUT, "/api/interprovince-fees", "/api/interprovince-fees/**")
                         .hasRole("ADMIN")
                         // Swagger UI and each service's OpenAPI doc
                         .pathMatchers(
@@ -94,48 +84,34 @@ public class SecurityConfig {
                         .pathMatchers(WEBSOCKET_PATH)
                         .permitAll()
                         // identity-service decides itself which auth endpoints need a token (/me)
-                        .pathMatchers("/identity-service/api/auth/**", "/api/auth/**")
+                        .pathMatchers("/api/auth/**")
                         .permitAll()
                         // FR-04: guests browse products before logging in
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/api/products",
-                                "/api/products/**",
-                                "/catalog-service/api/products",
-                                "/catalog-service/api/products/**",
-                                "/order-service/api/reviews/**")
+                        .pathMatchers(HttpMethod.GET, "/api/products", "/api/products/**")
                         .permitAll()
                         // FR-14: the list of suppliers that take custom orders is public
                         // (SupplierController: "Works for a guest too"). The buyer sees
                         // these shops before signing in, so the gateway must let the
                         // request through without a token.
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/api/suppliers",
-                                "/api/suppliers/**",
-                                "/quotation-service/api/suppliers",
-                                "/quotation-service/api/suppliers/**")
+                        .pathMatchers(HttpMethod.GET, "/api/suppliers", "/api/suppliers/**")
+                        .permitAll()
+                        // B-3.2: the public summary of one shop (id, name, province, selling flags).
+                        // The matcher is the exact path, not "/api/vendors/**": the profile
+                        // of a shop stays private to its owner and the admin.
+                        .pathMatchers(HttpMethod.GET, "/api/vendors/*/summary")
                         .permitAll()
                         // BR-25: VNPay calls the IPN server to server and redirects the payer to the return page,
                         // both without our token; payment-service checks vnp_SecureHash instead
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/payment-service/api/payments/vnpay/ipn",
-                                "/payment-service/api/payments/vnpay/return",
-                                "/api/payments/vnpay/ipn",
-                                "/api/payments/vnpay/return")
+                        .pathMatchers(HttpMethod.GET, "/api/payments/vnpay/ipn", "/api/payments/vnpay/return")
                         .permitAll()
                         // AC-26.9: the registration fee is shown before anyone registers
-                        .pathMatchers(
-                                HttpMethod.GET,
-                                "/vendor-service/api/registration-fee-config",
-                                "/api/registration-fee-config")
+                        .pathMatchers(HttpMethod.GET, "/api/registration-fee-config")
                         .permitAll()
                         // AC-06.6: guests filter by crust and filling; hidden values stay admin only
-                        .pathMatchers(HttpMethod.GET, "/vendor-service/api/cake-attributes", "/api/cake-attributes")
+                        .pathMatchers(HttpMethod.GET, "/api/cake-attributes")
                         .permitAll()
-                        // shop product management (/catalog-service/api/seller/**): any logged-in account;
-                        // catalog-service checks the account owns an approved vendor (D-19: owner is not a role)
+                        // shop product management (/api/vendors/{id}/products/**): any logged-in account;
+                        // vendor-service checks the account owns an approved vendor (D-19: owner is not a role)
                         .anyExchange()
                         .authenticated())
                 // role claim is a single string ("MEMBER"/"ADMIN") -> ROLE_MEMBER / ROLE_ADMIN

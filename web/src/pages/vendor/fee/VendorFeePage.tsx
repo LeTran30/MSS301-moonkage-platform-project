@@ -1,18 +1,28 @@
 import styles from './VendorFeePage.module.css';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
-import { Button, Card, Badge, Icon, Breadcrumbs, toast } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
+import { Button, ButtonLink, Card, Badge, Breadcrumbs, toast } from '@/shared/ui';
+import { openPaymentPage, useAction } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
-import { useOwnVendorId, useRegistrationFeeConfig } from '@/entities/vendor';
+import {
+  useMyVendorDetail,
+  useOwnVendorId,
+  useRegistrationFeeConfig,
+  VENDOR_STATUS_LABELS,
+} from '@/entities/vendor';
 import { usePayVendorFee } from '@/features/pay-vendor-fee';
 
+/**
+ * B1.1 — đóng phí mở bán (FR-53, AC-27.4).
+ *
+ * Phí đóng một lần qua VNPay sau khi hồ sơ được duyệt; Shop chỉ mở bán khi
+ * khoản phí đã về. Trang chỉ nói những gì hệ thống thật sự làm.
+ */
 export function VendorFeePage() {
   const user = useCurrentUser();
-  const navigate = useNavigate();
   const vendorId = useOwnVendorId(user.vendorId);
+  const asyncProfile = useMyVendorDetail(vendorId || null);
+  const vendor = asyncProfile.kind === 'loaded' ? asyncProfile.data : null;
   const { busy, run, error } = useAction();
   const payVendorFee = usePayVendorFee(vendorId);
 
@@ -20,7 +30,9 @@ export function VendorFeePage() {
   // Mức phí đọc từ máy chủ; chưa tải xong thì không hiện một con số bịa.
   const asyncFee = useRegistrationFeeConfig();
   const feeAmount = asyncFee.kind === 'loaded' ? (asyncFee.data?.amount ?? null) : null;
-  const [feePlan, setFeePlan] = useState<'SEASONAL'>('SEASONAL');
+
+  const isApproved = vendor?.status === 'APPROVED';
+  const isFeePaid = Boolean(vendor?.registrationFeePaidAt);
 
   function handlePayFee() {
     if (feeAmount === null) {
@@ -29,17 +41,12 @@ export function VendorFeePage() {
     }
     void run(async () => {
       // AC-27.4: `POST /api/vendors/{vendorId}/registration-fee-payments` answers
-      // the VNPay page to open; the shop opens once the payment succeeds.
+      // the VNPay page; cùng tab để trang kết quả còn giữ phiên đăng nhập.
       const link = await payVendorFee();
-      if (link?.paymentUrl) {
-        toast.success('Đang chuyển tới cổng VNPay để nộp phí mở bán.');
-        window.open(link.paymentUrl, '_blank', 'noopener,noreferrer');
-        return;
+      if (!link?.paymentUrl) {
+        throw new Error('Không lấy được liên kết thanh toán. Vui lòng thử lại.');
       }
-      toast.success(
-        `Đã khởi tạo lệnh nộp phí mở bán ${formatCurrency(feeAmount)}! Gian hàng sẽ mở khi thanh toán thành công.`,
-      );
-      navigate(routes.vendor.overview);
+      openPaymentPage(link.paymentUrl);
     });
   }
 
@@ -47,82 +54,84 @@ export function VendorFeePage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
-          { label: 'Phí Mở Bán Gian Hàng' },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
+          { label: 'Phí mở bán' },
         ]}
       />
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Kích Hoạt Gian Hàng & Phí Mở Bán</h1>
+          <h1 className={styles.title}>Phí mở bán</h1>
           <p className={styles.subtitle}>
-            Phí duy trì kiểm định chất lượng, gắn tem chống giả NFC và kết nối mạng lưới doanh
-            nghiệp
+            Đóng một lần qua VNPay sau khi hồ sơ được duyệt. Gian hàng mở bán ngay khi khoản phí
+            được xác nhận.
           </p>
         </div>
-        <Badge tone="gold" size="md">
-          <Icon name="store" size={14} /> Kiểm định định kỳ
-        </Badge>
+        {vendor?.status && (
+          <Badge tone={isApproved ? 'green' : 'amber'} size="md">
+            {VENDOR_STATUS_LABELS[vendor.status]}
+          </Badge>
+        )}
       </div>
 
-      <div className={styles.gridTwo}>
-        <Card
-          padding="lg"
-          interactive
-          className={`${styles.planCard} ${feePlan === 'SEASONAL' ? styles.planCardActive : ''}`}
-          onClick={() => setFeePlan('SEASONAL')}
-        >
-          <div className={styles.planHeader}>
-            <h2 className={styles.planTitle}>Phí Mở Bán Gian Hàng</h2>
-            <Badge tone="gold">Phổ biến nhất</Badge>
-          </div>
-          <div className={styles.planPrice}>
-            {feeAmount === null ? (
-              <span className={styles.planPeriod}>Đang tải mức phí hiện hành…</span>
-            ) : (
-              <>
-                {formatCurrency(feeAmount)} <span className={styles.planPeriod}>/ lần mở bán</span>
-              </>
-            )}
-          </div>
-          <ul className={styles.planFeatures}>
-            <li>Đăng tải không giới hạn sản phẩm bánh Trung Thu</li>
-            <li>Nhận yêu cầu báo giá sỉ RFQ từ mạng lưới doanh nghiệp</li>
-            <li>Cấp tem NFC chống hàng giả miễn phí đợt đầu</li>
-            <li>Hỗ trợ trọng tài Escrow bảo lãnh thanh toán 100%</li>
-          </ul>
-          <Button
-            variant={feePlan === 'SEASONAL' ? 'primary' : 'outline'}
-            className={styles.planButton}
-          >
-            {feePlan === 'SEASONAL' ? 'Đang Chọn Gói Này' : 'Chọn Gói Này'}
-          </Button>
-        </Card>
-      </div>
+      <Card padding="lg" className={styles.planCard}>
+        <div className={styles.planPrice}>
+          {feeAmount === null ? (
+            <span className={styles.planPeriod}>Đang tải mức phí hiện hành…</span>
+          ) : (
+            formatCurrency(feeAmount)
+          )}
+        </div>
+        <ul className={styles.planFeatures}>
+          <li>Đóng một lần, không gia hạn.</li>
+          <li>Sau khi đóng: đăng sản phẩm, nhận đơn mua lẻ và yêu cầu đặt số lượng lớn.</li>
+        </ul>
+      </Card>
 
       {error && (
-        <p role="alert" className={styles.subtitle}>
+        <p role="alert" className={styles.error}>
           {error}
         </p>
       )}
 
-      <Card padding="md" className={styles.totalRow}>
-        <div>
-          <div className={styles.totalLabel}>Tổng phí thanh toán kích hoạt:</div>
-          <div className={styles.totalValue}>
-            {feeAmount === null ? '—' : formatCurrency(feeAmount)}
+      {isFeePaid ? (
+        <Card padding="md" className={styles.totalRow}>
+          <p className={styles.subtitle}>Bạn đã đóng phí mở bán. Gian hàng đang hoạt động.</p>
+          <ButtonLink to={routes.vendor.overview} variant="primary">
+            Về tổng quan gian hàng
+          </ButtonLink>
+        </Card>
+      ) : isApproved ? (
+        <Card padding="md" className={styles.totalRow}>
+          <div>
+            <div className={styles.totalLabel}>Số tiền cần đóng</div>
+            <div className={styles.totalValue}>
+              {feeAmount === null ? '—' : formatCurrency(feeAmount)}
+            </div>
           </div>
-        </div>
-        <Button
-          variant="primary"
-          size="lg"
-          loading={busy}
-          disabled={feeAmount === null}
-          onClick={handlePayFee}
-        >
-          Thanh Toán & Kích Hoạt Gian Hàng Ngay
-        </Button>
-      </Card>
+          <Button
+            variant="primary"
+            size="lg"
+            loading={busy}
+            disabled={feeAmount === null}
+            onClick={handlePayFee}
+          >
+            Đóng phí qua VNPay
+          </Button>
+        </Card>
+      ) : (
+        vendor && (
+          <Card padding="md" className={styles.totalRow}>
+            <p className={styles.subtitle}>
+              Bạn đóng phí được khi hồ sơ đã được duyệt. Trạng thái hiện tại:{' '}
+              {VENDOR_STATUS_LABELS[vendor.status ?? 'PENDING']}.
+            </p>
+            <ButtonLink to={routes.vendor.overview} variant="outline">
+              Xem trạng thái hồ sơ
+            </ButtonLink>
+          </Card>
+        )
+      )}
     </div>
   );
 }

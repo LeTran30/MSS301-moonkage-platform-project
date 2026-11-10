@@ -28,7 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * FR-04: the web opens a short session shown as a QR, the Moonkage Verify app sends the card once, and the result is
- * saved. Flow and invariants: docs/services/identity/classes/NfcServiceImpl.md.
+ * saved. Flow and invariants: docs/archive/2026-11-08-class-docs/identity/NfcServiceImpl.md.
  *
  * <p>Sessions live in a {@link ConcurrentHashMap} with a short TTL (Requirement 7.1 NfcSession): no database rows to
  * clean up, and a restart only means the user scans a new QR. One pending session per account bounds the memory.

@@ -7,7 +7,12 @@ import styles from './VendorMessagesPage.module.css';
 export function VendorMessagesPage() {
   return (
     <div className={styles.page}>
-      <Breadcrumbs items={[{ label: 'Kênh Xưởng', to: routes.vendor.overview }, { label: 'Tin nhắn khách hàng' }]} />
+      <Breadcrumbs
+        items={[
+          { label: 'Kênh người bán', to: routes.vendor.overview },
+          { label: 'Tin nhắn khách hàng' },
+        ]}
+      />
       <h1 className={styles.title}>Tin nhắn khách hàng</h1>
       <ChatInbox as="VENDOR" />
     </div>

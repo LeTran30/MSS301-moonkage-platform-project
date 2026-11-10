@@ -7,7 +7,7 @@ import { mapDisputeDtoToEntity, type DisputeDto } from '@/entities/dispute';
 /**
  * The write side of a dispute (FR-12, AC-49.1).
  *
- * The dispute entity owns the read (`listOpen`, `getByOrderId`) and the shape
+ * The dispute entity owns the read (`list`, `getByOrderId`) and the shape
  * of the dispute; the writes live here because they change the case, not the
  * dispute data (package-architecture §3 — `api/` of a feature holds the writes).
  */
@@ -34,7 +34,7 @@ export async function openDispute(orderId: string, payload: OpenDisputePayload):
   if (!dto) {
     throw new Error('Máy chủ không trả về hồ sơ khiếu nại.');
   }
-  return mapDisputeDtoToEntity(dto, orderId);
+  return mapDisputeDtoToEntity(dto);
 }
 
 /** Add a piece of evidence (AC-49.1) from the buyer or the vendor owner. */
@@ -47,5 +47,5 @@ export async function addDisputeEvidence(
   if (!dto) {
     throw new Error('Máy chủ không trả về hồ sơ khiếu nại.');
   }
-  return mapDisputeDtoToEntity(dto, orderId);
+  return mapDisputeDtoToEntity(dto);
 }

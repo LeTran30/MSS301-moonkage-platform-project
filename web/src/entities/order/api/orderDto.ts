@@ -42,6 +42,8 @@ export interface OrderDto {
   deliveredAt?: string;
   receivedConfirmedAt?: string;
   complaintDeadline?: string;
+  /** A dispute of the order waits for the admin's decision (FR-12, FR-49). */
+  disputeOpen?: boolean;
   createdAt?: string;
   items?: Array<{
     productId: string;

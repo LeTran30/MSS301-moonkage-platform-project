@@ -16,7 +16,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--color-zone);
+  color: var(--color-text);
   margin-bottom: var(--space-1);
 }
 
@@ -91,7 +91,7 @@
   gap: var(--space-6);
 }
 
-@media (max-width: 860px) {
+@media (max-width: var(--breakpoint-md)) {
   .reqBody {
     grid-template-columns: 1fr;
   }

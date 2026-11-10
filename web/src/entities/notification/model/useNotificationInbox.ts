@@ -23,19 +23,26 @@ export function mapNotificationDto(dto: NotificationDto): Notification {
   });
 }
 
+/** The account whose notifications the store holds; another account starts from an empty list. */
+let storeOwner = '';
+
 /**
- * Read the caller's inbox back from the server (BE-04b).
+ * Read the signed-in account's inbox back from the server (BE-04b).
  *
  * The socket is the fast path (a notification reaches the bell the moment the
  * event arrives); this call is the durable path — it fills the list after a
- * reload, when the push was missed or the tab was closed.
+ * login or a reload, when the push was missed or the tab was closed.
+ *
+ * `accountId` is empty for a guest: the list is cleared and nothing is read,
+ * so the next account never sees the notifications of the previous one.
  */
-export function useNotificationInbox(): { loading: boolean; reload: () => void } {
+export function useNotificationInbox(accountId: string): { loading: boolean; reload: () => void } {
   const [loading, setLoading] = useState(false);
 
   // Fetch and merge into the store. It touches no React state, so it can run
   // from an effect without a cascading render.
   const fetchInbox = useCallback(async (): Promise<void> => {
+    if (!accountId) return;
     const page = await notificationApi.list({ size: 50 });
     if (!page) return;
     const notifications = page.content.map(mapNotificationDto);
@@ -44,7 +51,7 @@ export function useNotificationInbox(): { loading: boolean; reload: () => void }
       const known = new Set(notifications.map((n) => n.id));
       return [...notifications, ...prev.filter((n) => !known.has(n.id))];
     });
-  }, []);
+  }, [accountId]);
 
   const reload = useCallback(() => {
     setLoading(true);
@@ -56,10 +63,14 @@ export function useNotificationInbox(): { loading: boolean; reload: () => void }
   }, [fetchInbox]);
 
   useEffect(() => {
+    if (storeOwner !== accountId) {
+      storeOwner = accountId;
+      notificationStore.set([]);
+    }
     void fetchInbox().catch(() => {
       // The inbox keeps whatever the socket delivered; a failed read is not fatal.
     });
-  }, [fetchInbox]);
+  }, [accountId, fetchInbox]);
 
   return { loading, reload };
 }

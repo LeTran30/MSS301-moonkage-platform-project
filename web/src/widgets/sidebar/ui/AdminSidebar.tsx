@@ -62,7 +62,7 @@ export function AdminSidebarContent({ onNavigate, showHeader = true }: Props = {
       badge: 1,
     },
     {
-      title: 'Danh mục VỌ & Nhân',
+      title: 'Danh mục vỏ và nhân',
       path: routes.admin.cakeCatalog,
       icon: 'layers',
     },

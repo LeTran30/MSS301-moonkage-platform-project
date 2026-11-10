@@ -40,7 +40,7 @@ export function EscrowLockedTable({ ledgers, vendorNames }: EscrowLockedTablePro
                   <strong className={styles.redText}>{formatCurrency(l.held ?? 0)}</strong>
                 </td>
                 <td>
-                  <Badge tone="red">Đang khóa Escrow</Badge>
+                  <Badge tone="red">Đang khóa</Badge>
                 </td>
               </tr>
             ))}

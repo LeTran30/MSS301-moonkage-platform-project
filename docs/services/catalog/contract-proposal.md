@@ -4,7 +4,7 @@
 
 ## 0. Trạng thái triển khai, 02/11/2026
 
-Phase D đã nối adapter theo tài liệu này (xem [implementation-plan](implementation-plan.md#phase-d-02112026-nối-adapter)); gate D mở ngày 02/11/2026. Adapter đọc đúng payload vendor-service và order-service đang phát. Chỗ khác với đề xuất bên dưới:
+Phase D đã nối adapter theo tài liệu này (xem [implementation-plan](../../work/plans/catalog-implementation-plan.md#phase-d-02112026-nối-adapter)); gate D mở ngày 02/11/2026. Adapter đọc đúng payload vendor-service và order-service đang phát. Chỗ khác với đề xuất bên dưới:
 
 - **review.created** đã theo envelope v1 (§7) từ 02/11/2026: order-service phát qua `OutboxService.enqueueState` với aggregateType REVIEW, aggregateId = reviewId, sourceVersion 1; `data` có thêm `orderId`, catalog bỏ qua. Trước ngày này sự kiện nằm ở gốc JSON; bản cũ còn trong inbox sẽ giữ pending vì thiếu schemaVersion.
 - product.upserted có thêm `resold`; catalog bỏ qua (không có cột).
@@ -126,13 +126,14 @@ Ví dụ (ID là dữ liệu mẫu):
 
 ## 6. vendor.updated / vendor.locked — đề xuất full snapshot
 
-Envelope VENDOR, aggregateId=data.vendorId; cả hai keys dùng cùng sourceVersion. Các trường snapshot đề xuất: vendorId, ownerAccountId (nonblank <=36), businessName (nonblank), status (PENDING/NEEDS_INFO/APPROVED/REJECTED/LOCKED), canOperate (boolean), sellsShop (boolean), **acceptsOrders** (boolean), deliveryAreas (array 34 mã tỉnh hợp lệ), localDeliveryFee (field có, nullable long >=0).
+Envelope VENDOR, aggregateId=data.vendorId; cả hai keys dùng cùng sourceVersion. Các trường snapshot đề xuất: vendorId, ownerAccountId (nonblank <=36), businessName (nonblank), **provinceCode** (field có, nullable, 2 chữ số — tỉnh trụ sở của Shop), status (PENDING/NEEDS_INFO/APPROVED/REJECTED/LOCKED), canOperate (boolean), sellsShop (boolean), **acceptsOrders** (boolean), deliveryAreas (array 34 mã tỉnh hợp lệ), localDeliveryFee (field có, nullable long >=0).
 
 - Vendor là nguồn tính canOperate từ trạng thái/đóng phí; catalog không tự tính lại dựa riêng vào status. canOperate=true yêu cầu APPROVED, nhưng APPROVED chưa chắc canOperate=true.
 - vendor.locked khuyến nghị cùng full snapshot, status=LOCKED và canOperate=false. Lock trước snapshot đầu vẫn đủ owner/name/areas để dựng vendor row một lần. Unlock phát vendor.updated full state/version mới hơn; late locked cũ bị gate. Không dùng bộ đếm/sourceVersion riêng cho locked.
 - Nếu nhóm chọn locked **signal** chỉ có vendorId/version, cần thêm vendor tombstone/watermark/pending hydration hoặc authoritative fetch; không ghi các field thiếu thành rỗng hoặc ghi đè owner/fee. Chưa có source API đó, nên C2 chỉ capture signal pending, không tự hydrate.
 - Product event không ghi vendor fields; vendor event không ghi product metadata/rating/version. Chỉ một row vendor đổi trạng thái, view join chặn public products của shop khóa. Dữ liệu chậm vẫn cần order/vendor chặn ở bước ghi theo BR-20/22.
 - acceptsOrders phục vụ lối gửi yêu cầu ở detail; đã thêm bằng migration mới `V2026_11_02_1000` (cột `accepts_orders`, mặc định false), không sửa V2/L-19. QuoteThreshold/stock không tự biến thành lệnh gửi báo giá.
+- provinceCode phục vụ thẻ sản phẩm: người mua thấy tỉnh của Shop (B-3.1); đã thêm bằng migration mới `V2026_11_06_1100` (cột `province_code`, cho phép null) và view `product_listings` nối cột đó. Bản chụp ghi trước khi có trường này không có tỉnh, nên catalog đọc `provinceCode` theo kiểu "có thể vắng".
 - Profile quotation/capabilities có thể cùng vendor event nhưng phải chốt schema theo consumer quotation; catalog không chép giấy tờ, NFC, CCCD, ngân hàng, hồ sơ PII hoặc tự làm tem sản phẩm.
 
 ## 7. review.created — đề xuất wire và sửa/xóa
@@ -198,7 +199,7 @@ Phải duyệt các điểm sau trước full rebuild:
 | Public resolver nhãn hidden | Vendor resolver theo group/code, không public picker hidden | ĐÃ DUYỆT |
 | Replay feed/checkpoint/target generation | Full snapshot manifest + order reviews, inbox retry; generation riêng nếu full rebuild | ĐÃ DUYỆT |
 | Endpoint sản phẩm vendor thay writer legacy | Owner triển khai và nghiệm thu trước xóa writer catalog | CHƯA CÓ endpoint thay thế |
-| Audit phí liên tỉnh | [Handoff orchestrator](orchestrator-handoff.md): bind/adapter/processed_events atomic | CHƯA CÓ adapter E2E |
+| Audit phí liên tỉnh | [Handoff orchestrator](../../archive/2026-10-27-catalog-orchestrator-handoff.md): bind/adapter/processed_events atomic | CHƯA CÓ adapter E2E |
 
 ## 11. Tiêu chí nghiệm thu sau duyệt (Phase D, chưa thực hiện ở C)
 

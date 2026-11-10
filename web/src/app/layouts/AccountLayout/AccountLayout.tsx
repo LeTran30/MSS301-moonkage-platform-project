@@ -82,11 +82,11 @@ export function AccountLayout() {
             </div>
           </Card>
 
-          {/* Khối "Việc cần bạn" */}
+          {/* việc đang chờ người mua, hiện trên mọi trang tài khoản */}
           {(pendingMaketCount > 0 || openRequestsCount > 0 || remainderDue.length > 0) && (
             <Card tone="gold" padding="sm" className={styles.actionNeededCard}>
               <div className={styles.actionNeededTitle}>
-                <Icon name="sparkle" size={15} /> Việc cần bạn xử lý
+                Việc cần bạn xử lý
               </div>
               <div className={styles.actionList}>
                 {pendingMaketCount > 0 && (

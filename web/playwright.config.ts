@@ -68,7 +68,11 @@ export default defineConfig({
   // Loại trừ file debug tạm: glob mặc định của Playwright là `**/*.@(spec|test)...`
   // nên một file tên `_tmp-debug2.spec.ts` lọt vào `web/e2e/` sẽ bị CI chạy.
   // File tạm chỉ dùng để dò lỗi cục bộ, không bao giờ được chạy trong CI.
-  testIgnore: ['**/_tmp*/**', '**/_tmp-*', '**/tmp-*'],
+  //
+  // `e2e/__tests__/` là test **thuần** của Vitest (không cần trình duyệt):
+  // chúng kiểm phần thuật toán mà các luồng E2E dựa vào. Playwright không
+  // chạy chúng — Vitest thì có (xem `vite.config.ts`).
+  testIgnore: ['**/_tmp*/**', '**/_tmp-*', '**/tmp-*', '**/__tests__/**'],
   // Không chạy song song trên cùng một máy: các test dùng chung trạng thái
   // (giỏ hàng, phiên đăng nhập) nên chạy tuần tự cho ổn định.
   fullyParallel: false,

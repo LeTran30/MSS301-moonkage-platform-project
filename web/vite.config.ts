@@ -15,9 +15,19 @@ export default defineConfig({
     // jsdom so the component tests can render real DOM (T-14).
     environment: 'jsdom',
     setupFiles: ['./src/shared/test/setup.ts'],
-    // Thư mục `e2e/` là test Playwright, không phải test Vitest — loại khỏi
-    // `exclude` để `npm test` không cố chạy chúng bằng Vitest.
-    exclude: ['**/node_modules/**', 'e2e/**', 'dist/**'],
+    // Thư mục `e2e/` là test Playwright, không phải test Vitest — `include` bên
+    // dưới chỉ lấy `src/**` và `e2e/__tests__/**`, nên `*.spec.ts` của
+    // Playwright không bị Vitest cố chạy.
+    //
+    // Ngoại lệ: `e2e/__tests__/` là test **thuần** (không cần trình duyệt,
+    // không cần backend) — ví dụ thuật toán ký callback VNPay. Chúng kiểm
+    // phần mà mọi luồng E2E khác dựa vào, nên phải chạy nhanh và chạy mỗi
+    // lần `npm test`.
+    exclude: ['**/node_modules/**', 'dist/**'],
+    include: [
+      'src/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+      'e2e/__tests__/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+    ],
     // Timeout mặc định của Vitest là 5 s. Trên CI (hoặc khi chạy song song với
     // Maven) máy có thể chậm, và một test cần ~1,2 s khi chạy riêng sẽ vượt
     // 5 s khi tải cao ⇒ báo đỏ giả. Nâng lên 15 s để ngưỡng phản ánh lỗi thật

@@ -146,13 +146,13 @@
   outline-offset: 1px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: var(--breakpoint-lg)) {
   .statGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 840px) {
+@media (max-width: var(--breakpoint-md)) {
   .detailLayout {
     grid-template-columns: 1fr;
   }
@@ -161,7 +161,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: var(--breakpoint-sm)) {
   .statGrid {
     grid-template-columns: 1fr;
   }

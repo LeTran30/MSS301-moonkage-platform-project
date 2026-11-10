@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { routes } from '@/shared/config';
 import { Button, ButtonLink, Card, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useCurrentUser } from '@/entities/user';
 import type { VendorDetailDto, VendorDocumentKind } from '@/entities/vendor';
-import { DOCUMENT_LABELS } from '../model/documentLabels';
+import { DOCUMENT_LABELS, OWNER_DOCUMENT_KINDS, uploadVendorDocument } from '@/entities/vendor';
 import { useResubmitVendorProfile } from '../model/useVendorSettingsActions';
-import { useUploadVendorDocument } from '../model/useUploadVendorDocument';
 import { LegalBankFields } from './LegalBankFields';
 import { LegalDocumentsField } from './LegalDocumentsField';
 import { LegalIdentityFields } from './LegalIdentityFields';
@@ -15,20 +13,22 @@ import styles from './vendorSettingsUi.module.css';
 interface LegalProfileFormProps {
   vendorId: string;
   detail: VendorDetailDto;
+  /** Gọi sau khi nộp lại thành công, để trang đọc lại trạng thái hồ sơ. */
+  onSaved?: () => void;
 }
 
 /**
  * B6.1 (FR-26, NFR-02) — the legal profile of the Shop.
  *
  * `GET /api/vendors/{vendorId}` reads it; `PUT /api/vendors/{vendorId}` sends it
- * back (AC-27.2, only while NEEDS_INFO or REJECTED). The documents keep their
- * current `objectKey`; a new file is uploaded first and its `tempKey` sent.
+ * back (AC-27.2, only while NEEDS_INFO or REJECTED). Only the documents the
+ * owner replaces are sent (their `tempKey`); every other kind stays on file.
+ * The ID number and the bank account number come back masked, so the owner
+ * types them in full again.
  */
-export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
-  const user = useCurrentUser();
-  const { busy, run } = useAction();
+export function LegalProfileForm({ vendorId, detail, onSaved }: LegalProfileFormProps) {
+  const { busy, run, error } = useAction();
   const resubmitVendorProfile = useResubmitVendorProfile();
-  const uploadVendorDocument = useUploadVendorDocument();
 
   // Khởi tạo form trực tiếp từ hồ sơ đã tải (không dùng effect để setState).
   const [businessName, setBusinessName] = useState(detail.businessName ?? '');
@@ -36,6 +36,8 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
   const [address, setAddress] = useState(detail.address ?? '');
   const [provinceCode, setProvinceCode] = useState(detail.provinceCode ?? '');
   const [representativeName, setRepresentativeName] = useState(detail.representativeName ?? '');
+  const [representativeIdNumber, setRepresentativeIdNumber] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [bankName, setBankName] = useState(detail.bankAccount?.bankName ?? '');
   const [bankAccountHolder, setBankAccountHolder] = useState(detail.bankAccount?.holder ?? '');
   const [supplySource, setSupplySource] = useState<'SELF_PRODUCED' | 'RESELL' | 'BOTH'>(
@@ -54,10 +56,6 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
     if (!file) return;
     void run(async () => {
       const uploaded = await uploadVendorDocument(file);
-      if (!uploaded) {
-        toast.error('Không tải được tệp lên kho lưu trữ.');
-        return;
-      }
       setTempKeys((prev) => ({ ...prev, [kind]: uploaded }));
       toast.success(`Đã tải lên ${DOCUMENT_LABELS[kind]}.`);
     });
@@ -66,28 +64,12 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     void run(async () => {
-      // AC-27.2: the whole profile again, with the documents that stay as they
-      // are (their current `objectKey`) and the new ones (their `tempKey`).
-      const payload: Array<{ kind: VendorDocumentKind; objectKey: string }> = [];
-
-      for (const kind of ['BUSINESS_LICENSE', 'FOOD_SAFETY'] as const) {
-        const uploaded = tempKeys[kind];
-        if (uploaded) {
-          payload.push({ kind, objectKey: uploaded });
-          continue;
-        }
-        const current = documents.find((d) => d.kind === kind);
-        // The backend only accepts a temp key or the key of a current document;
-        // without either one the resubmission is refused (DOCUMENT_NOT_ACCEPTED).
-        if (current) {
-          payload.push({ kind, objectKey: current.id });
-        }
-      }
-
-      if (payload.length === 0) {
-        toast.error('Hồ sơ cần ít nhất một tài liệu (Giấy phép kinh doanh hoặc VSATTP).');
-        return;
-      }
+      // AC-27.2: the whole profile again; only the replaced documents are
+      // sent, every other kind keeps the document on file.
+      const replaced = OWNER_DOCUMENT_KINDS.flatMap((kind) => {
+        const objectKey = tempKeys[kind];
+        return objectKey ? [{ kind, objectKey }] : [];
+      });
 
       await resubmitVendorProfile(vendorId, {
         businessName,
@@ -97,18 +79,20 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
         provinceCode,
         representativeName,
         // The backend masks the ID number on read; it needs the full one to check
-        // it against the identity card. The owner retypes it when needed.
-        representativeIdNumber: user.idCardNumberMasked ?? '',
+        // it against the identity card (BR-27).
+        representativeIdNumber: representativeIdNumber.trim(),
         supplySource,
         sellsShop,
         acceptsOrders,
         bankName,
-        bankAccountNumber: detail.bankAccount?.maskedNumber ?? '',
+        bankAccountNumber: bankAccountNumber.trim(),
         bankAccountHolder,
-        documents: payload,
+        documents: replaced,
       });
 
-      toast.success('Đã lưu thông tin hồ sơ pháp lý và chứng nhận VSATTP!');
+      toast.success('Đã nộp lại hồ sơ. Đội vận hành sẽ thẩm định lại.');
+      setTempKeys({});
+      onSaved?.();
     });
   };
 
@@ -128,6 +112,8 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
           onProvinceCodeChange={setProvinceCode}
           representativeName={representativeName}
           onRepresentativeNameChange={setRepresentativeName}
+          representativeIdNumber={representativeIdNumber}
+          onRepresentativeIdNumberChange={setRepresentativeIdNumber}
           supplySource={supplySource}
           onSupplySourceChange={setSupplySource}
         />
@@ -135,11 +121,20 @@ export function LegalProfileForm({ vendorId, detail }: LegalProfileFormProps) {
         <LegalBankFields
           bankName={bankName}
           onBankNameChange={setBankName}
+          bankAccountNumber={bankAccountNumber}
+          onBankAccountNumberChange={setBankAccountNumber}
+          maskedBankAccountNumber={detail.bankAccount?.maskedNumber}
           bankAccountHolder={bankAccountHolder}
           onBankAccountHolderChange={setBankAccountHolder}
         />
 
         <LegalDocumentsField documents={documents} tempKeys={tempKeys} onUpload={handleUpload} />
+
+        {error && (
+          <p role="alert" className={styles.formError}>
+            {error}
+          </p>
+        )}
 
         <div className={styles.actions}>
           <Button type="submit" variant="primary" loading={busy}>

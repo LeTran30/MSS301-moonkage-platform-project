@@ -14,7 +14,18 @@ interface VendorProductCardProps {
   attributeName: (code: string) => string;
 }
 
-/** Thẻ sản phẩm trong danh mục của gian hàng (B4.0). */
+const STATUS_BADGE = {
+  ON_SALE: { tone: 'green', label: 'Đang mở bán' },
+  HIDDEN: { tone: 'neutral', label: 'Đang ẩn' },
+  REMOVED: { tone: 'red', label: 'Bị sàn gỡ' },
+} as const;
+
+/**
+ * Thẻ sản phẩm trong danh mục của gian hàng (B4.0).
+ *
+ * Sản phẩm bị quản trị viên gỡ (FR-46) không còn sửa, ẩn hay hiện được
+ * (409 VENDOR_026), nên thẻ chỉ hiện lý do gỡ.
+ */
 export function VendorProductCard({
   product,
   busy,
@@ -22,6 +33,10 @@ export function VendorProductCard({
   onEdit,
   attributeName,
 }: VendorProductCardProps) {
+  const status = product.status ?? 'HIDDEN';
+  const badge = STATUS_BADGE[status];
+  const removed = status === 'REMOVED';
+
   return (
     <Card className={styles.productCard}>
       <div className={styles.cardImageWrap}>
@@ -31,9 +46,7 @@ export function VendorProductCard({
           className={styles.productImg}
         />
         <div className={styles.statusBadgeWrap}>
-          <Badge tone={product.status === 'ON_SALE' ? 'green' : 'neutral'}>
-            {product.status === 'ON_SALE' ? 'Đang mở bán' : 'Đang ẩn'}
-          </Badge>
+          <Badge tone={badge.tone}>{badge.label}</Badge>
         </div>
       </div>
 
@@ -63,24 +76,32 @@ export function VendorProductCard({
 
         <div className={styles.stockInfo}>
           <span>
-            Tồn kho: <strong>{product.stock ?? 0} bánh</strong>
+            Tồn kho: <strong>{product.stock ?? 0} hộp</strong>
           </span>
         </div>
+
+        {removed && (
+          <p className={styles.removedReason}>
+            Lý do gỡ: {product.removedReason || 'Quản trị viên không ghi lý do.'}
+          </p>
+        )}
       </div>
 
-      <div className={styles.cardActions}>
-        <Button
-          variant={product.status === 'ON_SALE' ? 'secondary' : 'primary'}
-          size="sm"
-          loading={busy}
-          onClick={() => onToggleVisibility(product)}
-        >
-          {product.status === 'ON_SALE' ? 'Ẩn sản phẩm' : 'Bật hiển thị'}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => onEdit(product)}>
-          Chỉnh sửa
-        </Button>
-      </div>
+      {!removed && (
+        <div className={styles.cardActions}>
+          <Button
+            variant={status === 'ON_SALE' ? 'secondary' : 'primary'}
+            size="sm"
+            loading={busy}
+            onClick={() => onToggleVisibility(product)}
+          >
+            {status === 'ON_SALE' ? 'Ẩn sản phẩm' : 'Bật hiển thị'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onEdit(product)}>
+            Chỉnh sửa
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }

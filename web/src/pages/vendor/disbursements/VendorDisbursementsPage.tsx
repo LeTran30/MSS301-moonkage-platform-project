@@ -75,15 +75,15 @@ export function VendorDisbursementsPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Ví & Tài chính', to: routes.vendor.money },
-          { label: 'Yêu cầu giải ngân Escrow' },
+          { label: 'Yêu cầu giải ngân' },
         ]}
       />
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Giải Ngân Tiền Ký Quỹ Escrow</h1>
+          <h1 className={styles.title}>Giải ngân tiền ký quỹ</h1>
           <p className={styles.subtitle}>
             Rút tiền doanh thu từ các đơn hàng đã được người mua xác nhận hoàn tất
           </p>
@@ -92,7 +92,7 @@ export function VendorDisbursementsPage() {
 
       <div className={styles.gridTwo}>
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Tạo Lệnh Rút Tiền Về Tài Khoản</h2>
+          <h2 className={styles.sectionTitle}>Tạo lệnh rút tiền về tài khoản</h2>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Số dư khả dụng có thể rút ngay:</span>
             <div className={styles.statValue}>{formatCurrency(availableBalance)}</div>
@@ -161,7 +161,7 @@ export function VendorDisbursementsPage() {
         </Card>
 
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Lịch Sử Lệnh Rút Gần Đây</h2>
+          <h2 className={styles.sectionTitle}>Lệnh rút gần đây</h2>
           <AsyncState
             state={asyncLedgers}
             onRetry={asyncLedgers.reload}

@@ -146,7 +146,7 @@ export function OrderDetailPage() {
     void run(async () => {
       const link = await getInvoiceLink(order.id);
       if (!link?.downloadUrl) {
-        toast.warning('Xưởng chưa đính kèm hóa đơn cho đơn hàng này.');
+        toast.warning('Shop chưa đính kèm hóa đơn cho đơn hàng này.');
         return;
       }
       window.open(link.downloadUrl, '_blank', 'noopener,noreferrer');
@@ -166,11 +166,11 @@ export function OrderDetailPage() {
             ]}
           />
           <h2 className={styles.title}>
-            Chi tiết đơn hàng #{orderCode(order.id)} {isBulk && <Badge tone="gold">Đơn Số Lượng Lớn</Badge>}
+            Chi tiết đơn hàng #{orderCode(order.id)}{' '}
+            {isBulk && <Badge tone="gold">Đơn Số Lượng Lớn</Badge>}
           </h2>
           <div className={styles.meta}>
-            Xưởng/Tiệm: <strong>{order.vendorName}</strong> · Đặt ngày{' '}
-            {formatDateTime(order.createdAt)}
+            Shop: <strong>{order.vendorName}</strong> · Đặt ngày {formatDateTime(order.createdAt)}
           </div>
         </div>
 
@@ -183,7 +183,13 @@ export function OrderDetailPage() {
           >
             Nhắn shop
           </ButtonLink>
-          {order.status === 'DELIVERED' && (
+          {order.status === 'DELIVERED' && order.hasDispute && (
+            // Khiếu nại đang mở: tiền chờ quản trị viên phân xử, không xác nhận nhận hàng được.
+            <ButtonLink to={routes.account.orderDispute(order.id)} variant="primary" size="sm">
+              Xem khiếu nại
+            </ButtonLink>
+          )}
+          {order.status === 'DELIVERED' && !order.hasDispute && (
             <>
               {/* Đơn đặt riêng: trả phần còn lại là bước nhận hàng, đơn tự hoàn tất (FR-22). */}
               {canPayRemainder ? (

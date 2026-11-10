@@ -56,7 +56,8 @@ export interface VendorDetailDto {
   deliveryAreas?: string[];
   registrationFeePaidAt?: string | null;
   documents?: Array<{ id: string; kind: string; uploadedAt?: string }>;
-  ownerCheck?: unknown;
+  /** The latest comparison with the owner's NFC card; only admins see it (AC-26.8). */
+  ownerCheck?: OwnerCheckDto | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -157,6 +158,33 @@ export interface VendorResponseDto {
   supplySource?: string;
   sellsShop?: boolean;
   acceptsOrders?: boolean;
+  /** HOUSEHOLD_BUSINESS or SOLE_PROPRIETORSHIP (BR-33). */
+  entityType?: 'HOUSEHOLD_BUSINESS' | 'SOLE_PROPRIETORSHIP';
+  /** The registration fee came in: only then does the admin attach its invoice (Q-36). */
+  registrationFeePaid?: boolean;
+  /** When the profile was first submitted. */
+  createdAt?: string;
+}
+
+/**
+ * Wire shape of `com.moonkage.vendor.vendor.dto.response.VendorSummaryResponse`
+ * (B-3.2): the public summary of one Shop, open to guests.
+ *
+ * Only the fields a buyer may read are here — no tax code, no address, no
+ * representative, no bank account, no document and no admin note (NFR-03).
+ */
+export interface VendorSummaryDto {
+  id: string;
+  businessName?: string;
+  /** The head-office province of the Shop; two digits, absent when it has none yet. */
+  provinceCode?: string;
+  /** `VendorStatus`: PENDING, NEEDS_INFO, APPROVED, REJECTED, LOCKED. */
+  status?: 'PENDING' | 'NEEDS_INFO' | 'APPROVED' | 'REJECTED' | 'LOCKED';
+  canOperate?: boolean;
+  sellsShop?: boolean;
+  acceptsOrders?: boolean;
+  /** Province codes the Shop delivers to (FR-28). */
+  deliveryAreas?: string[];
 }
 
 /**
@@ -185,8 +213,8 @@ export interface OwnerCheckDto {
   ownerIdMasked?: string;
   nfcVerifiedAt?: string;
   idMatch?: boolean;
-  /** `NameMatch`: EXACT, FUZZY, MISMATCH. */
-  nameMatch?: 'EXACT' | 'FUZZY' | 'MISMATCH';
+  /** `NameMatch` (A-15): MATCH or MISMATCH, no fuzzy level. */
+  nameMatch?: 'MATCH' | 'MISMATCH';
   checkedAt?: string;
 }
 

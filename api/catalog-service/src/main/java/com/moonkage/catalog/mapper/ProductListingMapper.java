@@ -16,6 +16,7 @@ public final class ProductListingMapper {
                 product.getProductId(),
                 product.getVendorId(),
                 product.getVendorName(),
+                product.getProvinceCode(),
                 product.getName(),
                 product.getDescription(),
                 List.of(product.getCrustCodes()),

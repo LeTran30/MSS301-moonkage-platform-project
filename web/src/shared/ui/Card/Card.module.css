@@ -1,8 +1,7 @@
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-md);
   min-width: 0;
 }
 .pad_none {
@@ -22,7 +21,7 @@
   box-shadow: none;
 }
 .gold {
-  background: linear-gradient(160deg, var(--color-gold-soft), var(--color-surface) 70%);
+  background: color-mix(in srgb, var(--color-gold-soft) 55%, var(--color-surface));
   border-color: color-mix(in srgb, var(--color-gold) 35%, var(--color-border));
 }
 .night {
@@ -35,16 +34,11 @@
   border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 .interactive {
-  transition:
-    transform var(--duration-normal) var(--ease-out),
-    box-shadow var(--duration-normal) var(--ease-out),
-    border-color var(--duration-normal) var(--ease-out);
+  transition: border-color var(--duration-normal) var(--ease-out);
   cursor: pointer;
 }
 .interactive:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-border));
+  border-color: var(--color-border-strong);
 }
 
 .header {

@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Answers other services about the NFC result of an account, and hashes an ID number they hold so the pepper never
- * leaves identity-service (D-07). Flow and invariants: docs/services/identity/classes/LegalProfileServiceImpl.md.
+ * leaves identity-service (D-07). Flow and invariants:
+ * docs/archive/2026-11-08-class-docs/identity/LegalProfileServiceImpl.md.
  */
 @Service
 @RequiredArgsConstructor

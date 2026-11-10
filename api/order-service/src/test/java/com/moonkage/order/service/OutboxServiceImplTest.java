@@ -14,6 +14,8 @@ import com.moonkage.order.entity.OutboxEvent;
 import com.moonkage.order.enums.AggregateType;
 import com.moonkage.order.repository.OutboxEventRepository;
 import com.moonkage.order.service.impl.OutboxServiceImpl;
+import com.moonkage.outbox.OutboxTraceContext;
+import io.micrometer.tracing.Tracer;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,7 +27,8 @@ class OutboxServiceImplTest {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    private final OutboxServiceImpl outbox = new OutboxServiceImpl(repository, objectMapper);
+    private final OutboxServiceImpl outbox =
+            new OutboxServiceImpl(repository, objectMapper, new OutboxTraceContext(Tracer.NOOP));
 
     @Test
     void reviewCreatedGoesOutInTheV1EnvelopeCatalogReads() throws Exception {

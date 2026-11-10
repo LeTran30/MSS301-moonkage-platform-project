@@ -21,7 +21,7 @@ export function HeaderNav({ selectedProvince, onOpenLocation }: HeaderNavProps) 
         </Link>
         <div className={styles.dropdownMenu}>
           <Link to={routes.base.quoteRequestNew} className={styles.dropdownItem}>
-            <Icon name="sparkle" size={16} /> Tạo yêu cầu báo giá (gửi nhiều nơi)
+            <Icon name="file" size={16} /> Tạo yêu cầu báo giá (gửi nhiều nơi)
           </Link>
           <Link to={routes.base.vendors} className={styles.dropdownItem}>
             <Icon name="factory" size={16} /> Danh sách xưởng &amp; đơn vị cung cấp

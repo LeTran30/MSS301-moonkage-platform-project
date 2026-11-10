@@ -16,12 +16,17 @@ import {
   useOrderMockups,
   type MaketVersion,
 } from '@/entities/order';
+import { useDisputeByOrder } from '@/entities/dispute';
 import { RequestSpecList, useVendorRequestList } from '@/entities/request';
 import { useAdvanceOrder } from '@/features/advance-order-status';
 import { UploadMaketModal, useUploadMockup } from '@/features/fulfill-order';
 import { useFileUpload } from '@/features/file-upload';
+import { VendorDisputePanel } from './VendorDisputePanel';
 
-const MAKET_STATE: Record<MaketVersion['status'], { tone: 'green' | 'gold' | 'red'; label: string }> = {
+const MAKET_STATE: Record<
+  MaketVersion['status'],
+  { tone: 'green' | 'gold' | 'red'; label: string }
+> = {
   PENDING: { tone: 'gold', label: 'Đang chờ khách duyệt' },
   APPROVED: { tone: 'green', label: 'Khách đã duyệt' },
   REJECTED: { tone: 'red', label: 'Khách yêu cầu sửa' },
@@ -61,6 +66,10 @@ export function VendorOrderDetailPage() {
     asyncRequests.kind === 'loaded' && order?.quoteId
       ? asyncRequests.data.find((r) => r.quotes.some((q) => q.id === order.quoteId))
       : undefined;
+  // Chỉ đơn đã giao mới có thể bị khiếu nại (FR-12); hồ sơ đã phân xử vẫn hiện để Shop xem phán quyết.
+  const mayHaveDispute = order?.status === 'DELIVERED' || order?.status === 'COMPLETED';
+  const asyncDispute = useDisputeByOrder(mayHaveDispute && order ? order.id : null);
+  const dispute = asyncDispute.kind === 'loaded' ? asyncDispute.data : null;
   const uploadMockup = useUploadMockup();
   const maketUpload = useFileUpload('ORDER');
   const [maketModalOpen, setMaketModalOpen] = useState(false);
@@ -105,7 +114,9 @@ export function VendorOrderDetailPage() {
         ...(needsTracking ? { trackingCode: trackingCode.trim() } : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
       });
-      toast.success(`Đơn đã chuyển sang "${orderStatusLabel(advanceStatus)}". Người mua đã được báo.`);
+      toast.success(
+        `Đơn đã chuyển sang "${orderStatusLabel(advanceStatus)}". Người mua đã được báo.`,
+      );
       setNote('');
       asyncOrder.reload();
     });
@@ -145,6 +156,9 @@ export function VendorOrderDetailPage() {
     if (!order) return '';
     if (nextStatus === 'WAITING_MAKET') return 'Gửi maket để đơn chuyển sang chờ khách duyệt.';
     if (waitsForApproval) return 'Chờ khách duyệt maket rồi mới vào sản xuất.';
+    if (order.status === 'DELIVERED' && order.hasDispute) {
+      return 'Người mua đang khiếu nại. Đơn chờ quản trị viên phân xử.';
+    }
     if (order.status === 'DELIVERED') {
       return isBulk
         ? `Đã giao. Chờ khách thanh toán phần còn lại ${formatCurrency(order.remainingAmount || 0)}; đơn tự hoàn tất khi tiền về.`
@@ -158,7 +172,7 @@ export function VendorOrderDetailPage() {
     <div className={styles.page}>
       <Breadcrumbs
         items={[
-          { label: 'Kênh Xưởng', to: routes.vendor.overview },
+          { label: 'Kênh người bán', to: routes.vendor.overview },
           { label: 'Quản lý đơn hàng', to: routes.vendor.orders },
           { label: `Đơn hàng #${orderCode(order.id)}` },
         ]}
@@ -166,7 +180,7 @@ export function VendorOrderDetailPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Xử Lý Đơn Hàng #{orderCode(order.id)}</h1>
+          <h1 className={styles.title}>Xử lý đơn hàng #{orderCode(order.id)}</h1>
           <p className={styles.subtitle}>
             Ngày đặt: {formatDate(order.createdAt)} · Người nhận: {order.shippingAddress.receiver} (
             {order.shippingAddress.phone})
@@ -293,7 +307,12 @@ export function VendorOrderDetailPage() {
                     rel="noopener noreferrer"
                     aria-label={`Mở maket bản ${latestMaket.version} cỡ lớn`}
                   >
-                    <img src={latestMaket.imageUrl} alt="" className={styles.maketThumb} loading="lazy" />
+                    <img
+                      src={latestMaket.imageUrl}
+                      alt=""
+                      className={styles.maketThumb}
+                      loading="lazy"
+                    />
                   </a>
                   <div className={styles.maketMeta}>
                     <span>Bản {latestMaket.version}</span>
@@ -355,6 +374,16 @@ export function VendorOrderDetailPage() {
           </div>
         </Card>
       </div>
+
+      {dispute && (
+        <VendorDisputePanel
+          dispute={dispute}
+          onChanged={() => {
+            asyncDispute.reload();
+            asyncOrder.reload();
+          }}
+        />
+      )}
 
       <UploadMaketModal
         open={maketModalOpen}
