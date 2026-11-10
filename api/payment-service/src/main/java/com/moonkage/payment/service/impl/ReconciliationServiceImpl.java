@@ -216,7 +216,12 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                 throw new AppException(ErrorCode.ALREADY_PAID_OUT);
             }
             long amount = ledger.getHeld();
-            Payout payout = Payout.of(orderId, ledger.getVendorId(), amount, caller.accountId());
+            Payout payout = Payout.builder()
+                    .orderId(orderId)
+                    .vendorId(ledger.getVendorId())
+                    .amount(amount)
+                    .approvedBy(caller.accountId())
+                    .build();
             payoutRepository.saveAndFlush(payout);
             if (amount > 0) {
                 ledgerService.payout(orderId, amount, payout.getId(), caller.accountId());

@@ -93,8 +93,16 @@ class PaymentServiceImplTest {
         when(paymentRepository.saveAndFlush(any(Payment.class))).thenAnswer(call -> call.getArgument(0));
         when(allocationRepository.findByPaymentId(PAYMENT_ID))
                 .thenReturn(List.of(
-                        new PaymentAllocation(PAYMENT_ID, "order-1", 100_000L),
-                        new PaymentAllocation(PAYMENT_ID, "order-2", 150_000L)));
+                        PaymentAllocation.builder()
+                                .paymentId(PAYMENT_ID)
+                                .orderId("order-1")
+                                .amount(100_000L)
+                                .build(),
+                        PaymentAllocation.builder()
+                                .paymentId(PAYMENT_ID)
+                                .orderId("order-2")
+                                .amount(150_000L)
+                                .build()));
     }
 
     @Test

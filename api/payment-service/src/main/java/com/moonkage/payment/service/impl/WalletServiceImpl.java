@@ -75,8 +75,13 @@ public class WalletServiceImpl implements WalletService {
                 .filter(w -> w.getBalance() >= amount)
                 .orElseThrow(() -> new AppException(ErrorCode.WALLET_INSUFFICIENT));
         wallet.setBalance(wallet.getBalance() - amount);
-        entryRepository.save(
-                new WalletEntry(accountId, WalletEntryKind.DEBIT, WalletEntryReason.PAYMENT, amount, paymentId));
+        entryRepository.save(WalletEntry.builder()
+                .accountId(accountId)
+                .kind(WalletEntryKind.DEBIT)
+                .reason(WalletEntryReason.PAYMENT)
+                .amount(amount)
+                .referenceId(paymentId)
+                .build());
     }
 
     @Override
@@ -95,10 +100,16 @@ public class WalletServiceImpl implements WalletService {
         }
         Wallet wallet = walletRepository
                 .findForUpdateByAccountId(buyerAccountId)
-                .orElseGet(() -> walletRepository.save(new Wallet(buyerAccountId)));
+                .orElseGet(() -> walletRepository.save(
+                        Wallet.builder().accountId(buyerAccountId).build()));
         wallet.setBalance(wallet.getBalance() + held);
-        WalletEntry credit = entryRepository.save(new WalletEntry(
-                buyerAccountId, WalletEntryKind.CREDIT, WalletEntryReason.ORDER_REJECTED, held, orderId));
+        WalletEntry credit = entryRepository.save(WalletEntry.builder()
+                .accountId(buyerAccountId)
+                .kind(WalletEntryKind.CREDIT)
+                .reason(WalletEntryReason.ORDER_REJECTED)
+                .amount(held)
+                .referenceId(orderId)
+                .build());
         // the order's escrow goes down by the same amount, so the money is never counted twice (NFR-09)
         ledgerService.refund(orderId, held, credit.getId(), null);
         notifyRefund(orderId, buyerAccountId, held);

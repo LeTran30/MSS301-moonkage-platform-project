@@ -63,7 +63,11 @@ public class RefundServiceImpl implements RefundService {
         if (refundRepository.existsByOriginalPaymentIdAndReason(paymentId, reason)) {
             return;
         }
-        refundRepository.save(Refund.automatic(paymentId, reason, amount));
+        refundRepository.save(Refund.builder()
+                .originalPaymentId(paymentId)
+                .reason(reason)
+                .amount(amount)
+                .build());
     }
 
     @Override
@@ -100,7 +104,13 @@ public class RefundServiceImpl implements RefundService {
             log.error("Dispute {} refunds order {}, which has no payment", disputeId, orderId);
             return;
         }
-        refundRepository.save(Refund.dispute(orderId, disputeId, paymentId, amount));
+        refundRepository.save(Refund.builder()
+                .orderId(orderId)
+                .disputeId(disputeId)
+                .originalPaymentId(paymentId)
+                .reason(RefundReason.DISPUTE)
+                .amount(amount)
+                .build());
     }
 
     @Override

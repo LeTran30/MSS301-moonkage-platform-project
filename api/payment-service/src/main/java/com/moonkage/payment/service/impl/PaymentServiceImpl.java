@@ -100,8 +100,11 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setExpiresAt(expiresAt);
         Payment saved = paymentRepository.saveAndFlush(payment);
         String paymentId = saved.getId();
-        shares.forEach(
-                share -> allocationRepository.save(new PaymentAllocation(paymentId, share.orderId(), share.amount())));
+        shares.forEach(share -> allocationRepository.save(PaymentAllocation.builder()
+                .paymentId(paymentId)
+                .orderId(share.orderId())
+                .amount(share.amount())
+                .build()));
         // vnp_CreateDate is the payment's own creation time: the refund API asks for it back (vnp_TransactionDate)
         Instant createdAt = saved.getCreatedAt() != null ? saved.getCreatedAt() : now;
         String payUrl = vnpayGateway.payUrl(
@@ -127,8 +130,11 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
         payment.setExpiresAt(expiresAt);
         Payment saved = paymentRepository.saveAndFlush(payment);
-        shares.forEach(share ->
-                allocationRepository.save(new PaymentAllocation(saved.getId(), share.orderId(), share.amount())));
+        shares.forEach(share -> allocationRepository.save(PaymentAllocation.builder()
+                .paymentId(saved.getId())
+                .orderId(share.orderId())
+                .amount(share.amount())
+                .build()));
         walletService.pay(request.payerAccountId(), request.amount(), saved.getId());
         recordPaid(saved);
         return new CreatePaymentResponse(saved.getId(), null);

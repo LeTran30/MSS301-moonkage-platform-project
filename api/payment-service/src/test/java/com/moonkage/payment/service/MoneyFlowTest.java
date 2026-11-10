@@ -23,6 +23,7 @@ import com.moonkage.payment.enums.DisbursementPurpose;
 import com.moonkage.payment.enums.DisbursementStatus;
 import com.moonkage.payment.enums.LedgerEntryKind;
 import com.moonkage.payment.enums.PaymentStatus;
+import com.moonkage.payment.enums.RefundReason;
 import com.moonkage.payment.enums.RefundStatus;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
@@ -250,7 +251,13 @@ class MoneyFlowTest {
         payment.setStatus(PaymentStatus.SUCCEEDED);
         payment.setCreatedAt(Instant.now());
         when(paymentRepository.findById("pay-1")).thenReturn(Optional.of(payment));
-        Refund refund = Refund.dispute(ORDER_ID, "dispute-1", "pay-1", amount);
+        Refund refund = Refund.builder()
+                .orderId(ORDER_ID)
+                .disputeId("dispute-1")
+                .originalPaymentId("pay-1")
+                .reason(RefundReason.DISPUTE)
+                .amount(amount)
+                .build();
         when(refundRepository.findForUpdateByStatus(eq(RefundStatus.PENDING), any(Pageable.class)))
                 .thenReturn(List.of(refund));
         when(refundRepository.findForUpdateById(refund.getId())).thenReturn(Optional.of(refund));

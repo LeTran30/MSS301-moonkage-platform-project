@@ -6,6 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,7 +18,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "wallets")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class Wallet {
 
     /** accounts.id in identity-service; no FK across services. */
@@ -25,6 +29,7 @@ public class Wallet {
     private String accountId;
 
     @Column(nullable = false)
+    @Builder.Default
     private Long balance = 0L;
 
     @Version
@@ -33,9 +38,4 @@ public class Wallet {
 
     @UpdateTimestamp
     private Instant updatedAt;
-
-    /** A new, empty wallet of the account. */
-    public Wallet(String accountId) {
-        this.accountId = accountId;
-    }
 }

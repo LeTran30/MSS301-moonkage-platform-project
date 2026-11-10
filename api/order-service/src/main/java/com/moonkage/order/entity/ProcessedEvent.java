@@ -6,6 +6,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,7 +18,9 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name = "processed_events")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProcessedEvent {
 
     @Id
@@ -29,11 +33,4 @@ public class ProcessedEvent {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant processedAt;
-
-    public static ProcessedEvent of(String eventId, String routingKey) {
-        ProcessedEvent event = new ProcessedEvent();
-        event.eventId = eventId;
-        event.routingKey = routingKey;
-        return event;
-    }
 }

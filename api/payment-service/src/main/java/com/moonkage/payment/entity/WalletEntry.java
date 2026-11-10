@@ -11,6 +11,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,12 +23,15 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name = "wallet_entries")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class WalletEntry {
 
     @Id
     @Column(length = 36)
-    private String id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
     @Column(name = "account_id", nullable = false, length = 36)
     private String accountId;
@@ -48,15 +53,4 @@ public class WalletEntry {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
-
-    /** The only way to fill an entry: every field at once, nothing changes afterwards. */
-    public WalletEntry(
-            String accountId, WalletEntryKind kind, WalletEntryReason reason, long amount, String referenceId) {
-        this.id = UUID.randomUUID().toString();
-        this.accountId = accountId;
-        this.kind = kind;
-        this.reason = reason;
-        this.amount = amount;
-        this.referenceId = referenceId;
-    }
 }
