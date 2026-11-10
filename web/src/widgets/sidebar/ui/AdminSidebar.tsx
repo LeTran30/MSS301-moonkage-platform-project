@@ -7,7 +7,6 @@ type NavItem = {
   title: string;
   path: string;
   icon: IconName;
-  badge?: number;
 };
 
 type Props = {
@@ -36,14 +35,12 @@ export function AdminSidebarContent({ onNavigate, showHeader = true }: Props = {
       title: 'Duyệt người bán',
       path: routes.admin.vendors,
       icon: 'store',
-      badge: 1,
     },
     { title: 'Kiểm duyệt sản phẩm', path: routes.admin.products, icon: 'cake' },
     {
       title: 'Duyệt giải ngân cọc',
       path: routes.admin.disbursements,
       icon: 'wallet',
-      badge: 1,
     },
     {
       title: 'Chuyển tiền người bán',
@@ -64,7 +61,6 @@ export function AdminSidebarContent({ onNavigate, showHeader = true }: Props = {
       title: 'Xử lý khiếu nại',
       path: routes.admin.disputes,
       icon: 'alert',
-      badge: 1,
     },
     {
       title: 'Danh mục vỏ và nhân',
@@ -102,9 +98,6 @@ export function AdminSidebarContent({ onNavigate, showHeader = true }: Props = {
             >
               <Icon name={it.icon} size={18} />
               <span className={styles.navLabel}>{it.title}</span>
-              {it.badge !== undefined && it.badge > 0 && (
-                <span className={styles.badge}>{it.badge}</span>
-              )}
             </Link>
           );
         })}
