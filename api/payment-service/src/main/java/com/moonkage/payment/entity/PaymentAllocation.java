@@ -7,6 +7,8 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +21,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "payment_allocations")
 @IdClass(PaymentAllocation.Key.class)
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PaymentAllocation {
 
     @Id
@@ -33,12 +37,6 @@ public class PaymentAllocation {
 
     @Column(nullable = false)
     private Long amount;
-
-    public PaymentAllocation(String paymentId, String orderId, long amount) {
-        this.paymentId = paymentId;
-        this.orderId = orderId;
-        this.amount = amount;
-    }
 
     @EqualsAndHashCode
     @NoArgsConstructor

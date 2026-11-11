@@ -2,6 +2,7 @@ package com.moonkage.vendor.controller;
 
 import com.moonkage.vendor.product.StockService;
 import com.moonkage.vendor.product.dto.request.ReserveStockRequest;
+import com.moonkage.vendor.product.dto.request.ReturnStockRequest;
 import com.moonkage.vendor.product.dto.response.StockReservationResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
@@ -36,6 +37,13 @@ public class InternalStockController {
     @PostMapping("/{checkoutId}/commit")
     public ResponseEntity<StockReservationResponse> commit(@PathVariable String checkoutId) {
         return ResponseEntity.ok(stockService.commit(checkoutId));
+    }
+
+    /** A Shop rejected a paid order (Q-01): its pieces go back on sale; again for the same order changes nothing. */
+    @PostMapping("/returns")
+    public ResponseEntity<Void> returnOrder(@Valid @RequestBody ReturnStockRequest request) {
+        stockService.returnOrder(request);
+        return ResponseEntity.noContent().build();
     }
 
     /** On payment.failed, or when the checkout expires at order-service. */

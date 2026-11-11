@@ -3,6 +3,7 @@ package com.moonkage.payment.repository;
 import com.moonkage.payment.entity.Ledger;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,4 +35,14 @@ public interface LedgerRepository extends JpaRepository<Ledger, String> {
             order by l.updatedAt desc, l.orderId
             """)
     Page<Ledger> search(String vendorId, boolean payableOnly, Instant now, Pageable page);
+
+    /** COMPLETED orders (received, and a custom order's remainder paid) with no open dispute and no payout yet. */
+    @Query("""
+            select l.orderId from Ledger l
+            where exists (select s.orderId from OrderSnapshot s
+                          where s.orderId = l.orderId and s.status = 'COMPLETED' and s.disputeOpen = false)
+              and not exists (select p.id from Payout p where p.orderId = l.orderId)
+            order by l.updatedAt
+            """)
+    List<String> findCompletedNotPaidOut(Pageable page);
 }

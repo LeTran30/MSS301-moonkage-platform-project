@@ -1512,6 +1512,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/wallets/banks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["banks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wallets/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wallets/me/withdrawals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["myWithdrawals"];
+        put?: never;
+        post: operations["requestWithdrawal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wallets/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wallets/withdrawals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["withdrawals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wallets/withdrawals/{withdrawalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["reviewWithdrawal"];
+        trace?: never;
+    };
+    "/internal/ledgers/{orderId}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["state"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/internal/payments": {
         parameters: {
             query?: never;
@@ -1855,6 +1967,17 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponseListBankResponse: {
+            code?: string;
+            data?: components["schemas"]["BankResponse"][];
+            errors?: components["schemas"]["PaymentFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ApiResponseListCakeAttributeResponse: {
             code?: string;
             data?: components["schemas"]["CakeAttributeResponse"][];
@@ -2053,6 +2176,17 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponseListWithdrawalResponse: {
+            code?: string;
+            data?: components["schemas"]["WithdrawalResponse"][];
+            errors?: components["schemas"]["PaymentFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ApiResponseLoginResponse: {
             code?: string;
             data?: components["schemas"]["LoginResponse"];
@@ -2233,6 +2367,17 @@ export interface components {
         ApiResponsePageResponseRefundResponse: {
             code?: string;
             data?: components["schemas"]["PageResponseRefundResponse"];
+            errors?: components["schemas"]["PaymentFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponsePageResponseWithdrawalResponse: {
+            code?: string;
+            data?: components["schemas"]["PageResponseWithdrawalResponse"];
             errors?: components["schemas"]["PaymentFieldError"][];
             message?: string;
             path?: string;
@@ -2494,6 +2639,39 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponseWalletResponse: {
+            code?: string;
+            data?: components["schemas"]["WalletResponse"];
+            errors?: components["schemas"]["PaymentFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseWalletSummaryResponse: {
+            code?: string;
+            data?: components["schemas"]["WalletSummaryResponse"];
+            errors?: components["schemas"]["PaymentFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseWithdrawalResponse: {
+            code?: string;
+            data?: components["schemas"]["WithdrawalResponse"];
+            errors?: components["schemas"]["PaymentFieldError"][];
+            message?: string;
+            path?: string;
+            /** Format: int32 */
+            status?: number;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         AttachFileRequest: {
             tempKey: string;
         };
@@ -2501,6 +2679,11 @@ export interface components {
             bankName?: string;
             holder?: string;
             maskedNumber?: string;
+        };
+        BankResponse: {
+            bin?: string;
+            name?: string;
+            shortName?: string;
         };
         /** @description One crust or filling of the catalogue (FR-54). */
         CakeAttributeResponse: {
@@ -2593,6 +2776,7 @@ export interface components {
         CreateCheckoutRequest: {
             addressDetail: string;
             invoiceInfo?: components["schemas"]["OrderInvoiceInfoRequest"];
+            paymentMethod?: string;
             provinceCode: string;
             recipientName: string;
             recipientPhone: string;
@@ -2623,6 +2807,7 @@ export interface components {
             amount?: number;
             /** Format: date-time */
             expiresAt?: string;
+            method?: string;
             payerAccountId: string;
             /** @enum {string} */
             purpose: "CHECKOUT" | "DEPOSIT" | "REMAINDER" | "REGISTRATION_FEE";
@@ -2679,6 +2864,13 @@ export interface components {
              *          business registration portal (AC-45.5, A-14)
              */
             registryChecked?: boolean;
+        };
+        CreateWithdrawalRequest: {
+            accountName: string;
+            accountNumber: string;
+            /** Format: int64 */
+            amount?: number;
+            bankBin: string;
         };
         CurrentUserInfo: {
             accountId?: string;
@@ -2772,6 +2964,18 @@ export interface components {
             contentType: string;
             /** Format: int64 */
             sizeBytes?: number;
+        };
+        Entry: {
+            /** Format: int64 */
+            amount?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            id?: string;
+            /** @enum {string} */
+            kind?: "CREDIT" | "DEBIT";
+            /** @enum {string} */
+            reason?: "ORDER_REJECTED" | "PAYMENT" | "REFUND" | "WITHDRAWAL" | "WITHDRAWAL_RETURNED" | "SALE" | "DISBURSEMENT";
+            referenceId?: string;
         };
         Evidence: {
             /** Format: date-time */
@@ -2895,6 +3099,17 @@ export interface components {
             /** Format: int64 */
             totalCollected?: number;
             vendorId?: string;
+        };
+        LedgerStateResponse: {
+            /** Format: int64 */
+            disbursed?: number;
+            /** Format: int64 */
+            held?: number;
+            orderId?: string;
+            /** Format: int64 */
+            paidOut?: number;
+            /** Format: int64 */
+            pendingDisbursement?: number;
         };
         Line: {
             available?: boolean;
@@ -3076,7 +3291,7 @@ export interface components {
             /** Format: int64 */
             shippingFee?: number;
             /** @enum {string} */
-            status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED";
+            status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED" | "REJECTED";
             /** Format: int64 */
             totalAmount?: number;
             trackingCode?: string;
@@ -3114,6 +3329,17 @@ export interface components {
         };
         PageResponseDisputeResponse: {
             content?: components["schemas"]["DisputeResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
+        PageResponseEntry: {
+            content?: components["schemas"]["Entry"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -3180,6 +3406,17 @@ export interface components {
         };
         PageResponseRefundResponse: {
             content?: components["schemas"]["RefundResponse"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
+        PageResponseWithdrawalResponse: {
+            content?: components["schemas"]["WithdrawalResponse"][];
             /** Format: int32 */
             page?: number;
             /** Format: int32 */
@@ -3345,7 +3582,7 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
             /** @enum {string} */
-            milestone?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED";
+            milestone?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED" | "REJECTED";
             note?: string;
             photoKeys?: string[];
         };
@@ -3539,6 +3776,11 @@ export interface components {
             rating?: number;
             reviewId?: string;
         };
+        ReviewWithdrawalRequest: {
+            reason?: string;
+            /** @enum {string} */
+            status: "PENDING" | "COMPLETED" | "REJECTED";
+        };
         /** @description Replaces the whole list of provinces the vendor delivers to (FR-28). */
         SaveDeliveryAreasRequest: {
             /** @description at least one; each a province code of common-reference, e.g. "79" */
@@ -3631,7 +3873,7 @@ export interface components {
             /** Format: int64 */
             orderCount?: number;
             /** @enum {string} */
-            status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED";
+            status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED" | "REJECTED";
         };
         SubmitCardRequest: {
             appVersion?: string;
@@ -3762,7 +4004,7 @@ export interface components {
             photoTempKeys?: string[];
             receivedConfirmed?: boolean;
             /** @enum {string} */
-            status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED";
+            status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED" | "REJECTED";
             trackingCode?: string;
         };
         /** @description A change of status: the Shop hides or shows its product (FR-34), an admin removes it with a reason (FR-46). */
@@ -3922,6 +4164,36 @@ export interface components {
         VnpayIpnResponse: {
             Message?: string;
             RspCode?: string;
+        };
+        WalletResponse: {
+            /** Format: int64 */
+            balance?: number;
+            entries?: components["schemas"]["PageResponseEntry"];
+        };
+        WalletSummaryResponse: {
+            /** Format: int64 */
+            pendingWithdrawalAmount?: number;
+            /** Format: int64 */
+            pendingWithdrawals?: number;
+            /** Format: int64 */
+            totalBalance?: number;
+        };
+        WithdrawalResponse: {
+            accountId?: string;
+            accountName?: string;
+            accountNumber?: string;
+            /** Format: int64 */
+            amount?: number;
+            bankBin?: string;
+            bankName?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            id?: string;
+            rejectReason?: string;
+            /** Format: date-time */
+            reviewedAt?: string;
+            /** @enum {string} */
+            status?: "PENDING" | "COMPLETED" | "REJECTED";
         };
     };
     responses: never;
@@ -5032,7 +5304,7 @@ export interface operations {
                 page?: number;
                 paymentGroupId?: string;
                 size?: number;
-                status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED";
+                status?: "PAID" | "CONFIRMED" | "SHIPPING" | "DEPOSITED" | "AWAITING_MOCKUP_APPROVAL" | "IN_PRODUCTION" | "READY_TO_SHIP" | "DELIVERED" | "COMPLETED" | "REJECTED";
                 vendorId?: string;
             };
             header?: never;
@@ -6669,6 +6941,185 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponsePresignedUploadLinkResponse"];
+                };
+            };
+        };
+    };
+    banks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListBankResponse"];
+                };
+            };
+        };
+    };
+    mine: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseWalletResponse"];
+                };
+            };
+        };
+    };
+    myWithdrawals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListWithdrawalResponse"];
+                };
+            };
+        };
+    };
+    requestWithdrawal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWithdrawalRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseWithdrawalResponse"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseWalletSummaryResponse"];
+                };
+            };
+        };
+    };
+    withdrawals: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: "PENDING" | "COMPLETED" | "REJECTED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseWithdrawalResponse"];
+                };
+            };
+        };
+    };
+    reviewWithdrawal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                withdrawalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewWithdrawalRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseWithdrawalResponse"];
+                };
+            };
+        };
+    };
+    state: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LedgerStateResponse"];
                 };
             };
         };

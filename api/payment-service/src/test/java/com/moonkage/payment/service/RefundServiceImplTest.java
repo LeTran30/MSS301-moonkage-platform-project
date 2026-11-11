@@ -24,6 +24,7 @@ import com.moonkage.payment.enums.LedgerEntryKind;
 import com.moonkage.payment.enums.PaymentStatus;
 import com.moonkage.payment.enums.RefundReason;
 import com.moonkage.payment.enums.RefundStatus;
+import com.moonkage.payment.enums.WalletEntryReason;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
 import com.moonkage.payment.gateway.VnpayRefundClient;
@@ -67,6 +68,8 @@ class RefundServiceImplTest {
     private final OrderSnapshotRepository snapshotRepository = mock(OrderSnapshotRepository.class);
     private final OutboxService outboxService = mock(OutboxService.class);
     private final VnpayRefundClient refundClient = mock(VnpayRefundClient.class);
+    private final WalletService walletService = mock(WalletService.class);
+    private final WalletNotifier walletNotifier = mock(WalletNotifier.class);
 
     private RefundServiceImpl service;
     private Ledger ledger;
@@ -83,7 +86,9 @@ class RefundServiceImplTest {
                 ledgerService,
                 outboxService,
                 refundClient,
-                new TransactionTemplate(mock(PlatformTransactionManager.class)));
+                new TransactionTemplate(mock(PlatformTransactionManager.class)),
+                walletService,
+                walletNotifier);
 
         ledger = new Ledger();
         ledger.setOrderId(ORDER_ID);
@@ -161,7 +166,12 @@ class RefundServiceImplTest {
     @Test
     void aDisputeRefundUsesThePaymentOfTheOrder() {
         when(ledgerEntryRepository.findByOrderIdAndKindOrderByCreatedAtDesc(ORDER_ID, LedgerEntryKind.COLLECT))
-                .thenReturn(List.of(LedgerEntry.of(ORDER_ID, LedgerEntryKind.COLLECT, 3_000_000L, PAYMENT_ID, null)));
+                .thenReturn(List.of(LedgerEntry.builder()
+                        .orderId(ORDER_ID)
+                        .kind(LedgerEntryKind.COLLECT)
+                        .amount(3_000_000L)
+                        .referenceId(PAYMENT_ID)
+                        .build()));
 
         service.requestForDispute(ORDER_ID, "dispute-1", 1_000_000L);
 
@@ -195,6 +205,24 @@ class RefundServiceImplTest {
     }
 
     // ----- sending the refund to the gateway -----
+
+    /** Q-01: a payment made from the wallet has no gateway transaction; its refund goes back to the wallet. */
+    @Test
+    void aRefundOfAWalletPaymentGoesBackToTheWallet() {
+        Refund refund = pendingDisputeRefund(1_000_000L);
+        Payment payment = paymentRepository.findById(PAYMENT_ID).orElseThrow();
+        payment.setMethod("WALLET");
+        payment.setPayerAccountId("buyer-1");
+
+        service.processPending();
+
+        assertEquals(RefundStatus.SUCCEEDED, refund.getStatus());
+        verify(walletService).credit("buyer-1", WalletEntryReason.REFUND, 1_000_000L, refund.getId());
+        verify(refundClient, never()).refund(anyString(), any(), any(), anyLong(), anyLong(), anyString());
+        assertEquals(2_000_000L, ledger.getHeld());
+        assertEquals(1_000_000L, ledger.getRefunded());
+        verify(walletNotifier).notify(eq("buyer-1"), anyString(), anyString(), eq(1_000_000L));
+    }
 
     @Test
     void aRefundTheGatewayAcceptsMovesTheLedgerAndIsAnnounced() {
@@ -247,13 +275,25 @@ class RefundServiceImplTest {
         when(paymentRepository.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
         when(allocationRepository.findByPaymentId(PAYMENT_ID))
                 .thenReturn(List.of(
-                        new PaymentAllocation(PAYMENT_ID, "order-1", 1_000_000L),
-                        new PaymentAllocation(PAYMENT_ID, "order-2", 2_000_000L)));
+                        PaymentAllocation.builder()
+                                .paymentId(PAYMENT_ID)
+                                .orderId("order-1")
+                                .amount(1_000_000L)
+                                .build(),
+                        PaymentAllocation.builder()
+                                .paymentId(PAYMENT_ID)
+                                .orderId("order-2")
+                                .amount(2_000_000L)
+                                .build()));
         // the second order has its own escrow; both still hold what the payment brought them
         Ledger other = ledgerOf("order-2", 2_000_000L);
         when(ledgerRepository.findForUpdateByOrderId("order-2")).thenReturn(Optional.of(other));
         when(ledgerRepository.findByOrderId("order-2")).thenReturn(Optional.of(other));
-        Refund refund = Refund.automatic(PAYMENT_ID, RefundReason.LATE_PAYMENT, 3_000_000L);
+        Refund refund = Refund.builder()
+                .originalPaymentId(PAYMENT_ID)
+                .reason(RefundReason.LATE_PAYMENT)
+                .amount(3_000_000L)
+                .build();
         when(refundRepository.findForUpdateByStatus(eq(RefundStatus.PENDING), any(Pageable.class)))
                 .thenReturn(List.of(refund));
         when(refundRepository.findForUpdateById(refund.getId())).thenReturn(Optional.of(refund));
@@ -273,7 +313,11 @@ class RefundServiceImplTest {
     @Test
     void aDuplicatePaymentRefundMovesNoLedger() {
         when(paymentRepository.findById(PAYMENT_ID)).thenReturn(Optional.of(payment(PaymentStatus.SUCCEEDED)));
-        Refund refund = Refund.automatic(PAYMENT_ID, RefundReason.DUPLICATE_PAYMENT, 500_000L);
+        Refund refund = Refund.builder()
+                .originalPaymentId(PAYMENT_ID)
+                .reason(RefundReason.DUPLICATE_PAYMENT)
+                .amount(500_000L)
+                .build();
         when(refundRepository.findForUpdateByStatus(eq(RefundStatus.PENDING), any(Pageable.class)))
                 .thenReturn(List.of(refund));
         when(refundRepository.findForUpdateById(refund.getId())).thenReturn(Optional.of(refund));
@@ -345,7 +389,13 @@ class RefundServiceImplTest {
     private Refund pendingDisputeRefund(long amount) {
         Payment payment = payment(PaymentStatus.SUCCEEDED);
         when(paymentRepository.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
-        Refund refund = Refund.dispute(ORDER_ID, "dispute-1", PAYMENT_ID, amount);
+        Refund refund = Refund.builder()
+                .orderId(ORDER_ID)
+                .disputeId("dispute-1")
+                .originalPaymentId(PAYMENT_ID)
+                .reason(RefundReason.DISPUTE)
+                .amount(amount)
+                .build();
         when(refundRepository.findForUpdateByStatus(eq(RefundStatus.PENDING), any(Pageable.class)))
                 .thenReturn(List.of(refund));
         when(refundRepository.findForUpdateById(refund.getId())).thenReturn(Optional.of(refund));

@@ -2,8 +2,11 @@ package com.moonkage.order.client;
 
 import com.moonkage.order.client.dto.CreatePaymentRequest;
 import com.moonkage.order.client.dto.CreatePaymentResponse;
+import com.moonkage.order.client.dto.LedgerState;
 import com.moonkage.order.client.dto.RefundRequest;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -25,4 +28,8 @@ public interface PaymentClient {
     /** Once per payment and reason; a repeat changes nothing. */
     @PostMapping("/refunds")
     void requestRefund(@RequestBody RefundRequest request);
+
+    /** Whether the vendor already took or asked for part of an order's money (Q-01: rejecting a custom order). */
+    @GetMapping("/ledgers/{orderId}/state")
+    LedgerState ledgerState(@PathVariable String orderId);
 }

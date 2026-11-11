@@ -101,6 +101,14 @@ export function HeaderUserMenu({ user, restoring = false }: HeaderUserMenuProps)
             </Link>
             <Link
               role="menuitem"
+              to={routes.account.wallet}
+              className={styles.dropdownItem}
+              onClick={() => setOpen(false)}
+            >
+              <Icon name="wallet" size={16} /> Ví của tôi
+            </Link>
+            <Link
+              role="menuitem"
               to={routes.account.requests}
               className={styles.dropdownItem}
               onClick={() => setOpen(false)}

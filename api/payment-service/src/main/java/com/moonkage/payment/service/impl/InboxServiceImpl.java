@@ -20,7 +20,8 @@ public class InboxServiceImpl implements InboxService {
         if (repository.existsById(eventId)) {
             return false;
         }
-        repository.saveAndFlush(ProcessedEvent.of(eventId, routingKey));
+        repository.saveAndFlush(
+                ProcessedEvent.builder().eventId(eventId).routingKey(routingKey).build());
         return true;
     }
 }

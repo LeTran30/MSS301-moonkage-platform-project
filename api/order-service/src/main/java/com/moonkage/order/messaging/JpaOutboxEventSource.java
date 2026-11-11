@@ -1,6 +1,5 @@
 package com.moonkage.order.messaging;
 
-import com.moonkage.order.entity.OutboxEvent;
 import com.moonkage.order.repository.OutboxEventRepository;
 import com.moonkage.outbox.OutboxEventRow;
 import com.moonkage.outbox.OutboxEventSource;
@@ -40,11 +39,11 @@ class JpaOutboxEventSource implements OutboxEventSource {
 
     @Override
     public void markPublished(String eventId, Instant publishedAt) {
-        outboxEventRepository.findById(eventId).ifPresent(event -> event.markPublished(publishedAt));
+        outboxEventRepository.findById(eventId).ifPresent(event -> event.setPublishedAt(publishedAt));
     }
 
     @Override
     public void incrementAttempts(String eventId) {
-        outboxEventRepository.findById(eventId).ifPresent(OutboxEvent::incrementAttempts);
+        outboxEventRepository.findById(eventId).ifPresent(event -> event.setAttempts(event.getAttempts() + 1));
     }
 }

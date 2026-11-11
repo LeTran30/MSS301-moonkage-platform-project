@@ -37,7 +37,12 @@ public class OutboxServiceImpl implements OutboxService {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Event " + eventId + " cannot be serialized", e);
         }
-        outboxEventRepository.save(OutboxEvent.of(eventId, routingKey, payload, traceContext.currentTraceParent()));
+        outboxEventRepository.save(OutboxEvent.builder()
+                .id(eventId)
+                .routingKey(routingKey)
+                .payload(payload)
+                .traceParent(traceContext.currentTraceParent())
+                .build());
     }
 
     @Override

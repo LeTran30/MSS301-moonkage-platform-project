@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { routes } from '@/shared/config';
 import { toast } from '@/shared/ui';
 import { openPaymentPage, useAction, useAsync } from '@/shared/lib';
 import { toNationalPhone } from '@/shared/utils';
@@ -10,6 +12,7 @@ import { useCurrentUser } from '@/entities/user';
 import {
   InvoiceRequestForm,
   PaymentMethodPanel,
+  type CheckoutPaymentMethod,
   ShippingAddressForm,
   useCheckout,
 } from '@/features/checkout';
@@ -27,6 +30,8 @@ export function CheckoutPage() {
   const user = useCurrentUser();
   const { busy, run, error } = useAction();
   const checkoutOrder = useCheckout();
+  const navigate = useNavigate();
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('VNPAY');
 
   // The cart was priced to the delivery province (BR-30), so the order ships there.
   const provinceCode = useDeliveryProvinceCode();
@@ -93,8 +98,20 @@ export function CheckoutPage() {
         provinceCode,
         addressDetail: address.trim(),
         invoiceInfo,
+        paymentMethod,
       });
 
+      // Q-01: paid from the wallet already; the result page waits for the orders.
+      if (!checkout.paymentUrl) {
+        navigate(routes.base.paymentResult, {
+          state: {
+            paymentId: checkout.paymentId,
+            checkoutId: checkout.checkoutId,
+            amount: checkout.totalAmount,
+          },
+        });
+        return;
+      }
       // FR-09, BR-25: the orders exist once the IPN marks the payment paid; the
       // server empties the cart then. VNPay brings the buyer back to M4.3.
       openPaymentPage(checkout.paymentUrl);
@@ -135,7 +152,7 @@ export function CheckoutPage() {
             onCompanyEmailChange={setCompanyEmail}
           />
 
-          <PaymentMethodPanel />
+          <PaymentMethodPanel value={paymentMethod} onChange={setPaymentMethod} total={total} />
         </div>
 
         {/* Tóm tắt thanh toán */}

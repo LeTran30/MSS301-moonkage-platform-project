@@ -6,8 +6,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -19,7 +22,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "outbox_events")
 @Getter
+@Setter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OutboxEvent {
 
     /** = the event's own eventId, also sent as the AMQP message id. */
@@ -51,21 +57,4 @@ public class OutboxEvent {
     @UpdateTimestamp
     @Column(nullable = false)
     private Instant updatedAt;
-
-    public static OutboxEvent of(String id, String routingKey, String payload, String traceParent) {
-        OutboxEvent event = new OutboxEvent();
-        event.id = id;
-        event.routingKey = routingKey;
-        event.payload = payload;
-        event.traceParent = traceParent;
-        return event;
-    }
-
-    public void markPublished(Instant timestamp) {
-        this.publishedAt = timestamp;
-    }
-
-    public void incrementAttempts() {
-        this.attempts++;
-    }
 }

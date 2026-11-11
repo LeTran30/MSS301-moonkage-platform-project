@@ -10,6 +10,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -23,12 +25,15 @@ import org.hibernate.annotations.Immutable;
 @Immutable
 @Table(name = "ledger_entries")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class LedgerEntry {
 
     @Id
     @Column(length = 36)
-    private String id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
     @Column(name = "order_id", nullable = false, length = 36)
     private String orderId;
@@ -51,16 +56,4 @@ public class LedgerEntry {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
-
-    public static LedgerEntry of(
-            String orderId, LedgerEntryKind kind, long amount, String referenceId, String actorAccountId) {
-        LedgerEntry entry = new LedgerEntry();
-        entry.id = UUID.randomUUID().toString();
-        entry.orderId = orderId;
-        entry.kind = kind;
-        entry.amount = amount;
-        entry.referenceId = referenceId;
-        entry.actorAccountId = actorAccountId;
-        return entry;
-    }
 }

@@ -3390,7 +3390,8 @@
                 "IN_PRODUCTION",
                 "READY_TO_SHIP",
                 "DELIVERED",
-                "COMPLETED"
+                "COMPLETED",
+                "REJECTED"
               ]
             }
           },
@@ -3785,6 +3786,54 @@
         }
       }
     },
+    "/api/wallets/me/withdrawals": {
+      "get": {
+        "tags": [
+          "wallet-controller"
+        ],
+        "operationId": "myWithdrawals",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListWithdrawalResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "wallet-controller"
+        ],
+        "operationId": "requestWithdrawal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWithdrawalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseWithdrawalResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ledgers/{orderId}/disbursements": {
       "get": {
         "tags": [
@@ -3846,6 +3895,46 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDisbursementResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallets/withdrawals/{withdrawalId}": {
+      "patch": {
+        "tags": [
+          "wallet-controller"
+        ],
+        "operationId": "reviewWithdrawal",
+        "parameters": [
+          {
+            "name": "withdrawalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWithdrawalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseWithdrawalResponse"
                 }
               }
             }
@@ -3924,6 +4013,174 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDisbursementResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/ledgers/{orderId}/state": {
+      "get": {
+        "tags": [
+          "internal-ledger-controller"
+        ],
+        "operationId": "state",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LedgerStateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallets/withdrawals": {
+      "get": {
+        "tags": [
+          "wallet-controller"
+        ],
+        "operationId": "withdrawals",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "PENDING",
+              "enum": [
+                "PENDING",
+                "COMPLETED",
+                "REJECTED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseWithdrawalResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallets/summary": {
+      "get": {
+        "tags": [
+          "wallet-controller"
+        ],
+        "operationId": "summary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseWalletSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallets/me": {
+      "get": {
+        "tags": [
+          "wallet-controller"
+        ],
+        "operationId": "mine",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseWalletResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wallets/banks": {
+      "get": {
+        "tags": [
+          "wallet-controller"
+        ],
+        "operationId": "banks",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListBankResponse"
                 }
               }
             }
@@ -8869,6 +9126,10 @@
           },
           "invoiceInfo": {
             "$ref": "#/components/schemas/OrderInvoiceInfoRequest"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "pattern": "VNPAY|WALLET"
           }
         },
         "required": [
@@ -9199,7 +9460,8 @@
               "IN_PRODUCTION",
               "READY_TO_SHIP",
               "DELIVERED",
-              "COMPLETED"
+              "COMPLETED",
+              "REJECTED"
             ]
           },
           "trackingCode": {
@@ -9324,7 +9586,8 @@
               "IN_PRODUCTION",
               "READY_TO_SHIP",
               "DELIVERED",
-              "COMPLETED"
+              "COMPLETED",
+              "REJECTED"
             ]
           },
           "buyerAccountId": {
@@ -9625,7 +9888,8 @@
               "IN_PRODUCTION",
               "READY_TO_SHIP",
               "DELIVERED",
-              "COMPLETED"
+              "COMPLETED",
+              "REJECTED"
             ]
           },
           "note": {
@@ -9782,7 +10046,8 @@
               "IN_PRODUCTION",
               "READY_TO_SHIP",
               "DELIVERED",
-              "COMPLETED"
+              "COMPLETED",
+              "REJECTED"
             ]
           },
           "orderCount": {
@@ -10377,6 +10642,11 @@
             "items": {
               "$ref": "#/components/schemas/AllocationRequest"
             }
+          },
+          "method": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 0
           }
         },
         "required": [
@@ -10393,6 +10663,114 @@
           },
           "paymentUrl": {
             "type": "string"
+          }
+        }
+      },
+      "CreateWithdrawalRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 10000
+          },
+          "bankBin": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\d{6,10}"
+          },
+          "accountNumber": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\d{6,19}"
+          },
+          "accountName": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0,
+            "pattern": "[A-Z ]+"
+          }
+        },
+        "required": [
+          "accountName",
+          "accountNumber",
+          "bankBin"
+        ]
+      },
+      "ApiResponseWithdrawalResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/WithdrawalResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentFieldError"
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WithdrawalResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "bankBin": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "REJECTED"
+            ]
+          },
+          "rejectReason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -10496,6 +10874,27 @@
           }
         }
       },
+      "ReviewWithdrawalRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "REJECTED"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "ApiResponseRefundResponse": {
         "type": "object",
         "properties": {
@@ -10596,6 +10995,326 @@
         "required": [
           "status"
         ]
+      },
+      "LedgerStateResponse": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "held": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "disbursed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "paidOut": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pendingDisbursement": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ApiResponsePageResponseWithdrawalResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseWithdrawalResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentFieldError"
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseWithdrawalResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WithdrawalResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResponseWalletSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/WalletSummaryResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentFieldError"
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WalletSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "totalBalance": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pendingWithdrawals": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pendingWithdrawalAmount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ApiResponseWalletResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/WalletResponse"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentFieldError"
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Entry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "CREDIT",
+              "DEBIT"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "ORDER_REJECTED",
+              "PAYMENT",
+              "REFUND",
+              "WITHDRAWAL",
+              "WITHDRAWAL_RETURNED",
+              "SALE",
+              "DISBURSEMENT"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "referenceId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseEntry": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Entry"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WalletResponse": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "entries": {
+            "$ref": "#/components/schemas/PageResponseEntry"
+          }
+        }
+      },
+      "ApiResponseListWithdrawalResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WithdrawalResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentFieldError"
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseListBankResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BankResponse"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentFieldError"
+            }
+          },
+          "path": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "BankResponse": {
+        "type": "object",
+        "properties": {
+          "bin": {
+            "type": "string"
+          },
+          "shortName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
       },
       "ApiResponsePageResponseRefundResponse": {
         "type": "object",

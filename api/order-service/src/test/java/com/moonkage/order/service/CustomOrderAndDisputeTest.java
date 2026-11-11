@@ -89,6 +89,7 @@ class CustomOrderAndDisputeTest {
                 orderEvents,
                 vendorDirectory,
                 mock(com.moonkage.order.client.PaymentClient.class),
+                mock(com.moonkage.order.client.VendorClient.class),
                 new com.moonkage.order.config.OrderProperties(),
                 entityManager,
                 mock(OrderFileService.class),
@@ -274,6 +275,16 @@ class CustomOrderAndDisputeTest {
     @Test
     void noDisputeAfterTheComplaintDeadline() {
         order.setComplaintDeadline(Instant.now().minusSeconds(1));
+
+        AppException error = assertThrows(AppException.class, () -> disputeService.open(BUYER, ORDER_ID, damaged()));
+
+        assertEquals(ErrorCode.COMPLAINT_WINDOW_CLOSED, error.getErrorCode());
+    }
+
+    /** Confirming receipt closes complaints: the money of the order then goes to the Shop. */
+    @Test
+    void noDisputeOnceTheBuyerConfirmedReceipt() {
+        order.setReceivedConfirmedAt(Instant.now().minusSeconds(60));
 
         AppException error = assertThrows(AppException.class, () -> disputeService.open(BUYER, ORDER_ID, damaged()));
 

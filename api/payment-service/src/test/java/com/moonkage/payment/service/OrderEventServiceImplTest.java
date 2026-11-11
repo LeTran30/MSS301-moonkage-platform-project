@@ -41,13 +41,15 @@ class OrderEventServiceImplTest {
     private final InboxService inboxService = mock(InboxService.class);
     private final RefundService refundService = mock(RefundService.class);
     private final LedgerService ledgerService = mock(LedgerService.class);
+    private final WalletService walletService = mock(WalletService.class);
 
     private OrderEventServiceImpl service;
     private OrderSnapshot snapshot;
 
     @BeforeEach
     void setUp() {
-        service = new OrderEventServiceImpl(snapshotRepository, inboxService, ledgerService, refundService);
+        service = new OrderEventServiceImpl(
+                snapshotRepository, inboxService, ledgerService, refundService, walletService);
         snapshot = new OrderSnapshot();
         snapshot.setOrderId(ORDER_ID);
         snapshot.setVendorId(VENDOR_ID);
@@ -69,6 +71,21 @@ class OrderEventServiceImplTest {
         assertEquals("DELIVERED", snapshot.getStatus());
         assertEquals(230_000L, snapshot.getTotalAmount());
         assertEquals(3L, snapshot.getSourceVersion());
+    }
+
+    /** Q-01: a Shop rejecting a paid order sends that order's money to the buyer's wallet. */
+    @Test
+    void aRejectedOrderIsRefundedToTheBuyersWallet() {
+        service.onOrderEvent(RabbitConfig.ORDER_EVENTS_QUEUE, orderEvent(2L, null, "REJECTED"));
+
+        verify(walletService).refundRejectedOrder(ORDER_ID, "buyer-1");
+    }
+
+    @Test
+    void anyOtherStatusLeavesTheWalletAlone() {
+        service.onOrderEvent(RabbitConfig.ORDER_EVENTS_QUEUE, orderEvent(2L));
+
+        verify(walletService, never()).refundRejectedOrder(anyString(), anyString());
     }
 
     /** The same event twice changes nothing (NFR-05). */
@@ -170,11 +187,15 @@ class OrderEventServiceImplTest {
     }
 
     private static OrderEvent orderEvent(long version, Instant complaintDeadline) {
+        return orderEvent(version, complaintDeadline, "DELIVERED");
+    }
+
+    private static OrderEvent orderEvent(long version, Instant complaintDeadline, String status) {
         return new OrderEvent(
                 "evt-1",
                 ORDER_ID,
                 "BUY_NOW",
-                "DELIVERED",
+                status,
                 "buyer-1",
                 VENDOR_ID,
                 230_000L,

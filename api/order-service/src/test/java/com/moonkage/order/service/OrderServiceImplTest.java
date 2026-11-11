@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,6 +15,10 @@ import static org.mockito.Mockito.when;
 
 import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
+import com.moonkage.order.client.VendorClient;
+import com.moonkage.order.client.dto.LedgerState;
+import com.moonkage.order.client.dto.ReserveStockRequest;
+import com.moonkage.order.client.dto.ReturnStockRequest;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
 import com.moonkage.order.dto.event.QuoteAcceptedEvent;
@@ -34,12 +39,15 @@ import com.moonkage.order.repository.ProgressUpdateRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.security.Role;
 import com.moonkage.order.service.impl.OrderServiceImpl;
+import feign.FeignException;
+import feign.Request;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,6 +70,8 @@ class OrderServiceImplTest {
     private final OrderEventPublisher orderEvents = mock(OrderEventPublisher.class);
     private final VendorDirectory vendorDirectory = mock(VendorDirectory.class);
     private final EntityManager entityManager = mock(EntityManager.class);
+    private final PaymentClient paymentClient = mock(PaymentClient.class);
+    private final VendorClient vendorClient = mock(VendorClient.class);
 
     private OrderServiceImpl service;
     private Order order;
@@ -77,7 +87,8 @@ class OrderServiceImplTest {
                 inboxService,
                 orderEvents,
                 vendorDirectory,
-                mock(PaymentClient.class),
+                paymentClient,
+                vendorClient,
                 new OrderProperties(),
                 entityManager,
                 mock(OrderFileService.class),
@@ -138,6 +149,136 @@ class OrderServiceImplTest {
 
         assertEquals(ErrorCode.INVALID_STATE_TRANSITION, error.getErrorCode());
         assertEquals(OrderStatus.PAID, order.getStatus());
+    }
+
+    /** Q-01: the Shop refuses a paid order with a reason; payment-service refunds it from order.status_changed. */
+    @Test
+    void theShopRejectsAPaidOrderWithAReason() {
+        service.update(OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Hết hàng", null, null));
+
+        assertEquals(OrderStatus.REJECTED, order.getStatus());
+        verify(progressUpdateRepository).save(any());
+        verify(orderEvents).announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
+    }
+
+    /** Q-01: the pieces of the rejected order go back on sale at vendor-service. */
+    @Test
+    void aRejectedBuyNowOrderGivesItsStockBack() {
+        order.setPaymentGroupId("checkout-1");
+        when(orderItemRepository.findByOrderId(ORDER_ID)).thenReturn(List.of(item(order, "product-1", 3)));
+
+        service.update(OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Hết hàng", null, null));
+
+        ArgumentCaptor<ReturnStockRequest> sent = ArgumentCaptor.forClass(ReturnStockRequest.class);
+        verify(vendorClient).returnStock(sent.capture());
+        assertEquals("checkout-1", sent.getValue().checkoutId());
+        assertEquals(
+                List.of(new ReserveStockRequest.Item("product-1", 3)),
+                sent.getValue().items());
+    }
+
+    /** Seed data and old orders have no reservation: the rejection still goes through, without stock to return. */
+    @Test
+    void anOrderWithoutAReservationIsStillRejected() {
+        order.setPaymentGroupId("checkout-old");
+        Request request = Request.create(
+                Request.HttpMethod.POST, "/internal/stock/reservations/returns", Map.of(), null, null, null);
+        doThrow(new FeignException.NotFound("no reservation", request, null, null))
+                .when(vendorClient)
+                .returnStock(any());
+
+        service.update(OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Hết hàng", null, null));
+
+        assertEquals(OrderStatus.REJECTED, order.getStatus());
+        verify(orderEvents).announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
+    }
+
+    /** FR-11, AC-48.1: a delivered order nobody confirmed is confirmed by the system after its complaint window. */
+    @Test
+    void theSystemConfirmsAnOverdueDeliveredOrder() {
+        order.setStatus(OrderStatus.DELIVERED);
+        when(orderRepository.findForUpdateUnconfirmedPastDeadline(any(), any())).thenReturn(List.of(order));
+
+        assertEquals(1, service.confirmOverdue());
+
+        assertEquals(OrderStatus.COMPLETED, order.getStatus());
+        assertNotNull(order.getReceivedConfirmedAt());
+        verify(orderEvents).announce(RabbitConfig.ORDER_RECEIVED_CONFIRMED_ROUTING_KEY, order);
+    }
+
+    /** A custom order is only received: it completes when its remainder is paid. */
+    @Test
+    void anOverdueCustomOrderIsReceivedButNotCompleted() {
+        order.setKind(OrderKind.CUSTOM_ORDER);
+        order.setStatus(OrderStatus.DELIVERED);
+        when(orderRepository.findForUpdateUnconfirmedPastDeadline(any(), any())).thenReturn(List.of(order));
+
+        service.confirmOverdue();
+
+        assertEquals(OrderStatus.DELIVERED, order.getStatus());
+        assertNotNull(order.getReceivedConfirmedAt());
+    }
+
+    @Test
+    void aCustomOrderIsRejectedBeforeWorkWhileTheShopTookNoneOfTheDeposit() {
+        order.setKind(OrderKind.CUSTOM_ORDER);
+        order.setStatus(OrderStatus.DEPOSITED);
+        when(paymentClient.ledgerState(ORDER_ID)).thenReturn(new LedgerState(ORDER_ID, 300_000L, 0, 0, 0));
+
+        service.update(OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Không kịp", null, null));
+
+        assertEquals(OrderStatus.REJECTED, order.getStatus());
+        verify(vendorClient, never()).returnStock(any());
+    }
+
+    @Test
+    void aCustomOrderWhoseDepositWasPartlyPaidOutGoesThroughADispute() {
+        order.setKind(OrderKind.CUSTOM_ORDER);
+        order.setStatus(OrderStatus.DEPOSITED);
+        when(paymentClient.ledgerState(ORDER_ID)).thenReturn(new LedgerState(ORDER_ID, 200_000L, 100_000L, 0, 0));
+
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(
+                        OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Không kịp", null, null)));
+
+        assertEquals(ErrorCode.REJECT_AFTER_DISBURSEMENT, error.getErrorCode());
+        assertEquals(OrderStatus.DEPOSITED, order.getStatus());
+        verify(orderEvents, never()).announce(any(), any());
+    }
+
+    @Test
+    void aRejectionNeedsAReason() {
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(
+                        OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, " ", null, null)));
+
+        assertEquals(ErrorCode.REJECT_REASON_REQUIRED, error.getErrorCode());
+        assertEquals(OrderStatus.PAID, order.getStatus());
+    }
+
+    @Test
+    void aConfirmedOrderCanNoLongerBeRejected() {
+        order.setStatus(OrderStatus.CONFIRMED);
+
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(
+                        OWNER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "Hết hàng", null, null)));
+
+        assertEquals(ErrorCode.INVALID_STATE_TRANSITION, error.getErrorCode());
+        verify(orderEvents, never()).announce(any(), any());
+    }
+
+    @Test
+    void onlyTheOwnerOfTheShopRejectsTheOrder() {
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.update(
+                        BUYER, ORDER_ID, new UpdateOrderRequest(OrderStatus.REJECTED, null, "x", null, null)));
+
+        assertEquals(ErrorCode.ACCESS_DENIED, error.getErrorCode());
     }
 
     @Test
