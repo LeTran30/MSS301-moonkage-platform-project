@@ -1,7 +1,8 @@
-package com.moonkage.order.service;
+package com.moonkage.order.service.publisher;
 
 import com.moonkage.order.dto.event.outbound.OrderEvent;
 import com.moonkage.order.entity.Order;
+import com.moonkage.order.service.OutboxService;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

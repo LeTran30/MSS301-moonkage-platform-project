@@ -1,4 +1,4 @@
-package com.moonkage.order.service;
+package com.moonkage.order.service.support;
 
 import com.moonkage.order.entity.Order;
 import com.moonkage.order.entity.ProgressUpdate;
