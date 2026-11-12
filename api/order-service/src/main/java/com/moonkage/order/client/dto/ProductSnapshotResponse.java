@@ -17,7 +17,7 @@ public record ProductSnapshotResponse(List<ProductPart> products, List<VendorPar
     /**
      * @param ownerAccountId BR-22: the owner may not buy it
      * @param quoteThreshold from this quantity on, the vendor sells through a quote (BR-03); null = none
-     * @param purchasable on sale, Shop on, vendor allowed to operate
+     * @param purchasable on sale, not past its expiry date, Shop on, vendor allowed to operate
      */
     public record ProductPart(
             String productId,

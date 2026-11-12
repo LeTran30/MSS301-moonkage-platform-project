@@ -1,5 +1,6 @@
 package com.moonkage.vendor.product;
 
+import com.moonkage.vendor.common.TimeConstant;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.Quantity;
@@ -7,7 +8,9 @@ import com.moonkage.vendor.product.dto.request.ReserveStockRequest;
 import com.moonkage.vendor.product.dto.response.StockReservationResponse;
 import com.moonkage.vendor.vendor.VendorService;
 import com.moonkage.vendor.vendor.VendorView;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,6 +39,7 @@ class StockServiceImpl implements StockService {
     private final ProductRepository productRepository;
     private final VendorService vendorService;
     private final ProductSnapshotPublisher snapshotPublisher;
+    private final Clock clock;
 
     @Override
     @Transactional
@@ -49,13 +53,19 @@ class StockServiceImpl implements StockService {
             }
             return toResponse(held, products);
         }
-        if (!request.expiresAt().isAfter(Instant.now())) {
+        Instant now = clock.instant();
+        if (!request.expiresAt().isAfter(now)) {
             throw new AppException(ErrorCode.RESERVATION_EXPIRY_INVALID).atField(FIELD_EXPIRES_AT);
         }
-        checkAvailable(wanted, products);
+        LocalDate businessDate = businessDate(now);
+        checkAvailable(wanted, products, businessDate);
         List<StockReservation> lines = wanted.entrySet().stream()
                 .map(line -> StockReservation.hold(
-                        request.checkoutId(), products.get(line.getKey()), line.getValue(), request.expiresAt()))
+                        request.checkoutId(),
+                        products.get(line.getKey()),
+                        line.getValue(),
+                        request.expiresAt(),
+                        businessDate))
                 .toList();
         reservationRepository.saveAll(lines);
         announce(products.values());
@@ -73,8 +83,9 @@ class StockServiceImpl implements StockService {
                 .filter(StockReservation::needsStockToCommit)
                 .collect(Collectors.toMap(StockReservation::getProductId, StockReservation::getQty));
         if (lines.status() != ReservationStatus.COMMITTED) {
-            checkAvailable(retaken, lines.products());
-            lines.reservations().forEach(line -> line.commit(lines.products().get(line.getProductId())));
+            LocalDate businessDate = businessDate(clock.instant());
+            checkAvailable(retaken, lines.products(), businessDate);
+            lines.reservations().forEach(line -> line.commit(lines.products().get(line.getProductId()), businessDate));
             announce(retaken.keySet().stream().map(lines.products()::get).toList());
         }
         return toResponse(lines.reservations(), lines.products());
@@ -131,16 +142,16 @@ class StockServiceImpl implements StockService {
     }
 
     /**
-     * STOCK_UNAVAILABLE at each product that cannot be sold in that quantity now: missing, not on sale, short, or of
-     * a Shop that may not sell (locked, not paid, Shop turned off: BR-20, BR-21, BR-31).
+     * STOCK_UNAVAILABLE at each product that cannot be sold in that quantity now: missing, not on sale, expired,
+     * short, or of a Shop that may not sell (locked, not paid, Shop turned off: BR-20, BR-21, BR-31).
      */
-    private void checkAvailable(Map<String, Quantity> wanted, Map<String, Product> products) {
+    private void checkAvailable(Map<String, Quantity> wanted, Map<String, Product> products, LocalDate businessDate) {
         Map<String, Boolean> sellingByVendor = new HashMap<>();
         List<String> unavailable = new ArrayList<>();
         wanted.forEach((productId, qty) -> {
             Product product = products.get(productId);
             boolean available = product != null
-                    && product.canSupply(qty.value())
+                    && product.canSupply(qty.value(), businessDate)
                     && sellingByVendor.computeIfAbsent(product.getVendorId(), this::sells);
             if (!available) {
                 unavailable.add(productId);
@@ -192,6 +203,10 @@ class StockServiceImpl implements StockService {
                                 line.getQty().value(),
                                 line.getUnitPrice().value()))
                         .toList());
+    }
+
+    private static LocalDate businessDate(Instant now) {
+        return LocalDate.ofInstant(now, TimeConstant.VIETNAM_ZONE);
     }
 
     /**

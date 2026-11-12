@@ -17,7 +17,7 @@ public interface StockService {
      * it asks for the same lines (RESERVATION_MISMATCH otherwise).
      *
      * @throws com.moonkage.vendor.common.exception.AppException STOCK_UNAVAILABLE naming each product that is
-     *     missing, not on sale, of a Shop that may not sell, or short
+     *     missing, not on sale, expired, of a Shop that may not sell, or short
      */
     StockReservationResponse reserve(ReserveStockRequest request);
 

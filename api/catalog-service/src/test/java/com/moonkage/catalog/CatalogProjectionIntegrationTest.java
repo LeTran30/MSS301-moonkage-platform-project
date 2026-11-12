@@ -6,7 +6,9 @@ import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.moonkage.catalog.common.TimeConstant;
 import com.moonkage.catalog.dto.request.ProductSearchRequest;
+import com.moonkage.catalog.dto.request.ProductSnapshotRequest;
 import com.moonkage.catalog.entity.projection.ProductProjectionRow;
 import com.moonkage.catalog.entity.projection.ReviewProjectionRow;
 import com.moonkage.catalog.entity.projection.VendorProjectionRow;
@@ -14,10 +16,13 @@ import com.moonkage.catalog.entity.readmodel.ProductListing;
 import com.moonkage.catalog.enums.DeliveryLabel;
 import com.moonkage.catalog.enums.ProductStatus;
 import com.moonkage.catalog.enums.ProjectionOutcome;
+import com.moonkage.catalog.exception.CatalogErrorCode;
+import com.moonkage.catalog.exception.CatalogException;
 import com.moonkage.catalog.repository.JdbcProjectionInboxRepository;
 import com.moonkage.catalog.repository.readmodel.ProductListingRepository;
 import com.moonkage.catalog.service.CatalogProjectionService;
 import com.moonkage.catalog.service.ProductReadService;
+import com.moonkage.catalog.service.ProductSnapshotService;
 import com.moonkage.catalog.service.ProjectionInboxService;
 import jakarta.persistence.EntityManagerFactory;
 import java.nio.charset.StandardCharsets;
@@ -411,6 +416,40 @@ class CatalogProjectionIntegrationTest {
         var reviews = http.getForObject("/api/products/p/reviews?provinceCode=79", JsonNode.class);
         assertThat(reviews.at("/data/totalElements").asInt()).isEqualTo(1);
         assertThat(reviews.at("/data/content/0/rating").asInt()).isEqualTo(4);
+    }
+
+    @Test
+    void expiryDateIsAppliedToSearchFacetsDetailReviewsAndCheckoutSnapshot() {
+        seedVendor();
+        LocalDate today = businessDate();
+        projection.applyProduct(
+                id(), withExpiry(product("expired", 1, "expired", ProductStatus.ON_SALE), today.minusDays(1)));
+        projection.applyProduct(id(), withExpiry(product("today", 1, "today", ProductStatus.ON_SALE), today));
+
+        assertThat(ids(searchIn("01", null, List.of(), List.of(), null))).containsExactly("today");
+        assertThat(products.getFacets("01", null).vendors())
+                .singleElement()
+                .satisfies(vendor -> assertThat(vendor.count()).isEqualTo(1));
+        assertThatThrownBy(() -> products.getProduct("expired", "01", null))
+                .isInstanceOf(CatalogException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CatalogErrorCode.PRODUCT_NOT_FOUND);
+        assertThat(http.getForEntity("/api/products/expired/reviews?provinceCode=01", JsonNode.class)
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(products.getProduct("today", "01", null).expiryDate()).isEqualTo(today);
+
+        var snapshot = context.getBean(ProductSnapshotService.class)
+                .snapshot(new ProductSnapshotRequest("01", List.of("expired", "today")));
+        assertThat(snapshot.products())
+                .anySatisfy(product -> {
+                    assertThat(product.productId()).isEqualTo("expired");
+                    assertThat(product.purchasable()).isFalse();
+                })
+                .anySatisfy(product -> {
+                    assertThat(product.productId()).isEqualTo("today");
+                    assertThat(product.purchasable()).isTrue();
+                });
+        assertThat(count("product_views")).isEqualTo(2);
     }
 
     @Test
@@ -890,6 +929,28 @@ class CatalogProjectionIntegrationTest {
                 row.sourceVersion());
     }
 
+    private ProductProjectionRow withExpiry(ProductProjectionRow row, LocalDate expiryDate) {
+        return new ProductProjectionRow(
+                row.productId(),
+                row.vendorId(),
+                row.name(),
+                row.description(),
+                row.crustCodes(),
+                row.fillingCodes(),
+                row.brand(),
+                row.origin(),
+                row.piecesPerBox(),
+                row.listPrice(),
+                row.stock(),
+                expiryDate,
+                row.deliveryLabel(),
+                row.quoteThreshold(),
+                row.status(),
+                row.imageKeys(),
+                row.priceTiers(),
+                row.sourceVersion());
+    }
+
     private List<String> ids(ProductSearchRequest request) {
         return products.search(request, null).content().stream()
                 .map(com.moonkage.catalog.dto.response.ProductListingResponse::id)
@@ -1003,7 +1064,7 @@ class CatalogProjectionIntegrationTest {
                 4,
                 100000,
                 10,
-                LocalDate.of(2027, 1, 1),
+                businessDate().plusYears(1),
                 DeliveryLabel.LOCAL,
                 null,
                 status,
@@ -1017,6 +1078,10 @@ class CatalogProjectionIntegrationTest {
         var array = JsonNodeFactory.instance.arrayNode();
         array.addObject().put("uninterpretedTierFixture", true);
         return array;
+    }
+
+    private static LocalDate businessDate() {
+        return LocalDate.now(TimeConstant.VIETNAM_ZONE);
     }
 
     private ReviewProjectionRow review(String reviewId, String productId, int rating) {
