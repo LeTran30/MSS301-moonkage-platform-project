@@ -19,6 +19,7 @@ import com.moonkage.storage.BucketAccess;
 import com.moonkage.storage.ObjectStorage;
 import com.moonkage.vendor.client.IdentityClient;
 import com.moonkage.vendor.client.PaymentClient;
+import com.moonkage.vendor.common.TimeConstant;
 import com.moonkage.vendor.common.config.RabbitConfig;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
@@ -189,6 +190,43 @@ class StockReservationIntegrationTest {
     }
 
     @Test
+    void anExpiredProductMakesTheWholeHoldFailWhileThePrintedExpiryDateRemainsSellable() throws Exception {
+        LocalDate today = businessDate();
+        String expiringToday = createProduct(10, today);
+        String expired = createProduct(10);
+        jdbcTemplate.update("UPDATE products SET expiry_date = ? WHERE id = ?", today.minusDays(1), expired);
+        String refusedCheckout = newId();
+
+        reserve(refusedCheckout, Map.of(expiringToday, 1, expired, 1))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_032"))
+                .andExpect(jsonPath("$.errors[0].field").value(expired));
+        assertEquals(10, stockOf(expiringToday));
+        assertEquals(10, stockOf(expired));
+        assertEquals(0, count(refusedCheckout));
+
+        reserve(newId(), Map.of(expiringToday, 1)).andExpect(status().isOk());
+        assertEquals(9, stockOf(expiringToday));
+    }
+
+    @Test
+    void aLatePaymentCannotRetakeAnExpiredProductAfterItsHoldWasReleased() throws Exception {
+        LocalDate today = businessDate();
+        String product = createProduct(2);
+        String checkoutId = newId();
+        reserve(checkoutId, Map.of(product, 1)).andExpect(status().isOk());
+        release(checkoutId).andExpect(status().isNoContent());
+        jdbcTemplate.update("UPDATE products SET expiry_date = ? WHERE id = ?", today.minusDays(1), product);
+
+        commit(checkoutId)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_032"))
+                .andExpect(jsonPath("$.errors[0].field").value(product));
+        assertEquals(2, stockOf(product));
+        assertEquals("RELEASED", statusOf(checkoutId));
+    }
+
+    @Test
     void aHoldNeedsAFutureExpiryAndEachProductOnce() throws Exception {
         String product = createProduct(10);
         ObjectNode past = reserveBody(newId(), Map.of(product, 1))
@@ -333,13 +371,17 @@ class StockReservationIntegrationTest {
     }
 
     private String createProduct(int stock) throws Exception {
+        return createProduct(stock, businessDate().plusYears(1));
+    }
+
+    private String createProduct(int stock, LocalDate expiryDate) throws Exception {
         ObjectNode body = objectMapper
                 .createObjectNode()
                 .put("name", "Hộp 4 bánh nướng")
                 .put("description", "Bánh nướng nhân đậu xanh")
                 .put("listPrice", LIST_PRICE)
                 .put("stock", stock)
-                .put("expiryDate", LocalDate.of(2026, 12, 31).toString())
+                .put("expiryDate", expiryDate.toString())
                 .put("deliveryLabel", "LOCAL");
         body.set("imageKeys", objectMapper.valueToTree(List.of(TEMP_PREFIX + "a.jpg")));
         body.set("crustCodes", objectMapper.valueToTree(List.of("banh-nuong")));
@@ -460,5 +502,9 @@ class StockReservationIntegrationTest {
 
     private static String newId() {
         return UUID.randomUUID().toString();
+    }
+
+    private static LocalDate businessDate() {
+        return LocalDate.now(TimeConstant.VIETNAM_ZONE);
     }
 }

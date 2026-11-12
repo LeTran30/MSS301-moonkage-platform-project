@@ -97,7 +97,9 @@ public enum ErrorCode {
     PRODUCT_IMAGE_COUNT_INVALID("VENDOR_112", HttpStatus.BAD_REQUEST, "error.vendor.product_image_count_invalid"),
     RESOLD_NOT_ALLOWED("VENDOR_113", HttpStatus.BAD_REQUEST, "error.vendor.resold_not_allowed"),
     RESERVATION_ITEMS_INVALID("VENDOR_114", HttpStatus.BAD_REQUEST, "error.vendor.reservation_items_invalid"),
-    RESERVATION_EXPIRY_INVALID("VENDOR_115", HttpStatus.BAD_REQUEST, "error.vendor.reservation_expiry_invalid");
+    RESERVATION_EXPIRY_INVALID("VENDOR_115", HttpStatus.BAD_REQUEST, "error.vendor.reservation_expiry_invalid"),
+    /** A product may be sold through its expiry date, judged in Vietnam time, but never after it. */
+    PRODUCT_EXPIRY_PASSED("VENDOR_116", HttpStatus.BAD_REQUEST, "error.vendor.product_expiry_passed");
 
     private final String code;
     private final HttpStatus httpStatus;

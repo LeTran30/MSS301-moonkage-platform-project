@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -61,8 +62,9 @@ class StockReservation {
     private Instant updatedAt;
 
     /** Takes the pieces from {@code product}; it must be able to supply them. */
-    static StockReservation hold(String checkoutId, Product product, Quantity qty, Instant expiresAt) {
-        product.takeStock(qty.value());
+    static StockReservation hold(
+            String checkoutId, Product product, Quantity qty, Instant expiresAt, LocalDate businessDate) {
+        product.takeStock(qty.value(), businessDate);
         StockReservation reservation = new StockReservation();
         reservation.checkoutId = checkoutId;
         reservation.productId = product.getId();
@@ -74,9 +76,9 @@ class StockReservation {
     }
 
     /** Paid. A released line takes its pieces from {@code product} again; it must be able to supply them. */
-    void commit(Product product) {
+    void commit(Product product, LocalDate businessDate) {
         if (status == ReservationStatus.RELEASED) {
-            product.takeStock(qty.value());
+            product.takeStock(qty.value(), businessDate);
         }
         moveTo(ReservationStatus.COMMITTED);
     }

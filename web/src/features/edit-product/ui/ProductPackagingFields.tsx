@@ -1,4 +1,5 @@
 import { Input } from '@/shared/ui';
+import { vietnamBusinessDate } from '@/shared/lib';
 import styles from './productFormUi.module.css';
 
 interface ProductPackagingFieldsProps {
@@ -25,6 +26,7 @@ export function ProductPackagingFields({
         <Input
           id="product-expiry"
           type="date"
+          min={vietnamBusinessDate()}
           value={expiryDate}
           onChange={(e) => onExpiryDateChange(e.target.value)}
           required

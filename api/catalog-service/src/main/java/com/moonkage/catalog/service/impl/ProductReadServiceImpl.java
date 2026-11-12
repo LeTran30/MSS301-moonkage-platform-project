@@ -1,6 +1,7 @@
 package com.moonkage.catalog.service.impl;
 
 import com.moonkage.api.PageResponse;
+import com.moonkage.catalog.common.TimeConstant;
 import com.moonkage.catalog.config.PublicImageProperties;
 import com.moonkage.catalog.dto.request.ProductSearchRequest;
 import com.moonkage.catalog.dto.response.ProductFacetsResponse;
@@ -20,6 +21,8 @@ import com.moonkage.catalog.repository.readmodel.ProductListingRepository;
 import com.moonkage.catalog.repository.readmodel.ProductSearchFilter;
 import com.moonkage.catalog.service.ProductReadService;
 import com.moonkage.reference.Province;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +48,7 @@ public class ProductReadServiceImpl implements ProductReadService {
     private final JdbcProductSearchRepository searchRepository;
     private final ProductReviewReadRepository reviewRepository;
     private final PublicImageProperties images;
+    private final Clock clock;
 
     @Override
     public PageResponse<ProductListingResponse> search(ProductSearchRequest request, String accountId) {
@@ -57,6 +61,7 @@ public class ProductReadServiceImpl implements ProductReadService {
                         .orElseThrow(() -> new CatalogException(CatalogErrorCode.INVALID_REQUEST));
         var filter = new ProductSearchFilter(
                 request.provinceCode(),
+                businessDate(),
                 wordsOf(request.query()),
                 request.vendorIds(),
                 request.brands(),
@@ -86,7 +91,16 @@ public class ProductReadServiceImpl implements ProductReadService {
             throw new CatalogException(CatalogErrorCode.INVALID_REQUEST);
         }
         var filter = new ProductSearchFilter(
-                provinceCode, words, List.of(), List.of(), List.of(), List.of(), null, null, ProductSort.RATING);
+                provinceCode,
+                businessDate(),
+                words,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                null,
+                ProductSort.RATING);
         ProductFacetRows rows = searchRepository.findFacets(filter);
         return new ProductFacetsResponse(
                 toCounts(rows.crusts()),
@@ -128,6 +142,7 @@ public class ProductReadServiceImpl implements ProductReadService {
         if (product.getStatus() != ProductStatus.ON_SALE
                 || !product.isCanOperate()
                 || !product.isSellsShop()
+                || product.getExpiryDate().isBefore(businessDate())
                 || !deliverable) {
             throw new CatalogException(CatalogErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -173,5 +188,9 @@ public class ProductReadServiceImpl implements ProductReadService {
             throw new CatalogException(CatalogErrorCode.INVALID_REQUEST);
         }
         return PageRequest.of(page, size);
+    }
+
+    private LocalDate businessDate() {
+        return LocalDate.now(clock.withZone(TimeConstant.VIETNAM_ZONE));
     }
 }

@@ -20,6 +20,7 @@ public class JdbcProductSearchRepository {
     /** On sale, from a Shop that can sell in the Shop now, delivered to :province. */
     private static final String VISIBLE = """
             status = 'ON_SALE' AND can_operate AND sells_shop
+            AND expiry_date >= :businessDate
             AND (delivery_label = 'NATIONWIDE' OR :province = ANY(delivery_areas))""";
 
     private static final String SEARCHED_TEXT =
@@ -116,6 +117,7 @@ public class JdbcProductSearchRepository {
     private static MapSqlParameterSource parameters(ProductSearchFilter filter) {
         var parameters = new MapSqlParameterSource()
                 .addValue("province", filter.provinceCode())
+                .addValue("businessDate", filter.businessDate())
                 .addValue("vendorIds", filter.vendorIds())
                 .addValue("brands", filter.brands())
                 .addValue("crustCodes", textArray(filter.crustCodes()))

@@ -6,6 +6,7 @@ import com.moonkage.vendor.cakeattribute.CakeAttributeCodes;
 import com.moonkage.vendor.cakeattribute.CakeAttributeGroup;
 import com.moonkage.vendor.cakeattribute.CakeAttributeRef;
 import com.moonkage.vendor.cakeattribute.CakeAttributeService;
+import com.moonkage.vendor.common.TimeConstant;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
 import com.moonkage.vendor.common.vo.Price;
@@ -23,17 +24,20 @@ import com.moonkage.vendor.vendor.dto.response.PresignedUploadLinkResponse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.OptimisticLockException;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-class ProductServiceImpl implements ProductService {
+class ProductServiceImpl implements ProductService, ProductExpiryService {
 
     private static final String FIELD_VERSION = "version";
 
@@ -45,6 +49,7 @@ class ProductServiceImpl implements ProductService {
     private final ObjectStorage objectStorage;
     private final ProductImageProperties imageProperties;
     private final EntityManager entityManager;
+    private final Clock clock;
 
     @Override
     public PresignedUploadLinkResponse createImageUploadLink(
@@ -60,8 +65,12 @@ class ProductServiceImpl implements ProductService {
     public ProductResponse createProduct(CurrentUserInfo caller, String vendorId, SaveProductRequest request) {
         VendorView vendor = getSellingVendor(caller, vendorId);
         ProductDetails details = toDetails(vendor, request, Set.of());
+        LocalDate businessDate = businessDate();
+        Product.requireNotExpired(details.expiryDate(), businessDate);
         Product product = Product.create(
-                vendorId, details.withImageKeys(productImages.place(vendorId, details.imageKeys(), List.of())));
+                vendorId,
+                details.withImageKeys(productImages.place(vendorId, details.imageKeys(), List.of())),
+                businessDate);
         productRepository.saveAndFlush(product);
         snapshotPublisher.announceUpserted(product);
         return toResponse(product);
@@ -94,8 +103,12 @@ class ProductServiceImpl implements ProductService {
         Product product = getForChange(vendorId, productId, request.version());
         product.checkEditable();
         ProductDetails details = toDetails(vendor, request, product.getCakeAttributeIds());
-        product.replace(details.withImageKeys(
-                productImages.place(vendorId, details.imageKeys(), List.copyOf(product.getImageKeys()))));
+        LocalDate businessDate = businessDate();
+        Product.requireNotExpired(details.expiryDate(), businessDate);
+        product.replace(
+                details.withImageKeys(
+                        productImages.place(vendorId, details.imageKeys(), List.copyOf(product.getImageKeys()))),
+                businessDate);
         productRepository.saveAndFlush(product);
         snapshotPublisher.announceUpserted(product);
         return toResponse(product);
@@ -121,11 +134,32 @@ class ProductServiceImpl implements ProductService {
         if (request.status() == ProductStatus.HIDDEN) {
             product.hide();
         } else {
-            product.show();
+            product.show(businessDate());
         }
         productRepository.saveAndFlush(product);
         snapshotPublisher.announceUpserted(product);
         return toResponse(product);
+    }
+
+    @Override
+    public List<String> findExpiredOnSaleProductIds(LocalDate businessDate, int limit) {
+        return productRepository.findExpiredOnSaleIds(businessDate, PageRequest.of(0, limit));
+    }
+
+    @Override
+    @Transactional
+    public void hideIfExpired(String productId, LocalDate businessDate) {
+        Product product = productRepository.findForChangeByIdIn(List.of(productId)).stream()
+                .findFirst()
+                .orElse(null);
+        if (product == null
+                || product.getStatus() != ProductStatus.ON_SALE
+                || !product.getExpiryDate().isBefore(businessDate)) {
+            return;
+        }
+        product.hide();
+        productRepository.flush();
+        snapshotPublisher.announceUpserted(product);
     }
 
     /** Its owner, while the vendor may operate and sells in the Shop (BR-20, BR-21, BR-31). */
@@ -263,5 +297,9 @@ class ProductServiceImpl implements ProductService {
 
     private static Integer valueOf(Quantity quantity) {
         return quantity == null ? null : quantity.value();
+    }
+
+    private LocalDate businessDate() {
+        return LocalDate.now(clock.withZone(TimeConstant.VIETNAM_ZONE));
     }
 }
