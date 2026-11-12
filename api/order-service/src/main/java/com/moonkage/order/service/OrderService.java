@@ -1,7 +1,7 @@
 package com.moonkage.order.service;
 
 import com.moonkage.api.PageResponse;
-import com.moonkage.order.dto.event.QuoteAcceptedEvent;
+import com.moonkage.order.dto.event.inbound.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.UpdateOrderRequest;
 import com.moonkage.order.dto.response.OrderResponse;
 import com.moonkage.order.dto.response.PaymentLinkResponse;

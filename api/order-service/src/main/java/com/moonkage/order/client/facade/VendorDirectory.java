@@ -1,4 +1,4 @@
-package com.moonkage.order.service;
+package com.moonkage.order.client.facade;
 
 import com.moonkage.order.client.VendorClient;
 import com.moonkage.order.client.dto.VendorView;

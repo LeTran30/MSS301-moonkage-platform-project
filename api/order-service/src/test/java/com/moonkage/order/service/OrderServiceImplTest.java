@@ -14,9 +14,10 @@ import static org.mockito.Mockito.when;
 
 import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.QuoteAcceptedEvent;
+import com.moonkage.order.dto.event.inbound.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.UpdateOrderRequest;
 import com.moonkage.order.dto.response.OrderResponse;
 import com.moonkage.order.entity.Order;

@@ -1,5 +1,6 @@
-package com.moonkage.order.dto.event;
+package com.moonkage.order.dto.event.outbound;
 
+import com.moonkage.order.dto.event.EventEnvelope;
 import java.time.Instant;
 
 /**

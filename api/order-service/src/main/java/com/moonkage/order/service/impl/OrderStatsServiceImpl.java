@@ -1,6 +1,7 @@
 package com.moonkage.order.service.impl;
 
 import com.moonkage.order.client.dto.VendorView;
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.dto.response.OrderStatsResponse;
 import com.moonkage.order.dto.response.OrderStatsResponse.DailyPoint;
@@ -16,7 +17,6 @@ import com.moonkage.order.repository.OrderStatsRepository.DailyRow;
 import com.moonkage.order.repository.OrderStatsRepository.TotalsRow;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.OrderStatsService;
-import com.moonkage.order.service.VendorDirectory;
 import feign.FeignException;
 import java.time.Instant;
 import java.time.LocalDate;
