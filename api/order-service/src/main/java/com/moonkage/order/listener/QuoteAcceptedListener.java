@@ -1,7 +1,7 @@
-package com.moonkage.order.messaging;
+package com.moonkage.order.listener;
 
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.QuoteAcceptedEvent;
+import com.moonkage.order.dto.event.inbound.QuoteAcceptedEvent;
 import com.moonkage.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

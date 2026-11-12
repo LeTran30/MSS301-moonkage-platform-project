@@ -1,6 +1,6 @@
 package com.moonkage.order.service;
 
-import com.moonkage.order.dto.event.OrderEvent;
+import com.moonkage.order.dto.event.outbound.OrderEvent;
 import com.moonkage.order.entity.Order;
 import java.time.Instant;
 import java.util.UUID;

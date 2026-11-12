@@ -1,4 +1,4 @@
-package com.moonkage.order.dto.event;
+package com.moonkage.order.dto.event.outbound;
 
 import com.moonkage.order.dto.response.ChatMessageResponse;
 import java.time.Instant;

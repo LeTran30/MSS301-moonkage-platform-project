@@ -1,4 +1,4 @@
-package com.moonkage.order.dto.event;
+package com.moonkage.order.dto.event.outbound;
 
 import java.time.Instant;
 

@@ -1,7 +1,7 @@
 package com.moonkage.order.service.impl;
 
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.OrderActivityEvent;
+import com.moonkage.order.dto.event.outbound.OrderActivityEvent;
 import com.moonkage.order.dto.request.AttachFileRequest;
 import com.moonkage.order.dto.request.FileUploadRequest;
 import com.moonkage.order.dto.request.ReviewMockupRequest;

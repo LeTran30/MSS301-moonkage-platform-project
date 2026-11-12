@@ -3,7 +3,7 @@ package com.moonkage.order.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.ChatEvent;
+import com.moonkage.order.dto.event.outbound.ChatEvent;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

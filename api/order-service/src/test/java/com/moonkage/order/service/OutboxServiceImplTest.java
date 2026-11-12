@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.ReviewCreatedEvent;
+import com.moonkage.order.dto.event.outbound.ReviewCreatedEvent;
 import com.moonkage.order.entity.OutboxEvent;
 import com.moonkage.order.enums.AggregateType;
 import com.moonkage.order.messaging.outbox.OutboxServiceImpl;

@@ -2,7 +2,7 @@ package com.moonkage.order.service.impl;
 
 import com.moonkage.api.PageResponse;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.DisputeEvent;
+import com.moonkage.order.dto.event.outbound.DisputeEvent;
 import com.moonkage.order.dto.request.EvidenceRequest;
 import com.moonkage.order.dto.request.OpenDisputeRequest;
 import com.moonkage.order.dto.request.ResolveDisputeRequest;

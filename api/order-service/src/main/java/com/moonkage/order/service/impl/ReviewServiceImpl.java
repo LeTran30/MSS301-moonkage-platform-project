@@ -1,7 +1,7 @@
 package com.moonkage.order.service.impl;
 
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.ReviewCreatedEvent;
+import com.moonkage.order.dto.event.outbound.ReviewCreatedEvent;
 import com.moonkage.order.dto.request.CreateReviewRequest;
 import com.moonkage.order.dto.response.ReviewResponse;
 import com.moonkage.order.entity.Order;

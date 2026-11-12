@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.config.RabbitConfig;
 import com.moonkage.order.dto.request.OpenDisputeRequest;
 import com.moonkage.order.dto.request.ResolveDisputeRequest;

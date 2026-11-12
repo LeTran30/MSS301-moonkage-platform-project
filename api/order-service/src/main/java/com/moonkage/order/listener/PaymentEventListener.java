@@ -1,8 +1,8 @@
-package com.moonkage.order.messaging;
+package com.moonkage.order.listener;
 
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.PaymentFailedEvent;
-import com.moonkage.order.dto.event.PaymentSucceededEvent;
+import com.moonkage.order.dto.event.inbound.PaymentFailedEvent;
+import com.moonkage.order.dto.event.inbound.PaymentSucceededEvent;
 import com.moonkage.order.service.CheckoutService;
 import com.moonkage.order.service.OrderService;
 import lombok.RequiredArgsConstructor;

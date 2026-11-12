@@ -1,5 +1,6 @@
 package com.moonkage.order.service;
 
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.entity.Order;
 import com.moonkage.order.exception.AppException;
 import com.moonkage.order.exception.ErrorCode;

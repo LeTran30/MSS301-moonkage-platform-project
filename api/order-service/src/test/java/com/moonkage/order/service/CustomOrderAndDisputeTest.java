@@ -15,8 +15,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.observability.MoneyMetrics;
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.QuoteAcceptedEvent;
+import com.moonkage.order.dto.event.inbound.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.ResolveDisputeRequest;
 import com.moonkage.order.entity.Dispute;
 import com.moonkage.order.entity.Order;
