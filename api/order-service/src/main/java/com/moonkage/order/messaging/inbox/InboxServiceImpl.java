@@ -1,7 +1,7 @@
-package com.moonkage.order.service.impl;
+package com.moonkage.order.messaging.inbox;
 
 import com.moonkage.order.entity.ProcessedEvent;
-import com.moonkage.order.repository.ProcessedEventRepository;
+import com.moonkage.order.repository.inbox.ProcessedEventRepository;
 import com.moonkage.order.service.InboxService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

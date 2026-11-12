@@ -1,7 +1,7 @@
-package com.moonkage.order.messaging;
+package com.moonkage.order.messaging.outbox;
 
 import com.moonkage.order.entity.OutboxEvent;
-import com.moonkage.order.repository.OutboxEventRepository;
+import com.moonkage.order.repository.outbox.OutboxEventRepository;
 import com.moonkage.outbox.OutboxEventRow;
 import com.moonkage.outbox.OutboxEventSource;
 import java.time.Instant;

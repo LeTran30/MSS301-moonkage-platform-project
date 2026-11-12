@@ -1,11 +1,11 @@
-package com.moonkage.order.service.impl;
+package com.moonkage.order.messaging.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moonkage.order.dto.event.EventEnvelope;
 import com.moonkage.order.entity.OutboxEvent;
 import com.moonkage.order.enums.AggregateType;
-import com.moonkage.order.repository.OutboxEventRepository;
+import com.moonkage.order.repository.outbox.OutboxEventRepository;
 import com.moonkage.order.service.OutboxService;
 import com.moonkage.outbox.OutboxTraceContext;
 import java.time.Instant;

@@ -1,4 +1,4 @@
-package com.moonkage.order.repository;
+package com.moonkage.order.repository.outbox;
 
 import com.moonkage.order.entity.OutboxEvent;
 import java.util.List;
