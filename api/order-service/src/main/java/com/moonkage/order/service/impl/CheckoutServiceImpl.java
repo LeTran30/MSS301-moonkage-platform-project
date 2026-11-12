@@ -38,7 +38,7 @@ import com.moonkage.order.repository.OrderItemRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.CheckoutService;
 import com.moonkage.order.service.InboxService;
-import com.moonkage.order.service.OrderEventPublisher;
+import com.moonkage.order.service.publisher.OrderEventPublisher;
 import feign.FeignException;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;

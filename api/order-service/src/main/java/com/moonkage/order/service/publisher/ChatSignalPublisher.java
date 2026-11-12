@@ -1,4 +1,4 @@
-package com.moonkage.order.service;
+package com.moonkage.order.service.publisher;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

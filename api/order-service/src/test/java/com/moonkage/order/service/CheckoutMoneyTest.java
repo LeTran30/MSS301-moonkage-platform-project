@@ -42,6 +42,7 @@ import com.moonkage.order.repository.OrderItemRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.security.Role;
 import com.moonkage.order.service.impl.CheckoutServiceImpl;
+import com.moonkage.order.service.publisher.OrderEventPublisher;
 import feign.FeignException;
 import feign.Request;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
