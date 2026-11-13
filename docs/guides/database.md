@@ -58,6 +58,7 @@ Mật khẩu chung của **mọi** tài khoản mẫu, kể cả admin: `SEED_PA
 | `member8@mk.com` | Bùi Quang Huy | 0901000008 | NFC, chủ "Doanh nghiệp tư nhân Quà Tặng Đoàn Viên" (TP.HCM), **chỉ nhận đặt** (BR-21) | người nhận lời mời ở Flow 2 |
 | `member9@mk.com` | Ngô Thanh Mây | 0901000009 | NFC, chủ "Hộ kinh doanh Bánh Nhà Mây" (TP.HCM), bán Shop và nhận đặt, có hàng bán lại | Shop có sản phẩm bán lại |
 | `member10@mk.com` → `member14@mk.com` | Đặng Thu Trang, Phan Quốc Bảo, Trịnh Mỹ Linh, Lý Gia Hân, Mai Đức Thắng | 0901000010 → 0901000014 | đã xác nhận, chưa NFC, 1 địa chỉ (4 người ở TP.HCM, member14 ở Cần Thơ) | người mua của các đơn demo |
+| `member15@mk.com` → `member17@mk.com` | Châu Ngọc Hà, Tạ Văn Khoa, Lâm Bảo Ngọc | 0901000015 → 0901000017 | đã xác nhận email, **đã NFC**, **chưa có Shop** | đăng ký người bán từ đầu (mỗi người một lần) |
 
 Dữ liệu demo tập trung ở **TP.HCM**: cả 5 Shop đã duyệt và 4/5 người mua mới ở đó, nên chọn khu vực TP.HCM khi demo. Khoảng 3/4 số đơn giao nội thành; số còn lại giao liên tỉnh tới Hà Nội (địa chỉ thứ hai của member1) và Cần Thơ, có mã vận đơn. Đơn demo (`member1` có nhiều nhất): 2 đơn mới thanh toán, 2 đã xác nhận, 2 đang giao, 3 đã giao (1 đơn có khiếu nại đang mở), còn lại đã hoàn tất. Trong số đã hoàn tất, có 3 đơn qua hạn khiếu nại nhưng **chưa giải ngân** để admin demo bước duyệt giải ngân, 1 đơn được hoàn một phần sau khiếu nại, 1 đơn bị từ chối khiếu nại. Mỗi đơn có tên Shop, ảnh của từng dòng và lịch sử tiến độ (`progress_updates`) cho các bước nó đã qua, đúng như khi đi qua app.
 
@@ -74,6 +75,7 @@ Seed không bao giờ đụng tới tài khoản người dùng tự tạo: emai
 | account | `0001` | `…-000100000000` | admin | identity |
 | | | `…-000100000001` → `…-000100000005` | member1 → member5 | identity |
 | | | `…-000100000006` → `…-000100000014` | member6 → member14 (dữ liệu demo) | identity |
+| | | `…-000100000015` → `…-000100000017` | member15 → member17 (đăng ký người bán) | identity |
 | vendor | `0002` | `…-000200000001` | Trăng Vàng (của member4) | vendor |
 | | | `…-000200000002` | Bánh Quê (của member5) | vendor |
 | | | `…-000200000003` → `…-000200000006` | Chợ Lớn, Cô Ba, Đoàn Viên, Nhà Mây, đều ở TP.HCM (của member6 → member9; dữ liệu demo; catalog và quotation seed bản sao `vendor_snapshots`) | vendor, catalog, quotation |
