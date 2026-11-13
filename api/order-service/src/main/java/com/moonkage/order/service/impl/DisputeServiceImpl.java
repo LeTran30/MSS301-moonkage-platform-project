@@ -2,7 +2,7 @@ package com.moonkage.order.service.impl;
 
 import com.moonkage.api.PageResponse;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.DisputeEvent;
+import com.moonkage.order.dto.event.outbound.DisputeEvent;
 import com.moonkage.order.dto.request.EvidenceRequest;
 import com.moonkage.order.dto.request.OpenDisputeRequest;
 import com.moonkage.order.dto.request.ResolveDisputeRequest;
@@ -21,9 +21,9 @@ import com.moonkage.order.repository.DisputeRepository;
 import com.moonkage.order.repository.OrderRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.DisputeService;
-import com.moonkage.order.service.OrderAccess;
-import com.moonkage.order.service.OrderFileService;
 import com.moonkage.order.service.OutboxService;
+import com.moonkage.order.service.support.OrderAccess;
+import com.moonkage.order.storage.OrderFileService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -52,7 +52,9 @@ public class DisputeServiceImpl implements DisputeService {
         // the row lock is the one payout-lock takes: a dispute and a payout never pass each other (P-02)
         Order order = orderAccess.forBuyer(caller, orderId);
         Instant now = Instant.now();
+        // confirming receipt (by the buyer or by the system) closes complaints: the money then goes to the Shop
         if (order.getDeliveredAt() == null
+                || order.getReceivedConfirmedAt() != null
                 || order.getComplaintDeadline() == null
                 || now.isAfter(order.getComplaintDeadline())) {
             throw new AppException(ErrorCode.COMPLAINT_WINDOW_CLOSED);

@@ -13,7 +13,7 @@ public record ProductSnapshotResponse(List<ProductPart> products, List<VendorPar
     /**
      * @param ownerAccountId the vendor's owner; BR-22 forbids them buying it
      * @param listPrice VAT included; the checkout charges the price vendor-service holds the stock at
-     * @param purchasable on sale, Shop on, vendor allowed to operate (BR-20, BR-21, BR-31)
+     * @param purchasable on sale, not past its expiry date, Shop on, vendor allowed to operate (BR-20, BR-21, BR-31)
      */
     public record ProductPart(
             String productId,

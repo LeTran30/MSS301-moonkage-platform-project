@@ -4,6 +4,8 @@ import com.moonkage.order.entity.Order;
 import com.moonkage.order.enums.OrderKind;
 import com.moonkage.order.enums.OrderStatus;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,4 +46,20 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             boolean missingInvoice,
             boolean openDispute,
             Pageable page);
+
+    /**
+     * Delivered orders the buyer never confirmed, past their complaint deadline and without an open dispute: the
+     * system confirms them for the buyer (FR-11, AC-48.1). Row locks, so a buyer's own confirmation waits.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select o from Order o
+            where o.status = com.moonkage.order.enums.OrderStatus.DELIVERED
+              and o.receivedConfirmedAt is null
+              and o.complaintDeadline < :now
+              and not exists (select d.id from Dispute d where d.order = o
+                              and d.status = com.moonkage.order.enums.DisputeStatus.OPEN)
+            order by o.complaintDeadline
+            """)
+    List<Order> findForUpdateUnconfirmedPastDeadline(Instant now, Pageable page);
 }

@@ -1,7 +1,7 @@
 package com.moonkage.order.service.impl;
 
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.OrderActivityEvent;
+import com.moonkage.order.dto.event.outbound.OrderActivityEvent;
 import com.moonkage.order.dto.request.AttachFileRequest;
 import com.moonkage.order.dto.request.FileUploadRequest;
 import com.moonkage.order.dto.request.ReviewMockupRequest;
@@ -17,12 +17,12 @@ import com.moonkage.order.exception.AppException;
 import com.moonkage.order.exception.ErrorCode;
 import com.moonkage.order.repository.MockupVersionRepository;
 import com.moonkage.order.security.CurrentUserInfo;
-import com.moonkage.order.service.OrderAccess;
 import com.moonkage.order.service.OrderDocumentService;
-import com.moonkage.order.service.OrderEventPublisher;
-import com.moonkage.order.service.OrderFileService;
-import com.moonkage.order.service.OrderProgress;
 import com.moonkage.order.service.OutboxService;
+import com.moonkage.order.service.publisher.OrderEventPublisher;
+import com.moonkage.order.service.support.OrderAccess;
+import com.moonkage.order.service.support.OrderProgress;
+import com.moonkage.order.storage.OrderFileService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;

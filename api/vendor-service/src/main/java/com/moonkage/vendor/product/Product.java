@@ -126,7 +126,8 @@ class Product {
     private Instant updatedAt;
 
     /** On sale at once, without review (BR-24). */
-    static Product create(String vendorId, ProductDetails details) {
+    static Product create(String vendorId, ProductDetails details, LocalDate businessDate) {
+        requireNotExpired(details.expiryDate(), businessDate);
         Product product = new Product();
         product.vendorId = vendorId;
         product.status = ProductStatus.ON_SALE;
@@ -135,8 +136,9 @@ class Product {
     }
 
     /** FR-30, FR-33: anything but a removed product. */
-    void replace(ProductDetails details) {
+    void replace(ProductDetails details, LocalDate businessDate) {
         checkEditable();
+        requireNotExpired(details.expiryDate(), businessDate);
         apply(details);
     }
 
@@ -152,7 +154,8 @@ class Product {
         moveTo(ProductStatus.HIDDEN);
     }
 
-    void show() {
+    void show(LocalDate businessDate) {
+        requireNotExpired(expiryDate, businessDate);
         moveTo(ProductStatus.ON_SALE);
     }
 
@@ -166,14 +169,14 @@ class Product {
         removedBy = adminAccountId;
     }
 
-    /** Whether {@code qty} pieces can be sold now: on sale with that much stock (BR-28). */
-    boolean canSupply(int qty) {
-        return status == ProductStatus.ON_SALE && stock >= qty;
+    /** Whether {@code qty} pieces can be sold now: on sale, unexpired, with that much stock (BR-28). */
+    boolean canSupply(int qty, LocalDate businessDate) {
+        return status == ProductStatus.ON_SALE && !expiryDate.isBefore(businessDate) && stock >= qty;
     }
 
     /** Held for a checkout; stock never goes below 0. Check {@link #canSupply} first. */
-    void takeStock(int qty) {
-        if (!canSupply(qty)) {
+    void takeStock(int qty, LocalDate businessDate) {
+        if (!canSupply(qty, businessDate)) {
             throw new IllegalStateException("Product " + id + " cannot supply " + qty);
         }
         stock -= qty;
@@ -219,6 +222,13 @@ class Product {
         cakeAttributeIds.clear();
         details.cakeAttributes().forEach(value -> cakeAttributeIds.add(value.id()));
         replacePriceTiers(details.priceTiers());
+    }
+
+    /** The printed expiry date remains sellable for that whole business day (FutureOrPresent). */
+    static void requireNotExpired(LocalDate expiryDate, LocalDate businessDate) {
+        if (expiryDate.isBefore(businessDate)) {
+            throw new AppException(ErrorCode.PRODUCT_EXPIRY_PASSED).atField(ProductDetails.EXPIRY_DATE);
+        }
     }
 
     /**

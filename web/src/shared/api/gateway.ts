@@ -184,6 +184,14 @@ export const GATEWAY = {
     // RefundController: @RequestMapping("/api/refunds") — các khoản hoàn cần xử lý tay (AC-49.3).
     REFUNDS: '/api/refunds',
     REFUND_BY_ID: (refundId: string) => `/api/refunds/${refundId}`,
+    // WalletController: @GetMapping("/me") — số dư và lịch sử ví của người mua (Q-01).
+    WALLET_ME: '/api/wallets/me',
+    // WalletController: rút tiền về ngân hàng (Q-01); danh sách ngân hàng lấy từ VietQR qua payment-service.
+    WALLET_BANKS: '/api/wallets/banks',
+    WALLET_MY_WITHDRAWALS: '/api/wallets/me/withdrawals',
+    WALLET_WITHDRAWALS: '/api/wallets/withdrawals',
+    WALLET_WITHDRAWAL: (withdrawalId: string) => `/api/wallets/withdrawals/${withdrawalId}`,
+    WALLET_SUMMARY: '/api/wallets/summary',
   },
 
   // 7. Logistics & WebSocket Realtime (InterprovinceFeeController, STOMP)

@@ -24,6 +24,7 @@ import com.moonkage.storage.BucketAccess;
 import com.moonkage.storage.ObjectStorage;
 import com.moonkage.vendor.client.IdentityClient;
 import com.moonkage.vendor.client.PaymentClient;
+import com.moonkage.vendor.common.TimeConstant;
 import com.moonkage.vendor.common.config.RabbitConfig;
 import com.moonkage.vendor.security.Role;
 import com.moonkage.vendor.vendor.SupplySource;
@@ -70,7 +71,8 @@ class ProductIntegrationTest {
     private static final String ADMIN_ID = "admin-1";
     private static final String TEMP_PREFIX = "tmp/";
     private static final String BUSINESS_NAME = "Tiệm bánh Trăng";
-    private static final LocalDate EXPIRY_DATE = LocalDate.of(2026, 12, 31);
+    private static final LocalDate TODAY = LocalDate.now(TimeConstant.VIETNAM_ZONE);
+    private static final LocalDate EXPIRY_DATE = TODAY.plusYears(1);
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
@@ -88,16 +90,22 @@ class ProductIntegrationTest {
     private final ObjectMapper objectMapper;
     private final JdbcTemplate jdbcTemplate;
     private final VendorFixture vendorFixture;
+    private final ExpiredProductSweeper expiredProductSweeper;
 
     private String ownerId;
 
     @Autowired
     ProductIntegrationTest(
-            MockMvc mvc, ObjectMapper objectMapper, JdbcTemplate jdbcTemplate, ApplicationContext context) {
+            MockMvc mvc,
+            ObjectMapper objectMapper,
+            JdbcTemplate jdbcTemplate,
+            ApplicationContext context,
+            ExpiredProductSweeper expiredProductSweeper) {
         this.mvc = mvc;
         this.objectMapper = objectMapper;
         this.jdbcTemplate = jdbcTemplate;
         this.vendorFixture = new VendorFixture(context);
+        this.expiredProductSweeper = expiredProductSweeper;
     }
 
     @BeforeEach
@@ -158,6 +166,60 @@ class ProductIntegrationTest {
                 .andExpect(jsonPath("$.code").value("VENDOR_030"))
                 .andExpect(jsonPath("$.errors[0].field").value("imageKeys"));
         verify(objectStorage, never()).moveUploadedFile(anyString(), any(), any(), anyString());
+    }
+
+    @Test
+    void anExpiredProductCannotBeCreatedReplacedOrReturnedOnSale() throws Exception {
+        String vendorId = vendorFixture.saveOperating(ownerId, SupplySource.SELF_PRODUCED, true);
+        ObjectNode expired = productBody().put("expiryDate", TODAY.minusDays(1).toString());
+
+        create(vendorId, expired)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VENDOR_116"))
+                .andExpect(jsonPath("$.errors[0].field").value("expiryDate"));
+        verify(objectStorage, never()).moveUploadedFile(anyString(), any(), any(), anyString());
+
+        JsonNode product = created(vendorId, productBody());
+        String productId = product.get("id").asText();
+        replace(
+                        vendorId,
+                        productId,
+                        expired.put("version", product.get("version").asLong()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VENDOR_116"))
+                .andExpect(jsonPath("$.errors[0].field").value("expiryDate"));
+
+        changeStatus(asOwner(vendorId, productId), "{\"status\":\"HIDDEN\"}").andExpect(status().isOk());
+        jdbcTemplate.update("UPDATE products SET expiry_date = ? WHERE id = ?", TODAY.minusDays(1), productId);
+        changeStatus(asOwner(vendorId, productId), "{\"status\":\"ON_SALE\"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VENDOR_116"))
+                .andExpect(jsonPath("$.errors[0].field").value("expiryDate"));
+    }
+
+    @Test
+    void expirySweepHidesLegacyExpiredProductsButKeepsTodaysProductsOnSale() throws Exception {
+        String vendorId = vendorFixture.saveOperating(ownerId, SupplySource.SELF_PRODUCED, true);
+        JsonNode expired = created(vendorId, productBody().put("name", "Expired legacy product"));
+        JsonNode expiringToday =
+                created(vendorId, productBody().put("name", "Expires today").put("expiryDate", TODAY.toString()));
+        String expiredId = expired.get("id").asText();
+        String todayId = expiringToday.get("id").asText();
+        jdbcTemplate.update("UPDATE products SET expiry_date = ? WHERE id = ?", TODAY.minusDays(1), expiredId);
+
+        expiredProductSweeper.sweep();
+
+        assertEquals("HIDDEN", productStatus(expiredId));
+        assertEquals("ON_SALE", productStatus(todayId));
+        assertEquals(
+                "HIDDEN",
+                lastEnvelope(RabbitConfig.PRODUCT_UPSERTED_ROUTING_KEY, expiredId)
+                        .get("data")
+                        .get("status")
+                        .asText());
+        int eventCount = productEventCount(expiredId);
+        expiredProductSweeper.sweep();
+        assertEquals(eventCount, productEventCount(expiredId));
     }
 
     @Test
@@ -406,5 +468,17 @@ class ProductIntegrationTest {
             envelopes.add(objectMapper.readTree(payload));
         }
         return envelopes.getLast();
+    }
+
+    private String productStatus(String productId) {
+        return jdbcTemplate.queryForObject("SELECT status FROM products WHERE id = ?", String.class, productId);
+    }
+
+    private int productEventCount(String productId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM outbox_events WHERE routing_key = ? AND payload LIKE ?",
+                Integer.class,
+                RabbitConfig.PRODUCT_UPSERTED_ROUTING_KEY,
+                "%" + productId + "%");
     }
 }

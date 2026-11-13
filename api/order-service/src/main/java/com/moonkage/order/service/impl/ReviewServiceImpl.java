@@ -1,7 +1,7 @@
 package com.moonkage.order.service.impl;
 
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.ReviewCreatedEvent;
+import com.moonkage.order.dto.event.outbound.ReviewCreatedEvent;
 import com.moonkage.order.dto.request.CreateReviewRequest;
 import com.moonkage.order.dto.response.ReviewResponse;
 import com.moonkage.order.entity.Order;
@@ -14,9 +14,9 @@ import com.moonkage.order.exception.ErrorCode;
 import com.moonkage.order.repository.OrderItemRepository;
 import com.moonkage.order.repository.ReviewRepository;
 import com.moonkage.order.security.CurrentUserInfo;
-import com.moonkage.order.service.OrderAccess;
 import com.moonkage.order.service.OutboxService;
 import com.moonkage.order.service.ReviewService;
+import com.moonkage.order.service.support.OrderAccess;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.util.List;

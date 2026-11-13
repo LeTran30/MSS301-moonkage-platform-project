@@ -51,8 +51,8 @@ export function AdminPayoutsPage() {
         <div>
           <h1 className={styles.title}>Lịch sử chuyển tiền và ủy nhiệm chi</h1>
           <p className={styles.subtitle}>
-            Nhật ký giao dịch chuyển tiền tự động từ tài khoản ký quỹ sang tài khoản ngân hàng của
-            xưởng
+            Đơn hoàn tất được hệ thống tự chuyển vào Ví shop. Đơn còn hoàn tiền hoặc giải ngân đang
+            chờ thì đợi quản trị viên xử lý xong rồi mới chuyển.
           </p>
         </div>
         <Button

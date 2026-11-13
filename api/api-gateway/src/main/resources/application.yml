@@ -114,12 +114,13 @@ spring:
             #   /api/payments/** PaymentController (@RequestMapping("/api/payments"))
             #   /api/ledgers/**  LedgerController (@RequestMapping("/api/ledgers"))
             #   /api/refunds/**  RefundController (@RequestMapping("/api/refunds"))
+            #   /api/wallets/**  WalletController (@RequestMapping("/api/wallets"))
             # The internal paths of the service (/internal/payments, /internal/refunds) are deliberately absent
             # (D-30 decision 5).
             - id: payment-service
               uri: lb://payment-service
               predicates:
-                - Path=/api/payments,/api/payments/**,/api/ledgers,/api/ledgers/**,/api/refunds,/api/refunds/**
+                - Path=/api/payments,/api/payments/**,/api/ledgers,/api/ledgers/**,/api/refunds,/api/refunds/**,/api/wallets,/api/wallets/**
             # The OpenAPI document of each service, reached under the name of the service.
             # The Swagger UI of the gateway points at these paths, so they have to keep working after the discovery
             # locator is turned off (D-30). StripPrefix drops the name of the service, so the service receives the

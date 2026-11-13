@@ -1,7 +1,7 @@
 package com.moonkage.order.service;
 
 import com.moonkage.api.PageResponse;
-import com.moonkage.order.dto.event.QuoteAcceptedEvent;
+import com.moonkage.order.dto.event.inbound.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.UpdateOrderRequest;
 import com.moonkage.order.dto.response.OrderResponse;
 import com.moonkage.order.dto.response.PaymentLinkResponse;
@@ -48,4 +48,10 @@ public interface OrderService {
 
     /** payment.succeeded (REMAINDER): the custom order is completed (AC-22.2). Safe to repeat. */
     void onRemainderPaid(String eventId, String orderId);
+
+    /**
+     * FR-11, AC-48.1: delivered orders the buyer forgot to confirm are confirmed by the system once the complaint
+     * window is over; a buy-now order then completes and its money goes to the Shop. Returns how many.
+     */
+    int confirmOverdue();
 }

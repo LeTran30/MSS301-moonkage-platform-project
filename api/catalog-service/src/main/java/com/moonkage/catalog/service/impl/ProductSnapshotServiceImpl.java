@@ -1,5 +1,6 @@
 package com.moonkage.catalog.service.impl;
 
+import com.moonkage.catalog.common.TimeConstant;
 import com.moonkage.catalog.dto.request.ProductSnapshotRequest;
 import com.moonkage.catalog.dto.response.ProductSnapshotResponse;
 import com.moonkage.catalog.dto.response.ProductSnapshotResponse.ProductPart;
@@ -11,6 +12,8 @@ import com.moonkage.catalog.enums.ProductStatus;
 import com.moonkage.catalog.repository.InterprovinceFeeRepository;
 import com.moonkage.catalog.repository.readmodel.ProductListingRepository;
 import com.moonkage.catalog.service.ProductSnapshotService;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -28,6 +31,7 @@ public class ProductSnapshotServiceImpl implements ProductSnapshotService {
 
     private final ProductListingRepository listingRepository;
     private final InterprovinceFeeRepository feeRepository;
+    private final Clock clock;
 
     @Override
     public ProductSnapshotResponse snapshot(ProductSnapshotRequest request) {
@@ -45,8 +49,10 @@ public class ProductSnapshotServiceImpl implements ProductSnapshotService {
                 .findFirst()
                 .orElse(null);
 
-        List<ProductPart> products =
-                listings.stream().map(ProductSnapshotServiceImpl::toProduct).toList();
+        LocalDate businessDate = businessDate();
+        List<ProductPart> products = listings.stream()
+                .map(listing -> toProduct(listing, businessDate))
+                .toList();
         List<VendorPart> vendors = byVendor.values().stream()
                 .map(vendorListings -> toVendor(vendorListings, request.provinceCode(), interprovinceFee))
                 .toList();
@@ -71,9 +77,11 @@ public class ProductSnapshotServiceImpl implements ProductSnapshotService {
                 any.getVendorId(), any.getVendorName(), deliverable, true, deliverable ? interprovinceFee : null);
     }
 
-    private static ProductPart toProduct(ProductListing listing) {
-        boolean purchasable =
-                listing.getStatus() == ProductStatus.ON_SALE && listing.isCanOperate() && listing.isSellsShop();
+    private static ProductPart toProduct(ProductListing listing, LocalDate businessDate) {
+        boolean purchasable = listing.getStatus() == ProductStatus.ON_SALE
+                && listing.isCanOperate()
+                && listing.isSellsShop()
+                && !listing.getExpiryDate().isBefore(businessDate);
         return new ProductPart(
                 listing.getProductId(),
                 listing.getVendorId(),
@@ -90,5 +98,9 @@ public class ProductSnapshotServiceImpl implements ProductSnapshotService {
     /** The cover image, which the order keeps as it was on the day of the purchase. */
     private static String firstImageKey(String[] imageKeys) {
         return imageKeys == null || imageKeys.length == 0 ? null : imageKeys[0];
+    }
+
+    private LocalDate businessDate() {
+        return LocalDate.now(clock.withZone(TimeConstant.VIETNAM_ZONE));
     }
 }

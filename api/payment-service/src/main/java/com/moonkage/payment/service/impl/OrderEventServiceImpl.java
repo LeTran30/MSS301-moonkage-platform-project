@@ -9,6 +9,7 @@ import com.moonkage.payment.service.InboxService;
 import com.moonkage.payment.service.LedgerService;
 import com.moonkage.payment.service.OrderEventService;
 import com.moonkage.payment.service.RefundService;
+import com.moonkage.payment.service.WalletService;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +21,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderEventServiceImpl implements OrderEventService {
 
     private static final ZoneId VIETNAM = ZoneId.of("Asia/Ho_Chi_Minh");
+    /** order-service OrderStatus.REJECTED. */
+    private static final String REJECTED = "REJECTED";
 
     private final OrderSnapshotRepository snapshotRepository;
     private final InboxService inboxService;
     private final LedgerService ledgerService;
     private final RefundService refundService;
+    private final WalletService walletService;
 
     @Override
     @Transactional
@@ -48,6 +52,10 @@ public class OrderEventServiceImpl implements OrderEventService {
         snapshot.setSourceVersion(event.sourceVersion());
         snapshotRepository.save(snapshot);
         ledgerService.describe(event.orderId(), event.vendorId(), expectedPayoutDate(snapshot));
+        // Q-01: the Shop refused a paid order, so the buyer gets that order's money back in their wallet
+        if (REJECTED.equals(event.status())) {
+            walletService.refundRejectedOrder(event.orderId(), event.buyerAccountId());
+        }
     }
 
     @Override

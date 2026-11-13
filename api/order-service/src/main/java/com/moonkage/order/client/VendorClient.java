@@ -1,6 +1,7 @@
 package com.moonkage.order.client;
 
 import com.moonkage.order.client.dto.ReserveStockRequest;
+import com.moonkage.order.client.dto.ReturnStockRequest;
 import com.moonkage.order.client.dto.StockReservationResponse;
 import com.moonkage.order.client.dto.VendorView;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -27,6 +28,10 @@ public interface VendorClient {
 
     @DeleteMapping("/stock/reservations/{checkoutId}")
     void release(@PathVariable String checkoutId);
+
+    /** A Shop rejected a paid order (Q-01): its pieces go back on sale; again for the same order changes nothing. */
+    @PostMapping("/stock/reservations/returns")
+    void returnStock(@RequestBody ReturnStockRequest request);
 
     /** Who owns a vendor (the other side of an order's chat); 404 when there is no such vendor. */
     @GetMapping("/vendors/{vendorId}")

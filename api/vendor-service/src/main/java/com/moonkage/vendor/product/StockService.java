@@ -1,6 +1,7 @@
 package com.moonkage.vendor.product;
 
 import com.moonkage.vendor.product.dto.request.ReserveStockRequest;
+import com.moonkage.vendor.product.dto.request.ReturnStockRequest;
 import com.moonkage.vendor.product.dto.response.StockReservationResponse;
 import java.time.Instant;
 import java.util.List;
@@ -17,7 +18,7 @@ public interface StockService {
      * it asks for the same lines (RESERVATION_MISMATCH otherwise).
      *
      * @throws com.moonkage.vendor.common.exception.AppException STOCK_UNAVAILABLE naming each product that is
-     *     missing, not on sale, of a Shop that may not sell, or short
+     *     missing, not on sale, expired, of a Shop that may not sell, or short
      */
     StockReservationResponse reserve(ReserveStockRequest request);
 
@@ -27,6 +28,12 @@ public interface StockService {
      * the same.
      */
     StockReservationResponse commit(String checkoutId);
+
+    /**
+     * A Shop rejected a paid order (Q-01): its pieces go back on sale, once per order. RESERVATION_NOT_FOUND unless the
+     * checkout is committed; RESERVATION_MISMATCH when an item is not a line of it or asks back more than it sold.
+     */
+    void returnOrder(ReturnStockRequest request);
 
     /** Not paid: the pieces go back. Nothing to do for an unknown or released checkout; a committed one refuses. */
     void release(String checkoutId);

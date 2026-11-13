@@ -11,6 +11,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,12 +28,15 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "refunds")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Refund {
 
     @Id
     @Column(length = 36)
-    private String id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
 
     @Column(length = 36)
     private String orderId;
@@ -51,7 +56,8 @@ public class Refund {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private RefundStatus status;
+    @Builder.Default
+    private RefundStatus status = RefundStatus.PENDING;
 
     @Column(length = 64)
     private String gatewayRefundRef;
@@ -66,23 +72,4 @@ public class Refund {
     @UpdateTimestamp
     @Column(nullable = false)
     private Instant updatedAt;
-
-    /** FR-49: through the payment that brought the order's money. */
-    public static Refund dispute(String orderId, String disputeId, String originalPaymentId, long amount) {
-        Refund refund = automatic(originalPaymentId, RefundReason.DISPUTE, amount);
-        refund.orderId = orderId;
-        refund.disputeId = disputeId;
-        return refund;
-    }
-
-    /** A refund not tied to an order or dispute (LATE_PAYMENT, DUPLICATE_PAYMENT, QUOTE_EXPIRED). */
-    public static Refund automatic(String originalPaymentId, RefundReason reason, long amount) {
-        Refund refund = new Refund();
-        refund.id = UUID.randomUUID().toString();
-        refund.originalPaymentId = originalPaymentId;
-        refund.reason = reason;
-        refund.amount = amount;
-        refund.status = RefundStatus.PENDING;
-        return refund;
-    }
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatDateTime } from '@/shared/utils';
 import {
@@ -61,6 +61,7 @@ export function OrderDetailPage() {
   // FR-21: `GET /api/orders/{orderId}/progress-updates` — lịch sách tiến độ.
   const asyncProgress = useOrderProgress(orderId);
   const progressUpdates = asyncProgress.kind === 'loaded' ? asyncProgress.data : [];
+  const rejectReason = progressUpdates.find((u) => u.milestone === 'REJECTED')?.note;
 
   // FR-11: `GET /api/orders/{orderId}/reviews` — đánh giá sản phẩm trong đơn.
   const asyncReviews = useOrderReviews(orderId);
@@ -201,13 +202,26 @@ export function OrderDetailPage() {
                   Đã nhận hàng
                 </Button>
               )}
-              <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
-                Báo vấn đề với đơn
-              </ButtonLink>
+              {/* Xác nhận nhận hàng (người mua hoặc hệ thống) là hết quyền khiếu nại: tiền đã về ví shop. */}
+              {!order.receivedConfirmed && (
+                <ButtonLink to={routes.account.orderDispute(order.id)} variant="danger" size="sm">
+                  Báo vấn đề với đơn
+                </ButtonLink>
+              )}
             </>
           )}
         </div>
       </div>
+
+      {order.status === 'REJECTED' && (
+        // Q-01: tiền của đơn này đã về ví người mua; các đơn khác của cùng lượt thanh toán vẫn đi tiếp.
+        <div role="status" className={styles.rejectedNotice}>
+          <strong>Shop đã từ chối đơn này.</strong>{' '}
+          {rejectReason && `Lý do: ${rejectReason}. `}
+          Toàn bộ tiền của đơn đã được hoàn vào{' '}
+          <Link to={routes.account.wallet}>ví Moonkage của bạn</Link>.
+        </div>
+      )}
 
       {/* Tabs */}
       <div className={styles.tabsWrap}>

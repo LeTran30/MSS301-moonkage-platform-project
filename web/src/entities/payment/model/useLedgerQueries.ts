@@ -37,7 +37,8 @@ export function useDisbursementRequests(options?: { vendorId?: string | null }) 
       vendorId: vendorId ?? undefined,
     });
     const requests: Array<DisbursementDto & { ledger: LedgerDto }> = [];
-    for (const ledger of ledgers) {
+    // only a custom order's deposit can be disbursed (FR-47), so buy-now ledgers have no requests to read
+    for (const ledger of ledgers.filter((l) => l.kind === 'CUSTOM_ORDER')) {
       const disbursements = await ledgerApi.getDisbursements(ledger.orderId);
       for (const disbursement of disbursements) {
         requests.push({ ...disbursement, ledger });

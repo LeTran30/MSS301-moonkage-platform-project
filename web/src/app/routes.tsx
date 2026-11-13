@@ -75,6 +75,7 @@ const AddressFormPage = page(() => import('@/pages/account/address-form'), 'Addr
 const NfcVerifyPage = page(() => import('@/pages/account/nfc-verify'), 'NfcVerifyPage');
 const ProfilePage = page(() => import('@/pages/account/profile'), 'ProfilePage');
 const MessagesPage = page(() => import('@/pages/account/messages'), 'MessagesPage');
+const WalletPage = page(() => import('@/pages/account/wallet'), 'WalletPage');
 
 // Gateway Pages
 
@@ -135,6 +136,10 @@ const AdminDisbursementsPage = page(
   'AdminDisbursementsPage',
 );
 const AdminPayoutsPage = page(() => import('@/pages/admin/payouts'), 'AdminPayoutsPage');
+const AdminWithdrawalsPage = page(
+  () => import('@/pages/admin/withdrawals'),
+  'AdminWithdrawalsPage',
+);
 const AdminReconciliationPage = page(
   () => import('@/pages/admin/reconciliation'),
   'AdminReconciliationPage',
@@ -217,6 +222,7 @@ const ROUTE_TABLE = [
           { path: 'xac-minh', element: withSuspense(NfcVerifyPage) },
           { path: 'thong-tin', element: withSuspense(ProfilePage) },
           { path: 'tin-nhan', element: withSuspense(MessagesPage) },
+          { path: 'vi', element: withSuspense(WalletPage) },
         ],
       },
     ],
@@ -257,6 +263,8 @@ const ROUTE_TABLE = [
         path: 'tien/giai-ngan',
         element: withSuspense(VendorDisbursementsPage),
       },
+      // Ví của chủ shop là ví của tài khoản: cùng trang với người mua.
+      { path: 'vi', element: withSuspense(WalletPage) },
       { path: 'cai-dat', element: withSuspense(VendorSettingsPage) },
       {
         path: 'cai-dat/phap-ly',
@@ -291,6 +299,7 @@ const ROUTE_TABLE = [
       { path: 'tien', element: withSuspense(AdminMoneyPage) },
       { path: 'tien/giai-ngan', element: withSuspense(AdminDisbursementsPage) },
       { path: 'tien/chuyen-tien', element: withSuspense(AdminPayoutsPage) },
+      { path: 'tien/rut-tien', element: withSuspense(AdminWithdrawalsPage) },
       { path: 'tien/doi-soat', element: withSuspense(AdminReconciliationPage) },
       { path: 'khieu-nai', element: withSuspense(AdminDisputesPage) },
       { path: 'cau-hinh', element: withSuspense(AdminConfigPage) },

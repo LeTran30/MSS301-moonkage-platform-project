@@ -15,8 +15,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.observability.MoneyMetrics;
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.QuoteAcceptedEvent;
+import com.moonkage.order.dto.event.inbound.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.ResolveDisputeRequest;
 import com.moonkage.order.entity.Dispute;
 import com.moonkage.order.entity.Order;
@@ -37,6 +38,9 @@ import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.security.Role;
 import com.moonkage.order.service.impl.DisputeServiceImpl;
 import com.moonkage.order.service.impl.OrderServiceImpl;
+import com.moonkage.order.service.publisher.OrderEventPublisher;
+import com.moonkage.order.service.support.OrderAccess;
+import com.moonkage.order.storage.OrderFileService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import java.time.Duration;
@@ -89,6 +93,7 @@ class CustomOrderAndDisputeTest {
                 orderEvents,
                 vendorDirectory,
                 mock(com.moonkage.order.client.PaymentClient.class),
+                mock(com.moonkage.order.client.VendorClient.class),
                 new com.moonkage.order.config.OrderProperties(),
                 entityManager,
                 mock(OrderFileService.class),
@@ -274,6 +279,16 @@ class CustomOrderAndDisputeTest {
     @Test
     void noDisputeAfterTheComplaintDeadline() {
         order.setComplaintDeadline(Instant.now().minusSeconds(1));
+
+        AppException error = assertThrows(AppException.class, () -> disputeService.open(BUYER, ORDER_ID, damaged()));
+
+        assertEquals(ErrorCode.COMPLAINT_WINDOW_CLOSED, error.getErrorCode());
+    }
+
+    /** Confirming receipt closes complaints: the money of the order then goes to the Shop. */
+    @Test
+    void noDisputeOnceTheBuyerConfirmedReceipt() {
+        order.setReceivedConfirmedAt(Instant.now().minusSeconds(60));
 
         AppException error = assertThrows(AppException.class, () -> disputeService.open(BUYER, ORDER_ID, damaged()));
 

@@ -3,12 +3,16 @@ package com.moonkage.order.service.impl;
 import com.moonkage.api.PageResponse;
 import com.moonkage.observability.MoneyMetrics;
 import com.moonkage.order.client.PaymentClient;
+import com.moonkage.order.client.VendorClient;
 import com.moonkage.order.client.dto.CreatePaymentRequest;
 import com.moonkage.order.client.dto.CreatePaymentResponse;
+import com.moonkage.order.client.dto.ReserveStockRequest;
+import com.moonkage.order.client.dto.ReturnStockRequest;
 import com.moonkage.order.client.dto.VendorView;
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.config.RabbitConfig;
-import com.moonkage.order.dto.event.QuoteAcceptedEvent;
+import com.moonkage.order.dto.event.inbound.QuoteAcceptedEvent;
 import com.moonkage.order.dto.request.UpdateOrderRequest;
 import com.moonkage.order.dto.response.OrderResponse;
 import com.moonkage.order.dto.response.PaymentLinkResponse;
@@ -30,10 +34,9 @@ import com.moonkage.order.repository.OrderRepository;
 import com.moonkage.order.repository.ProgressUpdateRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.InboxService;
-import com.moonkage.order.service.OrderEventPublisher;
-import com.moonkage.order.service.OrderFileService;
 import com.moonkage.order.service.OrderService;
-import com.moonkage.order.service.VendorDirectory;
+import com.moonkage.order.service.publisher.OrderEventPublisher;
+import com.moonkage.order.storage.OrderFileService;
 import feign.FeignException;
 import jakarta.persistence.EntityManager;
 import java.time.Duration;
@@ -56,6 +59,9 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
+    private static final int AUTO_CONFIRM_BATCH = 100;
+    private static final String AUTO_CONFIRM_NOTE = "Hệ thống tự xác nhận đã nhận hàng vì hết thời hạn khiếu nại";
+
     private static final int MAX_PAGE_SIZE = 100;
 
     private final OrderRepository orderRepository;
@@ -67,6 +73,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderEventPublisher orderEvents;
     private final VendorDirectory vendorDirectory;
     private final PaymentClient paymentClient;
+    private final VendorClient vendorClient;
     private final OrderProperties properties;
     private final EntityManager entityManager;
     private final OrderFileService fileService;
@@ -174,6 +181,7 @@ public class OrderServiceImpl implements OrderService {
                             caller.accountId(),
                             order.getRemainingAmount(),
                             null,
+                            null,
                             null));
             return new PaymentLinkResponse(payment.paymentId(), payment.paymentUrl());
         } catch (FeignException.Conflict e) {
@@ -252,9 +260,23 @@ public class OrderServiceImpl implements OrderService {
         if (disputeRepository.existsByOrderIdAndStatus(order.getId(), DisputeStatus.OPEN)) {
             throw new AppException(ErrorCode.DISPUTE_ALREADY_OPEN);
         }
+        markReceived(order, null);
+    }
+
+    @Override
+    @Transactional
+    public int confirmOverdue() {
+        List<Order> overdue = orderRepository.findForUpdateUnconfirmedPastDeadline(
+                Instant.now(), PageRequest.of(0, AUTO_CONFIRM_BATCH));
+        overdue.forEach(order -> markReceived(order, AUTO_CONFIRM_NOTE));
+        return overdue.size();
+    }
+
+    /** Received: a buy-now order completes (payment-service then pays the Shop); a custom order awaits the rest. */
+    private void markReceived(Order order, String note) {
         order.setReceivedConfirmedAt(Instant.now());
         if (order.getKind() == OrderKind.BUY_NOW) {
-            moveTo(order, OrderStatus.COMPLETED, null, List.of());
+            moveTo(order, OrderStatus.COMPLETED, note, List.of());
         } else {
             entityManager.flush();
         }
@@ -268,6 +290,10 @@ public class OrderServiceImpl implements OrderService {
                 .filter(order.getVendorId()::equals)
                 .isPresent()) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+        if (request.status() == OrderStatus.REJECTED) {
+            reject(order, request.note());
+            return;
         }
         if (request.status() != nextStatus(order)) {
             throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
@@ -307,6 +333,50 @@ public class OrderServiceImpl implements OrderService {
                         ? RabbitConfig.ORDER_DELIVERED_ROUTING_KEY
                         : RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY,
                 order);
+    }
+
+    /**
+     * Q-01: the Shop refuses a paid buy-now order it has not confirmed yet, with a reason the buyer sees.
+     * payment-service reads order.status_changed and returns the order's money to the buyer's wallet.
+     */
+    private void reject(Order order, String reason) {
+        boolean buyNow = order.getKind() == OrderKind.BUY_NOW && order.getStatus() == OrderStatus.PAID;
+        boolean custom = order.getKind() == OrderKind.CUSTOM_ORDER && order.getStatus() == OrderStatus.DEPOSITED;
+        if (!buyNow && !custom) {
+            throw new AppException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        if (!StringUtils.hasText(reason)) {
+            throw new AppException(ErrorCode.REJECT_REASON_REQUIRED);
+        }
+        // a Shop that already took part of the deposit settles through a dispute, not a full refund
+        if (custom && !paymentClient.ledgerState(order.getId()).untouched()) {
+            throw new AppException(ErrorCode.REJECT_AFTER_DISBURSEMENT);
+        }
+        moveTo(order, OrderStatus.REJECTED, reason, List.of());
+        orderEvents.announce(RabbitConfig.ORDER_STATUS_CHANGED_ROUTING_KEY, order);
+        if (buyNow) {
+            returnStock(order);
+        }
+    }
+
+    /**
+     * Last, so a failure above leaves the stock alone; vendor-service does it once per order. An order without a
+     * committed reservation (seed data, an order older than reservations) has no stock to give back: the rejection
+     * still goes through. Any other failure rolls the rejection back, so the Shop can try again.
+     */
+    private void returnStock(Order order) {
+        try {
+            vendorClient.returnStock(new ReturnStockRequest(
+                    order.getId(),
+                    order.getPaymentGroupId(),
+                    orderItemRepository.findByOrderId(order.getId()).stream()
+                            .map(item -> new ReserveStockRequest.Item(item.getProductId(), item.getQuantity()))
+                            .toList()));
+        } catch (FeignException.NotFound e) {
+            log.warn(
+                    "Order {} was rejected without returning stock: its checkout has no committed reservation",
+                    order.getId());
+        }
     }
 
     /** The one status the vendor may move the order to, null when none (7.1 Order.status). */

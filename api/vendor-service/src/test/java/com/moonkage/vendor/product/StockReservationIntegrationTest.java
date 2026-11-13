@@ -19,6 +19,7 @@ import com.moonkage.storage.BucketAccess;
 import com.moonkage.storage.ObjectStorage;
 import com.moonkage.vendor.client.IdentityClient;
 import com.moonkage.vendor.client.PaymentClient;
+import com.moonkage.vendor.common.TimeConstant;
 import com.moonkage.vendor.common.config.RabbitConfig;
 import com.moonkage.vendor.common.exception.AppException;
 import com.moonkage.vendor.common.exception.ErrorCode;
@@ -189,6 +190,43 @@ class StockReservationIntegrationTest {
     }
 
     @Test
+    void anExpiredProductMakesTheWholeHoldFailWhileThePrintedExpiryDateRemainsSellable() throws Exception {
+        LocalDate today = businessDate();
+        String expiringToday = createProduct(10, today);
+        String expired = createProduct(10);
+        jdbcTemplate.update("UPDATE products SET expiry_date = ? WHERE id = ?", today.minusDays(1), expired);
+        String refusedCheckout = newId();
+
+        reserve(refusedCheckout, Map.of(expiringToday, 1, expired, 1))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_032"))
+                .andExpect(jsonPath("$.errors[0].field").value(expired));
+        assertEquals(10, stockOf(expiringToday));
+        assertEquals(10, stockOf(expired));
+        assertEquals(0, count(refusedCheckout));
+
+        reserve(newId(), Map.of(expiringToday, 1)).andExpect(status().isOk());
+        assertEquals(9, stockOf(expiringToday));
+    }
+
+    @Test
+    void aLatePaymentCannotRetakeAnExpiredProductAfterItsHoldWasReleased() throws Exception {
+        LocalDate today = businessDate();
+        String product = createProduct(2);
+        String checkoutId = newId();
+        reserve(checkoutId, Map.of(product, 1)).andExpect(status().isOk());
+        release(checkoutId).andExpect(status().isNoContent());
+        jdbcTemplate.update("UPDATE products SET expiry_date = ? WHERE id = ?", today.minusDays(1), product);
+
+        commit(checkoutId)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_032"))
+                .andExpect(jsonPath("$.errors[0].field").value(product));
+        assertEquals(2, stockOf(product));
+        assertEquals("RELEASED", statusOf(checkoutId));
+    }
+
+    @Test
     void aHoldNeedsAFutureExpiryAndEachProductOnce() throws Exception {
         String product = createProduct(10);
         ObjectNode past = reserveBody(newId(), Map.of(product, 1))
@@ -333,13 +371,17 @@ class StockReservationIntegrationTest {
     }
 
     private String createProduct(int stock) throws Exception {
+        return createProduct(stock, businessDate().plusYears(1));
+    }
+
+    private String createProduct(int stock, LocalDate expiryDate) throws Exception {
         ObjectNode body = objectMapper
                 .createObjectNode()
                 .put("name", "Hộp 4 bánh nướng")
                 .put("description", "Bánh nướng nhân đậu xanh")
                 .put("listPrice", LIST_PRICE)
                 .put("stock", stock)
-                .put("expiryDate", LocalDate.of(2026, 12, 31).toString())
+                .put("expiryDate", expiryDate.toString())
                 .put("deliveryLabel", "LOCAL");
         body.set("imageKeys", objectMapper.valueToTree(List.of(TEMP_PREFIX + "a.jpg")));
         body.set("crustCodes", objectMapper.valueToTree(List.of("banh-nuong")));
@@ -356,6 +398,57 @@ class StockReservationIntegrationTest {
                 .getResponse()
                 .getContentAsString();
         return objectMapper.readTree(response).get("data").get("id").asText();
+    }
+
+    // ─── a Shop rejects a paid order (Q-01) ───
+
+    @Test
+    void aRejectedOrderPutsItsPiecesBackOnceAndLeavesTheOtherShopAlone() throws Exception {
+        String ours = createProduct(10);
+        String theirs = createProduct(10);
+        String checkoutId = newId();
+        reserve(checkoutId, Map.of(ours, 3, theirs, 2));
+        commit(checkoutId).andExpect(status().isOk());
+        String orderId = newId();
+
+        returnStock(orderId, checkoutId, Map.of(ours, 3)).andExpect(status().isNoContent());
+        returnStock(orderId, checkoutId, Map.of(ours, 3)).andExpect(status().isNoContent());
+
+        assertEquals(10, stockOf(ours));
+        assertEquals(8, stockOf(theirs));
+        assertEquals("COMMITTED", statusOf(checkoutId));
+        assertEquals(10, lastProductData(ours).get("stock").asInt());
+    }
+
+    @Test
+    void onlyWhatTheCheckoutSoldComesBack() throws Exception {
+        String product = createProduct(10);
+        String other = createProduct(10);
+        String checkoutId = newId();
+        reserve(checkoutId, Map.of(product, 3));
+
+        returnStock(newId(), checkoutId, Map.of(product, 3))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("VENDOR_031"));
+        commit(checkoutId);
+        returnStock(newId(), checkoutId, Map.of(product, 4))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_033"));
+        returnStock(newId(), checkoutId, Map.of(other, 1))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VENDOR_033"));
+        assertEquals(7, stockOf(product));
+        assertEquals(10, stockOf(other));
+    }
+
+    private ResultActions returnStock(String orderId, String checkoutId, Map<String, Integer> items) throws Exception {
+        ObjectNode body =
+                objectMapper.createObjectNode().put("orderId", orderId).put("checkoutId", checkoutId);
+        items.forEach((productId, qty) -> body.withArray("items")
+                .add(objectMapper.createObjectNode().put("productId", productId).put("qty", qty)));
+        return mvc.perform(post(RESERVATIONS + "/returns")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body.toString()));
     }
 
     private ObjectNode reserveBody(String checkoutId, Map<String, Integer> items) {
@@ -409,5 +502,9 @@ class StockReservationIntegrationTest {
 
     private static String newId() {
         return UUID.randomUUID().toString();
+    }
+
+    private static LocalDate businessDate() {
+        return LocalDate.now(TimeConstant.VIETNAM_ZONE);
     }
 }

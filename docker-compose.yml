@@ -252,6 +252,8 @@ services:
   identity-service:
     <<: *app
     container_name: moonkage-identity-service
+    # dev only: call the service directly, bypassing the gateway (the clients still go through :8080)
+    ports: ["${IDENTITY_SERVICE_PORT:-8081}:8081"]
     build: { context: ./api, dockerfile: identity-service/Dockerfile }
     environment:
       - TZ=Asia/Ho_Chi_Minh
@@ -300,6 +302,8 @@ services:
   catalog-service:
     <<: *app
     container_name: moonkage-catalog-service
+    # dev only: call the service directly, bypassing the gateway (the clients still go through :8080)
+    ports: ["${CATALOG_SERVICE_PORT:-8082}:8082"]
     build: { context: ./api, dockerfile: catalog-service/Dockerfile }
     environment:
       - TZ=Asia/Ho_Chi_Minh
@@ -335,6 +339,8 @@ services:
   quotation-service:
     <<: *app
     container_name: moonkage-quotation-service
+    # dev only: call the service directly, bypassing the gateway (the clients still go through :8080)
+    ports: ["${QUOTATION_SERVICE_PORT:-8083}:8083"]
     build: { context: ./api, dockerfile: quotation-service/Dockerfile }
     environment:
       - TZ=Asia/Ho_Chi_Minh
@@ -369,6 +375,8 @@ services:
     <<: *app
     container_name: moonkage-order-service
     build: { context: ./api, dockerfile: order-service/Dockerfile }
+    # dev only: call the service directly, bypassing the gateway (the clients still go through :8080)
+    ports: ["${ORDER_SERVICE_PORT:-8084}:8084"]
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - EUREKA_URL=http://discovery-server:8761/eureka/
@@ -411,6 +419,8 @@ services:
   vendor-service:
     <<: *app
     container_name: moonkage-vendor-service
+    # dev only: call the service directly, bypassing the gateway (the clients still go through :8080)
+    ports: ["${VENDOR_SERVICE_PORT:-8086}:8086"]
     build: { context: ./api, dockerfile: vendor-service/Dockerfile }
     environment:
       - TZ=Asia/Ho_Chi_Minh
@@ -459,6 +469,8 @@ services:
   payment-service:
     <<: *app
     container_name: moonkage-payment-service
+    # dev only: call the service directly, bypassing the gateway (the clients still go through :8080)
+    ports: ["${PAYMENT_SERVICE_PORT:-8087}:8087"]
     build: { context: ./api, dockerfile: payment-service/Dockerfile }
     environment:
       - TZ=Asia/Ho_Chi_Minh
@@ -497,6 +509,8 @@ services:
   orchestrator-service:
     <<: *app
     container_name: moonkage-orchestrator-service
+    # dev only: call the service directly, bypassing the gateway (the clients still go through :8080)
+    ports: ["${ORCHESTRATOR_SERVICE_PORT:-8088}:8088"]
     build: { context: ./api, dockerfile: orchestrator-service/Dockerfile }
     environment:
       - TZ=Asia/Ho_Chi_Minh
