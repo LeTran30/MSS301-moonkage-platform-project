@@ -15,6 +15,7 @@ import com.moonkage.payment.service.ReconciliationService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +38,7 @@ public class LedgerController {
      * FR-43: the vendor owner's reconciliation ({@code vendorId} of their vendor). Admin: everything, or
      * {@code payableOnly=true} for the orders waiting for payout (AC-48.1).
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ApiResponse<PageResponse<LedgerResponse>> list(
             @CurrentUser CurrentUserInfo caller,
@@ -47,24 +49,28 @@ public class LedgerController {
         return ApiResponse.ok(reconciliationService.list(caller, vendorId, payableOnly, page, size));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}")
     public ApiResponse<LedgerResponse> get(@CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(reconciliationService.get(caller, orderId));
     }
 
     /** NFR-07: the order's money journal, read only. */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}/entries")
     public ApiResponse<List<LedgerEntryResponse>> entries(
             @CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(reconciliationService.entries(caller, orderId));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}/refunds")
     public ApiResponse<List<RefundResponse>> refunds(
             @CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(reconciliationService.refunds(caller, orderId));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}/disbursements")
     public ApiResponse<List<DisbursementResponse>> disbursements(
             @CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
@@ -72,6 +78,7 @@ public class LedgerController {
     }
 
     /** FR-41: the vendor owner asks for part of the deposit. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{orderId}/disbursements")
     public ApiResponse<DisbursementResponse> requestDisbursement(
             @CurrentUser CurrentUserInfo caller,
@@ -81,6 +88,7 @@ public class LedgerController {
     }
 
     /** FR-47: an admin approves or rejects. */
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{orderId}/disbursements/{requestId}")
     public ApiResponse<DisbursementResponse> reviewDisbursement(
             @CurrentUser CurrentUserInfo caller,
@@ -91,6 +99,7 @@ public class LedgerController {
     }
 
     /** FR-48: an admin pays the vendor what is held, once per order. */
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{orderId}/payout")
     public ApiResponse<PayoutResponse> payout(@CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(reconciliationService.payout(caller, orderId));

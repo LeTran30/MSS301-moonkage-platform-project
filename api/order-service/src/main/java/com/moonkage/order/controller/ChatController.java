@@ -16,6 +16,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,6 +40,7 @@ public class ChatController {
     private final ChatService chatService;
 
     /** "Nhắn shop": opens the caller's conversation with the Shop, the same one every time. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ApiResponse<ConversationResponse> start(
             @CurrentUser CurrentUserInfo caller, @Valid @RequestBody StartConversationRequest request) {
@@ -46,6 +48,7 @@ public class ChatController {
     }
 
     /** {@code as=BUYER}: the Shops the caller wrote to; {@code as=VENDOR}: the buyers of the caller's Shop. */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ApiResponse<List<ConversationResponse>> inbox(
             @CurrentUser CurrentUserInfo caller, @RequestParam(defaultValue = "BUYER") ChatParty as) {
@@ -53,6 +56,7 @@ public class ChatController {
     }
 
     /** Oldest first; pass {@code before} = the seq of the first message shown to load older ones. */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{conversationId}")
     public ApiResponse<ChatThreadResponse> thread(
             @CurrentUser CurrentUserInfo caller,
@@ -62,6 +66,7 @@ public class ChatController {
         return ApiResponse.ok(chatService.thread(caller, conversationId, before, size));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{conversationId}/messages")
     public ResponseEntity<ApiResponse<ChatMessageResponse>> send(
             @CurrentUser CurrentUserInfo caller,
@@ -71,6 +76,7 @@ public class ChatController {
                 .body(ApiResponse.created(chatService.send(caller, conversationId, request)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{conversationId}/read")
     public ResponseEntity<Void> markRead(
             @CurrentUser CurrentUserInfo caller,
@@ -81,6 +87,7 @@ public class ChatController {
     }
 
     /** Call at most every few seconds while the person types; the other side shows "đang soạn tin…". */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{conversationId}/typing")
     public ResponseEntity<Void> typing(@CurrentUser CurrentUserInfo caller, @PathVariable String conversationId) {
         chatService.typing(caller, conversationId);

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -23,6 +24,12 @@ public class GlobalExceptionHandler extends CommonExceptionHandler {
 
     public GlobalExceptionHandler(MessageSource messageSource) {
         super(messageSource);
+    }
+
+    /** A {@code @PreAuthorize} on a controller said no: same answer as the services' own role checks. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        return handleAppException(new AppException(ErrorCode.ACCESS_DENIED), request);
     }
 
     @ExceptionHandler(AppException.class)

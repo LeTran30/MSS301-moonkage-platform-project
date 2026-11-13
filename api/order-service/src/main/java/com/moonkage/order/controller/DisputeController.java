@@ -11,6 +11,7 @@ import com.moonkage.order.service.DisputeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,12 +29,14 @@ public class DisputeController {
 
     private final DisputeService disputeService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ApiResponse<DisputeResponse> get(@CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(disputeService.get(caller, orderId));
     }
 
     /** FR-12: the buyer, while the complaint window is open. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<DisputeResponse> open(
@@ -44,6 +47,7 @@ public class DisputeController {
     }
 
     /** AC-49.1: evidence of the buyer or the vendor owner. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/evidences")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<DisputeResponse> addEvidence(
@@ -54,6 +58,7 @@ public class DisputeController {
     }
 
     /** FR-49: the admin's decision. */
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping
     public ApiResponse<DisputeResponse> resolve(
             @CurrentUser CurrentUserInfo caller,

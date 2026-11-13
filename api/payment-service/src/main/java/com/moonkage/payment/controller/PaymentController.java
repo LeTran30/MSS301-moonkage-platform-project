@@ -11,6 +11,7 @@ import com.moonkage.payment.service.PaymentService;
 import java.time.Instant;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +31,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     /** AC-51.3, admin: e.g. {@code purpose=REGISTRATION_FEE} for the registration fees collected. */
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ApiResponse<PageResponse<PaymentResponse>> list(
             @CurrentUser CurrentUserInfo caller,
@@ -42,6 +44,7 @@ public class PaymentController {
     }
 
     /** FR-09: the state of the caller's payment; the result page polls it until the IPN arrived. */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{paymentId}")
     public ApiResponse<PaymentResponse> get(@CurrentUser CurrentUserInfo caller, @PathVariable String paymentId) {
         return ApiResponse.ok(paymentService.get(paymentId, caller));
@@ -51,6 +54,7 @@ public class PaymentController {
      * BR-25: VNPay server-to-server result, the only thing that marks a payment paid. Always HTTP 200 with the
      * RspCode VNPay expects, never the ApiResponse envelope.
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/vnpay/ipn")
     public VnpayIpnResponse ipn(@RequestParam Map<String, String> callback) {
         return paymentService.handleIpn(callback);
@@ -60,6 +64,7 @@ public class PaymentController {
      * The web result page forwards the query VNPay redirected the payer with; answers which payment it was, after
      * checking the signature. Changes nothing (BR-25).
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/vnpay/return")
     public ApiResponse<PaymentResponse> vnpayReturn(@RequestParam Map<String, String> callback) {
         return ApiResponse.ok(paymentService.readReturn(callback));

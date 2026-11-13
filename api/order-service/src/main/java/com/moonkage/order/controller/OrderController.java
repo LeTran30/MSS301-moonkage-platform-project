@@ -20,6 +20,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,6 +45,7 @@ public class OrderController {
      * caller's Shop, {@code missingInvoice=true} for those still without an invoice (FR-32, AC-44.3). Admin: all;
      * {@code disputeStatus=OPEN} for the orders waiting for a dispute decision (FR-49).
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ApiResponse<PageResponse<OrderResponse>> list(
             @CurrentUser CurrentUserInfo caller,
@@ -72,6 +74,7 @@ public class OrderController {
      * last order.stats-default-days days). {@code vendorId}: one Shop, for its owner or an admin; without it the
      * whole marketplace, for an admin only.
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/stats")
     public ApiResponse<OrderStatsResponse> stats(
             @CurrentUser CurrentUserInfo caller,
@@ -81,6 +84,7 @@ public class OrderController {
         return ApiResponse.ok(orderStatsService.stats(caller, from, to, vendorId));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}")
     public ApiResponse<OrderResponse> get(@CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(orderService.get(caller, orderId));
@@ -90,6 +94,7 @@ public class OrderController {
      * Vendor: {@code {status, trackingCode?, note?}}, one step forward (FR-32, FR-40, FR-42). Buyer:
      * {@code {receivedConfirmed: true}} (FR-11).
      */
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/{orderId}")
     public ApiResponse<OrderResponse> update(
             @CurrentUser CurrentUserInfo caller,
@@ -99,6 +104,7 @@ public class OrderController {
     }
 
     /** FR-21: the order's history, read only. */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}/progress-updates")
     public ApiResponse<List<ProgressUpdateResponse>> progressUpdates(
             @CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
@@ -106,6 +112,7 @@ public class OrderController {
     }
 
     /** FR-22: pay the rest of a delivered custom order. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{orderId}/payments")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PaymentLinkResponse> payRemainder(

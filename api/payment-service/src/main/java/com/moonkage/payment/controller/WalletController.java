@@ -17,6 +17,7 @@ import com.moonkage.payment.service.WithdrawalService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,7 @@ public class WalletController {
     private final WithdrawalService withdrawalService;
     private final VietQrBankDirectory bankDirectory;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ApiResponse<WalletResponse> mine(
             @CurrentUser CurrentUserInfo caller,
@@ -45,17 +47,20 @@ public class WalletController {
     }
 
     /** The banks a withdrawal can go to (VietQR list, kept a day). */
+    @PreAuthorize("permitAll()")
     @GetMapping("/banks")
     public ApiResponse<List<BankResponse>> banks() {
         return ApiResponse.ok(bankDirectory.banks());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me/withdrawals")
     public ApiResponse<List<WithdrawalResponse>> myWithdrawals(@CurrentUser CurrentUserInfo caller) {
         return ApiResponse.ok(withdrawalService.mine(caller.accountId()));
     }
 
     /** The money leaves the wallet at once; 409 WALLET_001 when the balance is short. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/me/withdrawals")
     public ApiResponse<WithdrawalResponse> requestWithdrawal(
             @CurrentUser CurrentUserInfo caller, @Valid @RequestBody CreateWithdrawalRequest request) {
@@ -63,6 +68,7 @@ public class WalletController {
     }
 
     /** Admin: the withdrawals by status, oldest first (the queue to transfer). */
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/withdrawals")
     public ApiResponse<PageResponse<WithdrawalResponse>> withdrawals(
             @CurrentUser CurrentUserInfo caller,
@@ -73,6 +79,7 @@ public class WalletController {
     }
 
     /** Admin: COMPLETED once transferred, or REJECTED with a reason. */
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/withdrawals/{withdrawalId}")
     public ApiResponse<WithdrawalResponse> reviewWithdrawal(
             @CurrentUser CurrentUserInfo caller,
@@ -82,6 +89,7 @@ public class WalletController {
     }
 
     /** Admin: what buyers hold in their wallets and the withdrawals still to transfer. */
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/summary")
     public ApiResponse<WalletSummaryResponse> summary(@CurrentUser CurrentUserInfo caller) {
         return ApiResponse.ok(withdrawalService.summary(caller));
