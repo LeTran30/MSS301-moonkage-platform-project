@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { routes } from '@/shared/config';
-import { Icon } from '@/shared/ui';
+import { ButtonLink, Icon } from '@/shared/ui';
 import { sessionApi, type User } from '@/entities/user';
 import styles from './Header.module.css';
 
@@ -56,6 +56,35 @@ export function HeaderUserMenu({ user, restoring = false }: HeaderUserMenuProps)
     firstItem?.focus();
   }, [open]);
 
+  if (restoring) {
+    return (
+      <div className={styles.userTrigger} aria-busy="true" aria-label="Đang khôi phục phiên đăng nhập">
+        <div className={styles.userAvatar}>
+          <Icon name="user" size={18} />
+        </div>
+        <span className={styles.userName}>Đang tải…</span>
+      </div>
+    );
+  }
+
+  if (user.role === 'GUEST') {
+    return (
+      <div className={styles.guestActions} aria-label="Tài khoản">
+        <ButtonLink to={routes.auth.login} variant="outline" size="sm">
+          Đăng nhập
+        </ButtonLink>
+        <ButtonLink
+          to={routes.auth.register}
+          variant="primary"
+          size="sm"
+          className={styles.guestRegister}
+        >
+          Đăng ký
+        </ButtonLink>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.userMenuWrap}>
       <button
@@ -69,9 +98,7 @@ export function HeaderUserMenu({ user, restoring = false }: HeaderUserMenuProps)
         <div className={styles.userAvatar}>
           <Icon name="user" size={18} />
         </div>
-        <span className={styles.userName} aria-busy={restoring}>
-          {restoring ? 'Đang tải…' : user.name}
-        </span>
+        <span className={styles.userName}>{user.name}</span>
         <Icon name="chevronDown" size={14} />
       </button>
 

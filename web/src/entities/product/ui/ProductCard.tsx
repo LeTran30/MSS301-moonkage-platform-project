@@ -57,6 +57,13 @@ export const ProductCard = memo(function ProductCard({
             {product.name}
           </Link>
         </h3>
+        {product.expiryDate && (
+          <div className={styles.expiryInfo}>
+            <Icon name="calendar" size={14} />
+            <span>HSD:</span>
+            <strong>{product.expiryDate}</strong>
+          </div>
+        )}
         <div className={styles.priceRow}>
           <span className={styles.price}>{formatCurrency(product.price)}</span>
           {/*

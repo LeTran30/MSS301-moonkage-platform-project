@@ -91,6 +91,21 @@
 .name a:hover {
   color: var(--color-primary);
 }
+.expiryInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.expiryInfo svg {
+  flex: none;
+  color: var(--color-gold-text);
+}
+.expiryInfo strong {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
 .priceRow {
   display: flex;
   align-items: baseline;

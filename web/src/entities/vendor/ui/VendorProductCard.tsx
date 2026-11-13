@@ -1,5 +1,5 @@
 import { formatCurrency } from '@/shared/utils';
-import { Badge, Button, Card, ProductImage } from '@/shared/ui';
+import { Badge, Button, Card, Icon, ProductImage } from '@/shared/ui';
 import type { VendorProductDto } from '../api/vendorProductApi';
 import styles from './VendorProductCard.module.css';
 
@@ -19,6 +19,13 @@ const STATUS_BADGE = {
   HIDDEN: { tone: 'neutral', label: 'Đang ẩn' },
   REMOVED: { tone: 'red', label: 'Bị sàn gỡ' },
 } as const;
+
+function displayExpiry(expiryDate: string | null | undefined): string {
+  if (!expiryDate) return 'Chưa cập nhật';
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(expiryDate);
+  if (!match) return expiryDate;
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
 
 /**
  * Thẻ sản phẩm trong danh mục của gian hàng (B4.0).
@@ -75,6 +82,10 @@ export function VendorProductCard({
         </div>
 
         <div className={styles.stockInfo}>
+          <span className={styles.expiryInfo}>
+            <Icon name="calendar" size={14} />
+            HSD: <strong>{displayExpiry(product.expiryDate)}</strong>
+          </span>
           <span>
             Tồn kho: <strong>{product.stock ?? 0} hộp</strong>
           </span>

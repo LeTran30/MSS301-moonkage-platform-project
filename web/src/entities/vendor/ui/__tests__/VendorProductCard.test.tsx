@@ -9,6 +9,7 @@ const PRODUCT: VendorProduct = {
   name: 'Bánh nướng hạt sen trứng muối',
   listPrice: 175000,
   stock: 35,
+  expiryDate: '2026-11-15',
   crustCodes: ['banh-nuong'],
   fillingCodes: ['hat-sen'],
   status: 'ON_SALE',
@@ -38,6 +39,7 @@ describe('Entities - VendorProductCard (B4.0, FR-34, FR-46)', () => {
     expect(screen.getByText('Đang mở bán')).toBeTruthy();
     expect(screen.getByText('Bánh nướng')).toBeTruthy();
     expect(screen.getByText('35 hộp')).toBeTruthy();
+    expect(screen.getByText('15/11/2026')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ẩn sản phẩm' }));
     fireEvent.click(screen.getByRole('button', { name: 'Chỉnh sửa' }));
