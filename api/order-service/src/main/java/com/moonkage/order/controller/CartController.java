@@ -10,6 +10,7 @@ import com.moonkage.order.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -29,18 +30,21 @@ public class CartController {
     private final CartService cartService;
 
     /** Split by Shop with each Shop's delivery fee to {@code provinceCode} (AC-09.1, BR-30). */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ApiResponse<CartResponse> get(@CurrentUser CurrentUserInfo caller, @RequestParam String provinceCode) {
         return ApiResponse.ok(cartService.get(caller, provinceCode));
     }
 
     /** 409 CART_004 / CART_005 above the stock or at the quote threshold: send a request instead (AC-08.2). */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/items")
     public ApiResponse<CartResponse.Line> addItem(
             @CurrentUser CurrentUserInfo caller, @Valid @RequestBody AddCartItemRequest request) {
         return ApiResponse.ok(cartService.addItem(caller, request));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/items/{itemId}")
     public ApiResponse<CartResponse.Line> updateItem(
             @CurrentUser CurrentUserInfo caller,
@@ -49,6 +53,7 @@ public class CartController {
         return ApiResponse.ok(cartService.updateItem(caller, itemId, request));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/items/{itemId}")
     public ResponseEntity<Void> removeItem(@CurrentUser CurrentUserInfo caller, @PathVariable String itemId) {
         cartService.removeItem(caller, itemId);

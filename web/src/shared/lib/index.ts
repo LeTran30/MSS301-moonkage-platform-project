@@ -55,3 +55,4 @@ export { validators } from './validators';
 
 export { openPaymentPage } from './payment';
 export { focusFirstInvalidField } from './focusFirstInvalidField';
+export { vietnamBusinessDate } from './vietnamBusinessDate';

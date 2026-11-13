@@ -36,6 +36,7 @@ export function AccountLayout() {
       icon: 'dashboard',
     },
     { path: routes.account.orders, label: 'Đơn hàng của tôi', icon: 'package' },
+    { path: routes.account.wallet, label: 'Ví của tôi', icon: 'wallet' },
     {
       path: routes.account.messages,
       label: 'Tin nhắn với shop',

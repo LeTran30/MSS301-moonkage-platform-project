@@ -52,6 +52,14 @@ Ledger giữ NFR-09 trong một transaction cho mọi lần ghi sổ: giải ng�
 
 **Chuyển tiền.** Từ chối khi đơn còn lệnh hoàn `PENDING`/`MANUAL_REQUIRED` hoặc yêu cầu giải ngân đang chờ; sau đó gọi `payout-lock` (409 → `LEDGER_007`), rồi chuyển toàn bộ số đang giữ.
 
+## Ví người mua (Q-01)
+
+- `wallets` (một dòng mỗi tài khoản, `balance >= 0`) và `wallet_entries` (chỉ thêm, trigger chặn sửa/xóa; lúc commit số dư phải bằng tổng các dòng). `(reason, reference_id)` duy nhất nên mỗi lần hoàn chỉ ghi một lần.
+- Lý do: `ORDER_REJECTED` (shop từ chối đơn, tham chiếu orderId, tiền lấy từ `held` của sổ đơn bằng dòng `REFUND`), `PAYMENT` (trả checkout bằng ví), `REFUND` (hoàn một khoản đã trả bằng ví: tranh chấp, trả trễ — không gọi VNPay), `WITHDRAWAL` / `WITHDRAWAL_RETURNED` (rút về ngân hàng, trả lại khi bị từ chối).
+- `withdrawals`: `PENDING` → `COMPLETED` (quản trị viên đã chuyển khoản tay) hoặc `REJECTED` (kèm lý do, tiền về lại ví). Tiền rời ví ngay khi gửi yêu cầu. Ngân hàng phải nằm trong danh sách VietQR (`GET /api/wallets/banks`, giữ 1 ngày).
+- API: `GET /api/wallets/me`, `GET|POST /api/wallets/me/withdrawals`, `GET /api/wallets/banks`; quản trị: `GET /api/wallets/withdrawals?status=`, `PATCH /api/wallets/withdrawals/{id}`, `GET /api/wallets/summary`. Nội bộ: `GET /internal/ledgers/{orderId}/state` (order-service hỏi trước khi cho từ chối đơn đặt hàng).
+- Thông báo người mua qua outbox: `orchestrator.inapp.wallet` và `orchestrator.email.wallet` (mẫu `WALLET_NOTICE`); email lấy từ identity `GET /internal/accounts/{id}/contact`, lỗi tra cứu không chặn tiền.
+
 ## Sự kiện và API nội bộ
 
 **Phát**

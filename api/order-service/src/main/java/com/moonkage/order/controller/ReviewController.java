@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,11 +30,13 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ApiResponse<List<ReviewResponse>> list(@CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(reviewService.list(caller, orderId));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ReviewResponse> create(

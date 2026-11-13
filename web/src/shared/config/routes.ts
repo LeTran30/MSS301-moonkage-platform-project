@@ -43,6 +43,7 @@ export const routes = {
     addressNew: '/tai-khoan/dia-chi/moi',
     verify: '/tai-khoan/xac-minh', // M6.4
     profile: '/tai-khoan/thong-tin', // M6.5
+    wallet: '/tai-khoan/vi', // Ví người mua (Q-01)
     messages: '/tai-khoan/tin-nhan', // Nhắn tin với shop
     messagesWithShop: (vendorId: string) =>
       `/tai-khoan/tin-nhan?shop=${encodeURIComponent(vendorId)}`,
@@ -62,6 +63,7 @@ export const routes = {
     reconciliation: '/kenh-ban/tien/doi-soat', // B5.1
     disbursements: '/kenh-ban/tien/giai-ngan', // B5.2
     messages: '/kenh-ban/tin-nhan', // Hộp thư khách hỏi shop
+    wallet: '/kenh-ban/vi', // Ví shop: tiền đơn hoàn tất, giải ngân cọc, rút về ngân hàng
     settings: '/kenh-ban/cai-dat', // B6.0
     legal: '/kenh-ban/cai-dat/phap-ly', // B6.1
     zones: '/kenh-ban/cai-dat/vung-giao', // B6.2
@@ -76,6 +78,7 @@ export const routes = {
     money: '/quan-tri/tien', // Q4.0
     disbursements: '/quan-tri/tien/giai-ngan', // Q4.1
     payouts: '/quan-tri/tien/chuyen-tien', // Q4.2
+    withdrawals: '/quan-tri/tien/rut-tien', // Rút tiền từ ví người mua (Q-01)
     reconciliation: '/quan-tri/tien/doi-soat', // Q4.3
     disputes: '/quan-tri/khieu-nai', // Q5.0
     config: '/quan-tri/cau-hinh', // Q6.0

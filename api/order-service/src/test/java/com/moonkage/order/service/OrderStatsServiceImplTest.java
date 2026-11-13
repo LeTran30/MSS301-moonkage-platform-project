@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.moonkage.order.client.dto.VendorView;
+import com.moonkage.order.client.facade.VendorDirectory;
 import com.moonkage.order.config.OrderProperties;
 import com.moonkage.order.dto.response.OrderStatsResponse;
 import com.moonkage.order.exception.AppException;

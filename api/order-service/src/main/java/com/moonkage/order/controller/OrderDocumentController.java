@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,12 +34,14 @@ public class OrderDocumentController {
     private final OrderDocumentService documentService;
 
     /** Step 1 of a mockup, progress photo, invoice or evidence upload; then send tempKey where it is attached. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/uploads")
     public ApiResponse<PresignedUploadLinkResponse> createUploadLink(
             @CurrentUser CurrentUserInfo caller, @Valid @RequestBody FileUploadRequest request) {
         return ApiResponse.ok(documentService.createUploadLink(request));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}/mockups")
     public ApiResponse<List<MockupResponse>> mockups(
             @CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
@@ -46,6 +49,7 @@ public class OrderDocumentController {
     }
 
     /** FR-39: the vendor sends a new version. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/{orderId}/mockups")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<MockupResponse> uploadMockup(
@@ -56,6 +60,7 @@ public class OrderDocumentController {
     }
 
     /** FR-20: the buyer approves or asks for changes. */
+    @PreAuthorize("isAuthenticated()")
     @PatchMapping("/{orderId}/mockups/{versionNo}")
     public ApiResponse<MockupResponse> reviewMockup(
             @CurrentUser CurrentUserInfo caller,
@@ -66,12 +71,14 @@ public class OrderDocumentController {
     }
 
     /** FR-25: a link to the vendor's invoice. */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{orderId}/invoice")
     public ApiResponse<FileLinkResponse> invoice(@CurrentUser CurrentUserInfo caller, @PathVariable String orderId) {
         return ApiResponse.ok(documentService.invoice(caller, orderId));
     }
 
     /** FR-44: the vendor attaches the invoice it issued. */
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{orderId}/invoice")
     public ApiResponse<FileLinkResponse> attachInvoice(
             @CurrentUser CurrentUserInfo caller,

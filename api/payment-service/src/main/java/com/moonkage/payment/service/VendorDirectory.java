@@ -13,6 +13,11 @@ public class VendorDirectory {
 
     private final VendorClient vendorClient;
 
+    /** The account that owns a vendor: its wallet receives the vendor's money. A failure is thrown, never guessed. */
+    public String ownerAccountId(String vendorId) {
+        return vendorClient.get(vendorId).ownerAccountId();
+    }
+
     public Optional<String> ownedVendorId(String accountId) {
         try {
             return Optional.ofNullable(vendorClient.findByOwner(accountId)).map(v -> v.id());

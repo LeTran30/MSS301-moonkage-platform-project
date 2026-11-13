@@ -12,13 +12,19 @@ import jakarta.validation.constraints.Size;
  *
  * @param provinceCode Q-12, decides the delivery fee of each Shop (BR-30)
  * @param invoiceInfo null = personal invoice (AC-24.5); copied to every order of the checkout (BR-29)
+ * @param paymentMethod WALLET pays from the buyer's wallet at once (Q-01); null or VNPAY sends the buyer to VNPay
  */
 public record CreateCheckoutRequest(
         @NotBlank @Size(max = 100) String recipientName,
         @NotBlank @Pattern(regexp = "0\\d{9}") String recipientPhone,
         @NotBlank @Pattern(regexp = "\\d{2}") String provinceCode,
         @NotBlank @Size(max = 255) String addressDetail,
-        @Valid InvoiceInfoRequest invoiceInfo) {
+        @Valid InvoiceInfoRequest invoiceInfo,
+        @Pattern(regexp = "VNPAY|WALLET") String paymentMethod) {
+
+    public boolean paysFromWallet() {
+        return "WALLET".equals(paymentMethod);
+    }
 
     /** FR-24: only the tax code's format is checked (AC-24.3). */
     public record InvoiceInfoRequest(

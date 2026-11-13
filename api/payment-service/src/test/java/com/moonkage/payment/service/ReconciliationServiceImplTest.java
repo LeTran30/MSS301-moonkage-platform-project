@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -23,6 +24,7 @@ import com.moonkage.payment.entity.LedgerEntry;
 import com.moonkage.payment.entity.OrderSnapshot;
 import com.moonkage.payment.enums.DisbursementPurpose;
 import com.moonkage.payment.enums.DisbursementStatus;
+import com.moonkage.payment.enums.WalletEntryReason;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
 import com.moonkage.payment.repository.DisbursementRequestRepository;
@@ -66,6 +68,8 @@ class ReconciliationServiceImplTest {
     private final VendorDirectory vendorDirectory = mock(VendorDirectory.class);
     private final OrderClient orderClient = mock(OrderClient.class);
     private final RefundService refundService = mock(RefundService.class);
+    private final WalletService walletService = mock(WalletService.class);
+    private final WalletNotifier walletNotifier = mock(WalletNotifier.class);
 
     private ReconciliationServiceImpl service;
     private Ledger ledger;
@@ -87,7 +91,9 @@ class ReconciliationServiceImplTest {
                 outboxService,
                 vendorDirectory,
                 orderClient,
-                tx);
+                tx,
+                walletService,
+                walletNotifier);
 
         ledger = new Ledger();
         ledger.setOrderId(ORDER_ID);
@@ -98,6 +104,7 @@ class ReconciliationServiceImplTest {
         when(ledgerRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
         when(vendorDirectory.ownedVendorId(OWNER.accountId())).thenReturn(Optional.of(VENDOR_ID));
         when(vendorDirectory.ownedVendorId(STRANGER.accountId())).thenReturn(Optional.empty());
+        when(vendorDirectory.ownerAccountId(VENDOR_ID)).thenReturn(OWNER.accountId());
         when(disbursementRepository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
         when(payoutRepository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
     }
@@ -205,6 +212,7 @@ class ReconciliationServiceImplTest {
         assertEquals(2_500_000L, ledger.getHeld());
         assertEquals(500_000L, ledger.getDisbursed());
         verify(outboxService).enqueue(anyString(), eq(RabbitConfig.DISBURSEMENT_REVIEWED_ROUTING_KEY), any());
+        verify(walletService).credit(OWNER.accountId(), WalletEntryReason.DISBURSEMENT, 500_000L, request.getId());
     }
 
     /** AC-48.3: the admin may approve less than what was asked; only that much leaves the escrow. */
@@ -322,6 +330,22 @@ class ReconciliationServiceImplTest {
         assertEquals(0L, ledger.getHeld());
         assertEquals(2_000_000L, ledger.getPaidOut());
         verify(outboxService).enqueue(anyString(), eq(RabbitConfig.PAYOUT_COMPLETED_ROUTING_KEY), any());
+        // the money lands in the Shop owner's wallet, whole (no commission)
+        verify(walletService).credit(OWNER.accountId(), WalletEntryReason.SALE, 2_000_000L, ORDER_ID);
+        verify(walletNotifier).notify(eq(OWNER.accountId()), anyString(), anyString(), eq(2_000_000L));
+    }
+
+    /** FR-48 without an admin: completed orders are paid out by the sweep; one that is not ready waits. */
+    @Test
+    void theSweepPaysOutCompletedOrdersAndSkipsTheOnesNotReady() {
+        ledger.setHeld(2_000_000L);
+        when(ledgerRepository.findCompletedNotPaidOut(any())).thenReturn(List.of(ORDER_ID, "order-2"));
+        when(ledgerRepository.findByOrderId("order-2")).thenReturn(Optional.empty());
+
+        assertEquals(1, service.payOutCompleted());
+
+        verify(walletService).credit(OWNER.accountId(), WalletEntryReason.SALE, 2_000_000L, ORDER_ID);
+        verify(walletService, never()).credit(anyString(), any(), anyLong(), eq("order-2"));
     }
 
     /** FR-48: the order is paid out once. */

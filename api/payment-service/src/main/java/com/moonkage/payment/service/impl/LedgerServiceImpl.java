@@ -32,7 +32,12 @@ public class LedgerServiceImpl implements LedgerService {
         ledger.setTotalCollected(ledger.getTotalCollected() + amount);
         ledger.setHeld(ledger.getHeld() + amount);
         ledgerRepository.save(ledger);
-        ledgerEntryRepository.save(LedgerEntry.of(orderId, LedgerEntryKind.COLLECT, amount, paymentId, null));
+        ledgerEntryRepository.save(LedgerEntry.builder()
+                .orderId(orderId)
+                .kind(LedgerEntryKind.COLLECT)
+                .amount(amount)
+                .referenceId(paymentId)
+                .build());
     }
 
     @Override
@@ -106,7 +111,13 @@ public class LedgerServiceImpl implements LedgerService {
         ledger.setHeld(ledger.getHeld() - amount);
         book.accept(ledger);
         ledgerRepository.save(ledger);
-        ledgerEntryRepository.save(LedgerEntry.of(orderId, kind, amount, referenceId, actorAccountId));
+        ledgerEntryRepository.save(LedgerEntry.builder()
+                .orderId(orderId)
+                .kind(kind)
+                .amount(amount)
+                .referenceId(referenceId)
+                .actorAccountId(actorAccountId)
+                .build());
     }
 
     /** The vendor comes from the order's events when they arrived first; otherwise they fill it in later. */

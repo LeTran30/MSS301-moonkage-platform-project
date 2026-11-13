@@ -8,6 +8,7 @@ import com.moonkage.order.security.CurrentUser;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.DisputeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,7 @@ public class DisputeQueueController {
 
     private final DisputeService disputeService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ApiResponse<PageResponse<DisputeResponse>> list(
             @CurrentUser CurrentUserInfo caller,

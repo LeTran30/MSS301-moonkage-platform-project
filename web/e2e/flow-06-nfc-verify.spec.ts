@@ -81,6 +81,8 @@ test.describe('FLOW 6 — Xác minh danh tính NFC', () => {
 
     // Phiên được mở tự động khi tài khoản chưa định danh (AC-04.1).
     await expect(page.getByLabel('Mã phiên xác minh')).toBeVisible();
+    // A real QR the Verify app can scan, not a decorative icon.
+    await expect(page.getByRole('img', { name: /Mã QR phiên xác minh/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Tạo mã QR mới/i })).toBeVisible();
   });
 

@@ -1,5 +1,6 @@
-import { Badge, Button, ButtonLink, Card, Icon } from '@/shared/ui';
+import { Badge, Button, ButtonLink, Card, Icon, QrCode } from '@/shared/ui';
 import type { User } from '@/entities/user';
+import { nfcSessionQrValue } from '../model/sessionQr';
 import styles from './nfcVerifyUi.module.css';
 
 interface NfcVerifiedPanelProps {
@@ -80,7 +81,15 @@ export function NfcSessionCard({
       ) : (
         <div className={styles.unverifiedBox}>
           <div className={styles.qrBox}>
-            <Icon name="qr" size={160} />
+            {sessionId ? (
+              <QrCode
+                value={nfcSessionQrValue(sessionId)}
+                size={200}
+                label="Mã QR phiên xác minh, quét bằng ứng dụng Moonkage Verify"
+              />
+            ) : (
+              <Icon name="qr" size={160} />
+            )}
             <span className={styles.qrTimer}>Mã phiên QR làm mới sau {timerLabel}</span>
             {sessionId && (
               <code className={styles.sessionCode} aria-label="Mã phiên xác minh">

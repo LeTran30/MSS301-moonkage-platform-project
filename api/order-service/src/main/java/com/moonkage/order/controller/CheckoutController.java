@@ -10,6 +10,7 @@ import com.moonkage.order.service.CheckoutService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +28,7 @@ public class CheckoutController {
     private final CheckoutService checkoutService;
 
     /** Holds the stock and answers the VNPay link (BR-28); no order exists until the payment succeeds. */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CreateCheckoutResponse> create(
@@ -35,6 +37,7 @@ public class CheckoutController {
     }
 
     /** The result page polls it: status, and the order ids once paid (AC-09.7). */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{checkoutId}")
     public ApiResponse<CheckoutResponse> get(@CurrentUser CurrentUserInfo caller, @PathVariable String checkoutId) {
         return ApiResponse.ok(checkoutService.get(caller, checkoutId));

@@ -3,7 +3,18 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { formatCurrency, formatDate } from '@/shared/utils';
-import { Badge, Button, ButtonLink, Card, Breadcrumbs, Icon, Input, toast } from '@/shared/ui';
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  Breadcrumbs,
+  Icon,
+  Input,
+  Modal,
+  Textarea,
+  toast,
+} from '@/shared/ui';
 import { useAction } from '@/shared/lib';
 import {
   canSendMaket,
@@ -74,12 +85,19 @@ export function VendorOrderDetailPage() {
   const maketUpload = useFileUpload('ORDER');
   const [maketModalOpen, setMaketModalOpen] = useState(false);
   const [maketFile, setMaketFile] = useState<File | null>(null);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   const nextStatus = order ? nextOrderStatus(order) : null;
   // Gửi maket là bước đưa đơn sang chờ duyệt; không có nút chuyển trạng thái trống.
   const advanceStatus = nextStatus === 'WAITING_MAKET' ? null : nextStatus;
   const waitsForApproval = order?.status === 'WAITING_MAKET' && latestMaket?.status !== 'APPROVED';
   const needsTracking = Boolean(order?.interprovince && nextStatus === 'SHIPPING');
+  // Q-01: a paid buy-now order not confirmed yet, or a custom order before work starts, may be refused; its money
+  // goes to the buyer's wallet. A custom order whose deposit was partly paid out is refused by the server (dispute).
+  const canReject =
+    (order?.type === 'RETAIL' && order.status === 'PAID') ||
+    (order?.type === 'BULK' && order.status === 'DEPOSITED');
 
   function handleSendMaket() {
     if (!order) return;
@@ -122,6 +140,21 @@ export function VendorOrderDetailPage() {
     });
   }
 
+  function handleReject() {
+    if (!order) return;
+    if (!rejectReason.trim()) {
+      toast.warning('Hãy ghi lý do từ chối để người mua biết.');
+      return;
+    }
+    void run(async () => {
+      await advanceOrder(order.id, { status: 'REJECTED', note: rejectReason.trim() });
+      toast.success('Đã từ chối đơn. Tiền của đơn được hoàn vào ví của người mua.');
+      setRejectOpen(false);
+      setRejectReason('');
+      asyncOrder.reload();
+    });
+  }
+
   if (asyncOrder.kind === 'loading') {
     return <p>Đang tải đơn hàng…</p>;
   }
@@ -154,6 +187,9 @@ export function VendorOrderDetailPage() {
   /** What the Shop waits for when it has no step to take. */
   function waitingText(): string {
     if (!order) return '';
+    if (order.status === 'REJECTED') {
+      return 'Shop đã từ chối đơn này. Tiền của đơn đã được hoàn vào ví của người mua.';
+    }
     if (nextStatus === 'WAITING_MAKET') return 'Gửi maket để đơn chuyển sang chờ khách duyệt.';
     if (waitsForApproval) return 'Chờ khách duyệt maket rồi mới vào sản xuất.';
     if (order.status === 'DELIVERED' && order.hasDispute) {
@@ -186,7 +222,10 @@ export function VendorOrderDetailPage() {
             {order.shippingAddress.phone})
           </p>
         </div>
-        <Badge tone={order.status === 'COMPLETED' ? 'green' : 'gold'} size="md">
+        <Badge
+          tone={order.status === 'COMPLETED' ? 'green' : order.status === 'REJECTED' ? 'red' : 'gold'}
+          size="md"
+        >
           {orderStatusLabel(order.status)}
         </Badge>
       </div>
@@ -368,8 +407,13 @@ export function VendorOrderDetailPage() {
             ) : (
               <p className={styles.productMeta}>{waitingText()}</p>
             )}
+            {canReject && (
+              <Button variant="danger" onClick={() => setRejectOpen(true)} disabled={busy}>
+                Từ chối đơn
+              </Button>
+            )}
             <ButtonLink to={routes.vendor.orders} variant="outline">
-              Về Danh Sách
+              Về danh sách
             </ButtonLink>
           </div>
         </Card>
@@ -384,6 +428,37 @@ export function VendorOrderDetailPage() {
           }}
         />
       )}
+
+      <Modal
+        open={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+        title={`Từ chối đơn #${orderCode(order.id)}`}
+        description={
+          order.type === 'BULK'
+            ? 'Người mua được hoàn toàn bộ tiền cọc vào ví Moonkage. Chỉ từ chối được khi shop chưa nhận hay xin giải ngân phần nào của tiền cọc.'
+            : 'Người mua được hoàn toàn bộ tiền của đơn này vào ví Moonkage. Hàng của đơn được trả lại kho. Các đơn của shop khác trong cùng lần thanh toán không bị ảnh hưởng.'
+        }
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setRejectOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="danger" loading={busy} onClick={handleReject}>
+              Xác nhận từ chối
+            </Button>
+          </>
+        }
+      >
+        <Textarea
+          label="Lý do từ chối"
+          required
+          rows={3}
+          maxLength={2000}
+          value={rejectReason}
+          onChange={(e) => setRejectReason(e.target.value)}
+          placeholder="Ví dụ: Hết hàng nhân trứng muối, không kịp giao trong tuần này"
+        />
+      </Modal>
 
       <UploadMaketModal
         open={maketModalOpen}

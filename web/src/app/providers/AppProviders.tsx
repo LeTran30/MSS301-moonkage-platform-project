@@ -4,7 +4,8 @@ import { ToastContainer } from '@/shared/ui';
 import { useProductCatalog, useTaxonomyCatalog } from '@/entities/product';
 import { useVendorCatalog } from '@/entities/vendor';
 import { useDeliveryProvinceCode } from '@/entities/region';
-import { useNotificationPush } from '@/entities/notification';
+import { useNotificationInbox, useNotificationPush } from '@/entities/notification';
+import { useCurrentUser } from '@/entities/user';
 import { RealtimeProvider } from '@/shared/api/realtime';
 import { queryClient } from '@/shared/api';
 import { subscribeToToken } from '@/shared/api/tokenVault';
@@ -60,10 +61,13 @@ function SessionRealtime({ children }: { children: ReactNode }) {
  *
  * `useNotificationPush` phải nằm trong `RealtimeProvider` vì nó dùng chính
  * socket đó; nó nạp ở đây một lần nên chuông và trang thông báo đọc cùng một
- * kho dữ liệu.
+ * kho dữ liệu. Hộp thư đã lưu được đọc ngay khi đăng nhập, để chuông có
+ * thông báo cả khi chưa mở trang thông báo.
  */
 function NotificationPushBridge() {
+  const user = useCurrentUser();
   useNotificationPush();
+  useNotificationInbox(user.id);
   return null;
 }
 

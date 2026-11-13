@@ -13,6 +13,7 @@ const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   READY_TO_SHIP: 'Sẵn sàng giao',
   DELIVERED: 'Đã giao hàng',
   COMPLETED: 'Hoàn tất',
+  REJECTED: 'Shop đã từ chối',
 };
 
 export function orderStatusLabel(status: OrderStatus): string {

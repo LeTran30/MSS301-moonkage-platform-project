@@ -17,6 +17,7 @@
 | Đổi schema DB, viết dữ liệu mẫu, biết tài khoản mẫu | [guides/database.md](guides/database.md) |
 | Biết hệ thống phải làm gì (FR, AC, BR) | [product/requirements.md](product/requirements.md) |
 | Biết hệ thống được xây ra sao (service, API, sự kiện, quyết định D-xx) | [architecture/software-design.md](architecture/software-design.md) |
+| Xem sơ đồ UML: use case, class, state machine, activity | [architecture/uml/](architecture/uml/README.md) |
 | Biết chuẩn kiến trúc bắt buộc phải tuân thủ (đặt tên, API, dữ liệu, security, test) | [architecture/architecture-standards.md](architecture/architecture-standards.md) |
 | Biết code hiện tại đang lệch chuẩn ở đâu và cần sửa gì | [work/reviews/codebase-conformance-review.md](work/reviews/codebase-conformance-review.md) |
 | Biết API công khai và schema của từng service | [architecture/api-db/README.md](architecture/api-db/README.md) |
@@ -50,7 +51,7 @@ Mỗi thư mục chứa đúng **một loại** tài liệu. Loại quyết đ�
 | Thư mục | Loại (Diátaxis) | Trả lời câu hỏi | Ai sửa, khi nào |
 |---|---|---|---|
 | [product/](product/) | Reference nghiệp vụ | Xây **gì**? [context](product/context.md) → [user stories](product/user-stories.md) → [requirements](product/requirements.md); tài liệu IA ở [product/ia/](product/ia/) | Khi requirement đổi |
-| [architecture/](architecture/) | Explanation | Xây **thế nào**, vì sao? [software-design.md](architecture/software-design.md), [architecture-standards.md](architecture/architecture-standards.md), [web-package-architecture.md](architecture/web-package-architecture.md) | Khi có quyết định thiết kế |
+| [architecture/](architecture/) | Explanation | Xây **thế nào**, vì sao? [software-design.md](architecture/software-design.md), [architecture-standards.md](architecture/architecture-standards.md), [web-package-architecture.md](architecture/web-package-architecture.md), sơ đồ UML ở [uml/](architecture/uml/README.md) | Khi có quyết định thiết kế |
 | [architecture/api-db/](architecture/api-db/README.md) | Reference kỹ thuật | Hợp đồng API, schema, sự kiện của từng service; sổ quyết định [decisions.md](architecture/api-db/decisions.md) | **Cùng PR** khi API hoặc schema đổi |
 | [conventions/](conventions/) | Reference kỹ thuật | Viết code **ra sao**? | Hiếm; cả nhóm đồng ý |
 | [guides/](guides/) | Tutorial + How-to | **Làm** việc X thế nào? | Khi quy trình đổi |

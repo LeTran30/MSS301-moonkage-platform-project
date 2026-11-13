@@ -38,7 +38,7 @@ import com.moonkage.order.repository.OrderItemRepository;
 import com.moonkage.order.security.CurrentUserInfo;
 import com.moonkage.order.service.CheckoutService;
 import com.moonkage.order.service.InboxService;
-import com.moonkage.order.service.OrderEventPublisher;
+import com.moonkage.order.service.publisher.OrderEventPublisher;
 import feign.FeignException;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
@@ -127,12 +127,17 @@ public class CheckoutServiceImpl implements CheckoutService {
                             paymentExpiresAt,
                             groups.values().stream()
                                     .map(g -> new CreatePaymentRequest.Allocation(g.getOrderId(), g.totalAmount()))
-                                    .toList()));
+                                    .toList(),
+                            request.paysFromWallet() ? CreatePaymentRequest.WALLET : null));
         } catch (RuntimeException e) {
             transactionTemplate.executeWithoutResult(status -> checkoutRepository
                     .findForUpdateById(checkoutId)
                     .ifPresent(c -> c.setStatus(CheckoutStatus.FAILED)));
             releaseQuietly(checkoutId);
+            // a new checkout cannot be paid already, so a 409 on a wallet payment is a short balance (WALLET_001)
+            if (request.paysFromWallet() && e instanceof FeignException.Conflict) {
+                throw new AppException(ErrorCode.WALLET_INSUFFICIENT);
+            }
             throw e;
         }
         transactionTemplate.executeWithoutResult(status ->

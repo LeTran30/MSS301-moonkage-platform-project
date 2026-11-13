@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { routes } from '@/shared/config';
 import { Button, Card, Breadcrumbs, toast } from '@/shared/ui';
-import { useAction } from '@/shared/lib';
+import { useAction, vietnamBusinessDate } from '@/shared/lib';
 import { useCurrentUser } from '@/entities/user';
 import {
   useMyVendorDetail,
@@ -137,6 +137,7 @@ export function VendorProductFormPage() {
       return 'Bánh bán lại cần ghi rõ thương hiệu và xuất xứ.';
     }
     if (!expiryDate) return 'Vui lòng chọn hạn sử dụng.';
+    if (expiryDate < vietnamBusinessDate()) return 'Hạn sử dụng không được trước ngày hiện tại.';
     if (selectedCrusts.length === 0) return 'Sản phẩm cần gắn ít nhất 1 loại vỏ bánh.';
     if (selectedFillings.length === 0) return 'Sản phẩm cần gắn ít nhất 1 loại nhân bánh.';
     if (images.length === 0) return `Sản phẩm cần ít nhất 1 ảnh (tối đa ${MAX_PRODUCT_IMAGES}).`;

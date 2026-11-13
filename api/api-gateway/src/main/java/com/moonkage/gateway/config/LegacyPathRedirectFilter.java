@@ -75,10 +75,12 @@ public class LegacyPathRedirectFilter implements WebFilter {
             new Redirect("/order-service/api/checkouts", "/api/checkouts"),
             new Redirect("/order-service/api/orders", "/api/orders"),
             new Redirect("/order-service/api/chat", "/api/chat"),
-            // payment-service: the canonical routes are /api/payments/**, /api/ledgers/** and /api/refunds/**.
+            // payment-service: the canonical routes are /api/payments/**, /api/ledgers/**, /api/refunds/** and
+            // /api/wallets/**.
             new Redirect("/payment-service/api/payments", "/api/payments"),
             new Redirect("/payment-service/api/ledgers", "/api/ledgers"),
-            new Redirect("/payment-service/api/refunds", "/api/refunds"));
+            new Redirect("/payment-service/api/refunds", "/api/refunds"),
+            new Redirect("/payment-service/api/wallets", "/api/wallets"));
 
     /** The longest prefix first, so the most specific one wins when two of them could match. */
     private static final List<Redirect> BY_LENGTH = REDIRECTS.stream()

@@ -59,14 +59,6 @@
 .navLabel {
   flex: 1;
 }
-.badge {
-  padding: 2px 6px;
-  border-radius: var(--radius-full);
-  background: var(--color-zone);
-  color: var(--color-white);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-}
 .footerLink {
   padding: var(--space-4);
   border-top: 1px solid var(--color-border);

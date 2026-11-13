@@ -60,6 +60,9 @@
   border-top: 1px dashed var(--color-border-strong);
 }
 .paymentMethod {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   background: var(--color-surface-2);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
@@ -67,6 +70,7 @@
 }
 .vnpayRadio {
   display: flex;
+  cursor: pointer;
   gap: var(--space-3);
   font-size: var(--text-sm);
 }

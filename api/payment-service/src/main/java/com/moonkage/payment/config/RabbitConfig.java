@@ -29,6 +29,10 @@ public class RabbitConfig {
     public static final String DISBURSEMENT_REQUESTED_ROUTING_KEY = "disbursement.requested";
     public static final String DISBURSEMENT_REVIEWED_ROUTING_KEY = "disbursement.reviewed";
     public static final String PAYOUT_COMPLETED_ROUTING_KEY = "payout.completed";
+    /** orchestrator-service: the buyer's inbox and email (Q-01 wallet refunds). */
+    public static final String INAPP_WALLET_ROUTING_KEY = "orchestrator.inapp.wallet";
+
+    public static final String EMAIL_WALLET_ROUTING_KEY = "orchestrator.email.wallet";
 
     // sent by order-service, read here (order_snapshots, dispute refunds)
     public static final String DISPUTE_OPENED_ROUTING_KEY = "dispute.opened";

@@ -1,6 +1,7 @@
 package com.moonkage.catalog.repository.readmodel;
 
 import com.moonkage.catalog.enums.ProductSort;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -9,6 +10,7 @@ import java.util.List;
  */
 public record ProductSearchFilter(
         String provinceCode,
+        LocalDate businessDate,
         List<String> words,
         List<String> vendorIds,
         List<String> brands,
