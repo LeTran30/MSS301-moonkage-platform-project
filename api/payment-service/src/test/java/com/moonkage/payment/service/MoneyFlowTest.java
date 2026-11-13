@@ -70,6 +70,7 @@ class MoneyFlowTest {
     private final DisbursementRequestRepository disbursementRepository = mock(DisbursementRequestRepository.class);
     private final PayoutRepository payoutRepository = mock(PayoutRepository.class);
     private final OutboxService outboxService = mock(OutboxService.class);
+    private final MoneyNotificationService notificationService = mock(MoneyNotificationService.class);
     private final VnpayRefundClient refundClient = mock(VnpayRefundClient.class);
     private final VendorDirectory vendorDirectory = mock(VendorDirectory.class);
     private final OrderClient orderClient = mock(OrderClient.class);
@@ -102,6 +103,7 @@ class MoneyFlowTest {
                 ledgerService,
                 refundService,
                 outboxService,
+                notificationService,
                 vendorDirectory,
                 orderClient,
                 tx);
@@ -109,12 +111,14 @@ class MoneyFlowTest {
         ledger.setOrderId(ORDER_ID);
         ledger.setVendorId(VENDOR_ID);
         ledger.setTotalCollected(3_000_000L);
+        ledger.setDepositCollected(3_000_000L);
         ledger.setHeld(3_000_000L);
         when(ledgerRepository.findForUpdateByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
         when(ledgerRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
         when(vendorDirectory.ownedVendorId(OWNER.accountId())).thenReturn(Optional.of(VENDOR_ID));
         when(disbursementRepository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
         when(payoutRepository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
+        when(payoutRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
     }
 
     @Test

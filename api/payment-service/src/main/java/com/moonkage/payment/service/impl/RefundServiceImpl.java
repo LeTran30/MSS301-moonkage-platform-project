@@ -86,6 +86,9 @@ public class RefundServiceImpl implements RefundService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void requestForDispute(String orderId, String disputeId, long amount) {
+        // Payout takes the same lock before its final eligibility check. A dispute refund can therefore never
+        // appear after that check and before the remaining balance leaves the ledger.
+        ledgerService.lock(orderId);
         if (refundRepository.existsByDisputeId(disputeId)) {
             return;
         }

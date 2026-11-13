@@ -3,11 +3,13 @@ package com.moonkage.payment.service;
 import com.moonkage.api.PageResponse;
 import com.moonkage.payment.dto.request.CreateDisbursementRequest;
 import com.moonkage.payment.dto.request.ReviewDisbursementRequest;
+import com.moonkage.payment.dto.response.DisbursementListItemResponse;
 import com.moonkage.payment.dto.response.DisbursementResponse;
 import com.moonkage.payment.dto.response.LedgerEntryResponse;
 import com.moonkage.payment.dto.response.LedgerResponse;
 import com.moonkage.payment.dto.response.PayoutResponse;
 import com.moonkage.payment.dto.response.RefundResponse;
+import com.moonkage.payment.enums.DisbursementStatus;
 import com.moonkage.payment.security.CurrentUserInfo;
 import java.util.List;
 
@@ -32,8 +34,18 @@ public interface ReconciliationService {
 
     List<DisbursementResponse> disbursements(CurrentUserInfo caller, String orderId);
 
+    /** Direct paged query for admin/vendor screens; does not fan out through every ledger. */
+    PageResponse<DisbursementListItemResponse> listDisbursements(
+            CurrentUserInfo caller, String vendorId, DisbursementStatus status, int page, int size);
+
     /** FR-41: the vendor owner asks for part of a custom order's deposit; waiting ones count against what is held. */
-    DisbursementResponse requestDisbursement(CurrentUserInfo caller, String orderId, CreateDisbursementRequest request);
+    default DisbursementResponse requestDisbursement(
+            CurrentUserInfo caller, String orderId, CreateDisbursementRequest request) {
+        return requestDisbursement(caller, orderId, request, null);
+    }
+
+    DisbursementResponse requestDisbursement(
+            CurrentUserInfo caller, String orderId, CreateDisbursementRequest request, String idempotencyKey);
 
     /** FR-47: an admin approves (the ledger moves) or rejects with a reason. */
     DisbursementResponse reviewDisbursement(

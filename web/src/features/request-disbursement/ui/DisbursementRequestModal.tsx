@@ -10,10 +10,10 @@ import styles from './requestDisbursementUi.module.css';
 
 interface DisbursementRequestModalProps {
   open: boolean;
-  /** Các dòng sổ quỹ đủ điều kiện giải ngân. */
-  payableLedgers: LedgerDto[];
-  /** Tổng số tiền khả dụng để rút. */
-  totalAvailable: number;
+  /** Các dòng sổ có tiền cọc còn đủ điều kiện giải ngân. */
+  eligibleLedgers: LedgerDto[];
+  /** Tiền cọc còn có thể yêu cầu trên đúng đơn đang chọn. */
+  selectedAvailable: number;
   /** Đơn hàng đang được chọn. */
   orderId: string;
   /** Số tiền đang nhập. */
@@ -31,7 +31,7 @@ interface DisbursementRequestModalProps {
 }
 
 /**
- * FR-41: yêu cầu rút tiền về tài khoản ngân hàng của Shop.
+ * FR-41: yêu cầu giải ngân sớm một phần tiền cọc của đơn đặt hàng.
  *
  * Modal nằm ở tầng `features/request-disbursement/ui` vì nó là hành động
  * tương tác có mutation (POST `/api/ledgers/{orderId}/disbursements`).
@@ -40,8 +40,8 @@ interface DisbursementRequestModalProps {
  */
 export function DisbursementRequestModal({
   open,
-  payableLedgers,
-  totalAvailable,
+  eligibleLedgers,
+  selectedAvailable,
   orderId,
   amount,
   purpose,
@@ -57,21 +57,22 @@ export function DisbursementRequestModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Yêu cầu rút tiền về tài khoản ngân hàng"
+      title="Yêu cầu giải ngân tiền cọc"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
             Hủy
           </Button>
           <Button variant="primary" loading={busy} onClick={onSubmit}>
-            Xác nhận rút tiền
+            Gửi yêu cầu giải ngân
           </Button>
         </>
       }
     >
       <div className={styles.modalBody}>
         <p className={styles.modalSub}>
-          Tiền sẽ được kế toán sàn Moonkage đối soát và lệnh chuyển khoản được thực hiện trong 24 giờ làm việc.
+          Moonkage sẽ xét duyệt và ghi sổ phần tiền cọc được giải ngân. Thao tác này không phải
+          payout phần tiền còn lại của đơn.
         </p>
 
         <div className={styles.formGroup}>
@@ -79,21 +80,21 @@ export function DisbursementRequestModal({
             label="Đơn hàng cần giải ngân"
             required
             placeholder="— Chọn đơn hàng —"
-            options={payableLedgers.map((l) => ({
+            options={eligibleLedgers.map((l) => ({
               value: l.orderId,
-              label: `#${l.orderId} · ${formatCurrency(l.toReceive ?? 0)}`,
+              label: `#${l.orderId} · còn ${formatCurrency(l.remainingDisbursable ?? 0)}`,
             }))}
             value={orderId}
             onChange={(v) => {
-              const next = payableLedgers.find((l) => l.orderId === v);
-              onOrderIdChange(v, String(next?.toReceive ?? 0));
+              const next = eligibleLedgers.find((l) => l.orderId === v);
+              onOrderIdChange(v, String(next?.remainingDisbursable ?? 0));
             }}
           />
         </div>
 
         <div className={styles.formGroup}>
           <label className={styles.label} htmlFor="disbursement-amount">
-            Số tiền muốn rút (VNĐ) *
+            Số tiền muốn giải ngân (VNĐ) *
           </label>
           <Input
             id="disbursement-amount"
@@ -101,9 +102,11 @@ export function DisbursementRequestModal({
             value={amount}
             onChange={(e) => onAmountChange(e.target.value)}
             placeholder="Ví dụ: 500000"
+            min={1}
+            max={selectedAvailable}
           />
           <span className={styles.inputHint}>
-            Tối đa có thể rút: <strong>{formatCurrency(totalAvailable)}</strong>
+            Tối đa của đơn đang chọn: <strong>{formatCurrency(selectedAvailable)}</strong>
           </span>
         </div>
 

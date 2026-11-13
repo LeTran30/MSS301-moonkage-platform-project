@@ -24,7 +24,9 @@ export function PayoutRequestCard({ request, vendorName, onApprove }: PayoutRequ
           </span>
         </div>
         <div className={styles.amountCol}>
-          <strong className={styles.poAmount}>{formatCurrency(request.amount)}</strong>
+          <strong className={styles.poAmount}>
+            {formatCurrency(request.approvedAmount ?? request.amount)}
+          </strong>
           <Badge
             tone={
               request.status === 'APPROVED'
@@ -49,8 +51,20 @@ export function PayoutRequestCard({ request, vendorName, onApprove }: PayoutRequ
           <strong>{payoutPurposeLabel(request.purpose)}</strong>
         </div>
         <div className={styles.poItem}>
-          <span>Mã đơn hàng liên kết:</span>
-          <strong>#{request.orderId}</strong>
+          <span>Số tiền Shop yêu cầu:</span>
+          <strong>{formatCurrency(request.amount)}</strong>
+        </div>
+        <div className={styles.poItem}>
+          <span>Tiền cọc còn giữ:</span>
+          <strong>{formatCurrency(request.approvalCapacity)}</strong>
+        </div>
+        <div className={styles.poItem}>
+          <span>Đã giải ngân:</span>
+          <strong>{formatCurrency(request.disbursed)}</strong>
+        </div>
+        <div className={styles.poItem}>
+          <span>Đang chờ duyệt:</span>
+          <strong>{formatCurrency(request.pendingDisbursement)}</strong>
         </div>
         <div className={styles.poItem}>
           <span>Thời gian yêu cầu:</span>
@@ -66,7 +80,7 @@ export function PayoutRequestCard({ request, vendorName, onApprove }: PayoutRequ
       <div className={styles.poActions}>
         {request.status === 'PENDING' && (
           <Button variant="primary" size="sm" onClick={() => onApprove(request)} iconLeft="check">
-            Phê duyệt &amp; Chuyển khoản
+            Xét duyệt
           </Button>
         )}
       </div>

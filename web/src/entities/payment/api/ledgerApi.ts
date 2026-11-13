@@ -14,13 +14,19 @@ export interface LedgerDto {
   kind?: 'BUY_NOW' | 'CUSTOM_ORDER' | null;
   orderStatus?: string;
   totalCollected?: number;
+  /** Total successfully collected with payment purpose DEPOSIT. */
+  depositCollected?: number;
   held?: number;
   disbursed?: number;
   refunded?: number;
   paidOut?: number;
   toReceive?: number;
+  pendingDisbursement?: number;
+  /** Deposit still available for a new disbursement request, after pending requests. */
+  remainingDisbursable?: number;
   expectedPayoutDate?: string | null;
   disputeOpen?: boolean;
+  disbursementEligible?: boolean;
   /** Looks eligible for payout and not paid out yet (AC-48.1). */
   payable?: boolean;
 }
@@ -47,6 +53,12 @@ export interface DisbursementDto {
   decidedAt?: string | null;
 }
 
+/** Paged admin/vendor row returned by GET /api/ledgers/disbursements. */
+export interface DisbursementListItemDto extends DisbursementDto {
+  vendorId?: string;
+  ledger: LedgerDto;
+}
+
 /** Wire shape of `com.moonkage.payment.dto.request.CreateDisbursementRequest`. */
 export interface CreateDisbursementPayload {
   amount: number;
@@ -66,10 +78,11 @@ export interface RefundDto {
 
 /** Wire shape of `com.moonkage.payment.dto.response.PayoutResponse` (FR-48). */
 export interface PayoutDto {
+  payoutId?: string;
   orderId?: string;
+  vendorId?: string;
   amount?: number;
-  paidAt?: string | null;
-  reference?: string | null;
+  createdAt?: string | null;
 }
 
 /**
@@ -80,16 +93,20 @@ export interface PayoutDto {
  */
 export const ledgerApi = {
   async getLedgers(options?: { vendorId?: string; payableOnly?: boolean }): Promise<LedgerDto[]> {
-    const params = new URLSearchParams();
-    if (options?.vendorId) params.set('vendorId', options.vendorId);
-    if (options?.payableOnly) params.set('payableOnly', 'true');
-    params.set('size', '200');
-
-    const query = params.toString();
-    const res = await apiClient.get<unknown>(
-      query ? `${GATEWAY.PAYMENT.LEDGERS}?${query}` : GATEWAY.PAYMENT.LEDGERS,
-    );
-    return unwrapPage<LedgerDto>(res);
+    const ledgers: LedgerDto[] = [];
+    const pageSize = 100; // payment-service caps every page at 100.
+    for (let page = 0; ; page += 1) {
+      const params = new URLSearchParams();
+      if (options?.vendorId) params.set('vendorId', options.vendorId);
+      if (options?.payableOnly) params.set('payableOnly', 'true');
+      params.set('page', String(page));
+      params.set('size', String(pageSize));
+      const res = await apiClient.get<unknown>(`${GATEWAY.PAYMENT.LEDGERS}?${params}`);
+      const batch = unwrapPage<LedgerDto>(res);
+      ledgers.push(...batch);
+      if (batch.length < pageSize) break;
+    }
+    return ledgers;
   },
 
   /** The money of one order. */
@@ -114,5 +131,21 @@ export const ledgerApi = {
   async getDisbursements(orderId: string): Promise<DisbursementDto[]> {
     const res = await apiClient.get<unknown>(GATEWAY.PAYMENT.LEDGER_DISBURSEMENTS(orderId));
     return unwrapList<DisbursementDto>(res);
+  },
+
+  /** Direct request page; replaces the former one-request-per-ledger fan-out. */
+  async getDisbursementRequests(options?: {
+    vendorId?: string;
+    status?: string;
+    page?: number;
+    size?: number;
+  }): Promise<DisbursementListItemDto[]> {
+    const params = new URLSearchParams();
+    if (options?.vendorId) params.set('vendorId', options.vendorId);
+    if (options?.status) params.set('status', options.status);
+    params.set('page', String(options?.page ?? 0));
+    params.set('size', String(options?.size ?? 100));
+    const res = await apiClient.get<unknown>(`${GATEWAY.PAYMENT.DISBURSEMENTS}?${params}`);
+    return unwrapPage<DisbursementListItemDto>(res);
   },
 };

@@ -166,6 +166,7 @@ export const GATEWAY = {
     PAYMENTS: '/api/payments',
     PAYMENT_BY_ID: (paymentId: string) => `/api/payments/${paymentId}`,
     LEDGERS: '/api/ledgers',
+    DISBURSEMENTS: '/api/ledgers/disbursements',
     LEDGER_BY_ORDER: (orderId: string) => `/api/ledgers/${orderId}`,
     // LedgerController: @GetMapping("/{orderId}/entries")
     LEDGER_ENTRIES: (orderId: string) => `/api/ledgers/${orderId}/entries`,

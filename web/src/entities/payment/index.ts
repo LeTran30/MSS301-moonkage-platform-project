@@ -2,6 +2,7 @@ export { ledgerApi } from './api/ledgerApi';
 export type {
   CreateDisbursementPayload,
   DisbursementDto,
+  DisbursementListItemDto,
   LedgerDto,
   LedgerEntryDto,
   PayoutDto,

@@ -1,5 +1,6 @@
 package com.moonkage.payment.service;
 
+import com.moonkage.payment.enums.PaymentPurpose;
 import java.time.LocalDate;
 
 /**
@@ -12,11 +13,15 @@ public interface LedgerService {
      * Records money the buyer paid for an order, opening its ledger on the first payment.
      *
      * @param paymentId the payment the money came with
+     * @param purpose whether this collection is deposit, remainder or checkout money
      */
-    void collect(String orderId, long amount, String paymentId);
+    void collect(String orderId, long amount, String paymentId, PaymentPurpose purpose);
 
     /** Whether the platform still holds at least {@code amount} of the order. */
     boolean holds(String orderId, long amount);
+
+    /** Serializes a pending money workflow with payout without changing the ledger. */
+    void lock(String orderId);
 
     /** Money back to the buyer (FR-49, P-01); LEDGER_002 when more than held. */
     void refund(String orderId, long amount, String refundId, String actorAccountId);

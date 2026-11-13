@@ -1,11 +1,11 @@
 import { formatCurrency } from '@/shared/utils';
 import { Button, Modal } from '@/shared/ui';
-import { payoutPurposeLabel, type PayoutRequest } from '@/entities/payment';
+import type { LedgerDto } from '@/entities/payment';
 import styles from './payOutUi.module.css';
 
 interface PayoutConfirmModalProps {
   open: boolean;
-  request: PayoutRequest | null;
+  ledger: LedgerDto | null;
   /** Tên Shop hiển thị. */
   vendorName: string;
   busy: boolean;
@@ -13,10 +13,10 @@ interface PayoutConfirmModalProps {
   onSubmit: () => void;
 }
 
-/** Xác nhận phê duyệt lệnh giải ngân (Q4.1). */
+/** Confirm the one-time final payout of the balance still held for an order (FR-48). */
 export function PayoutConfirmModal({
   open,
-  request,
+  ledger,
   vendorName,
   busy,
   onClose,
@@ -26,34 +26,33 @@ export function PayoutConfirmModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Xác nhận phê duyệt lệnh giải ngân"
+      title="Xác nhận payout cuối đơn"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
             Hủy
           </Button>
           <Button variant="primary" loading={busy} onClick={onSubmit}>
-            Xác nhận &amp; Giải ngân
+            Xác nhận payout
           </Button>
         </>
       }
     >
       <div className={styles.modalBody}>
         <p>
-          Hệ thống sẽ ghi nhận lệnh chuyển tiền từ tài khoản ký quỹ của Moonkage sang tài khoản
-          ngân hàng của xưởng:
+          Thao tác này chuyển toàn bộ số dư còn giữ sang trạng thái đã payout và chỉ được thực hiện
+          một lần khi đơn đã hết thời hạn khiếu nại, không còn hoàn tiền hoặc giải ngân chờ xử lý.
         </p>
         <div className={styles.confirmBox}>
           <p>
-            Đơn vị nhận: <strong>{request ? vendorName || request.vendorId : ''}</strong>
+            Đơn vị nhận: <strong>{ledger ? vendorName || ledger.vendorId : ''}</strong>
           </p>
           <p>
-            Số tiền thực chuyển:{' '}
-            <strong className={styles.goldText}>{formatCurrency(request?.amount ?? 0)}</strong>
+            Đơn hàng: <strong>{ledger?.orderId ?? ''}</strong>
           </p>
           <p>
-            Lý do:{' '}
-            <strong>{request?.reason ?? payoutPurposeLabel(request?.purpose ?? '')}</strong>
+            Số tiền payout:{' '}
+            <strong className={styles.goldText}>{formatCurrency(ledger?.held ?? 0)}</strong>
           </p>
         </div>
       </div>

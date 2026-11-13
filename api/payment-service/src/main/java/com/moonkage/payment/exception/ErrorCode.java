@@ -50,6 +50,8 @@ public enum ErrorCode {
     /** FR-48, P-02: not received nor past the complaint deadline, a dispute open, or a refund or request pending. */
     PAYOUT_NOT_ELIGIBLE("LEDGER_007", HttpStatus.CONFLICT, "error.ledger.payout_not_eligible"),
     ALREADY_PAID_OUT("LEDGER_008", HttpStatus.CONFLICT, "error.ledger.already_paid_out"),
+    /** The same Idempotency-Key was reused with a different request body. */
+    IDEMPOTENCY_CONFLICT("LEDGER_009", HttpStatus.CONFLICT, "error.ledger.idempotency_conflict"),
 
     // Refunds (AC-49.3)
     REFUND_NOT_FOUND("REFUND_001", HttpStatus.NOT_FOUND, "error.refund.not_found");

@@ -13,6 +13,7 @@ import com.moonkage.payment.entity.Ledger;
 import com.moonkage.payment.entity.LedgerEntry;
 import com.moonkage.payment.entity.OrderSnapshot;
 import com.moonkage.payment.enums.LedgerEntryKind;
+import com.moonkage.payment.enums.PaymentPurpose;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
 import com.moonkage.payment.repository.LedgerEntryRepository;
@@ -64,13 +65,14 @@ class LedgerServiceImplTest {
         when(ledgerRepository.findForUpdateByOrderId(ORDER_ID)).thenReturn(Optional.empty());
         when(snapshotRepository.findById(ORDER_ID)).thenReturn(Optional.empty());
 
-        ledgerService.collect(ORDER_ID, 500_000L, "payment-1");
+        ledgerService.collect(ORDER_ID, 500_000L, "payment-1", PaymentPurpose.CHECKOUT);
 
         ArgumentCaptor<Ledger> captor = ArgumentCaptor.forClass(Ledger.class);
         verify(ledgerRepository).save(captor.capture());
         Ledger ledger = captor.getValue();
         assertThat(ledger.getOrderId()).isEqualTo(ORDER_ID);
         assertThat(ledger.getTotalCollected()).isEqualTo(500_000L);
+        assertThat(ledger.getDepositCollected()).isZero();
         // the money is held until it is paid out; nothing leaves without an approval
         assertThat(ledger.getHeld()).isEqualTo(500_000L);
         assertThat(ledger.getDisbursed()).isZero();
@@ -83,9 +85,10 @@ class LedgerServiceImplTest {
         Ledger ledger = ledgerOf(500_000L, 500_000L);
         when(ledgerRepository.findForUpdateByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
 
-        ledgerService.collect(ORDER_ID, 200_000L, "payment-2");
+        ledgerService.collect(ORDER_ID, 200_000L, "payment-2", PaymentPurpose.REMAINDER);
 
         assertThat(ledger.getTotalCollected()).isEqualTo(700_000L);
+        assertThat(ledger.getDepositCollected()).isEqualTo(500_000L);
         assertThat(ledger.getHeld()).isEqualTo(700_000L);
     }
 
@@ -97,7 +100,7 @@ class LedgerServiceImplTest {
         snapshot.setVendorId(VENDOR_ID);
         when(snapshotRepository.findById(ORDER_ID)).thenReturn(Optional.of(snapshot));
 
-        ledgerService.collect(ORDER_ID, 100_000L, "payment-1");
+        ledgerService.collect(ORDER_ID, 100_000L, "payment-1", PaymentPurpose.DEPOSIT);
 
         ArgumentCaptor<Ledger> captor = ArgumentCaptor.forClass(Ledger.class);
         verify(ledgerRepository).save(captor.capture());
@@ -141,6 +144,21 @@ class LedgerServiceImplTest {
 
         assertThat(ledger.getHeld()).isEqualTo(200_000L);
         assertThat(ledger.getDisbursed()).isEqualTo(300_000L);
+    }
+
+    @Test
+    void disbursingNeverConsumesRemainderMoney() {
+        Ledger ledger = ledgerOf(1_500_000L, 1_500_000L);
+        ledger.setDepositCollected(500_000L);
+        when(ledgerRepository.findForUpdateByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
+
+        assertThatThrownBy(() -> ledgerService.disburse(ORDER_ID, 500_001L, "request-1", "admin-1"))
+                .isInstanceOf(AppException.class)
+                .extracting(exception -> ((AppException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.LEDGER_INSUFFICIENT);
+
+        assertThat(ledger.getHeld()).isEqualTo(1_500_000L);
+        assertThat(ledger.getDisbursed()).isZero();
     }
 
     @Test
@@ -197,7 +215,7 @@ class LedgerServiceImplTest {
         Ledger ledger = ledgerOf(500_000L, 500_000L);
         when(ledgerRepository.findForUpdateByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
 
-        ledgerService.collect(ORDER_ID, 100_000L, "payment-9");
+        ledgerService.collect(ORDER_ID, 100_000L, "payment-9", PaymentPurpose.REMAINDER);
         ledgerService.disburse(ORDER_ID, 50_000L, "request-9", "admin-1");
         ledgerService.refund(ORDER_ID, 20_000L, "refund-9", "admin-2");
 
@@ -216,7 +234,7 @@ class LedgerServiceImplTest {
         Ledger ledger = ledgerOf(500_000L, 500_000L);
         when(ledgerRepository.findForUpdateByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
 
-        ledgerService.collect(ORDER_ID, 100_000L, "payment-1");
+        ledgerService.collect(ORDER_ID, 100_000L, "payment-1", PaymentPurpose.REMAINDER);
         ledgerService.disburse(ORDER_ID, 200_000L, "request-1", "admin-1");
         ledgerService.refund(ORDER_ID, 50_000L, "refund-1", "admin-1");
         ledgerService.payout(ORDER_ID, 350_000L, "payout-1", "admin-1");
@@ -268,6 +286,7 @@ class LedgerServiceImplTest {
         ledger.setOrderId(ORDER_ID);
         ledger.setVendorId(VENDOR_ID);
         ledger.setTotalCollected(totalCollected);
+        ledger.setDepositCollected(totalCollected);
         ledger.setHeld(held);
         ledger.setDisbursed(0L);
         ledger.setRefunded(0L);

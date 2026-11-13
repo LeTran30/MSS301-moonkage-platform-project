@@ -40,6 +40,10 @@ public class Ledger {
     @Column(nullable = false)
     private Long totalCollected = 0L;
 
+    /** The part of totalCollected paid with purpose DEPOSIT (BR-09). */
+    @Column(nullable = false)
+    private Long depositCollected = 0L;
+
     @Column(nullable = false)
     private Long held = 0L;
 

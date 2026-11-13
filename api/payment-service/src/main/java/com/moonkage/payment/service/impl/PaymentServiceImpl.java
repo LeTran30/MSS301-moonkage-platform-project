@@ -247,7 +247,8 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.saveAndFlush(payment);
         allocationRepository
                 .findByPaymentId(payment.getId())
-                .forEach(share -> ledgerService.collect(share.getOrderId(), share.getAmount(), payment.getId()));
+                .forEach(share -> ledgerService.collect(
+                        share.getOrderId(), share.getAmount(), payment.getId(), payment.getPurpose()));
         // BE-11b: the counter that is compared with order.created to catch money without an order
         moneyMetrics.paymentSucceeded(payment.getPurpose().name());
         PaymentSucceededEvent event = new PaymentSucceededEvent(

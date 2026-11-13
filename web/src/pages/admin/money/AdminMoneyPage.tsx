@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Tabs, AsyncState, EmptyState, toast } from '@/shared/ui';
+import { Button, Card, Tabs, AsyncState, EmptyState, toast } from '@/shared/ui';
 import { formatCurrency } from '@/shared/utils';
 import { useAction } from '@/shared/lib';
 import {
@@ -9,13 +9,18 @@ import {
   toPayoutRequest,
   useDisbursementRequests,
   type PayoutRequest,
+  type LedgerDto,
 } from '@/entities/payment';
 import { useVendorSearch } from '@/entities/vendor';
-import { useApproveDisbursement } from '@/features/approve-disbursement';
+import {
+  DisbursementReviewModal,
+  useApproveDisbursement,
+  type ReviewDisbursementPayload,
+} from '@/features/approve-disbursement';
 import { PayoutConfirmModal, usePayOut } from '@/features/pay-out';
 import styles from './AdminMoneyPage.module.css';
 
-type AdminMoneyTab = 'PAYOUTS' | 'ESCROW' | 'CYCLES';
+type AdminMoneyTab = 'DISBURSEMENTS' | 'FINAL_PAYOUTS' | 'ESCROW' | 'CYCLES';
 
 /**
  * Q4.1 — the disbursements the Shop asked for.
@@ -24,9 +29,11 @@ type AdminMoneyTab = 'PAYOUTS' | 'ESCROW' | 'CYCLES';
  * `GET /api/ledgers/{orderId}/disbursements` for the requests of each order.
  */
 export function AdminMoneyPage() {
-  const [activeTab, setActiveTab] = useState<AdminMoneyTab>('PAYOUTS');
+  const [activeTab, setActiveTab] = useState<AdminMoneyTab>('DISBURSEMENTS');
   const [selectedPayout, setSelectedPayout] = useState<PayoutRequest | null>(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [selectedLedger, setSelectedLedger] = useState<LedgerDto | null>(null);
+  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const { busy, run, error } = useAction();
   const approveDisbursement = useApproveDisbursement();
   const payOut = usePayOut();
@@ -56,6 +63,7 @@ export function AdminMoneyPage() {
   const pendingAmount = requests
     .filter((r) => r.status === 'PENDING')
     .reduce((acc, r) => acc + r.amount, 0);
+  const payableLedgers = ledgers.filter((ledger) => ledger.payable && (ledger.held ?? 0) > 0);
 
   const handleOpenConfirm = (po: PayoutRequest) => {
     setSelectedPayout(po);
@@ -63,28 +71,53 @@ export function AdminMoneyPage() {
   };
 
   /**
-   * FR-47 + FR-48: the admin approves the request, then pays the vendor what
-   * is held on the order (`PUT /api/ledgers/{orderId}/payout`).
+   * FR-47: approving an early deposit disbursement only moves the approved
+   * amount from held to disbursed. Final-order payout is a separate FR-48
+   * action and must never be triggered from this request.
    */
-  const handleApprovePayout = () => {
+  const handleReviewDisbursement = (payload: ReviewDisbursementPayload) => {
     if (!selectedPayout) return;
     void run(async () => {
-      const reviewed = await approveDisbursement(selectedPayout.orderId, selectedPayout.requestId, {
-        status: 'APPROVED',
-      });
+      const reviewed = await approveDisbursement(
+        selectedPayout.orderId,
+        selectedPayout.requestId,
+        payload,
+      );
       if (!reviewed) {
         toast.info('Yêu cầu giải ngân đã được ghi nhận. Vui lòng kiểm tra lại danh sách.');
         setConfirmModalOpen(false);
         asyncLedgers.reload();
         return;
       }
-      await payOut(selectedPayout.orderId);
-      toast.success(
-        `Đã duyệt chi giải ngân ${formatCurrency(selectedPayout.amount)} cho ${
-          vendorNames.get(selectedPayout.vendorId) ?? selectedPayout.vendorId
-        }!`,
-      );
+      const vendorName = vendorNames.get(selectedPayout.vendorId) ?? selectedPayout.vendorId;
+      if (payload.status === 'REJECTED') {
+        toast.success(`Đã từ chối yêu cầu giải ngân của ${vendorName}.`);
+      } else {
+        const approvedAmount = payload.approvedAmount ?? selectedPayout.amount;
+        toast.success(
+          `Đã duyệt và ghi sổ giải ngân ${formatCurrency(approvedAmount)} cho ${vendorName}!`,
+        );
+      }
       setConfirmModalOpen(false);
+      asyncLedgers.reload();
+    });
+  };
+
+  const handleFinalPayout = () => {
+    if (!selectedLedger) return;
+    void run(async () => {
+      const payout = await payOut(selectedLedger.orderId);
+      if (!payout) {
+        toast.info('Payout đã được ghi nhận. Vui lòng tải lại danh sách để kiểm tra.');
+      } else {
+        toast.success(
+          `Đã payout ${formatCurrency(payout.amount ?? selectedLedger.held ?? 0)} cho ${
+            vendorNames.get(selectedLedger.vendorId ?? '') ?? selectedLedger.vendorId ?? 'Shop'
+          }!`,
+        );
+      }
+      setPayoutModalOpen(false);
+      setSelectedLedger(null);
       asyncLedgers.reload();
     });
   };
@@ -136,7 +169,8 @@ export function AdminMoneyPage() {
 
       <Tabs<AdminMoneyTab>
         items={[
-          { id: 'PAYOUTS', label: 'Lệnh duyệt giải ngân' },
+          { id: 'DISBURSEMENTS', label: 'Lệnh duyệt giải ngân' },
+          { id: 'FINAL_PAYOUTS', label: `Payout cuối đơn (${payableLedgers.length})` },
           { id: 'ESCROW', label: 'Số dư đóng băng khiếu nại' },
           { id: 'CYCLES', label: 'Chu kỳ đối soát tuần' },
         ]}
@@ -144,7 +178,7 @@ export function AdminMoneyPage() {
         onChange={setActiveTab}
       />
 
-      {activeTab === 'PAYOUTS' && (
+      {activeTab === 'DISBURSEMENTS' && (
         <AsyncState
           state={asyncLedgers}
           onRetry={asyncLedgers.reload}
@@ -173,19 +207,75 @@ export function AdminMoneyPage() {
         </AsyncState>
       )}
 
+      {activeTab === 'FINAL_PAYOUTS' && (
+        <AsyncState
+          state={asyncLedgers}
+          onRetry={asyncLedgers.reload}
+          loadingMessage="Đang tải đơn đủ điều kiện payout..."
+          isEmpty={() => payableLedgers.length === 0}
+          empty={
+            <EmptyState
+              icon="wallet"
+              title="Chưa có đơn đủ điều kiện payout"
+              description="Đơn sẽ xuất hiện khi đã hoàn tất thời hạn khiếu nại và không còn giao dịch chờ xử lý."
+            />
+          }
+        >
+          {() => (
+            <div className={styles.list}>
+              {payableLedgers.map((ledger) => (
+                <Card key={ledger.orderId} className={styles.payoutCard}>
+                  <div>
+                    <strong>Đơn {ledger.orderId}</strong>
+                    <p className={styles.statSub}>
+                      {vendorNames.get(ledger.vendorId ?? '') ?? ledger.vendorId ?? 'Shop'} · Còn giữ{' '}
+                      {formatCurrency(ledger.held ?? 0)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setSelectedLedger(ledger);
+                      setPayoutModalOpen(true);
+                    }}
+                  >
+                    Payout phần còn lại
+                  </Button>
+                </Card>
+              ))}
+            </div>
+          )}
+        </AsyncState>
+      )}
+
       {activeTab === 'ESCROW' && <EscrowLockedTable ledgers={ledgers} vendorNames={vendorNames} />}
 
       {activeTab === 'CYCLES' && <EscrowCycleSummary ledgers={ledgers} />}
 
-      {/* Modal Confirm Payout */}
-      <PayoutConfirmModal
-        open={confirmModalOpen}
-        request={selectedPayout}
-        vendorName={selectedPayout ? (vendorNames.get(selectedPayout.vendorId) ?? '') : ''}
-        busy={busy}
-        onClose={() => setConfirmModalOpen(false)}
-        onSubmit={handleApprovePayout}
-      />
+      {/* FR-47 review: separate from the final-order payout. */}
+      {confirmModalOpen && selectedPayout && (
+        <DisbursementReviewModal
+          key={selectedPayout.requestId}
+          open
+          request={selectedPayout}
+          vendorName={vendorNames.get(selectedPayout.vendorId) ?? ''}
+          busy={busy}
+          onClose={() => setConfirmModalOpen(false)}
+          onSubmit={handleReviewDisbursement}
+        />
+      )}
+
+
+      {payoutModalOpen && selectedLedger && (
+        <PayoutConfirmModal
+          open
+          ledger={selectedLedger}
+          vendorName={vendorNames.get(selectedLedger.vendorId ?? '') ?? ''}
+          busy={busy}
+          onClose={() => setPayoutModalOpen(false)}
+          onSubmit={handleFinalPayout}
+        />
+      )}
     </div>
   );
 }

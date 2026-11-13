@@ -4,20 +4,18 @@ import { routes } from '@/shared/config';
 import { formatCurrency } from '@/shared/utils';
 import { Badge, Button, Card, Breadcrumbs, AsyncState, EmptyState, toast } from '@/shared/ui';
 import { useAction } from '@/shared/lib';
-import { useDisbursementRequests } from '@/entities/payment';
+import {
+  payoutPurposeLabel,
+  toPayoutRequest,
+  useDisbursementRequests,
+  type PayoutRequest,
+} from '@/entities/payment';
 import { useVendorSearch } from '@/entities/vendor';
-import { useApproveDisbursement } from '@/features/approve-disbursement';
-
-type DisbursementRow = {
-  requestId: string;
-  orderId: string;
-  vendorId: string;
-  amount: number;
-  purpose: string;
-  status: string;
-  createdAt?: string;
-  reason?: string | null;
-};
+import {
+  DisbursementReviewModal,
+  useApproveDisbursement,
+  type ReviewDisbursementPayload,
+} from '@/features/approve-disbursement';
 
 /**
  * Q4.1 — approve the escrow disbursements the Shops asked for.
@@ -27,8 +25,8 @@ type DisbursementRow = {
  * `PATCH /api/ledgers/{orderId}/disbursements/{requestId}` (FR-47).
  */
 export function AdminDisbursementsPage() {
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const { run, error } = useAction();
+  const [selectedRequest, setSelectedRequest] = useState<PayoutRequest | null>(null);
+  const { busy, run, error } = useAction();
 
   const asyncRequests = useDisbursementRequests();
 
@@ -41,36 +39,33 @@ export function AdminDisbursementsPage() {
   );
 
   const approveDisbursement = useApproveDisbursement();
-  const requests: DisbursementRow[] =
+  const requests: PayoutRequest[] =
     asyncRequests.kind === 'loaded'
-      ? asyncRequests.data.requests.map((d) => ({
-          requestId: d.requestId,
-          orderId: d.orderId ?? d.ledger.orderId,
-          vendorId: d.ledger.vendorId ?? '',
-          amount: d.amount ?? 0,
-          purpose: d.purpose ?? 'MATERIALS',
-          status: d.status ?? 'PENDING',
-          createdAt: d.createdAt,
-          reason: d.reason,
-        }))
+      ? asyncRequests.data.requests.map((d) =>
+          toPayoutRequest(d, vendorNames.get(d.ledger.vendorId ?? '') ?? ''),
+        )
       : [];
 
-  async function handleApprove(row: DisbursementRow) {
-    setBusyId(row.requestId);
-    await run(async () => {
-      const reviewed = await approveDisbursement(row.orderId, row.requestId, {
-        status: 'APPROVED',
-      });
+  function handleReview(payload: ReviewDisbursementPayload) {
+    if (!selectedRequest) return;
+    void run(async () => {
+      const reviewed = await approveDisbursement(
+        selectedRequest.orderId,
+        selectedRequest.requestId,
+        payload,
+      );
       if (reviewed) {
         toast.success(
-          `Đã phê duyệt lệnh giải ngân ${row.requestId}! Hệ thống đã lập ủy nhiệm chi VietQR.`,
+          payload.status === 'REJECTED'
+            ? `Đã từ chối yêu cầu ${selectedRequest.requestId}.`
+            : `Đã duyệt yêu cầu ${selectedRequest.requestId} và cập nhật ledger của đơn.`,
         );
       } else {
-        toast.info('Lệnh giải ngân đã được ghi nhận. Vui lòng kiểm tra lại danh sách.');
+        toast.info('Quyết định đã được ghi nhận. Vui lòng kiểm tra lại danh sách.');
       }
+      setSelectedRequest(null);
       asyncRequests.reload();
     });
-    setBusyId(null);
   }
 
   return (
@@ -85,9 +80,9 @@ export function AdminDisbursementsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Duyệt lệnh giải ngân tiền ký quỹ</h1>
+          <h1 className={styles.title}>Xét duyệt giải ngân tiền cọc</h1>
           <p className={styles.subtitle}>
-            Kiểm soát các lệnh rút tiền từ xưởng bánh sau khi đơn hàng được đối soát hợp lệ
+            Duyệt toàn bộ, duyệt một phần hoặc từ chối yêu cầu của Shop
           </p>
         </div>
       </div>
@@ -108,7 +103,7 @@ export function AdminDisbursementsPage() {
             <EmptyState
               icon="wallet"
               title="Chưa có lệnh giải ngân nào"
-              description="Khi Shop gửi yêu cầu rút tiền, lệnh sẽ hiện ở đây để Admin phê duyệt."
+              description="Khi Shop gửi yêu cầu giải ngân tiền cọc, yêu cầu sẽ xuất hiện tại đây."
             />
           }
         >
@@ -119,6 +114,9 @@ export function AdminDisbursementsPage() {
                   <th className={styles.tableHeaderCell}>Mã Lệnh</th>
                   <th className={styles.tableHeaderCell}>Xưởng Thụ Hưởng</th>
                   <th className={styles.tableHeaderCell}>Số Tiền Giải Ngân</th>
+                  <th className={styles.tableHeaderCell}>Mục Đích</th>
+                  <th className={styles.tableHeaderCell}>Cọc Còn Giữ</th>
+                  <th className={styles.tableHeaderCell}>Đã Giải Ngân</th>
                   <th className={styles.tableHeaderCell}>Đơn Hàng</th>
                   <th className={styles.tableHeaderCell}>Ngày Tạo</th>
                   <th className={styles.tableHeaderCell}>Trạng Thái</th>
@@ -132,7 +130,14 @@ export function AdminDisbursementsPage() {
                     <td className={styles.tableCell}>
                       {vendorNames.get(r.vendorId) ?? r.vendorId ?? '—'}
                     </td>
-                    <td className={styles.tableCellMoney}>{formatCurrency(r.amount)}</td>
+                    <td className={styles.tableCellMoney}>
+                      {formatCurrency(r.approvedAmount ?? r.amount)}
+                    </td>
+                    <td className={styles.tableCell}>{payoutPurposeLabel(r.purpose)}</td>
+                    <td className={styles.tableCellMoney}>
+                      {formatCurrency(r.approvalCapacity)}
+                    </td>
+                    <td className={styles.tableCell}>{formatCurrency(r.disbursed)}</td>
                     <td className={styles.tableCellMuted}>#{r.orderId}</td>
                     <td className={styles.tableCell}>
                       {r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '—'}
@@ -159,13 +164,14 @@ export function AdminDisbursementsPage() {
                         <Button
                           size="sm"
                           variant="primary"
-                          loading={busyId === r.requestId}
-                          onClick={() => void handleApprove(r)}
+                          onClick={() => setSelectedRequest(r)}
                         >
-                          Duyệt Chi
+                          Xét duyệt
                         </Button>
                       ) : (
-                        <span className={styles.mutedSmall}>Đã ủy nhiệm</span>
+                        <span className={styles.mutedSmall}>
+                          {r.status === 'REJECTED' ? r.reason || 'Đã từ chối' : 'Đã xử lý'}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -175,6 +181,18 @@ export function AdminDisbursementsPage() {
           )}
         </AsyncState>
       </Card>
+
+      {selectedRequest && (
+        <DisbursementReviewModal
+          key={selectedRequest.requestId}
+          open
+          request={selectedRequest}
+          vendorName={selectedRequest.vendorName}
+          busy={busy}
+          onClose={() => setSelectedRequest(null)}
+          onSubmit={handleReview}
+        />
+      )}
     </div>
   );
 }

@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "vendor-service", path = "/internal")
 public interface VendorClient {
 
+    @GetMapping("/vendors/{vendorId}")
+    VendorView findById(@PathVariable String vendorId);
+
     /** 404 when the account owns no vendor. */
     @GetMapping("/vendors/by-owner/{accountId}")
     VendorView findByOwner(@PathVariable String accountId);

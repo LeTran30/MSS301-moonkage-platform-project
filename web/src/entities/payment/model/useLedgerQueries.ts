@@ -1,6 +1,6 @@
 import { useQueryData } from '@/shared/lib';
 import { queryKeys } from '@/shared/api';
-import { ledgerApi, type DisbursementDto, type LedgerDto } from '../api/ledgerApi';
+import { ledgerApi, type DisbursementListItemDto } from '../api/ledgerApi';
 
 /**
  * The escrow ledgers of the platform.
@@ -33,16 +33,19 @@ export function useDisbursements(orderId: string | null) {
 export function useDisbursementRequests(options?: { vendorId?: string | null }) {
   const vendorId = options?.vendorId ?? null;
   return useQueryData(queryKeys.ledger.list(`requests:${vendorId ?? ''}`), async () => {
-    const ledgers = await ledgerApi.getLedgers({
-      vendorId: vendorId ?? undefined,
-    });
-    const requests: Array<DisbursementDto & { ledger: LedgerDto }> = [];
-    for (const ledger of ledgers) {
-      const disbursements = await ledgerApi.getDisbursements(ledger.orderId);
-      for (const disbursement of disbursements) {
-        requests.push({ ...disbursement, ledger });
-      }
+    const ledgersPromise = ledgerApi.getLedgers({ vendorId: vendorId ?? undefined });
+    const requests: DisbursementListItemDto[] = [];
+    const pageSize = 100;
+    for (let page = 0; ; page += 1) {
+      const batch = await ledgerApi.getDisbursementRequests({
+        vendorId: vendorId ?? undefined,
+        page,
+        size: pageSize,
+      });
+      requests.push(...batch);
+      if (batch.length < pageSize) break;
     }
+    const ledgers = await ledgersPromise;
     return { ledgers, requests };
   });
 }

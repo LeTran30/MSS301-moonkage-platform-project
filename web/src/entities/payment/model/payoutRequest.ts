@@ -11,12 +11,20 @@ export interface PayoutRequest {
   orderId: string;
   vendorId: string;
   vendorName: string;
+  /** Amount originally requested by the vendor. */
   amount: number;
+  approvedAmount?: number | null;
   purpose: string;
   status: string;
   reason?: string | null;
   createdAt?: string;
   decidedAt?: string | null;
+  depositCollected: number;
+  held: number;
+  disbursed: number;
+  pendingDisbursement: number;
+  /** Deposit still held before reserving pending requests; authoritative approval ceiling. */
+  approvalCapacity: number;
 }
 
 /**
@@ -56,10 +64,22 @@ export function toPayoutRequest(
     vendorId: disbursement.ledger.vendorId ?? '',
     vendorName,
     amount: disbursement.amount ?? 0,
+    approvedAmount: disbursement.approvedAmount,
     purpose: disbursement.purpose ?? 'MATERIALS',
     status: disbursement.status ?? 'PENDING',
     reason: disbursement.reason,
     createdAt: disbursement.createdAt,
     decidedAt: disbursement.decidedAt,
+    depositCollected: disbursement.ledger.depositCollected ?? 0,
+    held: disbursement.ledger.held ?? 0,
+    disbursed: disbursement.ledger.disbursed ?? 0,
+    pendingDisbursement: disbursement.ledger.pendingDisbursement ?? 0,
+    approvalCapacity: Math.max(
+      0,
+      Math.min(
+        disbursement.ledger.held ?? 0,
+        (disbursement.ledger.depositCollected ?? 0) - (disbursement.ledger.disbursed ?? 0),
+      ),
+    ),
   };
 }

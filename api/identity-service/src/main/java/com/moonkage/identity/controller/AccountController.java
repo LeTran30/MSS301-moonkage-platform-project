@@ -1,6 +1,7 @@
 package com.moonkage.identity.controller;
 
 import com.moonkage.api.ApiResponse;
+import com.moonkage.identity.account.AdminAccountDirectory;
 import com.moonkage.identity.account.dto.AccountResponse;
 import com.moonkage.identity.kyc.LegalProfileService;
 import com.moonkage.identity.kyc.dto.request.CheckIdNumberRequest;
@@ -12,6 +13,7 @@ import com.moonkage.identity.security.CurrentUser;
 import com.moonkage.identity.security.CurrentUserInfo;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +33,7 @@ public class AccountController {
 
     private final UserProfileService userProfileService;
     private final LegalProfileService legalProfileService;
+    private final AdminAccountDirectory adminAccountDirectory;
 
     @GetMapping("/api/accounts/me")
     public ResponseEntity<ApiResponse<AccountResponse>> getMyAccount(@CurrentUser CurrentUserInfo currentUser) {
@@ -50,6 +53,13 @@ public class AccountController {
     @GetMapping("/internal/accounts/{accountId}/name")
     public ResponseEntity<AccountNameResponse> getName(@PathVariable String accountId) {
         return ResponseEntity.ok(new AccountNameResponse(accountId, userProfileService.getFullName(accountId)));
+    }
+
+    /** Account IDs that receive platform-operation notifications. Internal services only. */
+    @Hidden
+    @GetMapping("/internal/accounts/admins")
+    public ResponseEntity<List<String>> getAdminAccountIds() {
+        return ResponseEntity.ok(adminAccountDirectory.accountIds());
     }
 
     /**

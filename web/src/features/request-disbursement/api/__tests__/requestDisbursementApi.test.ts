@@ -25,10 +25,31 @@ describe('Feature request-disbursement - requestDisbursementApi (FR-41)', () => 
     });
 
     // CreateDisbursementRequest của payment-service chỉ nhận {amount, purpose}.
-    expect(post).toHaveBeenCalledWith('/api/ledgers/ord-1/disbursements', {
-      amount: 4_200_000,
-      purpose: 'MATERIALS',
-    });
+    expect(post).toHaveBeenCalledWith(
+      '/api/ledgers/ord-1/disbursements',
+      {
+        amount: 4_200_000,
+        purpose: 'MATERIALS',
+      },
+      {
+        headers: { 'Idempotency-Key': expect.any(String) },
+      },
+    );
     expect(created?.requestId).toBe('req-1');
+  });
+
+  it('giữ nguyên Idempotency-Key khi retry sau lỗi mạng', async () => {
+    const post = vi.spyOn(apiClient, 'post')
+      .mockRejectedValueOnce(new Error('network lost'))
+      .mockResolvedValueOnce(envelope({ requestId: 'req-retried' }) as never);
+    const payload = { amount: 650_000, purpose: 'PRINTING' as const };
+
+    await expect(requestDisbursement('ord-retry', payload)).rejects.toThrow('network lost');
+    await requestDisbursement('ord-retry', payload);
+
+    const firstKey = post.mock.calls[0][2]?.headers?.['Idempotency-Key'];
+    const secondKey = post.mock.calls[1][2]?.headers?.['Idempotency-Key'];
+    expect(firstKey).toBeTruthy();
+    expect(secondKey).toBe(firstKey);
   });
 });

@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +22,7 @@ import com.moonkage.payment.entity.DisbursementRequest;
 import com.moonkage.payment.entity.Ledger;
 import com.moonkage.payment.entity.LedgerEntry;
 import com.moonkage.payment.entity.OrderSnapshot;
+import com.moonkage.payment.entity.Payout;
 import com.moonkage.payment.enums.DisbursementPurpose;
 import com.moonkage.payment.enums.DisbursementStatus;
 import com.moonkage.payment.exception.AppException;
@@ -63,6 +65,7 @@ class ReconciliationServiceImplTest {
     private final PayoutRepository payoutRepository = mock(PayoutRepository.class);
     private final RefundRepository refundRepository = mock(RefundRepository.class);
     private final OutboxService outboxService = mock(OutboxService.class);
+    private final MoneyNotificationService notificationService = mock(MoneyNotificationService.class);
     private final VendorDirectory vendorDirectory = mock(VendorDirectory.class);
     private final OrderClient orderClient = mock(OrderClient.class);
     private final RefundService refundService = mock(RefundService.class);
@@ -85,6 +88,7 @@ class ReconciliationServiceImplTest {
                 ledgerService,
                 refundService,
                 outboxService,
+                notificationService,
                 vendorDirectory,
                 orderClient,
                 tx);
@@ -93,13 +97,17 @@ class ReconciliationServiceImplTest {
         ledger.setOrderId(ORDER_ID);
         ledger.setVendorId(VENDOR_ID);
         ledger.setTotalCollected(3_000_000L);
+        ledger.setDepositCollected(3_000_000L);
         ledger.setHeld(3_000_000L);
         when(ledgerRepository.findForUpdateByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
         when(ledgerRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(ledger));
         when(vendorDirectory.ownedVendorId(OWNER.accountId())).thenReturn(Optional.of(VENDOR_ID));
         when(vendorDirectory.ownedVendorId(STRANGER.accountId())).thenReturn(Optional.empty());
         when(disbursementRepository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
+        when(disbursementRepository.findByOrderIdAndIdempotencyKey(anyString(), anyString()))
+                .thenReturn(Optional.empty());
         when(payoutRepository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
+        when(payoutRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
     }
 
     // ----- FR-41: the vendor asks for part of the deposit -----
@@ -122,8 +130,67 @@ class ReconciliationServiceImplTest {
     }
 
     @Test
+    void retryingTheSameDisbursementKeyReturnsTheOriginalRequest() {
+        when(snapshotRepository.findById(ORDER_ID)).thenReturn(Optional.of(customOrder()));
+        CreateDisbursementRequest body = new CreateDisbursementRequest(500_000L, DisbursementPurpose.MATERIALS);
+
+        DisbursementResponse first = service.requestDisbursement(OWNER, ORDER_ID, body, "request-key-1");
+        DisbursementRequest stored = new DisbursementRequest();
+        stored.setOrderId(ORDER_ID);
+        stored.setVendorId(VENDOR_ID);
+        stored.setAmount(body.amount());
+        stored.setPurpose(body.purpose());
+        stored.setStatus(DisbursementStatus.PENDING);
+        when(disbursementRepository.findByOrderIdAndIdempotencyKey(ORDER_ID, "request-key-1"))
+                .thenReturn(Optional.of(stored));
+
+        DisbursementResponse retried = service.requestDisbursement(OWNER, ORDER_ID, body, "request-key-1");
+
+        assertEquals(first.amount(), retried.amount());
+        verify(disbursementRepository, times(1)).saveAndFlush(any(DisbursementRequest.class));
+    }
+
+    @Test
+    void reusingADisbursementKeyForAnotherAmountIsRejected() {
+        DisbursementRequest stored = new DisbursementRequest();
+        stored.setOrderId(ORDER_ID);
+        stored.setVendorId(VENDOR_ID);
+        stored.setAmount(500_000L);
+        stored.setPurpose(DisbursementPurpose.MATERIALS);
+        when(disbursementRepository.findByOrderIdAndIdempotencyKey(ORDER_ID, "request-key-1"))
+                .thenReturn(Optional.of(stored));
+
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.requestDisbursement(
+                        OWNER,
+                        ORDER_ID,
+                        new CreateDisbursementRequest(600_000L, DisbursementPurpose.MATERIALS),
+                        "request-key-1"));
+
+        assertEquals(ErrorCode.IDEMPOTENCY_CONFLICT, error.getErrorCode());
+        verify(disbursementRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
     void aDisbursementBeyondWhatIsHeldIsRefused() {
         when(snapshotRepository.findById(ORDER_ID)).thenReturn(Optional.of(customOrder()));
+
+        AppException error = assertThrows(
+                AppException.class,
+                () -> service.requestDisbursement(
+                        OWNER, ORDER_ID, new CreateDisbursementRequest(3_000_001L, DisbursementPurpose.MATERIALS)));
+
+        assertEquals(ErrorCode.DISBURSEMENT_OVER_HELD, error.getErrorCode());
+        verify(disbursementRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void remainderMoneyDoesNotIncreaseWhatCanBeDisbursed() {
+        when(snapshotRepository.findById(ORDER_ID)).thenReturn(Optional.of(customOrder()));
+        ledger.setTotalCollected(8_000_000L);
+        ledger.setHeld(8_000_000L);
+        ledger.setDepositCollected(3_000_000L);
 
         AppException error = assertThrows(
                 AppException.class,
@@ -324,15 +391,29 @@ class ReconciliationServiceImplTest {
         verify(outboxService).enqueue(anyString(), eq(RabbitConfig.PAYOUT_COMPLETED_ROUTING_KEY), any());
     }
 
-    /** FR-48: the order is paid out once. */
+    /** FR-48 recovery: retry after a lost response returns the completed payout without moving money twice. */
     @Test
-    void anOrderIsPaidOutOnlyOnce() {
-        when(payoutRepository.existsByOrderId(ORDER_ID)).thenReturn(true);
+    void aCompletedPayoutRetryReturnsTheOriginalResult() {
+        Payout completed = Payout.of(ORDER_ID, VENDOR_ID, 2_000_000L, ADMIN.accountId());
+        when(payoutRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(completed));
+
+        PayoutResponse answer = service.payout(ADMIN, ORDER_ID);
+
+        assertEquals(completed.getId(), answer.payoutId());
+        assertEquals(2_000_000L, answer.amount());
+        verify(orderClient, never()).lockForPayout(anyString());
+        verify(payoutRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void aRequestAppearingAfterOrderLockStopsTheFinalPayout() {
+        when(disbursementRepository.sumAmountByOrderIdAndStatus(ORDER_ID, DisbursementStatus.PENDING))
+                .thenReturn(0L, 500_000L);
 
         AppException error = assertThrows(AppException.class, () -> service.payout(ADMIN, ORDER_ID));
 
-        assertEquals(ErrorCode.ALREADY_PAID_OUT, error.getErrorCode());
-        verify(orderClient, never()).lockForPayout(anyString());
+        assertEquals(ErrorCode.PAYOUT_NOT_ELIGIBLE, error.getErrorCode());
+        verify(orderClient).lockForPayout(ORDER_ID);
         verify(payoutRepository, never()).saveAndFlush(any());
     }
 
@@ -383,8 +464,27 @@ class ReconciliationServiceImplTest {
         var answer = service.get(OWNER, ORDER_ID);
 
         assertEquals(3_000_000L, answer.held());
+        assertEquals(3_000_000L, answer.depositCollected());
+        assertEquals(3_000_000L, answer.remainingDisbursable());
         assertEquals(3_000_000L, answer.toReceive());
         assertEquals(VENDOR_ID, answer.vendorId());
+    }
+
+    @Test
+    void ledgerReportsOnlyUncommittedDepositAsDisbursable() {
+        when(snapshotRepository.findById(ORDER_ID)).thenReturn(Optional.of(customOrder()));
+        when(disbursementRepository.sumAmountByOrderIdAndStatus(ORDER_ID, DisbursementStatus.PENDING))
+                .thenReturn(500_000L);
+        ledger.setTotalCollected(8_000_000L);
+        ledger.setDepositCollected(3_000_000L);
+        ledger.setDisbursed(1_000_000L);
+        ledger.setHeld(7_000_000L);
+
+        var answer = service.get(OWNER, ORDER_ID);
+
+        assertEquals(500_000L, answer.pendingDisbursement());
+        assertEquals(1_500_000L, answer.remainingDisbursable());
+        assertTrue(answer.disbursementEligible());
     }
 
     /** The money of an order the caller may not see does not leak: not even that it exists. */

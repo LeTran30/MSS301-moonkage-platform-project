@@ -4,6 +4,7 @@ import com.moonkage.payment.entity.Ledger;
 import com.moonkage.payment.entity.LedgerEntry;
 import com.moonkage.payment.entity.OrderSnapshot;
 import com.moonkage.payment.enums.LedgerEntryKind;
+import com.moonkage.payment.enums.PaymentPurpose;
 import com.moonkage.payment.exception.AppException;
 import com.moonkage.payment.exception.ErrorCode;
 import com.moonkage.payment.repository.LedgerEntryRepository;
@@ -27,9 +28,12 @@ public class LedgerServiceImpl implements LedgerService {
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public void collect(String orderId, long amount, String paymentId) {
+    public void collect(String orderId, long amount, String paymentId, PaymentPurpose purpose) {
         Ledger ledger = ledgerRepository.findForUpdateByOrderId(orderId).orElseGet(() -> open(orderId));
         ledger.setTotalCollected(ledger.getTotalCollected() + amount);
+        if (purpose == PaymentPurpose.DEPOSIT) {
+            ledger.setDepositCollected(ledger.getDepositCollected() + amount);
+        }
         ledger.setHeld(ledger.getHeld() + amount);
         ledgerRepository.save(ledger);
         ledgerEntryRepository.save(LedgerEntry.of(orderId, LedgerEntryKind.COLLECT, amount, paymentId, null));
@@ -42,6 +46,14 @@ public class LedgerServiceImpl implements LedgerService {
                 .findByOrderId(orderId)
                 .map(l -> l.getHeld() >= amount)
                 .orElse(false);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void lock(String orderId) {
+        if (ledgerRepository.findForUpdateByOrderId(orderId).isEmpty()) {
+            throw new AppException(ErrorCode.LEDGER_NOT_FOUND);
+        }
     }
 
     @Override
@@ -59,13 +71,18 @@ public class LedgerServiceImpl implements LedgerService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void disburse(String orderId, long amount, String requestId, String actorAccountId) {
-        take(
-                orderId,
-                LedgerEntryKind.DISBURSE,
-                amount,
-                requestId,
-                actorAccountId,
-                l -> l.setDisbursed(l.getDisbursed() + amount));
+        Ledger ledger = ledgerRepository
+                .findForUpdateByOrderId(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.LEDGER_NOT_FOUND));
+        long depositRemaining = Math.max(0L, ledger.getDepositCollected() - ledger.getDisbursed());
+        if (amount <= 0 || ledger.getHeld() < amount || depositRemaining < amount) {
+            throw new AppException(ErrorCode.LEDGER_INSUFFICIENT);
+        }
+        ledger.setHeld(ledger.getHeld() - amount);
+        ledger.setDisbursed(ledger.getDisbursed() + amount);
+        ledgerRepository.save(ledger);
+        ledgerEntryRepository.save(
+                LedgerEntry.of(orderId, LedgerEntryKind.DISBURSE, amount, requestId, actorAccountId));
     }
 
     @Override

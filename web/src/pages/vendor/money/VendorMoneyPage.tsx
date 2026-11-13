@@ -27,11 +27,11 @@ export function VendorMoneyPage() {
 
   const ledgers = asyncLedgers.kind === 'loaded' ? asyncLedgers.data : [];
 
-  const totalAvailable = ledgers.reduce((acc, l) => acc + (l.toReceive ?? 0), 0);
+  const totalAvailable = ledgers.reduce((acc, l) => acc + (l.remainingDisbursable ?? 0), 0);
   const totalLocked = ledgers
     .filter((l) => l.disputeOpen)
     .reduce((acc, l) => acc + (l.held ?? 0), 0);
-  const totalDisbursed = ledgers.reduce((acc, l) => acc + (l.paidOut ?? 0), 0);
+  const totalDisbursed = ledgers.reduce((acc, l) => acc + (l.disbursed ?? 0), 0);
 
   const filteredItems = ledgers.filter((l) => {
     if (activeTab === 'RETAIL') return l.kind === 'BUY_NOW';
@@ -40,11 +40,14 @@ export function VendorMoneyPage() {
     return true;
   });
 
-  const payableLedgers = ledgers.filter((l) => l.payable);
+  const eligibleLedgers = ledgers.filter((l) => l.disbursementEligible);
+  const selectedLedger = eligibleLedgers.find((l) => l.orderId === withdrawOrderId);
+  const selectedAvailable = selectedLedger?.remainingDisbursable ?? 0;
 
   const openWithdraw = (orderId?: string, amount?: number) => {
-    setWithdrawOrderId(orderId ?? payableLedgers[0]?.orderId ?? '');
-    setWithdrawAmount(String(amount ?? payableLedgers[0]?.toReceive ?? 0));
+    const next = eligibleLedgers.find((l) => l.orderId === orderId) ?? eligibleLedgers[0];
+    setWithdrawOrderId(next?.orderId ?? '');
+    setWithdrawAmount(String(amount ?? next?.remainingDisbursable ?? 0));
     setWithdrawModalOpen(true);
   };
 
@@ -58,7 +61,7 @@ export function VendorMoneyPage() {
       toast.error('Vui lòng chọn đơn hàng cần giải ngân.');
       return;
     }
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0 || amount > selectedAvailable) {
       toast.error('Số tiền giải ngân không hợp lệ.');
       return;
     }
@@ -73,7 +76,7 @@ export function VendorMoneyPage() {
           `Đã gửi yêu cầu giải ngân ${formatCurrency(amount)} cho đơn #${withdrawOrderId}. Ban quản trị sẽ duyệt.`,
         );
       } else {
-        toast.info('Yêu cầu giải ngân đã được ghi nhận. Vui lòng kiểm tra lại lịch sử.');
+        toast.info('Yêu cầu giải ngân đã được ghi nhận. Vui lòng kiểm tra trang lịch sử giải ngân.');
       }
       asyncLedgers.reload();
     });
@@ -88,15 +91,20 @@ export function VendorMoneyPage() {
             Theo dõi doanh thu bán lẻ, nhận giải ngân tiền cọc theo tiến độ và quản lý số dư ký quỹ.
           </p>
         </div>
-        <Button variant="primary" iconLeft="wallet" onClick={() => openWithdraw()}>
-          Yêu cầu rút tiền về ngân hàng
+        <Button
+          variant="primary"
+          iconLeft="wallet"
+          disabled={eligibleLedgers.length === 0}
+          onClick={() => openWithdraw()}
+        >
+          Yêu cầu giải ngân tiền cọc
         </Button>
       </div>
 
       {/* Thống kê dòng tiền */}
       <div className={styles.statsGrid}>
         <Card className={styles.statCard}>
-          <span className={styles.statLabel}>Số dư khả dụng để rút</span>
+          <span className={styles.statLabel}>Tiền cọc còn có thể yêu cầu</span>
           <strong className={`${styles.statValue} ${styles.green}`}>
             {formatCurrency(totalAvailable)}
           </strong>
@@ -112,7 +120,7 @@ export function VendorMoneyPage() {
         </Card>
 
         <Card className={styles.statCard}>
-          <span className={styles.statLabel}>Đã giải ngân kỳ này</span>
+          <span className={styles.statLabel}>Tiền cọc đã giải ngân</span>
           <strong className={styles.statValue}>{formatCurrency(totalDisbursed)}</strong>
           <span className={styles.statSub}>Theo dõi trạng thái chi trả của kế toán sàn</span>
         </Card>
@@ -121,9 +129,9 @@ export function VendorMoneyPage() {
       <div className={styles.escrowNotice}>
         <Icon name="shield" size={18} />{' '}
         <strong>Cơ chế ký quỹ bảo vệ người bán &amp; người mua:</strong> Tiền thanh toán của người
-        mua được Moonkage giữ an toàn. Với đơn đặt hàng doanh nghiệp, tiền cọc được giải ngân khi
-        khách duyệt Maket; tiền còn lại được giải ngân sau khi giao hàng thành công và hết hạn khiếu
-        nại (48h).
+        mua được Moonkage ghi nhận trong ledger. Với đơn đặt hàng, Shop có thể xin giải ngân một
+        phần tiền cọc; phần tiền còn lại chỉ được payout sau khi giao hàng và đơn hết điều kiện khiếu
+        nại.
       </div>
 
       <Tabs<MoneyTab>
@@ -157,8 +165,8 @@ export function VendorMoneyPage() {
 
       <DisbursementRequestModal
         open={withdrawModalOpen}
-        payableLedgers={payableLedgers}
-        totalAvailable={totalAvailable}
+        eligibleLedgers={eligibleLedgers}
+        selectedAvailable={selectedAvailable}
         orderId={withdrawOrderId}
         amount={withdrawAmount}
         purpose={withdrawPurpose}

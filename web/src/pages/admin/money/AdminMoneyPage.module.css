@@ -68,3 +68,15 @@
   flex-direction: column;
   gap: var(--space-4);
 }
+.payoutCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+@media (max-width: var(--breakpoint-md)) {
+  .payoutCard {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

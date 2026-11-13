@@ -101,8 +101,8 @@ class PaymentServiceImplTest {
         assertEquals(VnpayIpnResponse.CONFIRMED, answer);
         assertEquals(PaymentStatus.SUCCEEDED, payment.getStatus());
         assertEquals("00", payment.getGatewayResponseCode());
-        verify(ledgerService).collect("order-1", 100_000L, PAYMENT_ID);
-        verify(ledgerService).collect("order-2", 150_000L, PAYMENT_ID);
+        verify(ledgerService).collect("order-1", 100_000L, PAYMENT_ID, PaymentPurpose.CHECKOUT);
+        verify(ledgerService).collect("order-2", 150_000L, PAYMENT_ID, PaymentPurpose.CHECKOUT);
         verify(outboxService).enqueue(anyString(), eq(RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY), any());
     }
 
@@ -122,7 +122,7 @@ class PaymentServiceImplTest {
 
         assertEquals(
                 PaymentStatus.SUCCEEDED, service.readReturn(ipn("00", AMOUNT)).status());
-        verify(ledgerService).collect("order-1", 100_000L, PAYMENT_ID);
+        verify(ledgerService).collect("order-1", 100_000L, PAYMENT_ID, PaymentPurpose.CHECKOUT);
         verify(outboxService).enqueue(anyString(), eq(RabbitConfig.PAYMENT_SUCCEEDED_ROUTING_KEY), any());
     }
 
@@ -303,7 +303,7 @@ class PaymentServiceImplTest {
                                 new AllocationRequest("order-2", 150_000L))),
                         "checkout-1"));
         assertEquals(ErrorCode.PAYMENT_ALREADY_PAID, error.getErrorCode());
-        verify(ledgerService, never()).collect(anyString(), anyLong(), anyString());
+        verify(ledgerService, never()).collect(anyString(), anyLong(), anyString(), any(PaymentPurpose.class));
     }
 
     /** The deposit of acceptance-1, still open. */

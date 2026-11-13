@@ -37,6 +37,10 @@ public class DisbursementRequest {
     @Column(length = 36)
     private String vendorId;
 
+    /** Stable key supplied by the client so a retried POST cannot create a second request. */
+    @Column(length = 64)
+    private String idempotencyKey;
+
     @Column(nullable = false)
     private Long amount;
 

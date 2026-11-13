@@ -4,11 +4,13 @@ import com.moonkage.api.ApiResponse;
 import com.moonkage.api.PageResponse;
 import com.moonkage.payment.dto.request.CreateDisbursementRequest;
 import com.moonkage.payment.dto.request.ReviewDisbursementRequest;
+import com.moonkage.payment.dto.response.DisbursementListItemResponse;
 import com.moonkage.payment.dto.response.DisbursementResponse;
 import com.moonkage.payment.dto.response.LedgerEntryResponse;
 import com.moonkage.payment.dto.response.LedgerResponse;
 import com.moonkage.payment.dto.response.PayoutResponse;
 import com.moonkage.payment.dto.response.RefundResponse;
+import com.moonkage.payment.enums.DisbursementStatus;
 import com.moonkage.payment.security.CurrentUser;
 import com.moonkage.payment.security.CurrentUserInfo;
 import com.moonkage.payment.service.ReconciliationService;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/ledgers")
 @RequiredArgsConstructor
 public class LedgerController {
+
+    private static final String IDEMPOTENCY_KEY = "Idempotency-Key";
 
     private final ReconciliationService reconciliationService;
 
@@ -71,13 +76,25 @@ public class LedgerController {
         return ApiResponse.ok(reconciliationService.disbursements(caller, orderId));
     }
 
+    /** Paged request list for review/history screens, including the ledger context in each row. */
+    @GetMapping("/disbursements")
+    public ApiResponse<PageResponse<DisbursementListItemResponse>> listDisbursements(
+            @CurrentUser CurrentUserInfo caller,
+            @RequestParam(required = false) String vendorId,
+            @RequestParam(required = false) DisbursementStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(reconciliationService.listDisbursements(caller, vendorId, status, page, size));
+    }
+
     /** FR-41: the vendor owner asks for part of the deposit. */
     @PostMapping("/{orderId}/disbursements")
     public ApiResponse<DisbursementResponse> requestDisbursement(
             @CurrentUser CurrentUserInfo caller,
             @PathVariable String orderId,
+            @RequestHeader(value = IDEMPOTENCY_KEY, required = false) String idempotencyKey,
             @Valid @RequestBody CreateDisbursementRequest request) {
-        return ApiResponse.ok(reconciliationService.requestDisbursement(caller, orderId, request));
+        return ApiResponse.ok(reconciliationService.requestDisbursement(caller, orderId, request, idempotencyKey));
     }
 
     /** FR-47: an admin approves or rejects. */

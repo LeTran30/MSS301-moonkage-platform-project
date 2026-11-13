@@ -148,6 +148,9 @@ export const HEADER_ONLY_DIRECTIVES: readonly string[] = ['frame-ancestors \'non
  * URL tương đối hoặc rỗng không cần khai báo thêm (`'self'` đã đủ).
  */
 export function apiConnectSources(apiBaseUrl: string): string[] {
+  // An explicit empty/relative gateway uses the page's own origin (`'self'`).
+  // Do not let an unrelated VITE_WS_URL turn that answer into a non-empty list.
+  if (!apiBaseUrl.trim() || apiBaseUrl.trim().startsWith('/')) return [];
   return cspConnectSources(apiBaseUrl);
 }
 

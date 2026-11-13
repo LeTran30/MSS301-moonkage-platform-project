@@ -6,6 +6,7 @@ import com.moonkage.payment.config.RabbitConfig;
 import com.moonkage.payment.dto.event.MoneyEvent;
 import com.moonkage.payment.dto.request.CreateDisbursementRequest;
 import com.moonkage.payment.dto.request.ReviewDisbursementRequest;
+import com.moonkage.payment.dto.response.DisbursementListItemResponse;
 import com.moonkage.payment.dto.response.DisbursementResponse;
 import com.moonkage.payment.dto.response.LedgerEntryResponse;
 import com.moonkage.payment.dto.response.LedgerResponse;
@@ -27,6 +28,7 @@ import com.moonkage.payment.repository.PayoutRepository;
 import com.moonkage.payment.repository.RefundRepository;
 import com.moonkage.payment.security.CurrentUserInfo;
 import com.moonkage.payment.service.LedgerService;
+import com.moonkage.payment.service.MoneyNotificationService;
 import com.moonkage.payment.service.OutboxService;
 import com.moonkage.payment.service.ReconciliationService;
 import com.moonkage.payment.service.RefundService;
@@ -48,6 +50,7 @@ import org.springframework.util.StringUtils;
 public class ReconciliationServiceImpl implements ReconciliationService {
 
     private static final int MAX_PAGE_SIZE = 100;
+    private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 64;
     private static final String CUSTOM_ORDER = "CUSTOM_ORDER";
 
     private final LedgerRepository ledgerRepository;
@@ -59,6 +62,7 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     private final LedgerService ledgerService;
     private final RefundService refundService;
     private final OutboxService outboxService;
+    private final MoneyNotificationService notificationService;
     private final VendorDirectory vendorDirectory;
     private final OrderClient orderClient;
     private final TransactionTemplate transactionTemplate;
@@ -109,13 +113,62 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PageResponse<DisbursementListItemResponse> listDisbursements(
+            CurrentUserInfo caller, String vendorId, DisbursementStatus status, int page, int size) {
+        String effectiveVendorId = vendorId;
+        if (!caller.isAdmin()) {
+            String ownedVendorId = vendorDirectory
+                    .ownedVendorId(caller.accountId())
+                    .orElseThrow(() -> new AppException(ErrorCode.ACCESS_DENIED));
+            if (vendorId != null && !ownedVendorId.equals(vendorId)) {
+                throw new AppException(ErrorCode.ACCESS_DENIED);
+            }
+            effectiveVendorId = ownedVendorId;
+        }
+        Instant now = Instant.now();
+        PageRequest pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
+        return PageResponse.from(disbursementRepository
+                .search(effectiveVendorId, status, pageable)
+                .map(d -> {
+                    Ledger ledger = ledgerRepository
+                            .findByOrderId(d.getOrderId())
+                            .orElseThrow(() -> new AppException(ErrorCode.LEDGER_NOT_FOUND));
+                    return new DisbursementListItemResponse(
+                            d.getId(),
+                            d.getOrderId(),
+                            d.getVendorId(),
+                            d.getAmount(),
+                            d.getApprovedAmount(),
+                            d.getPurpose(),
+                            d.getStatus(),
+                            d.getReason(),
+                            d.getCreatedAt(),
+                            d.getDecidedAt(),
+                            toResponse(ledger, now));
+                }));
+    }
+
+    @Override
     @Transactional
     public DisbursementResponse requestDisbursement(
-            CurrentUserInfo caller, String orderId, CreateDisbursementRequest request) {
+            CurrentUserInfo caller, String orderId, CreateDisbursementRequest request, String idempotencyKey) {
         Ledger ledger = ledgerRepository
                 .findForUpdateByOrderId(orderId)
                 .filter(l -> l.getVendorId() != null && ownsVendor(caller, l.getVendorId()))
                 .orElseThrow(() -> new AppException(ErrorCode.LEDGER_NOT_FOUND));
+        String requestKey = normalizeIdempotencyKey(idempotencyKey);
+        if (requestKey != null) {
+            DisbursementRequest existing = disbursementRepository
+                    .findByOrderIdAndIdempotencyKey(orderId, requestKey)
+                    .orElse(null);
+            if (existing != null) {
+                if (existing.getAmount() != request.amount() || existing.getPurpose() != request.purpose()) {
+                    throw new AppException(ErrorCode.IDEMPOTENCY_CONFLICT);
+                }
+                return toResponse(existing);
+            }
+        }
         boolean customOrder = snapshotRepository
                 .findById(orderId)
                 .map(OrderSnapshot::getKind)
@@ -125,12 +178,13 @@ public class ReconciliationServiceImpl implements ReconciliationService {
             throw new AppException(ErrorCode.DISBURSEMENT_NOT_ALLOWED);
         }
         long waiting = disbursementRepository.sumAmountByOrderIdAndStatus(orderId, DisbursementStatus.PENDING);
-        if (waiting + request.amount() > ledger.getHeld()) {
+        if (request.amount() > remainingDisbursable(ledger, waiting)) {
             throw new AppException(ErrorCode.DISBURSEMENT_OVER_HELD);
         }
         DisbursementRequest disbursement = new DisbursementRequest();
         disbursement.setOrderId(orderId);
         disbursement.setVendorId(ledger.getVendorId());
+        disbursement.setIdempotencyKey(requestKey);
         disbursement.setAmount(request.amount());
         disbursement.setPurpose(request.purpose());
         disbursement.setStatus(DisbursementStatus.PENDING);
@@ -144,6 +198,7 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                 DisbursementStatus.PENDING.name(),
                 request.purpose().name(),
                 caller.accountId());
+        notificationService.disbursementRequested(orderId, request.amount());
         return toResponse(disbursement);
     }
 
@@ -184,18 +239,24 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                 request.status().name(),
                 disbursement.getReason(),
                 caller.accountId());
+        notificationService.disbursementReviewed(
+                disbursement.getVendorId(), orderId, request.status().name());
         return toResponse(disbursement);
     }
 
     @Override
     public PayoutResponse payout(CurrentUserInfo caller, String orderId) {
         requireAdmin(caller);
+        PayoutResponse existingPayout = transactionTemplate.execute(status -> payoutRepository
+                .findByOrderId(orderId)
+                .map(ReconciliationServiceImpl::toResponse)
+                .orElse(null));
+        if (existingPayout != null) {
+            return existingPayout;
+        }
         Boolean ready = transactionTemplate.execute(status -> {
             if (ledgerRepository.findByOrderId(orderId).isEmpty()) {
                 throw new AppException(ErrorCode.LEDGER_NOT_FOUND);
-            }
-            if (payoutRepository.existsByOrderId(orderId)) {
-                throw new AppException(ErrorCode.ALREADY_PAID_OUT);
             }
             return !refundRepository.existsByOrderIdAndStatusIn(
                             orderId, Set.of(RefundStatus.PENDING, RefundStatus.MANUAL_REQUIRED))
@@ -212,8 +273,17 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         }
         return transactionTemplate.execute(status -> {
             Ledger ledger = ledgerRepository.findForUpdateByOrderId(orderId).orElseThrow();
-            if (payoutRepository.existsByOrderId(orderId)) {
-                throw new AppException(ErrorCode.ALREADY_PAID_OUT);
+            Payout existing = payoutRepository.findByOrderId(orderId).orElse(null);
+            if (existing != null) {
+                return toResponse(existing);
+            }
+            // Recheck after the order lock and under the ledger row lock. A disbursement creator uses the same
+            // row lock, so it can no longer slip between the eligibility check and the final money movement.
+            boolean blocked = refundRepository.existsByOrderIdAndStatusIn(
+                            orderId, Set.of(RefundStatus.PENDING, RefundStatus.MANUAL_REQUIRED))
+                    || disbursementRepository.sumAmountByOrderIdAndStatus(orderId, DisbursementStatus.PENDING) > 0;
+            if (blocked) {
+                throw new AppException(ErrorCode.PAYOUT_NOT_ELIGIBLE);
             }
             long amount = ledger.getHeld();
             Payout payout = Payout.of(orderId, ledger.getVendorId(), amount, caller.accountId());
@@ -230,7 +300,8 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                     "COMPLETED",
                     null,
                     caller.accountId());
-            return new PayoutResponse(payout.getId(), orderId, ledger.getVendorId(), amount, payout.getCreatedAt());
+            notificationService.payoutCompleted(ledger.getVendorId(), orderId, amount);
+            return toResponse(payout);
         });
     }
 
@@ -259,20 +330,52 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         OrderSnapshot snapshot =
                 snapshotRepository.findById(ledger.getOrderId()).orElse(null);
         boolean paidOut = payoutRepository.existsByOrderId(ledger.getOrderId());
+        long pendingDisbursement =
+                disbursementRepository.sumAmountByOrderIdAndStatus(ledger.getOrderId(), DisbursementStatus.PENDING);
+        long remainingDisbursable = remainingDisbursable(ledger, pendingDisbursement);
+        boolean customOrder = snapshot != null && CUSTOM_ORDER.equals(snapshot.getKind());
+        boolean refundPending = refundRepository.existsByOrderIdAndStatusIn(
+                ledger.getOrderId(), Set.of(RefundStatus.PENDING, RefundStatus.MANUAL_REQUIRED));
         return new LedgerResponse(
                 ledger.getOrderId(),
                 ledger.getVendorId(),
                 snapshot == null ? null : snapshot.getKind(),
                 snapshot == null ? null : snapshot.getStatus(),
                 ledger.getTotalCollected(),
+                ledger.getDepositCollected(),
                 ledger.getHeld(),
                 ledger.getDisbursed(),
                 ledger.getRefunded(),
                 ledger.getPaidOut(),
                 paidOut ? 0L : ledger.getHeld(),
+                pendingDisbursement,
+                remainingDisbursable,
                 ledger.getExpectedPayoutDate(),
                 snapshot != null && snapshot.isDisputeOpen(),
-                !paidOut && snapshot != null && snapshot.looksPayable(now));
+                customOrder && !paidOut && remainingDisbursable > 0,
+                !paidOut
+                        && !refundPending
+                        && pendingDisbursement == 0
+                        && snapshot != null
+                        && snapshot.looksPayable(now));
+    }
+
+    /** BR-09: new requests consume only deposit money, never checkout or remainder money. */
+    private static long remainingDisbursable(Ledger ledger, long pending) {
+        long depositRemaining = Math.max(0L, ledger.getDepositCollected() - ledger.getDisbursed());
+        long depositStillHeld = Math.min(ledger.getHeld(), depositRemaining);
+        return Math.max(0L, depositStillHeld - pending);
+    }
+
+    private static String normalizeIdempotencyKey(String key) {
+        if (!StringUtils.hasText(key)) {
+            return null;
+        }
+        String normalized = key.trim();
+        if (normalized.length() > MAX_IDEMPOTENCY_KEY_LENGTH) {
+            throw new AppException(ErrorCode.INVALID_INPUT);
+        }
+        return normalized;
     }
 
     private void announce(
@@ -308,5 +411,10 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                 d.getReason(),
                 d.getCreatedAt(),
                 d.getDecidedAt());
+    }
+
+    private static PayoutResponse toResponse(Payout payout) {
+        return new PayoutResponse(
+                payout.getId(), payout.getOrderId(), payout.getVendorId(), payout.getAmount(), payout.getCreatedAt());
     }
 }

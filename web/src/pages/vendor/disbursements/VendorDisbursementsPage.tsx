@@ -17,7 +17,7 @@ import { useAction } from '@/shared/lib';
 import {
   DISBURSEMENT_PURPOSES,
   payoutPurposeLabel,
-  useLedgerList,
+  useDisbursementRequests,
   type DisbursementPurpose,
 } from '@/entities/payment';
 import { useCurrentUser } from '@/entities/user';
@@ -36,12 +36,21 @@ export function VendorDisbursementsPage() {
   const [purpose, setPurpose] = useState<DisbursementPurpose>('MATERIALS');
   const { busy, run, error } = useAction();
 
-  const asyncLedgers = useLedgerList({ vendorId: user.vendorId });
+  const asyncData = useDisbursementRequests({ vendorId: user.vendorId });
   const requestDisbursement = useRequestDisbursement();
 
-  const ledgers = asyncLedgers.kind === 'loaded' ? asyncLedgers.data : [];
-  const payableLedgers = ledgers.filter((l) => l.payable);
-  const availableBalance = ledgers.reduce((acc, l) => acc + (l.toReceive ?? 0), 0);
+  const data = asyncData.kind === 'loaded' ? asyncData.data : { ledgers: [], requests: [] };
+  const ledgers = data.ledgers;
+  const requests = [...data.requests].sort((a, b) =>
+    (b.createdAt ?? '').localeCompare(a.createdAt ?? ''),
+  );
+  const eligibleLedgers = ledgers.filter((l) => l.disbursementEligible);
+  const availableBalance = ledgers.reduce(
+    (acc, l) => acc + (l.remainingDisbursable ?? 0),
+    0,
+  );
+  const selectedLedger = eligibleLedgers.find((l) => l.orderId === orderId);
+  const selectedAvailable = selectedLedger?.remainingDisbursable ?? 0;
 
   function handleRequestDisbursement(e: React.FormEvent) {
     e.preventDefault();
@@ -49,8 +58,8 @@ export function VendorDisbursementsPage() {
       toast.error('Vui lòng chọn đơn hàng cần giải ngân.');
       return;
     }
-    if (!Number.isFinite(amount) || amount <= 0 || amount > availableBalance) {
-      toast.error('Số tiền rút không hợp lệ!');
+    if (!Number.isFinite(amount) || amount <= 0 || amount > selectedAvailable) {
+      toast.error('Số tiền giải ngân vượt quá tiền cọc còn lại của đơn đã chọn.');
       return;
     }
     void run(async () => {
@@ -60,13 +69,13 @@ export function VendorDisbursementsPage() {
       });
       if (created) {
         toast.success(
-          `Đã tạo yêu cầu rút ${formatCurrency(amount)}! Ban quản trị sẽ duyệt lệnh trong 2-4 giờ.`,
+          `Đã gửi yêu cầu giải ngân ${formatCurrency(amount)}. Ban quản trị sẽ xét duyệt yêu cầu.`,
         );
         setOrderId('');
         setAmount(0);
-        asyncLedgers.reload();
+        asyncData.reload();
       } else {
-        toast.info('Yêu cầu rút tiền đã được ghi nhận. Vui lòng kiểm tra lại lịch sử.');
+        toast.info('Yêu cầu giải ngân đã được ghi nhận. Vui lòng kiểm tra lại lịch sử.');
       }
     });
   }
@@ -83,18 +92,18 @@ export function VendorDisbursementsPage() {
 
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Giải ngân tiền ký quỹ</h1>
+          <h1 className={styles.title}>Giải ngân tiền cọc</h1>
           <p className={styles.subtitle}>
-            Rút tiền doanh thu từ các đơn hàng đã được người mua xác nhận hoàn tất
+            Yêu cầu giải ngân sớm một phần tiền cọc của đơn đặt hàng
           </p>
         </div>
       </div>
 
       <div className={styles.gridTwo}>
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Tạo lệnh rút tiền về tài khoản</h2>
+          <h2 className={styles.sectionTitle}>Tạo yêu cầu giải ngân</h2>
           <div className={styles.statCard}>
-            <span className={styles.statLabel}>Số dư khả dụng có thể rút ngay:</span>
+            <span className={styles.statLabel}>Tổng tiền cọc còn có thể yêu cầu:</span>
             <div className={styles.statValue}>{formatCurrency(availableBalance)}</div>
           </div>
 
@@ -104,15 +113,15 @@ export function VendorDisbursementsPage() {
                 label="Đơn hàng cần giải ngân"
                 required
                 placeholder="— Chọn đơn hàng —"
-                options={payableLedgers.map((l) => ({
+                options={eligibleLedgers.map((l) => ({
                   value: l.orderId,
-                  label: `#${l.orderId} · ${formatCurrency(l.toReceive ?? 0)}`,
+                  label: `#${l.orderId} · còn ${formatCurrency(l.remainingDisbursable ?? 0)}`,
                 }))}
                 value={orderId}
                 onChange={(v) => {
                   setOrderId(v);
                   const next = ledgers.find((l) => l.orderId === v);
-                  setAmount(next?.toReceive ?? 0);
+                  setAmount(next?.remainingDisbursable ?? 0);
                 }}
               />
             </div>
@@ -127,8 +136,8 @@ export function VendorDisbursementsPage() {
                 placeholder="Ví dụ: 500000"
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
-                max={availableBalance}
-                min={100000}
+                max={selectedAvailable}
+                min={1}
                 required
               />
             </div>
@@ -155,55 +164,62 @@ export function VendorDisbursementsPage() {
               loading={busy}
               className={styles.fullWidthButton}
             >
-              Xác Nhận Tạo Lệnh Giải Ngân
+              Gửi Yêu Cầu Giải Ngân
             </Button>
           </form>
         </Card>
 
         <Card padding="lg" className={styles.cardBody}>
-          <h2 className={styles.sectionTitle}>Lệnh rút gần đây</h2>
+          <h2 className={styles.sectionTitle}>Yêu cầu gần đây</h2>
           <AsyncState
-            state={asyncLedgers}
-            onRetry={asyncLedgers.reload}
+            state={asyncData}
+            onRetry={asyncData.reload}
             loadingMessage="Đang tải lịch sử giải ngân..."
-            isEmpty={() => ledgers.length === 0}
+            isEmpty={() => requests.length === 0}
             empty={
               <EmptyState
                 icon="wallet"
-                title="Chưa có lệnh giải ngân nào"
-                description="Các đơn hàng đủ điều kiện sẽ hiện ở đây để Shop gửi yêu cầu rút tiền."
+                title="Chưa có yêu cầu giải ngân nào"
+                description="Yêu cầu đã gửi sẽ xuất hiện ở đây cùng trạng thái xét duyệt."
               />
             }
           >
             {() => (
               <div className={styles.stack}>
-                {ledgers.map((l) => (
-                  <div key={l.orderId} className={styles.keyValueRow}>
+                {requests.map((request) => (
+                  <div key={request.requestId} className={styles.keyValueRow}>
                     <div>
-                      <div className={styles.keyValueLabel}>#{l.orderId}</div>
+                      <div className={styles.keyValueLabel}>Đơn #{request.orderId}</div>
                       <div className={styles.statLabel}>
-                        {l.expectedPayoutDate || 'Chưa có ngày chi'}
+                        {payoutPurposeLabel(request.purpose ?? '')}
+                        {request.createdAt
+                          ? ` · ${new Date(request.createdAt).toLocaleString('vi-VN')}`
+                          : ''}
                       </div>
+                      {request.reason && (
+                        <div className={styles.rejectionReason}>Lý do: {request.reason}</div>
+                      )}
                     </div>
                     <div className={styles.rightText}>
-                      <div className={styles.moneyText}>{formatCurrency(l.toReceive ?? 0)}</div>
-                      {l.paidOut ? (
-                        <Badge tone="green" size="sm">
-                          Đã hoàn tất
-                        </Badge>
-                      ) : l.disputeOpen ? (
-                        <Badge tone="red" size="sm">
-                          Khóa khiếu nại
-                        </Badge>
-                      ) : l.payable ? (
-                        <Badge tone="blue" size="sm">
-                          Đủ điều kiện rút
-                        </Badge>
-                      ) : (
-                        <Badge tone="neutral" size="sm">
-                          Chờ người mua xác nhận
-                        </Badge>
-                      )}
+                      <div className={styles.moneyText}>
+                        {formatCurrency(request.approvedAmount ?? request.amount ?? 0)}
+                      </div>
+                      <Badge
+                        tone={
+                          request.status === 'APPROVED'
+                            ? 'green'
+                            : request.status === 'REJECTED'
+                              ? 'red'
+                              : 'amber'
+                        }
+                        size="sm"
+                      >
+                        {request.status === 'APPROVED'
+                          ? 'Đã duyệt'
+                          : request.status === 'REJECTED'
+                            ? 'Bị từ chối'
+                            : 'Đang chờ'}
+                      </Badge>
                     </div>
                   </div>
                 ))}

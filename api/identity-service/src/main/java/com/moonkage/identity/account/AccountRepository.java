@@ -2,7 +2,9 @@ package com.moonkage.identity.account;
 
 import com.moonkage.identity.account.atom.Email;
 import com.moonkage.identity.account.atom.PhoneNumber;
+import com.moonkage.identity.account.atom.Role;
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -16,6 +18,8 @@ interface AccountRepository extends JpaRepository<Account, String> {
     Optional<Account> findByEmail(Email email);
 
     Optional<Account> findByPhoneNumber(PhoneNumber phoneNumber);
+
+    List<Account> findAllByRole(Role role);
 
     boolean existsByEmail(Email email);
 

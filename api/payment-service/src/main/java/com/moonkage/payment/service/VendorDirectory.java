@@ -20,4 +20,12 @@ public class VendorDirectory {
             return Optional.empty();
         }
     }
+
+    public Optional<String> ownerAccountId(String vendorId) {
+        try {
+            return Optional.ofNullable(vendorClient.findById(vendorId)).map(v -> v.ownerAccountId());
+        } catch (FeignException.NotFound e) {
+            return Optional.empty();
+        }
+    }
 }

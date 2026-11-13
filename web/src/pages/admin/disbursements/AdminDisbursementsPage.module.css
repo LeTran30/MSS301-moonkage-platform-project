@@ -24,7 +24,7 @@
 }
 .table {
   width: 100%;
-  min-width: 720px;
+  min-width: 1100px;
   border-collapse: collapse;
   text-align: left;
   font-size: var(--text-sm);
